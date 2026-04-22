@@ -59,7 +59,7 @@ cmd_download() {
 cmd_quick() {
   local dir="${RESULTS_ROOT}/$(_version)_quick"
   echo "Quick check → ${dir}/"
-  python quick_check.py --output-dir "$dir" "$@"
+  python3 quick_check.py --output-dir "$dir" "$@"
 }
 
 # ── list ──────────────────────────────────────────────────────────────────────
