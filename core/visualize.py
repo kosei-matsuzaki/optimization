@@ -9,8 +9,8 @@ import matplotlib.animation as animation
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
-from benchmarks import BenchmarkFunction
-from optimizers import OptimizeResult
+from .benchmarks import BenchmarkFunction
+from .optimizers import OptimizeResult
 
 matplotlib.rcParams.update({
     "font.family": "serif",
@@ -210,6 +210,42 @@ def save_function_figure(
         ax_surf = fig.add_subplot(gs[2], projection="3d")
         _draw_surface3d(ax_surf, benchmark, X, Y, Z)
 
+    elif benchmark.dim == 3:
+        fig = plt.figure(figsize=(14, 5))
+        gs = GridSpec(1, 2, figure=fig, width_ratios=[1.6, 1], wspace=0.35)
+        ax_conv = fig.add_subplot(gs[0])
+        _draw_convergence(ax_conv, benchmark, results_per_method, title="Convergence")
+        ax_3d = fig.add_subplot(gs[1], projection="3d")
+        # 3D scatter of all evals from best run, colored by log(1+f)
+        best_method = min(
+            results_per_method,
+            key=lambda m: min(r.best_f for r in results_per_method[m]),
+        )
+        best_run = min(results_per_method[best_method], key=lambda r: r.best_f)
+        if best_run.history_x:
+            arr = np.array(best_run.history_x)
+            f_log = np.log1p(np.array(best_run.history_f))
+            sc = ax_3d.scatter(
+                arr[:, 0], arr[:, 1], arr[:, 2],
+                c=f_log, cmap="viridis_r", s=6, alpha=0.4,
+                edgecolors="none", depthshade=True,
+            )
+            fig.colorbar(sc, ax=ax_3d, shrink=0.55, pad=0.08,
+                         label="log(1 + f(x))")
+        if benchmark.optima_pos:
+            for opt in benchmark.optima_pos:
+                ax_3d.scatter(
+                    [opt[0]], [opt[1]], [opt[2]],
+                    marker="*", color="red", s=180,
+                    edgecolors="white", linewidths=0.5, zorder=5,
+                )
+        lo3, hi3 = benchmark.bounds
+        ax_3d.set_xlim(lo3, hi3); ax_3d.set_ylim(lo3, hi3); ax_3d.set_zlim(lo3, hi3)
+        ax_3d.set_xlabel(r"$x_1$", labelpad=1, fontsize=7)
+        ax_3d.set_ylabel(r"$x_2$", labelpad=1, fontsize=7)
+        ax_3d.set_zlabel(r"$x_3$", labelpad=1, fontsize=7)
+        ax_3d.tick_params(labelsize=6)
+        ax_3d.set_title(f"{best_method}  — eval distribution\nbright=near optimum  *=optimum", fontsize=7)
     else:
         fig, ax_conv = plt.subplots(figsize=(8, 5))
         _draw_convergence(ax_conv, benchmark, results_per_method,
@@ -401,20 +437,26 @@ def save_population_gif(
     X, Y, Z = _contour_data(benchmark, resolution=150)
     Z_plot = np.log1p(Z - Z.min() + 1e-10)
 
-    def get_frames(run: OptimizeResult) -> list[np.ndarray]:
+    def get_frames(run: OptimizeResult) -> tuple[list[np.ndarray], list[int]]:
         pops = run.history_pop
         if not pops:
-            return []
+            return [], []
         s = max(1, len(pops) // pop_frames)
-        return [pops[min(i * s, len(pops) - 1)] for i in range(pop_frames)]
+        indices = [min(i * s, len(pops) - 1) for i in range(pop_frames)]
+        frames = [pops[idx] for idx in indices]
+        n_total = run.n_evals
+        eval_counts = [round((idx + 1) / len(pops) * n_total) for idx in indices]
+        return frames, eval_counts
 
-    pop_seqs = [get_frames(r) for r in runs]
+    frame_data = [get_frames(r) for r in runs]
+    pop_seqs = [fd[0] for fd in frame_data]
+    eval_seqs = [fd[1] for fd in frame_data]
     n_frames = max((len(f) for f in pop_seqs), default=1)
 
     fig, axes = _make_grid_fig(len(methods))
 
     def draw_frame(frame_idx: int) -> list:
-        for ax, method, frames, color in zip(axes, methods, pop_seqs, _COLORS):
+        for ax, method, frames, evals, color in zip(axes, methods, pop_seqs, eval_seqs, _COLORS):
             ax.clear()
             ax.contourf(X, Y, Z_plot, levels=30, cmap="viridis", alpha=0.7)
             ax.contour(X, Y, Z_plot, levels=10, colors="white", linewidths=0.2, alpha=0.3)
@@ -426,7 +468,8 @@ def save_population_gif(
             _draw_optima(ax, benchmark)
             ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
             ax.set_xlabel(r"$x_1$"); ax.set_ylabel(r"$x_2$")
-            ax.set_title(f"{method}  gen={frame_idx + 1}", fontsize=8)
+            eval_label = evals[fi] if fi >= 0 and evals else frame_idx + 1
+            ax.set_title(f"{method}  eval={eval_label}", fontsize=8)
         fig.suptitle(f"{benchmark.name}  [{benchmark.category}]  — population",
                      fontsize=10)
         return []
@@ -438,19 +481,197 @@ def save_population_gif(
     plt.close(fig)
 
 
-# keep for backward compatibility
-def save_combined_gif(
-    benchmark: BenchmarkFunction,
-    results_per_method: dict[str, list[OptimizeResult]],
-    output_dir: str | Path = "results",
-    **kwargs: object,
-) -> None:
-    save_evals_gif(benchmark, results_per_method, output_dir)
-    save_population_gif(benchmark, results_per_method, output_dir)
+# ---------------------------------------------------------------------------
+# Internal helper: 3D subplot grid
+# ---------------------------------------------------------------------------
+
+def _make_3d_grid_fig(n_methods: int) -> tuple[plt.Figure, list]:
+    n_cols = min(3, n_methods)
+    n_rows = (n_methods + n_cols - 1) // n_cols
+    fig = plt.figure(figsize=(5.5 * n_cols, 4.8 * n_rows), dpi=80)
+    axes = [fig.add_subplot(n_rows, n_cols, i + 1, projection="3d") for i in range(n_methods)]
+    return fig, axes
 
 
 # ---------------------------------------------------------------------------
-# Public: stats CSV + summary CSV (unchanged API)
+# Public: 3D GIF — eval accumulation colored by f-value
+# ---------------------------------------------------------------------------
+
+def save_3d_evals_gif(
+    benchmark: BenchmarkFunction,
+    results_per_method: dict[str, list[OptimizeResult]],
+    output_dir: str | Path = "results",
+    fps: int = 8,
+    n_frames: int = 40,
+) -> None:
+    """Accumulate eval points in 3D, colored by log(1+f).  bright = near optimum."""
+    if benchmark.dim != 3:
+        return
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    from matplotlib.colors import Normalize
+
+    methods = list(results_per_method.keys())
+    runs = [min(results_per_method[m], key=lambda r: r.best_f) for m in methods]
+    lo, hi = benchmark.bounds
+
+    all_f_log = np.log1p([f for r in runs for f in r.history_f])
+    vmax = float(np.percentile(all_f_log, 98)) if len(all_f_log) else 1.0
+    norm = Normalize(vmin=0.0, vmax=max(vmax, 1e-8))
+    cmap = plt.get_cmap("viridis_r")
+
+    total_evals = max(len(r.history_x) for r in runs)
+    step = max(1, total_evals // n_frames)
+
+    fig, axes = _make_3d_grid_fig(len(methods))
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=axes, shrink=0.55, pad=0.04,
+                        label="log(1 + f(x))  [bright = near optimum]")
+    cbar.ax.tick_params(labelsize=7)
+
+    def draw_frame(frame_idx: int) -> list:
+        comp_limit = (frame_idx + 1) * step
+        for ax, method, run in zip(axes, methods, runs):
+            ax.clear()
+            pts = run.history_x[:comp_limit]
+            if pts:
+                arr = np.array(pts)
+                f_log = np.log1p(np.array(run.history_f[:comp_limit]))
+                ax.scatter(arr[:, 0], arr[:, 1], arr[:, 2],
+                           c=f_log, cmap=cmap, norm=norm,
+                           s=8, alpha=0.45, edgecolors="none", depthshade=True)
+            if benchmark.optima_pos:
+                for opt in benchmark.optima_pos:
+                    ax.scatter([opt[0]], [opt[1]], [opt[2]],
+                               marker="*", color="red", s=180,
+                               edgecolors="white", linewidths=0.5, zorder=5)
+            ax.set_xlim(lo, hi); ax.set_ylim(lo, hi); ax.set_zlim(lo, hi)
+            ax.set_xlabel(r"$x_1$", labelpad=0, fontsize=7)
+            ax.set_ylabel(r"$x_2$", labelpad=0, fontsize=7)
+            ax.set_zlabel(r"$x_3$", labelpad=0, fontsize=7)
+            ax.tick_params(labelsize=6)
+            n_shown = min(comp_limit, len(run.history_x))
+            ax.set_title(f"{method}  eval={n_shown}", fontsize=8)
+        fig.suptitle(
+            f"{benchmark.name}  [{benchmark.category}]  — 3D eval accumulation"
+            f"   * = global optimum",
+            fontsize=9,
+        )
+        return []
+
+    ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
+                                  interval=1000 // fps, blit=False)
+    ani.save(str(output_dir / f"{benchmark.name}_evals.gif"),
+             writer=animation.PillowWriter(fps=fps))
+    plt.close(fig)
+
+
+# ---------------------------------------------------------------------------
+# Public: 3D GIF — population distribution, camera rotates
+# ---------------------------------------------------------------------------
+
+def save_3d_population_gif(
+    benchmark: BenchmarkFunction,
+    results_per_method: dict[str, list[OptimizeResult]],
+    output_dir: str | Path = "results",
+    pop_frames: int = 30,
+    fps: int = 6,
+) -> None:
+    """Population in 3D colored by distance to optimum; camera rotates 180°."""
+    if benchmark.dim != 3:
+        return
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    from matplotlib.colors import Normalize
+
+    methods = list(results_per_method.keys())
+    runs = [min(results_per_method[m], key=lambda r: r.best_f) for m in methods]
+    lo, hi = benchmark.bounds
+    opt_pos = (np.array(benchmark.optima_pos[0])
+               if benchmark.optima_pos else None)
+
+    def get_frames(run: OptimizeResult) -> tuple[list[np.ndarray], list[int]]:
+        pops = run.history_pop
+        if not pops:
+            return [], []
+        s = max(1, len(pops) // pop_frames)
+        indices = [min(i * s, len(pops) - 1) for i in range(pop_frames)]
+        frames = [pops[idx] for idx in indices]
+        eval_counts = [round((idx + 1) / len(pops) * run.n_evals) for idx in indices]
+        return frames, eval_counts
+
+    frame_data = [get_frames(r) for r in runs]
+    pop_seqs = [fd[0] for fd in frame_data]
+    eval_seqs = [fd[1] for fd in frame_data]
+    n_frames = max((len(f) for f in pop_seqs), default=1)
+
+    # Color: distance to optimum (low = near optimum = bright)
+    if opt_pos is not None:
+        max_dist = float(np.sqrt(3) * (hi - lo))
+        norm = Normalize(vmin=0.0, vmax=max_dist)
+        cmap = plt.get_cmap("viridis_r")
+        cbar_label = "distance to optimum  [bright = near optimum]"
+    else:
+        norm = Normalize(vmin=0.0, vmax=1.0)
+        cmap = plt.get_cmap("viridis_r")
+        cbar_label = "relative generation"
+
+    fig, axes = _make_3d_grid_fig(len(methods))
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=axes, shrink=0.55, pad=0.04, label=cbar_label)
+    cbar.ax.tick_params(labelsize=7)
+
+    az_start, az_range = 30, 180
+
+    def draw_frame(frame_idx: int) -> list:
+        azim = az_start + az_range * frame_idx / max(n_frames - 1, 1)
+        for ax, method, frames, evals in zip(axes, methods, pop_seqs, eval_seqs):
+            ax.clear()
+            fi = min(frame_idx, len(frames) - 1) if frames else -1
+            if fi >= 0 and len(frames[fi]) > 0:
+                pop = frames[fi]
+                if opt_pos is not None:
+                    dists = np.linalg.norm(pop - opt_pos, axis=1)
+                    c_vals = dists
+                else:
+                    c_vals = np.full(len(pop), frame_idx / max(n_frames - 1, 1))
+                ax.scatter(pop[:, 0], pop[:, 1], pop[:, 2],
+                           c=c_vals, cmap=cmap, norm=norm,
+                           s=40, edgecolors="white", linewidths=0.3,
+                           alpha=0.9, depthshade=True)
+            if benchmark.optima_pos:
+                for opt in benchmark.optima_pos:
+                    ax.scatter([opt[0]], [opt[1]], [opt[2]],
+                               marker="*", color="red", s=200,
+                               edgecolors="white", linewidths=0.5, zorder=5)
+            ax.set_xlim(lo, hi); ax.set_ylim(lo, hi); ax.set_zlim(lo, hi)
+            ax.set_xlabel(r"$x_1$", labelpad=0, fontsize=7)
+            ax.set_ylabel(r"$x_2$", labelpad=0, fontsize=7)
+            ax.set_zlabel(r"$x_3$", labelpad=0, fontsize=7)
+            ax.tick_params(labelsize=6)
+            ax.view_init(elev=25, azim=azim)
+            eval_label = evals[fi] if fi >= 0 and evals else frame_idx + 1
+            ax.set_title(f"{method}  eval={eval_label}", fontsize=8)
+        fig.suptitle(
+            f"{benchmark.name}  [{benchmark.category}]  — 3D population"
+            f"   * = global optimum",
+            fontsize=9,
+        )
+        return []
+
+    ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
+                                  interval=1000 // fps, blit=False)
+    ani.save(str(output_dir / f"{benchmark.name}_population.gif"),
+             writer=animation.PillowWriter(fps=fps))
+    plt.close(fig)
+
+
+# ---------------------------------------------------------------------------
+# Public: stats CSV + summary CSV
 # ---------------------------------------------------------------------------
 
 def save_stats(
@@ -512,31 +733,3 @@ def save_stats(
                 "mean_optima_rate": f"{mean_optima / n_optima_total:.2f}" if n_optima_total else "N/A",
             })
 
-
-# ---------------------------------------------------------------------------
-# Legacy wrappers (kept for backward compatibility)
-# ---------------------------------------------------------------------------
-
-def save_results(
-    benchmark: BenchmarkFunction,
-    results_per_method: dict[str, list[OptimizeResult]],
-    output_dir: str | Path = "results",
-) -> None:
-    save_function_figure(benchmark, results_per_method, output_dir)
-
-
-def plot_surface_3d(benchmark: BenchmarkFunction, output_dir: str | Path = "results",
-                    **_: object) -> None:
-    pass  # now embedded in save_function_figure
-
-
-def animate_comparison(benchmark: BenchmarkFunction,
-                       results_per_method: dict[str, list[OptimizeResult]],
-                       output_dir: str | Path = "results", **_: object) -> None:
-    pass  # now embedded in save_combined_gif
-
-
-def animate_population(benchmark: BenchmarkFunction,
-                       results_per_method: dict[str, list[OptimizeResult]],
-                       output_dir: str | Path = "results", **_: object) -> None:
-    pass  # now embedded in save_combined_gif

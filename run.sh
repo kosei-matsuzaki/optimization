@@ -85,6 +85,12 @@ cmd_status() {
   gh run view "$run_id"
 }
 
+# ── ui ───────────────────────────────────────────────────────────────────────
+cmd_ui() {
+  echo "Starting UI at http://localhost:8080 ..."
+  python3 web/app.py
+}
+
 # ── dispatch ──────────────────────────────────────────────────────────────────
 case "${1:-help}" in
   trigger)  shift; cmd_trigger  "$@" ;;
@@ -92,6 +98,7 @@ case "${1:-help}" in
   quick)    shift; cmd_quick    "$@" ;;
   list)            cmd_list ;;
   status)   shift; cmd_status   "${1:-}" ;;
+  ui)       shift; cmd_ui       "${1:-}" ;;
   *)
     cat <<'EOF'
 Usage: ./run.sh <command> [options]
@@ -114,6 +121,9 @@ Usage: ./run.sh <command> [options]
 
   status [RUN_ID]
       最新（またはRUN_IDで指定）のワークフロー実行状況を表示
+
+  ui
+      Results UI を起動 → http://localhost:8080
 EOF
     ;;
 esac

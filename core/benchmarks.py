@@ -129,3 +129,6 @@ BENCHMARKS_4D = _build(4)
 BENCHMARKS_BY_NAME: dict[str, BenchmarkFunction] = {
     b.name: b for b in BENCHMARKS + CUSTOM_BENCHMARKS
 }
+BENCHMARKS_3D_BY_NAME: dict[str, BenchmarkFunction] = {
+    b.name: b for b in BENCHMARKS_3D
+}

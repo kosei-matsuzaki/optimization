@@ -1,7 +1,7 @@
 import time
 import numpy as np
-from benchmarks import BenchmarkFunction
-from optimizers import BaseOptimizer, OptimizeResult
+from .benchmarks import BenchmarkFunction
+from .optimizers import BaseOptimizer, OptimizeResult
 
 
 def run_experiment(
@@ -9,7 +9,6 @@ def run_experiment(
     benchmark: BenchmarkFunction,
     n_runs: int = 10,
     max_evals: int = 5000,
-    success_threshold: float = 1e-4,
     **optimizer_kwargs,
 ) -> tuple[list[OptimizeResult], list[float]]:
     results: list[OptimizeResult] = []
@@ -17,9 +16,8 @@ def run_experiment(
     for i in range(n_runs):
         opt = optimizer_cls(benchmark, seed=i * 100, **optimizer_kwargs)
         t0 = time.perf_counter()
-        result = opt.optimize(max_evals=max_evals)
+        results.append(opt.optimize(max_evals=max_evals))
         times.append(time.perf_counter() - t0)
-        results.append(result)
     return results, times
 
 
@@ -29,11 +27,11 @@ def summarize(
 ) -> dict:
     best_fs = np.array([r.best_f for r in results])
     return {
-        "mean": float(np.mean(best_fs)),
-        "std": float(np.std(best_fs)),
-        "median": float(np.median(best_fs)),
-        "min": float(np.min(best_fs)),
-        "max": float(np.max(best_fs)),
+        "mean":         float(np.mean(best_fs)),
+        "std":          float(np.std(best_fs)),
+        "median":       float(np.median(best_fs)),
+        "min":          float(np.min(best_fs)),
+        "max":          float(np.max(best_fs)),
         "success_rate": float(np.mean(best_fs <= success_threshold)),
-        "n_runs": len(results),
+        "n_runs":       len(results),
     }

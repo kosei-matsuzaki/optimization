@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optimization Lab</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+  body { background: var(--bg); }
+
+  .dashboard { padding: 28px 36px; max-width: 1280px; margin: 0 auto; }
+
+  /* ── Stats row ──────────────────────────────────────────────────────────── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid transparent;
+  }
+  .stat-card.blue  { border-left-color: var(--accent); }
+  .stat-card.green { border-left-color: var(--success); }
+  .stat-card.gold  { border-left-color: var(--warn); }
+  .stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .stat-value    { font-size: 32px; font-weight: 700; color: var(--text); line-height: 1; }
+  .stat-value-sm { font-size: 14px; font-weight: 700; color: var(--text); font-family: var(--mono); }
+  .stat-sub      { font-size: 10.5px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+
+  /* ── Controls ────────────────────────────────────────────────────────────── */
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+    align-items: start;
+  }
+  .right-col { display: flex; flex-direction: column; gap: 18px; }
+
+  .panel-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    box-shadow: var(--shadow-sm);
+  }
+  .panel-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-title .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .panel-title .dot.green { background: var(--success); }
+
+  /* GH run rows inside Remote Runs */
+  .gh-runs-scroll { max-height: 220px; overflow-y: auto; }
+
+  /* ── Results grid ────────────────────────────────────────────────────────── */
+  .results-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    box-shadow: var(--shadow-sm);
+  }
+  .results-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .results-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 10px;
+  }
+  .result-card {
+    display: block;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    background: var(--surface-2);
+    transition: border-color .14s, background .14s, transform .1s;
+  }
+  .result-card:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: translateY(-1px);
+  }
+  .result-card-date { font-size: 12px; font-weight: 700; color: var(--text); font-family: var(--mono); }
+  .result-card-meta { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+
+  @media (max-width: 720px) {
+    .controls-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr; }
+    .dashboard { padding: 16px; }
+  }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <h1>Optimization Lab</h1>
+  <span class="subtitle">VSO Research Dashboard</span>
+  <span class="header-spacer"></span>
+  <a href="/methods" style="font-size:12px; font-weight:600; color:rgba(255,255,255,.85); text-decoration:none; padding:5px 12px; border-radius:20px; border:1px solid rgba(255,255,255,.3); transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background=''">手法解説</a>
+  <span class="header-badge">VSO Research</span>
+</header>
+
+<div class="dashboard">
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card blue">
+      <div class="stat-label">Total Results</div>
+      <div class="stat-value">{{ results|length }}</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Latest Run</div>
+      <div class="stat-value-sm" id="latest-date">—</div>
+      <div class="stat-sub" id="latest-commit"></div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">Quick Runs</div>
+      <div class="stat-value" id="quick-count">0</div>
+    </div>
+  </div>
+
+  <!-- Controls: Quick Run (left) | GH Actions + Remote Runs (right) -->
+  <div class="controls-grid">
+
+    <!-- Quick Run -->
+    <div class="panel-card">
+      <div class="panel-title"><span class="dot"></span> Quick Run (local)</div>
+      <form id="run-form">
+        <div class="form-grid" style="margin-bottom:12px;">
+          <div class="form-row">
+            <label for="n-runs">n_runs</label>
+            <input type="number" id="n-runs" name="n_runs" value="3" min="1" max="20">
+          </div>
+          <div class="form-row">
+            <label for="max-evals">max_evals</label>
+            <input type="number" id="max-evals" name="max_evals" value="2000" min="100" max="20000" step="100">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" id="run-btn">▶ Run</button>
+      </form>
+      <div id="job-status" style="display:none; margin-top:14px;">
+        <div class="job-bar">
+          <span id="job-badge" class="badge badge-running"><span class="spinner"></span>&nbsp;Running</span>
+          <span id="job-result-link" style="display:none; font-size:12px; margin-left:4px;">
+            → <a id="job-result-anchor" href="#" style="color:var(--accent);">View result</a>
+          </span>
+        </div>
+        <div id="terminal" class="terminal"></div>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div class="right-col">
+
+      <!-- GitHub Actions -->
+      <div class="panel-card">
+        <div class="panel-title"><span class="dot green"></span> GitHub Actions</div>
+        <form id="gh-form">
+          <div class="form-grid" style="margin-bottom:12px;">
+            <div class="form-row">
+              <label for="gh-n-runs">n_runs</label>
+              <input type="number" id="gh-n-runs" name="n_runs" value="30" min="1" max="100">
+            </div>
+            <div class="form-row">
+              <label for="gh-max-evals">max_evals</label>
+              <input type="number" id="gh-max-evals" name="max_evals" value="5000" min="100" max="50000" step="100">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-outline" id="gh-btn">⚡ Trigger Workflow</button>
+        </form>
+      </div>
+
+      <!-- Remote Runs -->
+      <div class="panel-card">
+        <div class="panel-title" style="margin-bottom:10px;">
+          <span class="dot" style="background:var(--accent-muted);"></span>
+          Remote Runs
+          <span class="header-spacer"></span>
+          <button class="section-action" onclick="loadGhRuns()">↻ Refresh</button>
+        </div>
+        <div class="gh-runs-scroll">
+          <div id="gh-runs-list"><p class="empty-state">Click Refresh to load.</p></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Recent Results -->
+  <div class="results-section">
+    <div class="results-section-header">
+      <span class="results-section-title">Results</span>
+      <span class="tag">{{ results|length }}</span>
+    </div>
+    {% if results %}
+    <div class="result-grid">
+      {% for r in results %}
+      <a href="/results/{{ r }}" class="result-card" data-name="{{ r }}">
+        <div class="result-card-date"></div>
+        <div class="result-card-meta"></div>
+        {% if 'quick' in r %}<span class="tag" style="margin-top:6px; display:inline-block;">quick</span>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:36px 0;">
+      <div style="font-size:13px; font-weight:600; color:var(--text-2); margin-bottom:4px;">No results yet</div>
+      <div style="font-size:12px; color:var(--muted);">Run a Quick Check or trigger a GitHub Actions workflow.</div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script id="page-data" type="application/json">{{ results | tojson }}</script>
+
+<script>
+function parseResultName(name) {
+  const m = name.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})_([^_]+)/);
+  if (!m) return { date: name, commit: '' };
+  return { date: `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}`, commit: m[7] };
+}
+
+const ALL_RESULTS = JSON.parse(document.getElementById('page-data').textContent);
+
+document.querySelectorAll('.result-card[data-name]').forEach(card => {
+  const { date, commit } = parseResultName(card.dataset.name);
+  card.querySelector('.result-card-date').textContent = date;
+  card.querySelector('.result-card-meta').textContent = commit ? `@ ${commit}` : '';
+});
+
+document.getElementById('quick-count').textContent =
+  ALL_RESULTS.filter(r => r.includes('quick')).length;
+
+if (ALL_RESULTS.length) {
+  const { date, commit } = parseResultName(ALL_RESULTS[0]);
+  document.getElementById('latest-date').textContent = date;
+  document.getElementById('latest-commit').textContent = commit ? `@ ${commit}` : '';
+}
+
+// ── Toast ──
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── Quick Run ──
+const terminal = document.getElementById('terminal');
+const jobBadge = document.getElementById('job-badge');
+const jobResultLink = document.getElementById('job-result-link');
+const jobResultAnchor = document.getElementById('job-result-anchor');
+const runBtn = document.getElementById('run-btn');
+let pollingInterval = null;
+let lastLineCount = 0;
+
+function colorLine(line) {
+  const el = document.createElement('div');
+  if (/error|exception|failed|traceback/i.test(line)) el.className = 'err';
+  else if (/warning|warn/i.test(line)) el.className = 'warn';
+  else if (/saved|done|complete/i.test(line)) el.className = 'ok';
+  el.textContent = line;
+  return el;
+}
+
+function pollStatus(jobId) {
+  pollingInterval = setInterval(async () => {
+    const res = await fetch(`/api/status/${jobId}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    data.output.slice(lastLineCount).forEach(line => terminal.appendChild(colorLine(line)));
+    lastLineCount = data.output.length;
+    terminal.scrollTop = terminal.scrollHeight;
+    if (data.status !== 'running') {
+      clearInterval(pollingInterval);
+      runBtn.disabled = false;
+      if (data.status === 'done') {
+        jobBadge.className = 'badge badge-done';
+        jobBadge.textContent = '✓ Done';
+        if (data.result_dir) {
+          jobResultAnchor.href = `/results/${data.result_dir}`;
+          jobResultLink.style.display = 'inline';
+        }
+        showToast('Run completed!', 'ok');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        jobBadge.className = 'badge badge-failed';
+        jobBadge.textContent = '✗ Failed';
+        showToast('Run failed.', 'err');
+      }
+    }
+  }, 600);
+}
+
+document.getElementById('run-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (pollingInterval) clearInterval(pollingInterval);
+  terminal.innerHTML = '';
+  lastLineCount = 0;
+  runBtn.disabled = true;
+  document.getElementById('job-status').style.display = 'block';
+  jobBadge.className = 'badge badge-running';
+  jobBadge.innerHTML = '<span class="spinner"></span>&nbsp;Running';
+  jobResultLink.style.display = 'none';
+  const res = await fetch('/api/run', { method: 'POST', body: new FormData(e.target) });
+  const { job_id } = await res.json();
+  pollStatus(job_id);
+});
+
+// ── GitHub Actions ──
+document.getElementById('gh-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('gh-btn');
+  btn.disabled = true; btn.textContent = 'Triggering…';
+  const res = await fetch('/api/gh-trigger', { method: 'POST', body: new FormData(e.target) });
+  const data = await res.json();
+  btn.disabled = false; btn.textContent = '⚡ Trigger Workflow';
+  showToast(data.message, data.ok ? 'ok' : 'err');
+  if (data.ok) setTimeout(loadGhRuns, 2000);
+});
+
+// ── Remote Runs ──
+async function loadGhRuns() {
+  const list = document.getElementById('gh-runs-list');
+  list.innerHTML = '<p class="empty-state"><span class="spinner"></span> Loading…</p>';
+  try {
+    const res = await fetch('/api/gh-runs');
+    if (!res.ok) throw new Error(await res.text());
+    const runs = await res.json();
+    if (!runs.length) { list.innerHTML = '<p class="empty-state">No runs found.</p>'; return; }
+    list.innerHTML = '';
+    runs.forEach(run => {
+      const row = document.createElement('div');
+      row.className = 'gh-run-row';
+      row.id = `gh-run-${run.databaseId}`;
+      const status = run.conclusion || run.status;
+      const badgeClass = status === 'success' ? 'badge-done'
+        : status === 'failure' ? 'badge-failed' : 'badge-running';
+      const canDownload = run.conclusion === 'success';
+      const date = new Date(run.createdAt).toLocaleString('ja-JP',
+        {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      row.innerHTML = `
+        <div class="gh-run-meta">
+          <span class="badge ${badgeClass}" style="font-size:10px;">${status}</span>
+          <span style="font-size:10.5px;color:var(--muted);">${date}</span>
+        </div>
+        <div class="gh-run-title">${run.displayTitle}</div>
+        ${canDownload ? `<button class="btn btn-outline btn-sm" id="dl-btn-${run.databaseId}"
+          onclick="startDownload('${run.databaseId}')">⬇ Download</button>` : ''}
+        <div id="dl-status-${run.databaseId}" style="font-size:11px;margin-top:4px;"></div>
+      `;
+      list.appendChild(row);
+    });
+    resumeDownloadPolling();
+  } catch(e) {
+    list.innerHTML = `<p class="empty-state" style="color:var(--danger);">Error: ${e.message}</p>`;
+  }
+}
+
+// ── Download ──
+const DL_JOB_KEY = 'dl_job';
+
+async function startDownload(ghRunId) {
+  const btn = document.getElementById(`dl-btn-${ghRunId}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Starting…'; }
+  const form = new FormData();
+  form.append('run_id', ghRunId);
+  const res = await fetch('/api/download', { method: 'POST', body: form });
+  const { job_id } = await res.json();
+  localStorage.setItem(DL_JOB_KEY, JSON.stringify({ job_id, gh_run_id: ghRunId }));
+  pollDownload(job_id, ghRunId);
+}
+
+function pollDownload(jobId, ghRunId) {
+  const statusEl = document.getElementById(`dl-status-${ghRunId}`);
+  const btn = document.getElementById(`dl-btn-${ghRunId}`);
+  const iv = setInterval(async () => {
+    const res = await fetch(`/api/dl-status/${jobId}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (statusEl) {
+      const color = data.status === 'done' ? 'var(--success)'
+        : data.status === 'failed' ? 'var(--danger)' : 'var(--warn)';
+      statusEl.innerHTML = `<span style="color:${color};">${data.message}</span>`;
+    }
+    if (data.status !== 'running') {
+      clearInterval(iv);
+      localStorage.removeItem(DL_JOB_KEY);
+      if (btn) { btn.disabled = false; btn.textContent = '⬇ Download'; }
+      if (data.status === 'done') {
+        showToast(data.message, 'ok');
+        setTimeout(() => location.reload(), 1200);
+      } else {
+        showToast(data.message, 'err');
+      }
+    }
+  }, 1000);
+}
+
+function resumeDownloadPolling() {
+  const stored = localStorage.getItem(DL_JOB_KEY);
+  if (!stored) return;
+  try {
+    const { job_id, gh_run_id } = JSON.parse(stored);
+    const btn = document.getElementById(`dl-btn-${gh_run_id}`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Downloading…'; }
+    pollDownload(job_id, gh_run_id);
+  } catch(e) {
+    localStorage.removeItem(DL_JOB_KEY);
+  }
+}
+</script>
+
+</body>
+</html>

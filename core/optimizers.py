@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 import cma
 
-from benchmarks import BenchmarkFunction
+from .benchmarks import BenchmarkFunction
 
 
 @dataclass
@@ -133,16 +133,15 @@ class VirusOptimizer(BaseOptimizer):
         n_elite_max: int = 6,
         temperature: float = 1.0,
         stagnation_limit: int = 2000,
-        tol: float = 0.0,
         niche_radius: float = 1.0,
-        niche_radius_min: float = 0.05,  # floor for adaptive niche radius
+        niche_radius_min: float = 0.05,
         elite_quality_factor: float = 1.0,
-        bloom_size: int = 2,             # individuals added on improvement
-        crowd_radius_frac: float = 1e-5, # crowding radius as fraction of span
-        max_crowd_fraction: float = 0.10,  # max fraction of pop per cluster
-        sigma_min_ratio: float = 0.10,   # min sigma multiplier for best+oldest individual
-        air_sigma_min: float = 1.5,      # air sigma multiplier when population is diverse
-        air_sigma_max: float = 5.0,      # air sigma multiplier when population is converged
+        bloom_size: int = 2,
+        crowd_radius_frac: float = 1e-5,
+        max_crowd_fraction: float = 0.10,
+        sigma_min_ratio: float = 0.10,
+        air_sigma_min: float = 1.5,
+        air_sigma_max: float = 5.0,
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
@@ -154,7 +153,6 @@ class VirusOptimizer(BaseOptimizer):
         self.n_elite_max = n_elite_max
         self.temperature = temperature
         self.stagnation_limit = stagnation_limit
-        self.tol = tol
         self.niche_radius = niche_radius
         self.niche_radius_min = niche_radius_min
         self.elite_quality_factor = elite_quality_factor
@@ -294,7 +292,7 @@ class VirusOptimizer(BaseOptimizer):
                 history_x.append(x.copy())
                 history_f.append(f)
 
-                if f < best_so_far - self.tol:
+                if f < best_so_far:
                     best_so_far = f
                     no_improve = 0
                     improved_this_gen = True
@@ -320,7 +318,7 @@ class VirusOptimizer(BaseOptimizer):
                     pop_age.append(0)
                     history_x.append(bx.copy())
                     history_f.append(bf)
-                    if bf < best_so_far - self.tol:
+                    if bf < best_so_far:
                         best_so_far = bf
                         no_improve = 0
                     else:
@@ -363,9 +361,6 @@ class VirusOptimizer(BaseOptimizer):
             sigma *= self.sigma_decay
             history_pop.append(np.array(pop_x).copy())
 
-        px_arr = np.array(pop_x)
-        pf_arr = np.array(pop_f)
-        self.last_elites = [pop_x[i].copy() for i in self._niche_elites(px_arr, pf_arr, niche_radius_dyn)]
         return self._make_result(history_x, history_f, history_pop)
 
 

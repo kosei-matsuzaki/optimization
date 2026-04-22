@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ run_id }} — Optimization Lab</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+  /* ── Media tabs ─────────────────────────────────────────────────────────── */
+  .media-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 16px;
+    gap: 2px;
+  }
+  .media-tabs button {
+    padding: 9px 18px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: -2px;
+    transition: color .14s, background .14s, border-color .14s;
+    white-space: nowrap;
+  }
+  .media-tabs button:hover { background: var(--bg); color: var(--text-2); }
+  .media-tabs button.active {
+    background: var(--surface);
+    color: var(--accent);
+    border-color: var(--border);
+    border-bottom-color: var(--surface);
+  }
+
+  /* ── Unified results table ──────────────────────────────────────────────── */
+  .method-row {
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface) !important;
+  }
+  .method-row:hover td { background: var(--accent-light) !important; }
+  .method-row td { border-bottom: 1px solid var(--border); }
+
+  .method-cell {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .expand-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px; height: 16px;
+    font-size: 8px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    transition: background .12s;
+    flex-shrink: 0;
+  }
+  .method-row[data-expanded="true"] .expand-toggle { background: var(--accent-light); color: var(--accent); }
+
+  .run-row td {
+    background: var(--surface-2) !important;
+    border-bottom: 1px solid var(--border-light) !important;
+    color: var(--text-2);
+    font-size: 11.5px;
+  }
+  .run-row:last-of-type td { border-bottom: 2px solid var(--border) !important; }
+  .run-cell {
+    padding-left: 32px !important;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px !important;
+  }
+
+  /* column alignment for the unified table */
+  .unified-table td, .unified-table th { white-space: nowrap; }
+  .unified-table th:not(:first-child),
+  .unified-table td:not(:first-child) { text-align: right; }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <h1>Optimization Lab</h1>
+  <span class="subtitle">Results Viewer</span>
+  <span class="header-spacer"></span>
+  <span class="header-badge">VSO Research</span>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+
+    <!-- Results navigation -->
+    <div class="sidebar-section" style="flex-shrink:0; max-height:180px; overflow-y:auto;">
+      <div class="section-header">
+        <span class="section-title">Results</span>
+        <a href="/" class="section-action">Home</a>
+      </div>
+      <ul class="results-list">
+        {% for r in all_results %}
+        <li>
+          <a href="/results/{{ r }}" {% if r == run_id %}class="active"{% endif %}>{{ r }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {% if dims %}
+
+    <!-- Dimension -->
+    {% if dims|length > 1 %}
+    <div class="sidebar-section" style="flex-shrink:0;">
+      <div class="section-header"><span class="section-title">Dimension</span></div>
+      <div class="tab-bar" id="dim-tabs">
+        {% for dim in dims %}
+        <button class="{% if loop.first %}active{% endif %}" data-dim="{{ dim }}">{{ dim }}</button>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div id="dim-tabs" style="display:none;">
+      <button class="active" data-dim="{{ dims[0] }}">{{ dims[0] }}</button>
+    </div>
+    {% endif %}
+
+    <!-- Function list -->
+    <div class="sidebar-section" style="flex:1; overflow-y:auto;">
+      <div class="section-header">
+        <span class="section-title">Function</span>
+        <span class="tag" id="func-count"></span>
+      </div>
+      <ul class="results-list" id="func-list"></ul>
+    </div>
+
+    {% endif %}
+  </aside>
+
+  <main class="main">
+    <div class="breadcrumb">
+      <a href="/">Home</a>
+      <span class="sep">/</span>
+      <span class="current">{{ run_id }}</span>
+    </div>
+
+    {% if dims %}
+
+    <!-- Visualization -->
+    <div class="card">
+      <div class="card-title" id="media-card-title">Visualization</div>
+      <div class="media-tabs" id="media-selector">
+        <button class="active" data-type="evals">評価点の蓄積</button>
+        <button data-type="runs">探索軌跡</button>
+        <button data-type="population">集団の動き</button>
+        <button data-type="landscape">関数地形</button>
+      </div>
+      <div class="media-display" id="media-display" onclick="openOverlay()">
+        <span class="placeholder">Select a function from the sidebar.</span>
+      </div>
+    </div>
+
+    <!-- Unified Results table -->
+    <div class="card">
+      <div class="card-title">Results — <span id="results-func-label" style="text-transform:none;letter-spacing:0;font-size:11px;font-family:var(--mono);"></span></div>
+      <div id="unified-table-container">
+        <p class="empty-state">Select a function.</p>
+      </div>
+    </div>
+
+    {% else %}
+    <p class="empty-state">No dim subdirectories found in this result.</p>
+    {% endif %}
+  </main>
+</div>
+
+<!-- Fullscreen overlay -->
+<div class="media-overlay" id="media-overlay" onclick="closeOverlay()">
+  <img id="overlay-img" src="" alt="">
+</div>
+
+<script id="page-data" type="application/json">{{ {"run_id": run_id, "dims": dims, "dims_data": dims_data} | tojson }}</script>
+
+<script>
+const _pd    = JSON.parse(document.getElementById('page-data').textContent);
+const RUN_ID = _pd.run_id;
+const DIMS   = _pd.dims;
+const DIMS_DATA = _pd.dims_data;
+
+let currentDim  = DIMS[0] || null;
+let currentFunc = null;
+let currentType = 'evals';
+let currentMediaSrc = null;
+
+// ── Dimension switch ──
+function switchDim(dim) {
+  currentDim = dim;
+  document.querySelectorAll('#dim-tabs button')
+    .forEach(b => b.classList.toggle('active', b.dataset.dim === dim));
+  buildFuncList();
+}
+
+// ── Function list ──
+function buildFuncList() {
+  const list = document.getElementById('func-list');
+  const countEl = document.getElementById('func-count');
+  list.innerHTML = '';
+  const functions = (DIMS_DATA[currentDim] || {}).functions || [];
+  if (countEl) countEl.textContent = functions.length;
+  functions.forEach((f, i) => {
+    const li = document.createElement('li');
+    const a  = document.createElement('a');
+    a.href = '#';
+    a.textContent = f;
+    a.dataset.func = f;
+    if (i === 0) a.classList.add('active');
+    a.addEventListener('click', e => { e.preventDefault(); selectFunc(f); });
+    li.appendChild(a);
+    list.appendChild(li);
+  });
+  if (functions.length) selectFunc(functions[0]);
+  else {
+    document.getElementById('media-display').innerHTML =
+      '<span class="placeholder">No functions found.</span>';
+    document.getElementById('unified-table-container').innerHTML = '';
+  }
+}
+
+function selectFunc(func) {
+  currentFunc = func;
+  document.querySelectorAll('#func-list a')
+    .forEach(a => a.classList.toggle('active', a.dataset.func === func));
+  document.getElementById('results-func-label').textContent = func;
+  document.getElementById('media-card-title').textContent = `Visualization — ${func}`;
+  updateMedia();
+  buildUnifiedTable(func);
+}
+
+// ── Media ──
+function updateMedia() {
+  if (!currentFunc || !currentDim) return;
+  const display = document.getElementById('media-display');
+  display.innerHTML = '<span class="placeholder">Loading…</span>';
+  const src = currentType === 'landscape'
+    ? `/media/${RUN_ID}/${currentDim}/${currentFunc}.svg`
+    : `/media/${RUN_ID}/${currentDim}/${currentFunc}_${currentType}.gif`;
+  currentMediaSrc = src;
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = `${currentFunc} ${currentType}`;
+  img.onload  = () => { display.innerHTML = ''; display.appendChild(img); };
+  img.onerror = () => {
+    display.innerHTML = '<span class="placeholder">Not available for this type.</span>';
+    currentMediaSrc = null;
+  };
+}
+
+document.getElementById('media-selector').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-type]');
+  if (!btn) return;
+  document.querySelectorAll('#media-selector button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentType = btn.dataset.type;
+  updateMedia();
+});
+
+// ── Fullscreen ──
+function openOverlay() {
+  if (!currentMediaSrc) return;
+  document.getElementById('overlay-img').src = currentMediaSrc;
+  document.getElementById('media-overlay').classList.add('open');
+}
+function closeOverlay() {
+  document.getElementById('media-overlay').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
+
+// ── Number formatting ──
+function fmtNum(val) {
+  const f = parseFloat(val);
+  if (isNaN(f) || val === '' || val == null) return val ?? '—';
+  if (Math.abs(f) === 0) return '0';
+  return Math.abs(f) >= 0.001 && Math.abs(f) < 10000
+    ? f.toPrecision(4) : f.toExponential(2);
+}
+
+// ── Rank color ──
+function rankColors(values, higherBetter) {
+  const nums = values.map(v => parseFloat(v));
+  const valid = nums.filter(v => !isNaN(v));
+  if (valid.length < 2) return nums.map(() => '');
+  const sorted = [...valid].sort((a, b) => a - b);
+  return nums.map(v => {
+    if (isNaN(v)) return '';
+    const pos = sorted.indexOf(v);
+    const rank = higherBetter ? sorted.length - 1 - pos : pos;
+    const n = sorted.length;
+    if (rank === 0) return 'cell-best';
+    if (rank <= Math.floor(n * 0.25)) return 'cell-good';
+    if (rank <= Math.floor(n * 0.5))  return 'cell-mid';
+    if (rank < n - 1) return 'cell-bad';
+    return 'cell-worst';
+  });
+}
+
+// ── Unified table ──
+async function buildUnifiedTable(func) {
+  const container = document.getElementById('unified-table-container');
+  container.innerHTML = '<p class="empty-state">Loading…</p>';
+
+  const summaryRows = (DIMS_DATA[currentDim]?.summary || [])
+    .filter(r => r.function === func);
+
+  if (!summaryRows.length) {
+    container.innerHTML = '<p class="empty-state">No data.</p>';
+    return;
+  }
+
+  const res = await fetch(`/api/stats/${RUN_ID}/${currentDim}/${func}`);
+  const { rows: statRows } = await res.json();
+
+  // Group per-run rows by method
+  const byMethod = {};
+  (statRows || []).forEach(r => {
+    (byMethod[r.method] = byMethod[r.method] || []).push(r);
+  });
+
+  // Rank colors for summary
+  const bfColors  = rankColors(summaryRows.map(r => r.mean_best_f), false);
+  const srColors  = rankColors(summaryRows.map(r => parseInt(r.success_rate)), true);
+  const orColors  = rankColors(summaryRows.map(r => r.mean_optima_rate), true);
+
+  let html = `
+  <div class="table-wrap">
+  <table class="unified-table">
+    <thead>
+      <tr>
+        <th style="text-align:left; min-width:150px;">Method / Seed</th>
+        <th>best_f</th>
+        <th>success</th>
+        <th>time (s)</th>
+        <th>optima rate</th>
+        <th>evals</th>
+      </tr>
+    </thead>
+    <tbody id="unified-tbody">`;
+
+  summaryRows.forEach((sr, si) => {
+    const method = sr.method;
+    const runs   = byMethod[method] || [];
+    html += `
+      <tr class="method-row" data-method="${htmlesc(method)}" data-expanded="false">
+        <td><div class="method-cell">
+          <span class="expand-toggle">${runs.length ? '▶' : '·'}</span>
+          ${method}
+        </div></td>
+        <td class="${bfColors[si]}">${fmtNum(sr.mean_best_f)}</td>
+        <td class="${srColors[si]}">${sr.success_rate}</td>
+        <td>${fmtNum(sr.mean_time_s)}</td>
+        <td class="${orColors[si]}">${fmtNum(sr.mean_optima_rate)}</td>
+        <td style="color:var(--muted);">—</td>
+      </tr>`;
+    runs.forEach(run => {
+      const ok  = run.success === 'True';
+      const ors = parseFloat(run.optima_rate);
+      html += `
+        <tr class="run-row" data-method="${htmlesc(method)}" style="display:none;">
+          <td class="run-cell">seed ${run.seed}</td>
+          <td>${fmtNum(run.best_f)}</td>
+          <td class="${ok ? 'cell-success' : 'cell-failure'}">${ok ? '✓' : '✗'}</td>
+          <td>${fmtNum(run.time_s)}</td>
+          <td>${isNaN(ors) ? '—' : ors.toFixed(2)}</td>
+          <td>${run.n_evals ?? '—'}</td>
+        </tr>`;
+    });
+  });
+
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+
+  // Expand / collapse
+  container.querySelector('#unified-tbody').addEventListener('click', e => {
+    const row = e.target.closest('.method-row');
+    if (!row) return;
+    const method   = row.dataset.method;
+    const expanded = row.dataset.expanded === 'true';
+    container.querySelectorAll('.run-row').forEach(r => {
+      if (r.dataset.method === method) r.style.display = expanded ? 'none' : '';
+    });
+    row.dataset.expanded = expanded ? 'false' : 'true';
+    const toggle = row.querySelector('.expand-toggle');
+    if (toggle) toggle.textContent = expanded ? '▶' : '▼';
+  });
+}
+
+function htmlesc(s) {
+  return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+// ── Dim tabs ──
+document.getElementById('dim-tabs').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-dim]');
+  if (btn) switchDim(btn.dataset.dim);
+});
+
+// ── Init ──
+if (currentDim) buildFuncList();
+</script>
+
+</body>
+</html>

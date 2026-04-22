@@ -3,13 +3,16 @@ warnings.filterwarnings("ignore")
 import os
 from multiprocessing import Pool
 from pathlib import Path
-from benchmarks import BENCHMARKS, BENCHMARKS_3D, BENCHMARKS_4D, BenchmarkFunction
-from optimizers import (
+from core.benchmarks import BENCHMARKS, BENCHMARKS_3D, BENCHMARKS_4D, BenchmarkFunction
+from core.optimizers import (
     CMAESOptimizer, VirusOptimizer, PSOOptimizer, GAOptimizer,
     VOAOptimizer, SaVOAOptimizer,
 )
-from runner import run_experiment, summarize
-from visualize import save_function_figure, save_runs_gif, save_evals_gif, save_population_gif, save_stats
+from core.runner import run_experiment, summarize
+from core.visualize import (
+    save_function_figure, save_runs_gif, save_evals_gif, save_population_gif,
+    save_3d_evals_gif, save_3d_population_gif, save_stats,
+)
 
 
 N_RUNS = 30
@@ -47,7 +50,7 @@ def _process_bench(args: tuple) -> list[tuple]:
     output_dir = Path(output_dir_str)
 
     # Reconstruct benchmark locally so ioh closures stay within this process.
-    from benchmarks import _make_bbob, _himmelblau, _six_hump_camel, _BBOB_SPECS
+    from core.benchmarks import _make_bbob, _himmelblau, _six_hump_camel, _BBOB_SPECS
     if bench_name == "C01-Himmelblau":
         bench = _himmelblau()
     elif bench_name == "C02-SixHumpCamel":
@@ -79,6 +82,9 @@ def _process_bench(args: tuple) -> list[tuple]:
         save_runs_gif(bench, results_per_method, output_dir=output_dir)
         save_evals_gif(bench, results_per_method, output_dir=output_dir)
         save_population_gif(bench, results_per_method, output_dir=output_dir)
+    elif bench.dim == 3:
+        save_3d_evals_gif(bench, results_per_method, output_dir=output_dir)
+        save_3d_population_gif(bench, results_per_method, output_dir=output_dir)
     save_stats(bench, results_per_method, times_per_method, output_dir=output_dir)
 
     return rows
