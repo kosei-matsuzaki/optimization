@@ -87,7 +87,10 @@ def _draw_trajectory(
     result = min(results, key=lambda r: r.best_f)
     if result.history_x:
         pts = np.array(result.history_x)
-        ax.scatter(pts[:, 0], pts[:, 1], s=2, c=color, alpha=0.2, zorder=2)
+        step = max(1, len(pts) // 2000)
+        pts = pts[::step]
+        ax.scatter(pts[:, 0], pts[:, 1], s=2, c=color, alpha=0.2, zorder=2,
+                   rasterized=True)
 
     best_f = float("inf")
     traj_x: list[np.ndarray] = []
@@ -166,7 +169,7 @@ def _draw_surface3d(
 
 
 # ---------------------------------------------------------------------------
-# Public: save combined SVG per function
+# Public: save SVG per function (landscape + convergence)
 # ---------------------------------------------------------------------------
 
 def save_function_figure(
@@ -174,45 +177,37 @@ def save_function_figure(
     results_per_method: dict[str, list[OptimizeResult]],
     output_dir: str | Path = "results",
 ) -> None:
+    """Function landscape (2D contour + 3D surface) and convergence curves."""
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    methods = list(results_per_method.keys())
-    n_methods = len(methods)
 
     if benchmark.dim == 2:
-        # Left: 2×3 trajectory grid  |  Right: convergence (top) + surface3d (bottom)
-        n_cols_traj = 3
-        n_rows_traj = (n_methods + n_cols_traj - 1) // n_cols_traj  # ceil
-
-        fig = plt.figure(figsize=(24, 5 * n_rows_traj + 1))
-        outer = GridSpec(1, 2, figure=fig, width_ratios=[2, 1], wspace=0.25)
-        gs_traj = GridSpecFromSubplotSpec(
-            n_rows_traj, n_cols_traj,
-            subplot_spec=outer[0, 0],
-            hspace=0.45, wspace=0.3,
-        )
-        gs_right = GridSpecFromSubplotSpec(
-            2, 1, subplot_spec=outer[0, 1], hspace=0.45
-        )
-
         X, Y, Z = _contour_data(benchmark)
         Z_plot = np.log1p(Z - Z.min() + 1e-10)
+        lo, hi = benchmark.bounds
 
-        for idx, (method_name, results) in enumerate(results_per_method.items()):
-            r, c = divmod(idx, n_cols_traj)
-            ax = fig.add_subplot(gs_traj[r, c])
-            _draw_trajectory(ax, benchmark, results, method_name,
-                             _COLORS[idx % len(_COLORS)], X, Y, Z_plot)
-        # hide unused trajectory cells
-        for idx in range(n_methods, n_rows_traj * n_cols_traj):
-            r, c = divmod(idx, n_cols_traj)
-            fig.add_subplot(gs_traj[r, c]).set_visible(False)
+        fig = plt.figure(figsize=(18, 5))
+        gs = GridSpec(1, 3, figure=fig, width_ratios=[1, 1.5, 1], wspace=0.35)
 
-        ax_conv = fig.add_subplot(gs_right[0])
+        # 2D landscape
+        ax_land = fig.add_subplot(gs[0])
+        ax_land.contourf(X, Y, Z_plot, levels=40, cmap="viridis", alpha=0.85)
+        ax_land.contour(X, Y, Z_plot, levels=20, colors="white", linewidths=0.3, alpha=0.4)
+        if benchmark.optima_pos:
+            for opt in benchmark.optima_pos:
+                ax_land.plot(opt[0], opt[1], "o", color="yellow", markersize=9,
+                             markeredgecolor="black", markeredgewidth=0.6, zorder=5)
+        ax_land.set_xlim(lo, hi); ax_land.set_ylim(lo, hi)
+        ax_land.set_xlabel(r"$x_1$"); ax_land.set_ylabel(r"$x_2$")
+        ax_land.set_title("Landscape")
+
+        # Convergence
+        ax_conv = fig.add_subplot(gs[1])
         _draw_convergence(ax_conv, benchmark, results_per_method,
-                          title=f"{benchmark.name}  [{benchmark.category}]  — Convergence")
+                          title="Convergence")
 
-        ax_surf = fig.add_subplot(gs_right[1], projection="3d")
+        # 3D surface
+        ax_surf = fig.add_subplot(gs[2], projection="3d")
         _draw_surface3d(ax_surf, benchmark, X, Y, Z)
 
     else:
@@ -220,122 +215,238 @@ def save_function_figure(
         _draw_convergence(ax_conv, benchmark, results_per_method,
                           title=f"{benchmark.name}  [{benchmark.category}]  — Convergence")
 
-    fig.suptitle(f"{benchmark.name}  [{benchmark.category}]", fontsize=13, y=1.01)
+    fig.suptitle(f"{benchmark.name}  [{benchmark.category}]", fontsize=12)
     fig.savefig(output_dir / f"{benchmark.name}.svg", format="svg", bbox_inches="tight")
     plt.close(fig)
 
 
 # ---------------------------------------------------------------------------
-# Public: save combined GIF per function (2-D only)
+# Internal helper: build method-grid figure for GIFs
 # ---------------------------------------------------------------------------
 
-def save_combined_gif(
+def _make_grid_fig(n_methods: int) -> tuple:
+    n_cols = min(3, n_methods)
+    n_rows = (n_methods + n_cols - 1) // n_cols
+    fig, axes_grid = plt.subplots(
+        n_rows, n_cols,
+        figsize=(4 * n_cols, 3.5 * n_rows),
+        squeeze=False, dpi=80,
+    )
+    axes = [axes_grid[i // n_cols][i % n_cols] for i in range(n_methods)]
+    for idx in range(n_methods, n_rows * n_cols):
+        r, c = divmod(idx, n_cols)
+        axes_grid[r][c].set_visible(False)
+    return fig, axes
+
+
+def _draw_optima(ax: plt.Axes, benchmark: BenchmarkFunction) -> None:
+    if benchmark.optima_pos:
+        for opt in benchmark.optima_pos:
+            ax.plot(opt[0], opt[1], "o", color="yellow", markersize=7,
+                    markeredgecolor="black", markeredgewidth=0.4, zorder=6)
+
+
+# ---------------------------------------------------------------------------
+# Public: GIF — one frame per run (trajectory)
+# ---------------------------------------------------------------------------
+
+def save_runs_gif(
     benchmark: BenchmarkFunction,
     results_per_method: dict[str, list[OptimizeResult]],
     output_dir: str | Path = "results",
-    step: int = 100,
-    pop_frames: int = 60,
-    fps: int = 8,
+    fps: int = 3,
 ) -> None:
+    """One frame per run; shows eval scatter + best trajectory for each method."""
+    if benchmark.dim != 2:
+        return
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     methods = list(results_per_method.keys())
-    n_methods = len(methods)
+    n_runs = min(len(v) for v in results_per_method.values())
+    lo, hi = benchmark.bounds
+
+    X, Y, Z = _contour_data(benchmark, resolution=150)
+    Z_plot = np.log1p(Z - Z.min() + 1e-10)
+
+    fig, axes = _make_grid_fig(len(methods))
+
+    def draw_frame(run_idx: int) -> list:
+        for ax, method, color in zip(axes, methods, _COLORS):
+            ax.clear()
+            ax.contourf(X, Y, Z_plot, levels=30, cmap="viridis", alpha=0.7)
+            ax.contour(X, Y, Z_plot, levels=10, colors="white", linewidths=0.2, alpha=0.3)
+            results = results_per_method[method]
+            if run_idx < len(results):
+                r = results[run_idx]
+                if r.history_x:
+                    pts = np.array(r.history_x)
+                    s = max(1, len(pts) // 1000)
+                    ax.scatter(pts[::s, 0], pts[::s, 1], s=2, c=color,
+                               alpha=0.2, zorder=2, rasterized=True)
+                    best_f, traj = float("inf"), []
+                    for x, f in zip(r.history_x, r.history_best):
+                        if f < best_f:
+                            best_f = f
+                            traj.append(x)
+                    if len(traj) > 1:
+                        t = np.array(traj)
+                        ax.plot(t[:, 0], t[:, 1], "-", color=color,
+                                linewidth=1.2, zorder=3, alpha=0.8)
+                    bidx = int(np.argmin(r.history_best))
+                    bx = r.history_x[bidx]
+                    dot_c = "lime" if r.best_f <= 1e-4 else "red"
+                    ax.plot(bx[0], bx[1], "o", color=dot_c, markersize=7,
+                            markeredgecolor="white", markeredgewidth=0.5, zorder=5)
+            _draw_optima(ax, benchmark)
+            ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
+            ax.set_xlabel(r"$x_1$"); ax.set_ylabel(r"$x_2$")
+            ax.set_title(f"{method}", fontsize=8)
+        fig.suptitle(
+            f"{benchmark.name}  run {run_idx + 1}/{n_runs}"
+            f"  (lime=success, red=failure)",
+            fontsize=10,
+        )
+        return []
+
+    ani = animation.FuncAnimation(fig, draw_frame, frames=n_runs,
+                                  interval=1000 // fps, blit=False)
+    ani.save(str(output_dir / f"{benchmark.name}_runs.gif"),
+             writer=animation.PillowWriter(fps=fps))
+    plt.close(fig)
+
+
+# ---------------------------------------------------------------------------
+# Public: GIF — evaluation point accumulation
+# ---------------------------------------------------------------------------
+
+def save_evals_gif(
+    benchmark: BenchmarkFunction,
+    results_per_method: dict[str, list[OptimizeResult]],
+    output_dir: str | Path = "results",
+    step: int = 100,
+    fps: int = 6,
+) -> None:
+    """Animate eval-point accumulation (best run per method)."""
+    if benchmark.dim != 2:
+        return
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    methods = list(results_per_method.keys())
     runs = [min(results_per_method[m], key=lambda r: r.best_f) for m in methods]
     lo, hi = benchmark.bounds
 
     X, Y, Z = _contour_data(benchmark, resolution=150)
     Z_plot = np.log1p(Z - Z.min() + 1e-10)
 
-    # Comparison frames
     total_evals = max(len(r.history_x) for r in runs)
-    n_comp_frames = max(1, (total_evals + step - 1) // step)
+    n_frames = max(1, (total_evals + step - 1) // step)
 
-    # Population frames
-    def get_pop_frames(run: OptimizeResult) -> list[np.ndarray]:
+    fig, axes = _make_grid_fig(len(methods))
+
+    def draw_frame(frame_idx: int) -> list:
+        comp_limit = (frame_idx + 1) * step
+        for ax, method, run, color in zip(axes, methods, runs, _COLORS):
+            ax.clear()
+            ax.contourf(X, Y, Z_plot, levels=30, cmap="viridis", alpha=0.7)
+            ax.contour(X, Y, Z_plot, levels=10, colors="white", linewidths=0.2, alpha=0.3)
+            pts = run.history_x[:comp_limit]
+            if pts:
+                arr = np.array(pts)
+                ax.scatter(arr[:, 0], arr[:, 1], s=3, c=color, alpha=0.3, zorder=2)
+            if run.history_best[:comp_limit]:
+                bidx = int(np.argmin(run.history_best[:comp_limit]))
+                bx = run.history_x[bidx]
+                ax.plot(bx[0], bx[1], "o", color="red", markersize=8,
+                        markeredgecolor="white", markeredgewidth=0.5, zorder=5)
+            _draw_optima(ax, benchmark)
+            ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
+            ax.set_xlabel(r"$x_1$"); ax.set_ylabel(r"$x_2$")
+            n_shown = min(comp_limit, len(run.history_x))
+            bv = run.history_best[n_shown - 1] if n_shown > 0 else float("inf")
+            ax.set_title(f"{method}  e={n_shown}  f={bv:.2e}", fontsize=8)
+        fig.suptitle(f"{benchmark.name}  [{benchmark.category}]  — eval accumulation",
+                     fontsize=10)
+        return []
+
+    ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
+                                  interval=1000 // fps, blit=False)
+    ani.save(str(output_dir / f"{benchmark.name}_evals.gif"),
+             writer=animation.PillowWriter(fps=fps))
+    plt.close(fig)
+
+
+# ---------------------------------------------------------------------------
+# Public: GIF — population placement over generations
+# ---------------------------------------------------------------------------
+
+def save_population_gif(
+    benchmark: BenchmarkFunction,
+    results_per_method: dict[str, list[OptimizeResult]],
+    output_dir: str | Path = "results",
+    pop_frames: int = 30,
+    fps: int = 6,
+) -> None:
+    """Animate population distribution over generations (best run per method)."""
+    if benchmark.dim != 2:
+        return
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    methods = list(results_per_method.keys())
+    runs = [min(results_per_method[m], key=lambda r: r.best_f) for m in methods]
+    lo, hi = benchmark.bounds
+
+    X, Y, Z = _contour_data(benchmark, resolution=150)
+    Z_plot = np.log1p(Z - Z.min() + 1e-10)
+
+    def get_frames(run: OptimizeResult) -> list[np.ndarray]:
         pops = run.history_pop
         if not pops:
             return []
         s = max(1, len(pops) // pop_frames)
         return [pops[min(i * s, len(pops) - 1)] for i in range(pop_frames)]
 
-    pop_seqs = [get_pop_frames(r) for r in runs]
-    n_pop_frames = max((len(f) for f in pop_seqs), default=1)
-    total_frames = max(n_comp_frames, n_pop_frames)
+    pop_seqs = [get_frames(r) for r in runs]
+    n_frames = max((len(f) for f in pop_seqs), default=1)
 
-    # Grid: top block (ceil(n/3) rows × 3 cols) = comparison
-    #       bottom block (same shape) = population
-    n_cols = 3
-    n_rows_block = (n_methods + n_cols - 1) // n_cols
-    fig, axes_grid = plt.subplots(
-        2 * n_rows_block, n_cols,
-        figsize=(5 * n_cols, 4 * 2 * n_rows_block),
-        squeeze=False,
-    )
-    # Split axes into comparison (top) and population (bottom)
-    axes_comp = [axes_grid[i // n_cols][i % n_cols] for i in range(n_methods)]
-    axes_pop  = [axes_grid[n_rows_block + i // n_cols][i % n_cols] for i in range(n_methods)]
-    for idx in range(n_methods, n_rows_block * n_cols):
-        r, c = divmod(idx, n_cols)
-        axes_grid[r][c].set_visible(False)
-        axes_grid[n_rows_block + r][c].set_visible(False)
+    fig, axes = _make_grid_fig(len(methods))
 
     def draw_frame(frame_idx: int) -> list:
-        comp_limit = (frame_idx + 1) * step
-
-        for ax, method, run, color in zip(axes_comp, methods, runs, _COLORS):
+        for ax, method, frames, color in zip(axes, methods, pop_seqs, _COLORS):
             ax.clear()
             ax.contourf(X, Y, Z_plot, levels=30, cmap="viridis", alpha=0.7)
-            ax.contour(X, Y, Z_plot, levels=15, colors="white", linewidths=0.3, alpha=0.3)
-            pts = run.history_x[:comp_limit]
-            if pts:
-                arr = np.array(pts)
-                ax.scatter(arr[:, 0], arr[:, 1], s=3, c=color, alpha=0.3, zorder=2)
-            if run.history_best[:comp_limit]:
-                best_idx = int(np.argmin(run.history_best[:comp_limit]))
-                bx = run.history_x[best_idx]
-                ax.plot(bx[0], bx[1], "*", color="red", markersize=10,
-                        markeredgecolor="white", markeredgewidth=0.5, zorder=5)
-            if benchmark.optima_pos:
-                for opt in benchmark.optima_pos:
-                    ax.plot(opt[0], opt[1], "*", color="yellow", markersize=8,
-                            markeredgecolor="black", markeredgewidth=0.4, zorder=6)
-            ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
-            ax.set_xlabel(r"$x_1$"); ax.set_ylabel(r"$x_2$")
-            n_shown = min(comp_limit, len(run.history_x))
-            bv = run.history_best[n_shown - 1] if n_shown > 0 else float("inf")
-            ax.set_title(f"{method}  e={n_shown}  f={bv:.2e}", fontsize=8)
-
-        for ax, method, run, frames, color in zip(axes_pop, methods, runs, pop_seqs, _COLORS):
-            ax.clear()
-            ax.contourf(X, Y, Z_plot, levels=30, cmap="viridis", alpha=0.7)
-            ax.contour(X, Y, Z_plot, levels=15, colors="white", linewidths=0.3, alpha=0.3)
+            ax.contour(X, Y, Z_plot, levels=10, colors="white", linewidths=0.2, alpha=0.3)
             fi = min(frame_idx, len(frames) - 1) if frames else -1
             if fi >= 0 and len(frames[fi]) > 0:
                 pop = frames[fi]
                 ax.scatter(pop[:, 0], pop[:, 1], s=35, c=color,
                            edgecolors="white", linewidths=0.3, zorder=4, alpha=0.9)
-            if benchmark.optima_pos:
-                for opt in benchmark.optima_pos:
-                    ax.plot(opt[0], opt[1], "*", color="yellow", markersize=8,
-                            markeredgecolor="black", markeredgewidth=0.4, zorder=6)
+            _draw_optima(ax, benchmark)
             ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
             ax.set_xlabel(r"$x_1$"); ax.set_ylabel(r"$x_2$")
             ax.set_title(f"{method}  gen={frame_idx + 1}", fontsize=8)
-
-        fig.suptitle(
-            f"{benchmark.name}  [{benchmark.category}]"
-            f"  —  top: trajectory  |  bottom: population",
-            fontsize=10,
-        )
+        fig.suptitle(f"{benchmark.name}  [{benchmark.category}]  — population",
+                     fontsize=10)
         return []
 
-    ani = animation.FuncAnimation(fig, draw_frame, frames=total_frames,
+    ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
-    ani.save(str(output_dir / f"{benchmark.name}.gif"),
+    ani.save(str(output_dir / f"{benchmark.name}_population.gif"),
              writer=animation.PillowWriter(fps=fps))
     plt.close(fig)
+
+
+# keep for backward compatibility
+def save_combined_gif(
+    benchmark: BenchmarkFunction,
+    results_per_method: dict[str, list[OptimizeResult]],
+    output_dir: str | Path = "results",
+    **kwargs: object,
+) -> None:
+    save_evals_gif(benchmark, results_per_method, output_dir)
+    save_population_gif(benchmark, results_per_method, output_dir)
 
 
 # ---------------------------------------------------------------------------

@@ -11,20 +11,21 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from benchmarks import BENCHMARKS_BY_NAME
+from benchmarks import BENCHMARKS_BY_NAME, CUSTOM_BENCHMARKS
 from optimizers import (
     CMAESOptimizer, VirusOptimizer, PSOOptimizer,
     GAOptimizer, VOAOptimizer, SaVOAOptimizer,
 )
 from runner import run_experiment, summarize
-from visualize import save_function_figure, save_combined_gif, save_stats
+from visualize import save_function_figure, save_runs_gif, save_evals_gif, save_population_gif, save_stats
 
-# One representative function per BBOB group
+# One representative function per BBOB group + custom multi-optima
 _QUICK_FUNCTIONS = [
     "F01-Sphere",           # separable
     "F08-Rosenbrock",       # moderate-cond
     "F15-RastriginRot",     # multimodal
     "F20-Schwefel",         # weak-structure
+    "C01-Himmelblau",       # 4 global optima
 ]
 
 _OPTIMIZERS = {
@@ -65,7 +66,9 @@ def main(n_runs: int = 3, max_evals: int = 2000, output_dir: Path = Path("result
             )
 
         save_function_figure(bench, results_per_method, output_dir=output_dir)
-        save_combined_gif(bench, results_per_method, output_dir=output_dir)
+        save_runs_gif(bench, results_per_method, output_dir=output_dir)
+        save_evals_gif(bench, results_per_method, output_dir=output_dir)
+        save_population_gif(bench, results_per_method, output_dir=output_dir)
         save_stats(bench, results_per_method, times_per_method, output_dir=output_dir)
 
     print(f"\nFigures saved to: {output_dir.resolve()}/")
