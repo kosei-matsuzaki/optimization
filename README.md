@@ -286,13 +286,37 @@ optimization/
 
 ---
 
-## 実行方法
+## コマンド一覧
 
-本プロジェクトでは **GitHub Actions workflow 経由でのみ実行**する。ローカル実行は行わない。
+実験の実行・管理はすべて `run.sh` 経由で行う。結果は `results/YYYYMMDD_HHMMSS_<commit>/` に自動バージョン管理される。
 
-コード変更後は workflow をトリガーし、Actions の出力と `results/` の図で結果を確認すること。
+| コマンド | 説明 |
+|---|---|
+| `./run.sh trigger` | GitHub Actions ワークフローをトリガー（本番実験） |
+| `./run.sh trigger --n-runs 10 --max-evals 2000` | パラメータを指定してトリガー |
+| `./run.sh download` | 最新の完了済みワークフロー結果をダウンロード |
+| `./run.sh download <RUN_ID>` | 指定した RUN_ID の結果をダウンロード |
+| `./run.sh quick` | ローカルで軽量確認（代表4関数・3 run・2000 evals） |
+| `./run.sh quick --n-runs 5 --max-evals 3000` | パラメータを指定してローカル確認 |
+| `./run.sh status` | 最新ワークフロー実行の状態を表示 |
+| `./run.sh status <RUN_ID>` | 指定した RUN_ID の状態を表示 |
+| `./run.sh list` | ローカル結果一覧 + リモート実行履歴（最新5件） |
 
-依存ライブラリ（`requirements.txt` に記載）:
+```bash
+# 典型的なワークフロー
+./run.sh trigger          # 本番実験を投入
+./run.sh status           # 完了を確認
+./run.sh download         # 結果をローカルに保存
+
+# ローカル動作確認
+./run.sh quick
+```
+
+`main.py`（本番実験）はローカルでは実行しない。`quick_check.py` はローカル専用の軽量確認スクリプト。
+
+---
+
+## 依存ライブラリ
 
 ```
 numpy
