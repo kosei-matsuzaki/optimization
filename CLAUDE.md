@@ -3,9 +3,15 @@
 ## 実行ルール
 
 ### main.py の実行について
-- `main.py`（および関連スクリプト）の実行はこのローカルPC上では行わない。
+- `main.py` の実行はこのローカルPC上では行わない。
 - 実行は必ず **GitHub Actions workflow** 経由で行うこと。
 - コードの変更後は、リモートのワークフローをトリガーして結果を確認する。
+
+### quick_check.py / run.sh の実行について
+- `quick_check.py` はローカルでの軽量動作確認専用スクリプト。ローカル実行してよい。
+- BBOB 代表4関数・3 run・2000 evals で動作確認する（本番実験ではない）。
+- 実験管理には `run.sh` を使う（trigger / download / quick / list / status）。
+- 結果はすべて `results/YYYYMMDD_HHMMSS_<commit>/` にバージョン管理される。
 
 ### README.md の更新
 - コード・機能・パラメータ・実験設定に変更があった際は、**必ず README.md を更新**すること。
