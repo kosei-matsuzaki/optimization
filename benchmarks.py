@@ -1,7 +1,8 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
-from typing import Callable, Optional
+from dataclasses import dataclass
+from typing import Callable
 import numpy as np
+import ioh
 
 
 @dataclass
@@ -10,240 +11,74 @@ class BenchmarkFunction:
     func: Callable[[np.ndarray], float]
     bounds: tuple[float, float]
     optimum: float
-    category: str  # "unimodal" | "multimodal" | "multi-optima" | "deceptive"
+    category: str
     dim: int = 2
     optima_pos: list[list[float]] | None = None
 
 
-def sphere(x: np.ndarray) -> float:
-    return float(np.sum(x**2))
+# BBOB noiseless suite (Hansen et al., 2009)
+# 24 functions covering 5 difficulty groups; instance=1 fixes the transformation.
+# func(x) returns f(x) - f_opt so the global minimum is always 0.
+_BBOB_SPECS: list[tuple[int, str, str]] = [
+    # Group 1: Separable functions
+    (1,  "F01-Sphere",             "separable"),
+    (2,  "F02-EllipsoidalSep",     "separable"),
+    (3,  "F03-RastriginSep",       "separable"),
+    (4,  "F04-BucheRastrigin",     "separable"),
+    (5,  "F05-LinearSlope",        "separable"),
+    # Group 2: Low / moderate conditioning
+    (6,  "F06-AttractiveSector",   "moderate-cond"),
+    (7,  "F07-StepEllipsoidal",    "moderate-cond"),
+    (8,  "F08-Rosenbrock",         "moderate-cond"),
+    (9,  "F09-RosenbrockRot",      "moderate-cond"),
+    # Group 3: High conditioning, unimodal
+    (10, "F10-EllipsoidalRot",     "ill-cond"),
+    (11, "F11-Discus",             "ill-cond"),
+    (12, "F12-BentCigar",          "ill-cond"),
+    (13, "F13-SharpRidge",         "ill-cond"),
+    (14, "F14-DiffPowers",         "ill-cond"),
+    # Group 4: Multi-modal, adequate global structure
+    (15, "F15-RastriginRot",       "multimodal"),
+    (16, "F16-Weierstrass",        "multimodal"),
+    (17, "F17-SchafferF7",         "multimodal"),
+    (18, "F18-SchafferF7ill",      "multimodal"),
+    (19, "F19-GriewankRosenbrock", "multimodal"),
+    # Group 5: Multi-modal, weak global structure
+    (20, "F20-Schwefel",           "weak-structure"),
+    (21, "F21-Gallagher101",       "weak-structure"),
+    (22, "F22-Gallagher21",        "weak-structure"),
+    (23, "F23-Katsuura",           "weak-structure"),
+    (24, "F24-LunacekRastrigin",   "weak-structure"),
+]
 
 
-def rosenbrock(x: np.ndarray) -> float:
-    return float(100 * (x[1] - x[0]**2)**2 + (1 - x[0])**2)
+def _make_bbob(fid: int, name: str, category: str, dim: int, instance: int = 1) -> BenchmarkFunction:
+    prob = ioh.get_problem(fid, instance=instance, dimension=dim, problem_class=ioh.ProblemClass.BBOB)
+    lo = float(prob.bounds.lb[0])
+    hi = float(prob.bounds.ub[0])
+    f_opt = float(prob.optimum.y)
+    opt_x = [list(prob.optimum.x)]
 
+    def func(x: np.ndarray) -> float:
+        return float(prob(x.tolist())) - f_opt
 
-def rosenbrock_nd(x: np.ndarray) -> float:
-    return float(sum(100 * (x[i+1] - x[i]**2)**2 + (1 - x[i])**2 for i in range(len(x) - 1)))
-
-
-def rastrigin(x: np.ndarray) -> float:
-    A = 10
-    return float(A * len(x) + np.sum(x**2 - A * np.cos(2 * np.pi * x)))
-
-
-def ackley(x: np.ndarray) -> float:
-    a, b, c = 20, 0.2, 2 * np.pi
-    n = len(x)
-    return float(
-        -a * np.exp(-b * np.sqrt(np.sum(x**2) / n))
-        - np.exp(np.sum(np.cos(c * x)) / n)
-        + a + np.e
+    return BenchmarkFunction(
+        name=name,
+        func=func,
+        bounds=(lo, hi),
+        optimum=0.0,
+        category=category,
+        dim=dim,
+        optima_pos=opt_x,
     )
 
 
-def himmelblau(x: np.ndarray) -> float:
-    return float((x[0]**2 + x[1] - 11)**2 + (x[0] + x[1]**2 - 7)**2)
+def _build(dim: int) -> list[BenchmarkFunction]:
+    return [_make_bbob(fid, name, cat, dim) for fid, name, cat in _BBOB_SPECS]
 
 
-def beale(x: np.ndarray) -> float:
-    return float(
-        (1.5 - x[0] + x[0] * x[1])**2
-        + (2.25 - x[0] + x[0] * x[1]**2)**2
-        + (2.625 - x[0] + x[0] * x[1]**3)**2
-    )
-
-
-def schwefel(x: np.ndarray) -> float:
-    n = len(x)
-    return float(418.9829 * n - np.sum(x * np.sin(np.sqrt(np.abs(x)))))
-
-
-_EGGHOLDER_SHIFT = 959.6407
-
-
-def eggholder(x: np.ndarray) -> float:
-    val = (
-        -(x[1] + 47.0) * np.sin(np.sqrt(np.abs(x[0] / 2.0 + (x[1] + 47.0))))
-        - x[0] * np.sin(np.sqrt(np.abs(x[0] - (x[1] + 47.0))))
-    )
-    return float(val + _EGGHOLDER_SHIFT)
-
-
-BENCHMARKS: list[BenchmarkFunction] = [
-    BenchmarkFunction(
-        name="Sphere",
-        func=sphere,
-        bounds=(-5.0, 5.0),
-        optimum=0.0,
-        category="unimodal",
-        dim=2,
-        optima_pos=[[0.0, 0.0]],
-    ),
-    BenchmarkFunction(
-        name="Rosenbrock",
-        func=rosenbrock,
-        bounds=(-2.0, 2.0),
-        optimum=0.0,
-        category="unimodal",
-        dim=2,
-        optima_pos=[[1.0, 1.0]],
-    ),
-    BenchmarkFunction(
-        name="Rastrigin",
-        func=rastrigin,
-        bounds=(-5.12, 5.12),
-        optimum=0.0,
-        category="multimodal",
-        dim=2,
-        optima_pos=[[0.0, 0.0]],
-    ),
-    BenchmarkFunction(
-        name="Ackley",
-        func=ackley,
-        bounds=(-5.0, 5.0),
-        optimum=0.0,
-        category="multimodal",
-        dim=2,
-        optima_pos=[[0.0, 0.0]],
-    ),
-    BenchmarkFunction(
-        name="Himmelblau",
-        func=himmelblau,
-        bounds=(-5.0, 5.0),
-        optimum=0.0,
-        category="multi-optima",
-        dim=2,
-        optima_pos=[
-            [3.0, 2.0],
-            [-2.805118, 3.131312],
-            [-3.779310, -3.283186],
-            [3.584428, -1.848126],
-        ],
-    ),
-    BenchmarkFunction(
-        name="Beale",
-        func=beale,
-        bounds=(-4.5, 4.5),
-        optimum=0.0,
-        category="multi-optima",
-        dim=2,
-        optima_pos=[[3.0, 0.5]],
-    ),
-    BenchmarkFunction(
-        name="Schwefel",
-        func=schwefel,
-        bounds=(-500.0, 500.0),
-        optimum=0.0,
-        category="deceptive",
-        dim=2,
-        optima_pos=[[420.9687, 420.9687]],
-    ),
-    BenchmarkFunction(
-        name="Eggholder",
-        func=eggholder,
-        bounds=(-512.0, 512.0),
-        optimum=0.0,
-        category="deceptive",
-        dim=2,
-        optima_pos=[[512.0, 404.2319]],
-    ),
-]
-
-BENCHMARKS_3D: list[BenchmarkFunction] = [
-    BenchmarkFunction(
-        name="Sphere3D",
-        func=sphere,
-        bounds=(-5.0, 5.0),
-        optimum=0.0,
-        category="unimodal",
-        dim=3,
-        optima_pos=[[0.0, 0.0, 0.0]],
-    ),
-    BenchmarkFunction(
-        name="Rosenbrock3D",
-        func=rosenbrock_nd,
-        bounds=(-2.0, 2.0),
-        optimum=0.0,
-        category="unimodal",
-        dim=3,
-        optima_pos=[[1.0, 1.0, 1.0]],
-    ),
-    BenchmarkFunction(
-        name="Rastrigin3D",
-        func=rastrigin,
-        bounds=(-5.12, 5.12),
-        optimum=0.0,
-        category="multimodal",
-        dim=3,
-        optima_pos=[[0.0, 0.0, 0.0]],
-    ),
-    BenchmarkFunction(
-        name="Ackley3D",
-        func=ackley,
-        bounds=(-5.0, 5.0),
-        optimum=0.0,
-        category="multimodal",
-        dim=3,
-        optima_pos=[[0.0, 0.0, 0.0]],
-    ),
-    BenchmarkFunction(
-        name="Schwefel3D",
-        func=schwefel,
-        bounds=(-500.0, 500.0),
-        optimum=0.0,
-        category="deceptive",
-        dim=3,
-        optima_pos=[[420.9687, 420.9687, 420.9687]],
-    ),
-]
-
-BENCHMARKS_4D: list[BenchmarkFunction] = [
-    BenchmarkFunction(
-        name="Sphere4D",
-        func=sphere,
-        bounds=(-5.0, 5.0),
-        optimum=0.0,
-        category="unimodal",
-        dim=4,
-        optima_pos=[[0.0, 0.0, 0.0, 0.0]],
-    ),
-    BenchmarkFunction(
-        name="Rosenbrock4D",
-        func=rosenbrock_nd,
-        bounds=(-2.0, 2.0),
-        optimum=0.0,
-        category="unimodal",
-        dim=4,
-        optima_pos=[[1.0, 1.0, 1.0, 1.0]],
-    ),
-    BenchmarkFunction(
-        name="Rastrigin4D",
-        func=rastrigin,
-        bounds=(-5.12, 5.12),
-        optimum=0.0,
-        category="multimodal",
-        dim=4,
-        optima_pos=[[0.0, 0.0, 0.0, 0.0]],
-    ),
-    BenchmarkFunction(
-        name="Ackley4D",
-        func=ackley,
-        bounds=(-5.0, 5.0),
-        optimum=0.0,
-        category="multimodal",
-        dim=4,
-        optima_pos=[[0.0, 0.0, 0.0, 0.0]],
-    ),
-    BenchmarkFunction(
-        name="Schwefel4D",
-        func=schwefel,
-        bounds=(-500.0, 500.0),
-        optimum=0.0,
-        category="deceptive",
-        dim=4,
-        optima_pos=[[420.9687, 420.9687, 420.9687, 420.9687]],
-    ),
-]
+BENCHMARKS    = _build(2)
+BENCHMARKS_3D = _build(3)
+BENCHMARKS_4D = _build(4)
 
 BENCHMARKS_BY_NAME: dict[str, BenchmarkFunction] = {b.name: b for b in BENCHMARKS}
