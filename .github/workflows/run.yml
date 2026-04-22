@@ -1,0 +1,41 @@
+name: Run Optimization
+
+on:
+  workflow_dispatch:
+    inputs:
+      n_runs:
+        description: "Number of runs per benchmark"
+        required: false
+        default: "30"
+      max_evals:
+        description: "Max evaluations per run"
+        required: false
+        default: "5000"
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install numpy matplotlib cma
+
+      - name: Run experiment
+        run: |
+          sed -i "s/^N_RUNS = .*/N_RUNS = ${{ github.event.inputs.n_runs }}/" main.py
+          sed -i "s/^MAX_EVALS = .*/MAX_EVALS = ${{ github.event.inputs.max_evals }}/" main.py
+          python main.py
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: results
+          path: results/
+          retention-days: 30
