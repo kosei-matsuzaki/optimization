@@ -33,14 +33,30 @@ def _make_optimizers(sigma0: float) -> dict:
 
 
 def _process_bench(args: tuple) -> list[tuple]:
-    """Worker: run all optimizers on one benchmark and return result rows."""
+    """Worker: run all optimizers on one benchmark and return result rows.
+
+    Receives (bench_name, bench_dim, ...) instead of a BenchmarkFunction object
+    to avoid pickling ioh closures, which are not serialisable.
+    """
     import warnings
     warnings.filterwarnings("ignore")
     import matplotlib
     matplotlib.use("Agg")
 
-    bench, n_runs, max_evals, output_dir_str = args
+    bench_name, bench_dim, n_runs, max_evals, output_dir_str = args
     output_dir = Path(output_dir_str)
+
+    # Reconstruct benchmark locally so ioh closures stay within this process.
+    from benchmarks import _make_bbob, _himmelblau, _six_hump_camel, _BBOB_SPECS
+    if bench_name == "C01-Himmelblau":
+        bench = _himmelblau()
+    elif bench_name == "C02-SixHumpCamel":
+        bench = _six_hump_camel()
+    else:
+        spec = next((s for s in _BBOB_SPECS if s[1] == bench_name), None)
+        if spec is None:
+            raise ValueError(f"Unknown benchmark: {bench_name}")
+        bench = _make_bbob(spec[0], spec[1], spec[2], bench_dim)
 
     sigma0 = 0.2 * (bench.bounds[1] - bench.bounds[0])
     optimizers = _make_optimizers(sigma0)
@@ -83,7 +99,7 @@ def run_dimension(bench_list: list[BenchmarkFunction], dim_label: str) -> None:
     print("-" * 96)
 
     n_workers = min(os.cpu_count() or 2, len(bench_list))
-    args = [(bench, N_RUNS, MAX_EVALS, str(output_dir)) for bench in bench_list]
+    args = [(bench.name, bench.dim, N_RUNS, MAX_EVALS, str(output_dir)) for bench in bench_list]
 
     with Pool(n_workers) as pool:
         all_rows = pool.map(_process_bench, args)
