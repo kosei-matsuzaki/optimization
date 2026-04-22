@@ -17,7 +17,7 @@ from optimizers import (
     GAOptimizer, VOAOptimizer, SaVOAOptimizer,
 )
 from runner import run_experiment, summarize
-from visualize import save_function_figure, save_stats
+from visualize import save_function_figure, save_combined_gif, save_stats
 
 # One representative function per BBOB group
 _QUICK_FUNCTIONS = [
@@ -65,6 +65,7 @@ def main(n_runs: int = 3, max_evals: int = 2000, output_dir: Path = Path("result
             )
 
         save_function_figure(bench, results_per_method, output_dir=output_dir)
+        save_combined_gif(bench, results_per_method, output_dir=output_dir)
         save_stats(bench, results_per_method, times_per_method, output_dir=output_dir)
 
     print(f"\nFigures saved to: {output_dir.resolve()}/")
