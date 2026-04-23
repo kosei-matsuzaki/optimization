@@ -108,6 +108,37 @@
     transition: background .15s;
   }
   #pause-btn:hover { background: rgba(0,0,0,0.80); }
+
+  /* ── Column tooltips ────────────────────────────────────────────────────── */
+  th[data-tip] {
+    position: relative;
+    cursor: help;
+  }
+  th[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1e2e;
+    color: #ccd3f0;
+    border: 1px solid #353b55;
+    padding: 7px 11px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 400;
+    font-family: var(--mono);
+    white-space: pre-line;
+    min-width: 200px;
+    max-width: 300px;
+    z-index: 200;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s .1s;
+    line-height: 1.5;
+  }
+  th[data-tip]:hover::after { opacity: 1; }
   </style>
 </head>
 <body>
@@ -269,49 +300,72 @@ function selectFunc(func) {
   buildUnifiedTable(func);
 }
 
-// ── Pause / play GIF ──
-let _pausedCanvas = null;
-let _pausedImg    = null;
+// ── GIF canvas mirror (pause at any frame via rAF) ────────────────────────
+let _mirror = null; // { canvas, ctx, img, rafId, paused }
 
-function _resetPause() {
-  if (_pausedCanvas && _pausedImg) {
-    _pausedCanvas.replaceWith(_pausedImg);
+function _stopMirror() {
+  if (_mirror) {
+    cancelAnimationFrame(_mirror.rafId);
+    if (_mirror.canvas.parentNode) _mirror.canvas.remove();
+    _mirror.img.style.opacity = '';
+    _mirror = null;
   }
-  _pausedCanvas = null;
-  _pausedImg    = null;
   const btn = document.getElementById('pause-btn');
-  if (btn) { btn.textContent = '⏸'; btn.title = 'Pause animation'; }
+  if (btn) { btn.style.display = 'none'; btn.textContent = '⏸'; btn.title = 'Pause'; }
+}
+
+function _startMirror(img) {
+  _stopMirror();
+  const canvas = document.createElement('canvas');
+  canvas.width  = img.naturalWidth  || 800;
+  canvas.height = img.naturalHeight || 600;
+  canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:block;';
+  const ctx = canvas.getContext('2d');
+  img.style.opacity = '0';
+  img.parentElement.appendChild(canvas);
+
+  const m = { canvas, ctx, img, rafId: null, paused: false, lastTs: 0 };
+  _mirror = m;
+
+  function loop(ts) {
+    if (ts - m.lastTs >= 40) { // ~25 fps cap to save CPU
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      m.lastTs = ts;
+    }
+    m.rafId = requestAnimationFrame(loop);
+  }
+  m.rafId = requestAnimationFrame(loop);
+
+  const btn = document.getElementById('pause-btn');
+  if (btn) btn.style.display = 'flex';
 }
 
 function togglePause() {
-  const display = document.getElementById('media-display');
-  const btn     = document.getElementById('pause-btn');
-  if (_pausedCanvas) {
-    _resetPause();
+  if (!_mirror) return;
+  const btn = document.getElementById('pause-btn');
+  if (_mirror.paused) {
+    _mirror.paused = false;
+    function loop(ts) {
+      if (ts - _mirror.lastTs >= 40) {
+        _mirror.ctx.drawImage(_mirror.img, 0, 0, _mirror.canvas.width, _mirror.canvas.height);
+        _mirror.lastTs = ts;
+      }
+      _mirror.rafId = requestAnimationFrame(loop);
+    }
+    _mirror.rafId = requestAnimationFrame(loop);
+    if (btn) { btn.textContent = '⏸'; btn.title = 'Pause'; }
   } else {
-    const img = display.querySelector('img');
-    if (!img) return;
-    const canvas = document.createElement('canvas');
-    canvas.width  = img.naturalWidth  || 800;
-    canvas.height = img.naturalHeight || 600;
-    canvas.style.maxWidth  = '100%';
-    canvas.style.maxHeight = img.style.maxHeight || '';
-    try {
-      canvas.getContext('2d').drawImage(img, 0, 0);
-      _pausedImg = img;
-      img.replaceWith(canvas);
-      _pausedCanvas = canvas;
-      if (btn) { btn.textContent = '▶'; btn.title = 'Resume animation'; }
-    } catch(e) { /* cross-origin or not yet loaded */ }
+    _mirror.paused = true;
+    cancelAnimationFrame(_mirror.rafId);
+    if (btn) { btn.textContent = '▶'; btn.title = 'Resume'; }
   }
 }
 
 // ── Media ──
 function updateMedia() {
   if (!currentFunc || !currentDim) return;
-  _resetPause();
+  _stopMirror();
   const display = document.getElementById('media-display');
-  const btn     = document.getElementById('pause-btn');
   display.innerHTML = '<span class="placeholder">Loading…</span>';
   const isGif = currentType !== 'landscape';
   const src = isGif
@@ -323,13 +377,13 @@ function updateMedia() {
   img.alt = `${currentFunc} ${currentType}`;
   img.onload  = () => {
     display.innerHTML = '';
+    display.style.position = 'relative';
     display.appendChild(img);
-    if (btn) btn.style.display = isGif ? 'flex' : 'none';
+    if (isGif) _startMirror(img);
   };
   img.onerror = () => {
     display.innerHTML = '<span class="placeholder">Not available for this type.</span>';
     currentMediaSrc = null;
-    if (btn) btn.style.display = 'none';
   };
 }
 
@@ -339,7 +393,7 @@ document.getElementById('media-selector').addEventListener('click', e => {
   document.querySelectorAll('#media-selector button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   currentType = btn.dataset.type;
-  _resetPause();
+  _stopMirror();
   updateMedia();
 });
 
@@ -424,19 +478,22 @@ async function buildUnifiedTable(func) {
     return isNaN(n) ? '—' : (n * 100).toFixed(0) + '%';
   }
 
+  const TH = (label, tip, extra='') =>
+    `<th${tip ? ` data-tip="${tip.replace(/"/g,'&quot;')}"` : ''}${extra ? ' '+extra : ''}>${label}</th>`;
+
   let html = `
   <div class="table-wrap">
   <table class="unified-table">
     <thead>
       <tr>
-        <th style="text-align:left; min-width:150px;">Method / Seed</th>
-        <th>best_f</th>
-        <th>SR@1e-2</th>
-        <th>SR@1e-4</th>
-        <th>ERT</th>
-        <th>time (s)</th>
-        <th>optima rate</th>
-        <th>evals</th>
+        ${TH('Method / Seed', 'Click ▶ to expand per-run details.', 'style="text-align:left;min-width:150px;"')}
+        ${TH('best_f', 'Mean of final best f(x) across all runs.\nLower is better.\nBBOB functions: global minimum = 0.')}
+        ${TH('SR@1e-2', 'Success Rate  f ≤ 1×10⁻²\nFraction of runs reaching f < 0.01.\n(loose convergence target)')}
+        ${TH('SR@1e-4', 'Success Rate  f ≤ 1×10⁻⁴\nBBOB standard success target.\nFraction of successful runs.')}
+        ${TH('ERT', 'Expected Running Time  (BBOB standard)\n\nERT = Σ evals_to_target / n_success\n\nFailed runs are penalized with max_evals.\n— means no successful run.')}
+        ${TH('time (s)', 'Mean wall-clock time per run (seconds).')}
+        ${TH('optima rate', 'Fraction of distinct global optima found\nper run (capture radius ε = 0.1 × span).\nN/A for single-optimum functions.')}
+        ${TH('evals', 'Total function evaluations\nused in this run.')}
       </tr>
     </thead>
     <tbody id="unified-tbody">`;

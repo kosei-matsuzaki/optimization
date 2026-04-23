@@ -316,7 +316,7 @@ def save_runs_gif(
     n_runs = min(len(v) for v in results_per_method.values())
     lo, hi = benchmark.bounds
 
-    X, Y, Z = _contour_data(benchmark, resolution=150)
+    X, Y, Z = _contour_data(benchmark, resolution=100)
     Z_plot = np.log1p(Z - Z.min() + 1e-10)
 
     fig, axes = _make_grid_fig(len(methods))
@@ -362,7 +362,7 @@ def save_runs_gif(
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_runs,
                                   interval=1000 // fps, blit=False)
     ani.save(str(output_dir / f"{benchmark.name}_runs.gif"),
-             writer=animation.PillowWriter(fps=fps))
+             writer=animation.PillowWriter(fps=fps), dpi=100)
     plt.close(fig)
 
 
@@ -387,7 +387,7 @@ def save_evals_gif(
     runs = [min(results_per_method[m], key=lambda r: r.best_f) for m in methods]
     lo, hi = benchmark.bounds
 
-    X, Y, Z = _contour_data(benchmark, resolution=150)
+    X, Y, Z = _contour_data(benchmark, resolution=100)
     Z_plot = np.log1p(Z - Z.min() + 1e-10)
 
     total_evals = max(len(r.history_x) for r in runs)
@@ -423,7 +423,7 @@ def save_evals_gif(
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
     ani.save(str(output_dir / f"{benchmark.name}_evals.gif"),
-             writer=animation.PillowWriter(fps=fps))
+             writer=animation.PillowWriter(fps=fps), dpi=100)
     plt.close(fig)
 
 
@@ -448,7 +448,7 @@ def save_population_gif(
     runs = [min(results_per_method[m], key=lambda r: r.best_f) for m in methods]
     lo, hi = benchmark.bounds
 
-    X, Y, Z = _contour_data(benchmark, resolution=150)
+    X, Y, Z = _contour_data(benchmark, resolution=100)
     Z_plot = np.log1p(Z - Z.min() + 1e-10)
 
     def get_frames(run: OptimizeResult) -> tuple[list[np.ndarray], list[int]]:
@@ -508,7 +508,7 @@ def save_population_gif(
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
     ani.save(str(output_dir / f"{benchmark.name}_population.gif"),
-             writer=animation.PillowWriter(fps=fps))
+             writer=animation.PillowWriter(fps=fps), dpi=100)
     plt.close(fig)
 
 
@@ -595,7 +595,7 @@ def save_3d_evals_gif(
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
     ani.save(str(output_dir / f"{benchmark.name}_evals.gif"),
-             writer=animation.PillowWriter(fps=fps))
+             writer=animation.PillowWriter(fps=fps), dpi=80)
     plt.close(fig)
 
 
@@ -697,7 +697,7 @@ def save_3d_population_gif(
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
     ani.save(str(output_dir / f"{benchmark.name}_population.gif"),
-             writer=animation.PillowWriter(fps=fps))
+             writer=animation.PillowWriter(fps=fps), dpi=80)
     plt.close(fig)
 
 
