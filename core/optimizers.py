@@ -215,18 +215,30 @@ class VirusOptimizer(BaseOptimizer):
         best_so_far = float(np.min(init_f))
         no_improve = 0
         force_air_slots: set[int] = set()
+        sigma_d = np.ones(self.dim)
 
         while len(history_f) < max_evals:
             n = len(pop_x)
             pop_x_arr = np.array(pop_x)
             pop_f_arr = np.array(pop_f)
 
+            k_top = max(2, n // 4)
+            top_k_x = pop_x_arr[np.argsort(pop_f_arr)[:k_top]]
+            dim_var = np.var(top_k_x, axis=0)
+            mean_var = float(np.mean(dim_var)) + 1e-30
+            sigma_d_target = np.clip(np.sqrt(dim_var / mean_var), 0.1, 10.0)
+            sigma_d = sigma_d * 0.95 + sigma_d_target * 0.05
+            sigma_d /= (float(sigma_d.mean()) + 1e-30)
+
             sigma_mean = float(np.mean(sigma))
             sigma_ratio = sigma_mean / sigma_init_mean
             niche_radius_dyn = max(self.niche_radius_min, self.niche_radius * sigma_ratio)
             crowd_radius = self.crowd_radius_frac * sigma_mean
 
-            elite_idx = self._niche_elites(pop_x_arr, pop_f_arr, niche_radius_dyn)
+            top5_x = pop_x_arr[np.argsort(pop_f_arr)[:min(5, n)]]
+            top5_spread = float(np.mean(np.std(top5_x, axis=0))) / span
+            niche_radius_eff = self.niche_radius_min if top5_spread < 0.05 else niche_radius_dyn
+            elite_idx = self._niche_elites(pop_x_arr, pop_f_arr, niche_radius_eff)
 
             # Mark dead: age exceeded lifespan, excluding elites
             dead_idx = [
@@ -258,7 +270,7 @@ class VirusOptimizer(BaseOptimizer):
             diversity_ratio = np.clip(pop_diversity / 0.289, 0.0, 1.0)
             air_sigma_factor = self.air_sigma_max - (self.air_sigma_max - self.air_sigma_min) * diversity_ratio
             air_sigma_base = np.maximum(sigma, sigma_init_mean * 0.3)
-            air_sigma = air_sigma_base * air_sigma_factor
+            air_sigma_vec = air_sigma_base * air_sigma_factor * sigma_d
 
             new_xs: list[np.ndarray] = []
             if n_local > 0:
@@ -268,13 +280,13 @@ class VirusOptimizer(BaseOptimizer):
                     age_ratio = min(pop_age[pi] / max(self.lifespan, 1), 1.0)
                     combined = 0.5 * quality + 0.5 * age_ratio
                     scale = self.sigma_min_ratio + (1.0 - combined) * (1.0 - self.sigma_min_ratio)
-                    sigma_i = sigma * scale
+                    sigma_i = sigma * scale * sigma_d
                     child = pop_x[pi] + rng.normal(0, sigma_i, self.dim)
                     child = np.clip(child, lo, hi)
                     new_xs.append(child)
             for _ in range(n_air):
                 pi = rng.integers(0, n)
-                child = pop_x[pi] + rng.normal(0, air_sigma, self.dim)
+                child = pop_x[pi] + rng.normal(0, air_sigma_vec, self.dim)
                 child = np.clip(child, lo, hi)
                 new_xs.append(child)
 
@@ -285,7 +297,7 @@ class VirusOptimizer(BaseOptimizer):
                 if slot in force_air_slots:
                     force_air_slots.discard(slot)
                     pi = rng.integers(0, n)
-                    x = pop_x[pi] + rng.normal(0, air_sigma, self.dim)
+                    x = pop_x[pi] + rng.normal(0, air_sigma_vec, self.dim)
                     x = np.clip(x, lo, hi)
                 f = self.func(x)
                 pop_x[slot] = x
@@ -314,7 +326,8 @@ class VirusOptimizer(BaseOptimizer):
                 for _ in range(n_add):
                     if len(history_f) >= max_evals:
                         break
-                    bx = rng.uniform(lo, hi, self.dim)
+                    bx = pop_x[int(np.argmin(np.array(pop_f)))] + rng.normal(0, sigma, self.dim) * 2.0
+                    bx = np.clip(bx, lo, hi)
                     bf = self.func(bx)
                     pop_x.append(bx)
                     pop_f.append(bf)
@@ -331,7 +344,7 @@ class VirusOptimizer(BaseOptimizer):
             while len(pop_x) > self.n_pop_max:
                 px_arr = np.array(pop_x)
                 pf_arr = np.array(pop_f)
-                ei = self._niche_elites(px_arr, pf_arr, niche_radius_dyn)
+                ei = self._niche_elites(px_arr, pf_arr, niche_radius_eff)
                 candidates = [i for i in range(len(pop_x)) if i not in ei]
                 if not candidates:
                     break
@@ -341,10 +354,10 @@ class VirusOptimizer(BaseOptimizer):
                 pop_age.pop(worst)
 
             # Crowding control: force-age excess individuals near each elite
-            if crowd_radius > 0:
+            if crowd_radius > 0 and diversity_ratio > 0.05:
                 px_arr = np.array(pop_x)
                 pf_arr = np.array(pop_f)
-                ei = self._niche_elites(px_arr, pf_arr, niche_radius_dyn)
+                ei = self._niche_elites(px_arr, pf_arr, niche_radius_eff)
                 max_near = max(1, int(self.max_crowd_fraction * len(pop_x)))
                 for e in ei:
                     dists = np.linalg.norm(px_arr - px_arr[e], axis=1)
