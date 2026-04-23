@@ -24,17 +24,20 @@ from core.visualize import (
 
 # (function_name, dimension) — one representative per BBOB group, for each dim
 _QUICK_FUNCTIONS: list[tuple[str, int]] = [
-    # 2D
-    ("F01-Sphere",       2),   # separable
-    ("F08-Rosenbrock",   2),   # moderate-cond
-    ("F15-RastriginRot", 2),   # multimodal
-    ("F20-Schwefel",     2),   # weak-structure
-    ("C01-Himmelblau",   2),   # 4 global optima
+    # 2D — one per group + custom
+    ("F01-Sphere",          2),   # separable
+    ("F08-Rosenbrock",      2),   # moderate-cond
+    ("F10-EllipsoidalRot",  2),   # ill-cond
+    ("F15-RastriginRot",    2),   # multimodal
+    ("F20-Schwefel",        2),   # weak-structure
+    ("C01-Himmelblau",      2),   # 4 global optima
+    ("C02-SixHumpCamel",    2),   # 2 global optima
     # 3D
-    ("F01-Sphere",       3),   # separable
-    ("F08-Rosenbrock",   3),   # moderate-cond
-    ("F15-RastriginRot", 3),   # multimodal
-    ("F20-Schwefel",     3),   # weak-structure
+    ("F01-Sphere",          3),   # separable
+    ("F08-Rosenbrock",      3),   # moderate-cond
+    ("F10-EllipsoidalRot",  3),   # ill-cond
+    ("F15-RastriginRot",    3),   # multimodal
+    ("F20-Schwefel",        3),   # weak-structure
 ]
 
 _DIM_LOOKUP: dict[int, dict[str, object]] = {
@@ -54,8 +57,9 @@ _OPTIMIZERS = {
 def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int) -> None:
     """Run all functions in a dimension group and save results to dim_dir."""
     dim_dir.mkdir(parents=True, exist_ok=True)
-    print(f"\n{'Function':<22} {'Method':<10} {'Mean':>12} {'Std':>12} {'Success':>8}")
-    print("-" * 68)
+    print(f"\n{'Function':<22} {'Method':<10} {'Mean':>12} {'Std':>12} "
+          f"{'SR@1e-2':>8} {'SR@1e-4':>8} {'ERT':>9}")
+    print("-" * 83)
     for bench in benchmarks:
         sigma0 = 0.2 * (bench.bounds[1] - bench.bounds[0])
         results_per_method: dict = {}
@@ -68,9 +72,11 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int) -> No
             results_per_method[method] = results
             times_per_method[method] = times
             s = summarize(results)
+            ert_str = f"{s['ert']:>9.0f}" if s['ert'] < float('inf') else "     ---"
             print(
                 f"{bench.name:<22} {method:<10} "
-                f"{s['mean']:>12.4e} {s['std']:>12.4e} {s['success_rate']:>7.0%}"
+                f"{s['mean']:>12.4e} {s['std']:>12.4e} "
+                f"{s['sr_1e-2']:>7.0%} {s['success_rate']:>8.0%}{ert_str}"
             )
         save_function_figure(bench, results_per_method, output_dir=dim_dir)
         if bench.dim == 2:

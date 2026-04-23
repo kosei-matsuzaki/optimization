@@ -95,12 +95,12 @@ def run_dimension(bench_list: list[BenchmarkFunction], dim_label: str) -> None:
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n{'='*96}")
+    print(f"\n{'='*110}")
     print(f"  Dimension: {dim_label}")
-    print(f"{'='*96}")
+    print(f"{'='*110}")
     print(f"{'Function':<18} {'Category':<14} {'Method':<12} "
-          f"{'Mean':>12} {'Std':>12} {'Median':>12} {'Success':>8} {'Time(s)':>9}")
-    print("-" * 96)
+          f"{'Mean':>12} {'Std':>12} {'SR@1e-2':>8} {'SR@1e-4':>8} {'ERT':>9} {'Time(s)':>9}")
+    print("-" * 110)
 
     n_workers = min(os.cpu_count() or 2, len(bench_list))
     args = [(bench.name, bench.dim, N_RUNS, MAX_EVALS, str(output_dir)) for bench in bench_list]
@@ -110,11 +110,12 @@ def run_dimension(bench_list: list[BenchmarkFunction], dim_label: str) -> None:
 
     for bench, rows in zip(bench_list, all_rows):
         for name, category, method_name, s, avg_time in rows:
+            ert_str = f"{s['ert']:>9.0f}" if s['ert'] < float('inf') else "      ---"
             print(
                 f"{name:<18} {category:<14} {method_name:<12} "
                 f"{s['mean']:>12.4e} {s['std']:>12.4e} "
-                f"{s['median']:>12.4e} {s['success_rate']:>7.0%} "
-                f"{avg_time:>9.2f}"
+                f"{s['sr_1e-2']:>7.0%} {s['success_rate']:>8.0%}"
+                f"{ert_str} {avg_time:>9.2f}"
             )
 
     print(f"\nResults saved to: {output_dir.resolve()}/")

@@ -25,7 +25,20 @@ matplotlib.rcParams.update({
     "figure.dpi": 150,
 })
 
-_COLORS = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple", "tab:brown"]
+_COLORS = ["tab:blue", "tab:orange", "tab:green", "tab:red", "deepskyblue", "tab:brown"]
+
+# Name-based color overrides: proposed methods get distinct, high-visibility colors
+_METHOD_COLOR: dict[str, str] = {
+    "CMA-ES": "tab:blue",
+    "PSO":    "tab:orange",
+    "GA":     "tab:green",
+    "SaVOA":  "tab:red",
+    "VSO":    "deepskyblue",   # bright cyan-blue — stands out on dark backgrounds
+}
+
+
+def _method_color(name: str, fallback_idx: int) -> str:
+    return _METHOD_COLOR.get(name, _COLORS[fallback_idx % len(_COLORS)])
 
 
 # ---------------------------------------------------------------------------
@@ -127,7 +140,7 @@ def _draw_convergence(
         for results in results_per_method.values()
     )
     for idx, (method_name, results) in enumerate(results_per_method.items()):
-        color = _COLORS[idx % len(_COLORS)]
+        color = _method_color(method_name, idx)
         padded = np.array([
             r.history_best + [r.history_best[-1]] * (common_max - len(r.history_best))
             for r in results
@@ -456,9 +469,11 @@ def save_population_gif(
 
     fig, axes = _make_grid_fig(len(methods))
 
+    method_colors = [_method_color(m, i) for i, m in enumerate(methods)]
+
     def draw_frame(frame_idx: int) -> list:
         for ax, method, run, frames, evals, color in zip(
-            axes, methods, runs, pop_seqs, eval_seqs, _COLORS
+            axes, methods, runs, pop_seqs, eval_seqs, method_colors
         ):
             ax.clear()
             ax.contourf(X, Y, Z_plot, levels=30, cmap="viridis", alpha=0.7)
@@ -476,8 +491,8 @@ def save_population_gif(
                     for pos, sig in zip(pop, pop_sig):
                         circ = mpatches.Circle(
                             (float(pos[0]), float(pos[1])), float(sig),
-                            fill=False, edgecolor=color, linewidth=0.7,
-                            alpha=0.25, linestyle="--", zorder=3,
+                            fill=True, facecolor=color, edgecolor=color,
+                            linewidth=1.2, alpha=0.18, linestyle="-", zorder=3,
                         )
                         ax.add_patch(circ)
             _draw_optima(ax, benchmark)
@@ -727,8 +742,10 @@ def save_stats(
 
     summary_path = output_dir / "summary.csv"
     summary_exists = summary_path.exists()
+    from .runner import _evals_to_target
     fieldnames_s = ["function", "category", "method", "mean_time_s",
-                    "mean_best_f", "success_rate", "mean_optima_found", "mean_optima_rate"]
+                    "mean_best_f", "sr_1e-2", "sr_1e-4", "ert",
+                    "mean_optima_found", "mean_optima_rate"]
     with open(summary_path, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames_s)
         if not summary_exists:
@@ -736,15 +753,20 @@ def save_stats(
         for method, results in results_per_method.items():
             times = times_per_method.get(method, [0.0] * len(results))
             optima_counts = [_count_optima_found(r, benchmark, success_threshold) for r in results]
-            best_fs = [r.best_f for r in results]
+            best_fs = np.array([r.best_f for r in results])
             mean_optima = float(np.mean(optima_counts))
+            n_success = int(np.sum(best_fs <= success_threshold))
+            evals_list = [_evals_to_target(r, success_threshold) for r in results]
+            ert = f"{sum(evals_list) / n_success:.0f}" if n_success > 0 else "inf"
             writer.writerow({
                 "function": benchmark.name,
                 "category": benchmark.category,
                 "method": method,
                 "mean_time_s": f"{np.mean(times):.3f}",
                 "mean_best_f": f"{np.mean(best_fs):.4e}",
-                "success_rate": f"{np.mean(np.array(best_fs) <= success_threshold):.0%}",
+                "sr_1e-2":     f"{float(np.mean(best_fs <= 1e-2)):.0%}",
+                "sr_1e-4":     f"{float(np.mean(best_fs <= success_threshold)):.0%}",
+                "ert":         ert,
                 "mean_optima_found": f"{mean_optima:.2f}",
                 "mean_optima_rate": f"{mean_optima / n_optima_total:.2f}" if n_optima_total else "N/A",
             })

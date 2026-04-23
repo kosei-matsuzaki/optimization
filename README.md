@@ -283,8 +283,16 @@ niche_radius_dyn = max(niche_radius_min, niche_radius × (σ_現在 / σ_初期)
 | 次元数 | 2次元（BBOB 24関数 + カスタム2関数）、3次元（BBOB 24関数） |
 | sigma0（CMA-ES） | `0.2 × (hi - lo)` |
 
-統計量として Mean / Std / Median / Success Rate を報告する。  
-Success は `best_f ≤ 1e-4`（BBOB 標準精度ターゲット）で判定する。
+以下の指標を報告する：
+
+| 指標 | 定義 |
+|---|---|
+| **Mean / Std** | 全 run の最終 best f の平均・標準偏差 |
+| **SR@1e-2** | `best_f ≤ 1e-2` を達成した run の割合（ゆるい成功） |
+| **SR@1e-4** | `best_f ≤ 1e-4` を達成した run の割合（BBOB 標準成功） |
+| **ERT** | Expected Running Time（BBOB 標準）= Σ(各 run の目標到達評価回数) / 成功 run 数。失敗 run は max_evals でペナルティ計上。全 run 失敗時は `---` |
+
+ERT は成功率が 0% でも「どれだけ近づけたか」を相対的に比較できないが、SR@1e-2 と組み合わせることで緩い収束段階の差異を捉える。
 
 ---
 
