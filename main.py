@@ -6,7 +6,6 @@ from pathlib import Path
 from core.benchmarks import BENCHMARKS, BENCHMARKS_3D, BENCHMARKS_4D, CUSTOM_BENCHMARKS, BenchmarkFunction
 from core.optimizers import (
     CMAESOptimizer, VirusOptimizer, PSOOptimizer, GAOptimizer,
-    VOAOptimizer, SaVOAOptimizer, GeneticVirusOptimizer,
 )
 from core.runner import run_experiment, summarize
 from core.visualize import (
@@ -22,10 +21,7 @@ OUTPUT_DIR = Path("results")
 _BASE_OPTIMIZERS = {
     "PSO":   (PSOOptimizer,          {}),
     "GA":    (GAOptimizer,           {}),
-    "VOA":   (VOAOptimizer,          {}),
-    "SaVOA": (SaVOAOptimizer,        {}),
     "VSO":   (VirusOptimizer,        {}),
-    "GVO":   (GeneticVirusOptimizer, {}),
 }
 
 
