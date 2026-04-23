@@ -243,7 +243,9 @@ class VirusOptimizer(BaseOptimizer):
 
             weights = self._softmax_weights(pop_f_arr)
 
-            n_air = max(0, round(self.air_ratio * n_dead))
+            stagnation_ratio = min(no_improve / max(self.stagnation_limit, 1), 1.0)
+            air_ratio_eff = self.air_ratio + (0.5 - self.air_ratio) * stagnation_ratio ** 2
+            n_air = max(0, round(air_ratio_eff * n_dead))
             n_local = n_dead - n_air
 
             f_min_local = pop_f_arr.min()
@@ -255,7 +257,8 @@ class VirusOptimizer(BaseOptimizer):
             pop_diversity = np.mean(np.std(pop_x_arr, axis=0) / span)
             diversity_ratio = np.clip(pop_diversity / 0.289, 0.0, 1.0)
             air_sigma_factor = self.air_sigma_max - (self.air_sigma_max - self.air_sigma_min) * diversity_ratio
-            air_sigma = sigma * air_sigma_factor
+            air_sigma_base = np.maximum(sigma, sigma_init_mean * 0.3)
+            air_sigma = air_sigma_base * air_sigma_factor
 
             new_xs: list[np.ndarray] = []
             if n_local > 0:

@@ -3,7 +3,7 @@ warnings.filterwarnings("ignore")
 import os
 from multiprocessing import Pool
 from pathlib import Path
-from core.benchmarks import BENCHMARKS, BENCHMARKS_3D, BENCHMARKS_4D, BenchmarkFunction
+from core.benchmarks import BENCHMARKS, BENCHMARKS_3D, BENCHMARKS_4D, CUSTOM_BENCHMARKS, BenchmarkFunction
 from core.optimizers import (
     CMAESOptimizer, VirusOptimizer, PSOOptimizer, GAOptimizer,
     VOAOptimizer, SaVOAOptimizer,
@@ -123,9 +123,8 @@ def run_dimension(bench_list: list[BenchmarkFunction], dim_label: str) -> None:
 
 
 def main() -> None:
-    run_dimension(BENCHMARKS,    "dim2")
-    # run_dimension(BENCHMARKS_3D, "dim3")
-    # run_dimension(BENCHMARKS_4D, "dim4")
+    run_dimension(BENCHMARKS + CUSTOM_BENCHMARKS, "dim2")
+    run_dimension(BENCHMARKS_3D,                  "dim3")
 
 
 if __name__ == "__main__":

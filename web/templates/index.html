@@ -301,38 +301,55 @@ function colorLine(line) {
   return el;
 }
 
+// 指数バックオフ付きポーリング: 1s → 1.5s → 2.25s … 上限 5s
 function pollStatus(jobId) {
-  pollingInterval = setInterval(async () => {
-    const res = await fetch(`/api/status/${jobId}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    data.output.slice(lastLineCount).forEach(line => terminal.appendChild(colorLine(line)));
-    lastLineCount = data.output.length;
-    terminal.scrollTop = terminal.scrollHeight;
-    if (data.status !== 'running') {
-      clearInterval(pollingInterval);
-      runBtn.disabled = false;
-      if (data.status === 'done') {
-        jobBadge.className = 'badge badge-done';
-        jobBadge.textContent = '✓ Done';
-        if (data.result_dir) {
-          jobResultAnchor.href = `/results/${data.result_dir}`;
-          jobResultLink.style.display = 'inline';
+  let stopped = false;
+  let interval = 1000;
+  pollingInterval = { stop: () => { stopped = true; } };
+
+  const tick = async () => {
+    if (stopped) return;
+    try {
+      const res = await fetch(`/api/status/${jobId}`);
+      if (!res.ok) { scheduleNext(); return; }
+      const data = await res.json();
+      data.output.slice(lastLineCount).forEach(line => terminal.appendChild(colorLine(line)));
+      lastLineCount = data.output.length;
+      terminal.scrollTop = terminal.scrollHeight;
+      if (data.status !== 'running') {
+        runBtn.disabled = false;
+        if (data.status === 'done') {
+          jobBadge.className = 'badge badge-done';
+          jobBadge.textContent = '✓ Done';
+          if (data.result_dir) {
+            jobResultAnchor.href = `/results/${data.result_dir}`;
+            jobResultLink.style.display = 'inline';
+          }
+          showToast('Run completed!', 'ok');
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          jobBadge.className = 'badge badge-failed';
+          jobBadge.textContent = '✗ Failed';
+          showToast('Run failed.', 'err');
         }
-        showToast('Run completed!', 'ok');
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        jobBadge.className = 'badge badge-failed';
-        jobBadge.textContent = '✗ Failed';
-        showToast('Run failed.', 'err');
+        return;
       }
-    }
-  }, 600);
+    } catch (_) {}
+    scheduleNext();
+  };
+
+  const scheduleNext = () => {
+    if (stopped) return;
+    setTimeout(tick, interval);
+    interval = Math.min(interval * 1.5, 600000);
+  };
+
+  setTimeout(tick, interval);
 }
 
 document.getElementById('run-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  if (pollingInterval) clearInterval(pollingInterval);
+  if (pollingInterval) pollingInterval.stop();
   terminal.innerHTML = '';
   lastLineCount = 0;
   runBtn.disabled = true;
@@ -409,30 +426,43 @@ async function startDownload(ghRunId) {
   pollDownload(job_id, ghRunId);
 }
 
+// ダウンロードは通信量が多いので初回 2s、以降 3s → 6s まで緩やかに伸ばす
 function pollDownload(jobId, ghRunId) {
   const statusEl = document.getElementById(`dl-status-${ghRunId}`);
   const btn = document.getElementById(`dl-btn-${ghRunId}`);
-  const iv = setInterval(async () => {
-    const res = await fetch(`/api/dl-status/${jobId}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    if (statusEl) {
-      const color = data.status === 'done' ? 'var(--success)'
-        : data.status === 'failed' ? 'var(--danger)' : 'var(--warn)';
-      statusEl.innerHTML = `<span style="color:${color};">${data.message}</span>`;
-    }
-    if (data.status !== 'running') {
-      clearInterval(iv);
-      localStorage.removeItem(DL_JOB_KEY);
-      if (btn) { btn.disabled = false; btn.textContent = '⬇ Download'; }
-      if (data.status === 'done') {
-        showToast(data.message, 'ok');
-        setTimeout(() => location.reload(), 1200);
-      } else {
-        showToast(data.message, 'err');
+  let interval = 2000;
+
+  const tick = async () => {
+    try {
+      const res = await fetch(`/api/dl-status/${jobId}`);
+      if (!res.ok) { scheduleNext(); return; }
+      const data = await res.json();
+      if (statusEl) {
+        const color = data.status === 'done' ? 'var(--success)'
+          : data.status === 'failed' ? 'var(--danger)' : 'var(--warn)';
+        statusEl.innerHTML = `<span style="color:${color};">${data.message}</span>`;
       }
-    }
-  }, 1000);
+      if (data.status !== 'running') {
+        localStorage.removeItem(DL_JOB_KEY);
+        if (btn) { btn.disabled = false; btn.textContent = '⬇ Download'; }
+        if (data.status === 'done') {
+          showToast(data.message, 'ok');
+          setTimeout(() => location.reload(), 1200);
+        } else {
+          showToast(data.message, 'err');
+        }
+        return;
+      }
+    } catch (_) {}
+    scheduleNext();
+  };
+
+  const scheduleNext = () => {
+    setTimeout(tick, interval);
+    interval = Math.min(interval * 1.5, 600000);
+  };
+
+  setTimeout(tick, interval);
 }
 
 function resumeDownloadPolling() {
