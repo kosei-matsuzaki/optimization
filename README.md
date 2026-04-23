@@ -1,6 +1,7 @@
-# 最適化手法の比較実験: VSO と既存手法
+# 最適化手法の比較実験: VSO / GVO と既存手法
 
-ウイルス蔓延を模倣した独自手法 **VSO (Virus Spread Optimizer)** を、標準的な既存最適化手法と比較するベンチマーク実験です。
+ウイルス蔓延を模倣した独自手法 **VSO (Virus Spread Optimizer)** および
+その遺伝子自己適応版 **GVO (Genetic Virus Optimizer)** を、標準的な既存最適化手法と比較するベンチマーク実験です。
 
 ---
 
@@ -8,14 +9,15 @@
 
 | 手法 | 分類 | 本実験での位置づけ |
 |---|---|---|
-| **VSO** (Virus Spread Optimizer) | 群知能・独自提案 | **提案手法** |
+| **VSO** (Virus Spread Optimizer) | 群知能・独自提案 | **提案手法１** |
+| **GVO** (Genetic Virus Optimizer) | 群知能・独自提案 | **提案手法２** |
 | CMA-ES | 進化戦略 | ベースライン（強力な標準手法） |
 | PSO | 群知能 | ベースライン |
 | GA | 進化的アルゴリズム | ベースライン |
 | VOA | ウイルス模倣・既存 | 直接比較対象（同じウイルス着想） |
 | SaVOA | ウイルス模倣・既存 | 直接比較対象（VOA の自己適応版） |
 
-VOA・SaVOA は既発表のウイルス着想アルゴリズムです。**VSO はこれらと同じ着想を持ちつつ、異なるモデル化とメカニズムで設計した提案手法**です。
+VOA・SaVOA は既発表のウイルス着想アルゴリズムです。**VSO/GVO はこれらと同じ着想を持ちつつ、異なるモデル化とメカニズムで設計した提案手法**です。
 
 ---
 
@@ -285,6 +287,91 @@ niche_radius_dyn = max(niche_radius_min, niche_radius × (σ_現在 / σ_初期)
 | `sigma_min_ratio` | 0.10 | 最良・最高齢個体の sigma スケール下限 |
 | `air_sigma_min` | 1.5 | 集団分散時の空気感染 sigma 倍率 |
 | `air_sigma_max` | 5.0 | 集団収束時の空気感染 sigma 倍率 |
+
+---
+
+### GVO — Genetic Virus Optimizer（提案手法２）
+
+VSO ではグローバルパラメータとして管理していた探索挙動（sigma・air_ratio・temperature）を
+**個体（ウイルス）の遺伝子**として各個体に持たせ、子生成時に遺伝・突然変異させる手法。
+良い遺伝子を持つ個体は良い子孫を残して生き残り、悪い遺伝子は淘汰される → **自動パラメータ適応**。
+
+#### 個体の表現
+
+各個体は位置 x・評価値 f・年齢 age に加え、2 つの遺伝子を持つ。
+
+| 遺伝子 | 意味 | 初期値 |
+|---|---|---|
+| `sigma` | 局所感染の半径（ステップ幅） | `sigma_init × span × exp(U(-0.5, 0.5))` |
+| `p_air` | 空気感染を行う確率 | 0.2 |
+
+#### 遺伝子突然変異（ES 標準）
+
+子生成時、位置の前に遺伝子を突然変異させる。
+
+```
+τ = 1 / sqrt(2 × dim)         ← ES 標準の自己適応率（次元で正規化）
+
+sigma_child = sigma_parent × exp(τ × N(0,1))   ← 対数正規突然変異
+sigma_child = clip(sigma_child, sigma_min, span)
+
+# p_air はロジット空間で突然変異 → 値域 (0,1) を維持
+logit_p     = log(p_air / (1 − p_air))
+p_air_child = sigmoid(logit_p + 0.3 × N(0,1))
+```
+
+子の位置は突然変異後の遺伝子を使って生成されるため、
+**遺伝子が良ければ子の位置も良くなる → 自然選択で遺伝子が収束**。
+
+#### 1世代の動作フロー
+
+```
+1. ニッチ選択でエリートを特定
+   niche_radius_dyn = max(niche_radius_min, niche_radius × sigma_pop_mean / sigma_init)
+   (集団の平均 sigma が小さいほど niche_radius も縮小 → 収束に追従)
+
+2. 死亡判定: age > lifespan かつ非エリート
+
+3. 各死亡スロットに子を生成
+   ├─ 親を softmax 重みで選択
+   ├─ 遺伝子を突然変異 (sigma_child, p_air_child)
+   ├─ p_air_child の確率で空気感染、残りで局所感染
+   │   局所: x_child = x_parent + N(0, sigma_child)
+   │   空気: x_child = x_parent + N(0, max(sigma_child, σ_init × 0.3) × 4.0)
+   └─ 子に (x_child, sigma_child, p_air_child, age=0) を設定
+
+4. 過密上限制御 (cap at n_pop_max)
+
+5. 停滞検出 → 打ち切り
+
+6. 年齢更新
+```
+
+#### VSO との比較
+
+| 観点 | VSO | GVO |
+|---|---|---|
+| sigma | グローバルスカラー、世代ごとに 0.99× 減衰 | **個体別遺伝子**、対数正規突然変異で自動適応 |
+| air_ratio | グローバル固定値 (0.2) + 停滞時適応 | **個体別遺伝子 p_air**、ロジット空間で適応 |
+| temperature | グローバル固定値 1.0 | 廃止（1.0 固定に統合） |
+| bloom | あり（改善時に追加個体） | 廃止 |
+| crowding 制御 | あり（diversity < 0.05 で無効化） | 廃止（上限制御のみ） |
+| グローバルパラメータ数 | **17 個** | **7 個** |
+
+#### パラメータ一覧
+
+| パラメータ | デフォルト | 意味 |
+|---|---|---|
+| `n_pop` | 20 | 初期個体数 |
+| `n_pop_max` | 40 | 個体数の上限 |
+| `lifespan` | 5 | 個体の寿命（世代数） |
+| `n_elite_max` | 6 | 保護するエリートの最大数 |
+| `niche_radius` | 1.0 | コロニー間の最小距離（初期値） |
+| `niche_radius_min` | 0.05 | niche_radius の下限 |
+| `sigma_init` | 0.2 | 初期 sigma の探索範囲に対する比率 |
+| `stagnation_limit` | 2000 | 停滞打ち切り評価回数 |
+
+**内部定数（チューニング不要）**: τ = 1/√(2d)、τ_p = 0.3、air_factor = 4.0
 
 ## 実験条件
 

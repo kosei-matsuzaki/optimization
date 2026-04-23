@@ -741,3 +741,202 @@ class SaVOAOptimizer(BaseOptimizer):
                 sigma = max(sigma * 0.9, sigma_min)
 
         return self._make_result(history_x, history_f, history_pop)
+
+
+class GeneticVirusOptimizer(BaseOptimizer):
+    """Epidemic optimizer with per-individual gene-based self-adaptation.
+
+    Each virus carries two genes: sigma (local step size) and p_air (air
+    infection probability). Genes are mutated on reproduction via log-normal
+    mutation (sigma) and logit-space mutation (p_air), following the
+    self-adaptive ES framework. Good gene values produce better offspring and
+    are retained by selection; poor values die out with their host.
+
+    Global parameters are reduced to structural ones only (n_pop, lifespan,
+    niche). Exploration-exploitation balance emerges automatically.
+    """
+
+    _TAU_P      = 0.3    # logit-space mutation width for p_air
+    _AIR_FACTOR = 4.0    # air sigma = sigma_gene × _AIR_FACTOR
+    _EPS        = 1e-6   # numerical floor for logit computation
+
+    def __init__(
+        self,
+        benchmark: BenchmarkFunction,
+        seed: int = 42,
+        n_pop: int = 20,
+        n_pop_max: int = 40,
+        lifespan: int = 5,
+        n_elite_max: int = 6,
+        niche_radius: float = 1.0,
+        niche_radius_min: float = 0.05,
+        sigma_init: float = 0.2,
+        stagnation_limit: int = 2000,
+    ):
+        super().__init__(benchmark, seed)
+        self.n_pop            = n_pop
+        self.n_pop_max        = n_pop_max
+        self.lifespan         = lifespan
+        self.n_elite_max      = n_elite_max
+        self.niche_radius     = niche_radius
+        self.niche_radius_min = niche_radius_min
+        self.sigma_init       = sigma_init
+        self.stagnation_limit = stagnation_limit
+
+    # ── helpers ──────────────────────────────────────────────────────────────
+
+    def _niche_elites(self, pop_x: np.ndarray, pop_f: np.ndarray,
+                      niche_radius: float) -> set:
+        f_best   = pop_f.min()
+        f_spread = np.percentile(pop_f, 75) - f_best
+        cutoff   = f_best + max(f_spread, 1e-30)
+        elite_idx: set = set()
+        for candidate in np.argsort(pop_f):
+            if pop_f[candidate] > cutoff:
+                break
+            if not elite_idx or all(
+                np.linalg.norm(pop_x[candidate] - pop_x[e]) > niche_radius
+                for e in elite_idx
+            ):
+                elite_idx.add(int(candidate))
+            if len(elite_idx) >= self.n_elite_max:
+                break
+        return elite_idx
+
+    def _softmax_weights(self, f_vals: np.ndarray) -> np.ndarray:
+        scores = f_vals.max() - f_vals
+        scores -= scores.max()
+        w = np.exp(scores)
+        return w / w.sum()
+
+    # ── main loop ─────────────────────────────────────────────────────────────
+
+    def optimize(self, max_evals: int = 5000) -> OptimizeResult:
+        rng   = np.random.default_rng(self.seed)
+        lo, hi = self.bounds
+        span  = hi - lo
+        tau   = 1.0 / np.sqrt(2.0 * self.dim)
+        sigma_min      = span * 1e-6
+        sigma_init_abs = self.sigma_init * span
+        sigma_init_mean = sigma_init_abs   # scalar; used for niche_radius decay
+
+        # ── Initialize population ────────────────────────────────────────────
+        init_x   = rng.uniform(lo, hi, (self.n_pop, self.dim))
+        init_f   = np.array([self.func(x) for x in init_x])
+        init_age = rng.integers(0, self.lifespan, size=self.n_pop)
+        # Per-individual genes: diversify initial sigma in log-space
+        init_sigma = sigma_init_abs * np.exp(rng.uniform(-0.5, 0.5, self.n_pop))
+        init_p_air = np.full(self.n_pop, 0.2)
+
+        pop_x:     list[np.ndarray] = [init_x[i].copy() for i in range(self.n_pop)]
+        pop_f:     list[float]      = list(init_f)
+        pop_age:   list[int]        = list(init_age)
+        pop_sigma: list[float]      = list(init_sigma)
+        pop_p_air: list[float]      = list(init_p_air)
+
+        history_x:   list[np.ndarray] = list(init_x)
+        history_f:   list[float]      = list(init_f)
+        history_pop: list[np.ndarray] = [init_x.copy()]
+
+        best_so_far = float(np.min(init_f))
+        no_improve  = 0
+
+        while len(history_f) < max_evals:
+            n           = len(pop_x)
+            pop_x_arr   = np.array(pop_x)
+            pop_f_arr   = np.array(pop_f)
+            pop_sig_arr = np.array(pop_sigma)
+
+            # Niche radius shrinks with mean population sigma
+            sigma_pop_mean   = float(pop_sig_arr.mean())
+            sigma_ratio      = sigma_pop_mean / sigma_init_mean
+            niche_radius_dyn = max(self.niche_radius_min,
+                                   self.niche_radius * sigma_ratio)
+            elite_idx = self._niche_elites(pop_x_arr, pop_f_arr, niche_radius_dyn)
+
+            # Dead: age exceeded lifespan, excluding elites
+            dead_idx = [i for i in range(n)
+                        if pop_age[i] > self.lifespan and i not in elite_idx]
+            n_dead = len(dead_idx)
+
+            if n_dead == 0:
+                for i in range(n):
+                    pop_age[i] += 1
+                continue
+
+            weights = self._softmax_weights(pop_f_arr)
+            replaced: set[int] = set()
+
+            for slot in dead_idx:
+                if len(history_f) >= max_evals:
+                    break
+
+                # Select parent
+                pi = int(rng.choice(n, p=weights))
+
+                # ── Gene mutation ────────────────────────────────────────────
+                # sigma: log-normal mutation (ES standard)
+                sigma_c = pop_sigma[pi] * np.exp(tau * rng.standard_normal())
+                sigma_c = float(np.clip(sigma_c, sigma_min, span))
+
+                # p_air: logit-space mutation → stays in (0, 1)
+                p      = pop_p_air[pi]
+                logit  = np.log((p + self._EPS) / (1.0 - p + self._EPS))
+                p_air_c = float(
+                    1.0 / (1.0 + np.exp(-(logit + self._TAU_P * rng.standard_normal())))
+                )
+
+                # ── Position generation ──────────────────────────────────────
+                if rng.random() < p_air_c:
+                    sigma_air = max(sigma_c, sigma_init_mean * 0.3) * self._AIR_FACTOR
+                    child = pop_x[pi] + rng.normal(0, sigma_air, self.dim)
+                else:
+                    child = pop_x[pi] + rng.normal(0, sigma_c, self.dim)
+                child = np.clip(child, lo, hi)
+
+                f = self.func(child)
+                pop_x[slot]     = child
+                pop_f[slot]     = f
+                pop_age[slot]   = 0
+                pop_sigma[slot] = sigma_c
+                pop_p_air[slot] = p_air_c
+                replaced.add(slot)
+
+                history_x.append(child.copy())
+                history_f.append(f)
+
+                if f < best_so_far:
+                    best_so_far = f
+                    no_improve  = 0
+                else:
+                    no_improve += 1
+
+                if no_improve >= self.stagnation_limit:
+                    break
+
+            if no_improve >= self.stagnation_limit:
+                break
+
+            # Cap population at n_pop_max
+            while len(pop_x) > self.n_pop_max:
+                px_arr = np.array(pop_x)
+                pf_arr = np.array(pop_f)
+                ei = self._niche_elites(px_arr, pf_arr, niche_radius_dyn)
+                candidates = [i for i in range(len(pop_x)) if i not in ei]
+                if not candidates:
+                    break
+                worst = candidates[int(np.argmax(pf_arr[candidates]))]
+                pop_x.pop(worst)
+                pop_f.pop(worst)
+                pop_age.pop(worst)
+                pop_sigma.pop(worst)
+                pop_p_air.pop(worst)
+
+            # Age survivors
+            for i in range(len(pop_x)):
+                if i not in replaced:
+                    pop_age[i] += 1
+
+            history_pop.append(np.array(pop_x).copy())
+
+        return self._make_result(history_x, history_f, history_pop)
