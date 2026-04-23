@@ -10,6 +10,7 @@
 ### quick_check.py / run.sh の実行について
 - `quick_check.py` はローカルでの軽量動作確認専用スクリプト。ローカル実行してよい。
 - BBOB 代表4関数・3 run・2000 evals で動作確認する（本番実験ではない）。
+- **動作テストは必ず `./run.sh quick` を使うこと。`python3 quick_check.py` を直接呼ばない。**
 - 実験管理には `run.sh` を使う（trigger / download / quick / list / status）。
 - 結果はすべて `results/YYYYMMDD_HHMMSS_<commit>/` にバージョン管理される。
 

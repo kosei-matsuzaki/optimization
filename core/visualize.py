@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import matplotlib.patches as mpatches
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
@@ -456,20 +457,35 @@ def save_population_gif(
     fig, axes = _make_grid_fig(len(methods))
 
     def draw_frame(frame_idx: int) -> list:
-        for ax, method, frames, evals, color in zip(axes, methods, pop_seqs, eval_seqs, _COLORS):
+        for ax, method, run, frames, evals, color in zip(
+            axes, methods, runs, pop_seqs, eval_seqs, _COLORS
+        ):
             ax.clear()
             ax.contourf(X, Y, Z_plot, levels=30, cmap="viridis", alpha=0.7)
             ax.contour(X, Y, Z_plot, levels=10, colors="white", linewidths=0.2, alpha=0.3)
             fi = min(frame_idx, len(frames) - 1) if frames else -1
+            has_sigma = bool(run.history_pop_sigma)
             if fi >= 0 and len(frames[fi]) > 0:
                 pop = frames[fi]
                 ax.scatter(pop[:, 0], pop[:, 1], s=35, c=color,
                            edgecolors="white", linewidths=0.3, zorder=4, alpha=0.9)
+                # ── sigma circles ────────────────────────────────────────────
+                if has_sigma:
+                    sigma_fi = min(fi, len(run.history_pop_sigma) - 1)
+                    pop_sig  = run.history_pop_sigma[sigma_fi]
+                    for pos, sig in zip(pop, pop_sig):
+                        circ = mpatches.Circle(
+                            (float(pos[0]), float(pos[1])), float(sig),
+                            fill=False, edgecolor=color, linewidth=0.7,
+                            alpha=0.25, linestyle="--", zorder=3,
+                        )
+                        ax.add_patch(circ)
             _draw_optima(ax, benchmark)
             ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
             ax.set_xlabel(r"$x_1$"); ax.set_ylabel(r"$x_2$")
             eval_label = evals[fi] if fi >= 0 and evals else frame_idx + 1
-            ax.set_title(f"{method}  eval={eval_label}", fontsize=8)
+            sigma_note = "  [○=σ]" if has_sigma else ""
+            ax.set_title(f"{method}  eval={eval_label}{sigma_note}", fontsize=8)
         fig.suptitle(f"{benchmark.name}  [{benchmark.category}]  — population",
                      fontsize=10)
         return []

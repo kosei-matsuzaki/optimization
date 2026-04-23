@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 import numpy as np
 import cma
@@ -17,6 +17,8 @@ class OptimizeResult:
     history_f: list[float]       # raw f value at each evaluation
     history_pop: list[np.ndarray]  # population snapshot per generation (n, dim)
     n_evals: int
+    # per-individual sigma per generation (n,) array; empty = not recorded
+    history_pop_sigma: list[np.ndarray] = field(default_factory=list)
 
 
 class BaseOptimizer(ABC):
@@ -211,6 +213,7 @@ class VirusOptimizer(BaseOptimizer):
         history_x: list[np.ndarray] = list(init_x)
         history_f: list[float] = list(init_f)
         history_pop: list[np.ndarray] = [init_x.copy()]
+        history_pop_sigma: list[np.ndarray] = [np.full(self.n_pop, float(sigma))]
 
         best_so_far = float(np.min(init_f))
         no_improve = 0
@@ -374,10 +377,13 @@ class VirusOptimizer(BaseOptimizer):
                 if i not in replaced:
                     pop_age[i] += 1
 
+            history_pop_sigma.append(np.full(len(pop_x), float(sigma)))
             sigma *= self.sigma_decay
             history_pop.append(np.array(pop_x).copy())
 
-        return self._make_result(history_x, history_f, history_pop)
+        result = self._make_result(history_x, history_f, history_pop)
+        result.history_pop_sigma = history_pop_sigma
+        return result
 
 
 class PSOOptimizer(BaseOptimizer):
@@ -834,9 +840,10 @@ class GeneticVirusOptimizer(BaseOptimizer):
         pop_sigma: list[float]      = list(init_sigma)
         pop_p_air: list[float]      = list(init_p_air)
 
-        history_x:   list[np.ndarray] = list(init_x)
-        history_f:   list[float]      = list(init_f)
-        history_pop: list[np.ndarray] = [init_x.copy()]
+        history_x:         list[np.ndarray] = list(init_x)
+        history_f:         list[float]      = list(init_f)
+        history_pop:       list[np.ndarray] = [init_x.copy()]
+        history_pop_sigma: list[np.ndarray] = [init_sigma.copy()]
 
         best_so_far = float(np.min(init_f))
         no_improve  = 0
@@ -938,5 +945,8 @@ class GeneticVirusOptimizer(BaseOptimizer):
                     pop_age[i] += 1
 
             history_pop.append(np.array(pop_x).copy())
+            history_pop_sigma.append(np.array(pop_sigma).copy())
 
-        return self._make_result(history_x, history_f, history_pop)
+        result = self._make_result(history_x, history_f, history_pop)
+        result.history_pop_sigma = history_pop_sigma
+        return result
