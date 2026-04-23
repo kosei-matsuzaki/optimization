@@ -103,7 +103,7 @@ def _draw_trajectory(
         pts = np.array(result.history_x)
         step = max(1, len(pts) // 2000)
         pts = pts[::step]
-        ax.scatter(pts[:, 0], pts[:, 1], s=2, c=color, alpha=0.2, zorder=2,
+        ax.scatter(pts[:, 0], pts[:, 1], s=8, c=color, alpha=0.35, zorder=2,
                    rasterized=True)
 
     best_f = float("inf")
@@ -332,8 +332,8 @@ def save_runs_gif(
                 if r.history_x:
                     pts = np.array(r.history_x)
                     s = max(1, len(pts) // 1000)
-                    ax.scatter(pts[::s, 0], pts[::s, 1], s=2, c=color,
-                               alpha=0.2, zorder=2, rasterized=True)
+                    ax.scatter(pts[::s, 0], pts[::s, 1], s=8, c=color,
+                               alpha=0.35, zorder=2, rasterized=True)
                     best_f, traj = float("inf"), []
                     for x, f in zip(r.history_x, r.history_best):
                         if f < best_f:
@@ -404,7 +404,7 @@ def save_evals_gif(
             pts = run.history_x[:comp_limit]
             if pts:
                 arr = np.array(pts)
-                ax.scatter(arr[:, 0], arr[:, 1], s=3, c=color, alpha=0.3, zorder=2)
+                ax.scatter(arr[:, 0], arr[:, 1], s=8, c=color, alpha=0.4, zorder=2)
             if run.history_best[:comp_limit]:
                 bidx = int(np.argmin(run.history_best[:comp_limit]))
                 bx = run.history_x[bidx]
