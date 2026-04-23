@@ -85,30 +85,6 @@
   .unified-table th:not(:first-child),
   .unified-table td:not(:first-child) { text-align: right; }
 
-  /* ── GIF pause button ───────────────────────────────────────────────────── */
-  .media-wrapper {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-  }
-  #pause-btn {
-    position: absolute;
-    top: 8px; right: 8px;
-    z-index: 10;
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(0,0,0,0.55);
-    color: #fff;
-    font-size: 13px;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    transition: background .15s;
-  }
-  #pause-btn:hover { background: rgba(0,0,0,0.80); }
-
   /* ── Column tooltips ────────────────────────────────────────────────────── */
   th[data-tip] {
     position: relative;
@@ -216,11 +192,8 @@
         <button data-type="population">集団の動き</button>
         <button data-type="landscape">関数地形</button>
       </div>
-      <div class="media-wrapper">
-        <div class="media-display" id="media-display" onclick="openOverlay()">
-          <span class="placeholder">Select a function from the sidebar.</span>
-        </div>
-        <button id="pause-btn" title="Pause animation" onclick="event.stopPropagation(); togglePause()">⏸</button>
+      <div class="media-display" id="media-display" onclick="openOverlay()">
+        <span class="placeholder">Select a function from the sidebar.</span>
       </div>
     </div>
 
@@ -300,86 +273,19 @@ function selectFunc(func) {
   buildUnifiedTable(func);
 }
 
-// ── GIF canvas mirror (pause at any frame via rAF) ────────────────────────
-let _mirror = null; // { canvas, ctx, img, rafId, paused }
-
-function _stopMirror() {
-  if (_mirror) {
-    cancelAnimationFrame(_mirror.rafId);
-    if (_mirror.canvas.parentNode) _mirror.canvas.remove();
-    _mirror = null;
-  }
-  const btn = document.getElementById('pause-btn');
-  if (btn) { btn.style.display = 'none'; btn.textContent = '⏸'; btn.title = 'Pause'; }
-}
-
-function _startMirror(img) {
-  _stopMirror();
-  const canvas = document.createElement('canvas');
-  canvas.width  = img.naturalWidth  || 800;
-  canvas.height = img.naturalHeight || 600;
-  // z-index:1 layers canvas on top of img; img stays visible so browser keeps animating it
-  canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;display:block;';
-  const ctx = canvas.getContext('2d');
-  img.parentElement.appendChild(canvas);
-
-  const m = { canvas, ctx, img, rafId: null, paused: false, lastTs: 0 };
-  _mirror = m;
-
-  function loop(ts) {
-    if (ts - m.lastTs >= 40) { // ~25 fps cap to save CPU
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      m.lastTs = ts;
-    }
-    m.rafId = requestAnimationFrame(loop);
-  }
-  m.rafId = requestAnimationFrame(loop);
-
-  const btn = document.getElementById('pause-btn');
-  if (btn) btn.style.display = 'flex';
-}
-
-function togglePause() {
-  if (!_mirror) return;
-  const btn = document.getElementById('pause-btn');
-  if (_mirror.paused) {
-    _mirror.paused = false;
-    function loop(ts) {
-      if (ts - _mirror.lastTs >= 40) {
-        _mirror.ctx.drawImage(_mirror.img, 0, 0, _mirror.canvas.width, _mirror.canvas.height);
-        _mirror.lastTs = ts;
-      }
-      _mirror.rafId = requestAnimationFrame(loop);
-    }
-    _mirror.rafId = requestAnimationFrame(loop);
-    if (btn) { btn.textContent = '⏸'; btn.title = 'Pause'; }
-  } else {
-    _mirror.paused = true;
-    cancelAnimationFrame(_mirror.rafId);
-    if (btn) { btn.textContent = '▶'; btn.title = 'Resume'; }
-  }
-}
-
 // ── Media ──
 function updateMedia() {
   if (!currentFunc || !currentDim) return;
-  _stopMirror();
   const display = document.getElementById('media-display');
   display.innerHTML = '<span class="placeholder">Loading…</span>';
-  const isGif = currentType !== 'landscape';
-  const src = isGif
-    ? `/media/${RUN_ID}/${currentDim}/${currentFunc}_${currentType}.gif`
-    : `/media/${RUN_ID}/${currentDim}/${currentFunc}.svg`;
+  const src = currentType === 'landscape'
+    ? `/media/${RUN_ID}/${currentDim}/${currentFunc}.svg`
+    : `/media/${RUN_ID}/${currentDim}/${currentFunc}_${currentType}.gif`;
   currentMediaSrc = src;
   const img = document.createElement('img');
   img.src = src;
   img.alt = `${currentFunc} ${currentType}`;
-  img.onload  = () => {
-    display.innerHTML = '';
-    display.style.position = 'relative';
-    display.appendChild(img);
-    if (isGif) _startMirror(img);
-  };
+  img.onload  = () => { display.innerHTML = ''; display.appendChild(img); };
   img.onerror = () => {
     display.innerHTML = '<span class="placeholder">Not available for this type.</span>';
     currentMediaSrc = null;
@@ -392,7 +298,6 @@ document.getElementById('media-selector').addEventListener('click', e => {
   document.querySelectorAll('#media-selector button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   currentType = btn.dataset.type;
-  _stopMirror();
   updateMedia();
 });
 
