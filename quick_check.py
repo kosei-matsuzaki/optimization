@@ -14,7 +14,7 @@ from pathlib import Path
 from core.benchmarks import BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME
 from core.optimizers import (
     CMAESOptimizer, VirusOptimizer, PSOOptimizer,
-    GAOptimizer,
+    GAOptimizer, SaVOAOptimizer,
 )
 from core.runner import run_experiment, summarize
 from core.visualize import (
@@ -46,6 +46,7 @@ _OPTIMIZERS = {
     "CMA-ES": (CMAESOptimizer,          {}),
     "PSO":    (PSOOptimizer,            {}),
     "GA":     (GAOptimizer,             {}),
+    "SaVOA":  (SaVOAOptimizer,          {}),
     "VSO":    (VirusOptimizer,          {}),
 }
 
