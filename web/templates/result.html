@@ -86,6 +86,26 @@
   .unified-table td:not(:first-child) { text-align: right; }
 
   /* ── Column tooltips ────────────────────────────────────────────────────── */
+  /* ── Breadcrumb delete button ──────────────────────────────────────────── */
+  .breadcrumb { display: flex; align-items: center; gap: 6px; }
+  .breadcrumb-del-btn {
+    margin-left: auto;
+    padding: 4px 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .14s, color .14s, border-color .14s;
+  }
+  .breadcrumb-del-btn:hover {
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+  }
+
   th[data-tip] { cursor: help; }
   .col-tip {
     position: fixed;
@@ -121,16 +141,11 @@
     <div class="sidebar-section" style="flex-shrink:0; max-height:180px; overflow-y:auto;">
       <div class="section-header">
         <span class="section-title">Results</span>
-        <a href="/" class="section-action">Home</a>
       </div>
       <ul class="results-list">
         {% for r in all_results %}
-        <li style="display:flex; align-items:center; gap:4px;">
-          <a href="/results/{{ r }}" {% if r == run_id %}class="active"{% endif %} style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;">{{ r }}</a>
-          <button onclick="deleteResult('{{ r }}')" title="削除"
-            style="flex-shrink:0; background:none; border:none; color:var(--muted); cursor:pointer; font-size:13px; padding:1px 4px; border-radius:3px; line-height:1;"
-            onmouseover="this.style.background='var(--danger)';this.style.color='#fff'"
-            onmouseout="this.style.background='none';this.style.color='var(--muted)'">×</button>
+        <li>
+          <a href="/results/{{ r }}" {% if r == run_id %}class="active"{% endif %}>{{ r }}</a>
         </li>
         {% endfor %}
       </ul>
@@ -171,6 +186,7 @@
       <a href="/">Home</a>
       <span class="sep">/</span>
       <span class="current">{{ run_id }}</span>
+      <button class="breadcrumb-del-btn" onclick="deleteResult('{{ run_id }}')">削除</button>
     </div>
 
     {% if dims %}

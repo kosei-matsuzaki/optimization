@@ -101,39 +101,22 @@
     grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
     gap: 10px;
   }
-  .result-card-wrap { position: relative; }
+  .result-card-wrap {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    overflow: hidden;
+    transition: border-color .14s, transform .1s;
+  }
+  .result-card-wrap:hover { border-color: var(--accent); transform: translateY(-1px); }
   .result-card {
     display: block;
     padding: 12px 14px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
     text-decoration: none;
-    background: var(--surface-2);
-    transition: border-color .14s, background .14s, transform .1s;
   }
-  .result-card:hover {
-    border-color: var(--accent);
-    background: var(--accent-light);
-    transform: translateY(-1px);
-  }
+  .result-card:hover { background: var(--accent-light); }
   .result-card-date { font-size: 12px; font-weight: 700; color: var(--text); font-family: var(--mono); }
   .result-card-meta { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
-  .result-del-btn {
-    position: absolute; top: 5px; right: 6px;
-    width: 20px; height: 20px;
-    border-radius: 50%;
-    background: transparent;
-    border: none;
-    color: transparent;
-    cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
-    display: flex; align-items: center; justify-content: center;
-    transition: background .12s, color .12s;
-    z-index: 1;
-  }
-  .result-card-wrap:hover .result-del-btn { color: var(--muted); }
-  .result-del-btn:hover { background: var(--danger) !important; color: #fff !important; }
 
   @media (max-width: 720px) {
     .controls-grid { grid-template-columns: 1fr; }
@@ -253,7 +236,6 @@
           <div class="result-card-meta"></div>
           {% if 'quick' in r %}<span class="tag" style="margin-top:6px; display:inline-block;">quick</span>{% endif %}
         </a>
-        <button class="result-del-btn" title="削除" onclick="deleteResult('{{ r }}', event)">×</button>
       </div>
       {% endfor %}
     </div>
@@ -293,23 +275,6 @@ if (ALL_RESULTS.length) {
   const { date, commit } = parseResultName(ALL_RESULTS[0]);
   document.getElementById('latest-date').textContent = date;
   document.getElementById('latest-commit').textContent = commit ? `@ ${commit}` : '';
-}
-
-// ── Delete result ──
-async function deleteResult(runId, event) {
-  event.preventDefault();
-  event.stopPropagation();
-  if (!confirm(`「${runId}」を削除しますか？\nこの操作は元に戻せません。`)) return;
-  const res = await fetch(`/api/results/${encodeURIComponent(runId)}`, { method: 'DELETE' });
-  const data = await res.json();
-  if (data.ok) {
-    event.target.closest('.result-card-wrap').remove();
-    const remaining = document.querySelectorAll('.result-card-wrap').length;
-    document.querySelector('.results-section-header .tag').textContent = remaining;
-    showToast(`${runId} を削除しました`, 'ok');
-  } else {
-    showToast(data.message || '削除に失敗しました', 'err');
-  }
 }
 
 // ── Toast ──
