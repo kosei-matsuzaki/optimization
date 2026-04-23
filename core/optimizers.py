@@ -213,11 +213,10 @@ class VirusOptimizer(BaseOptimizer):
         history_x: list[np.ndarray] = list(init_x)
         history_f: list[float] = list(init_f)
         history_pop: list[np.ndarray] = [init_x.copy()]
-        _f0_max = float(init_f.max())
-        _f0_spread = float(init_f.max() - init_f.min())
-        _q0 = (_f0_max - init_f) / (_f0_spread + 1e-30)
-        _a0 = np.minimum(init_age / max(self.lifespan, 1), 1.0)
-        _s0 = self.sigma_min_ratio ** (0.5 * _q0 + 0.5 * _a0)
+        _lf0 = np.log10(init_f + 1e-10)
+        _lq0 = np.clip((_lf0.max() - _lf0) / (float(_lf0.max() - _lf0.min()) + 1e-30), 0.0, 1.0)
+        _a0  = np.minimum(init_age / max(self.lifespan, 1), 1.0)
+        _s0  = self.sigma_min_ratio ** (_lq0 * (0.7 + 0.3 * _a0))
         history_pop_sigma: list[np.ndarray] = [float(sigma) * _s0]
 
         best_so_far = float(np.min(init_f))
@@ -245,7 +244,10 @@ class VirusOptimizer(BaseOptimizer):
 
             top5_x = pop_x_arr[np.argsort(pop_f_arr)[:min(5, n)]]
             top5_spread = float(np.mean(np.std(top5_x, axis=0))) / span
-            niche_radius_eff = self.niche_radius_min if top5_spread < 0.05 else niche_radius_dyn
+            # Unimodal detection: only collapse niches when near the global optimum (f≈0),
+            # not when merely clustered at a local optimum (multimodal functions).
+            unimodal_converged = top5_spread < 0.05 and best_so_far < 1e-3
+            niche_radius_eff = self.niche_radius_min if unimodal_converged else niche_radius_dyn
             elite_idx = self._niche_elites(pop_x_arr, pop_f_arr, niche_radius_eff)
 
             # Mark dead: age exceeded lifespan, excluding elites
@@ -268,9 +270,12 @@ class VirusOptimizer(BaseOptimizer):
             n_air = max(0, round(air_ratio_eff * n_dead))
             n_local = n_dead - n_air
 
-            f_min_local = pop_f_arr.min()
-            f_max_local = pop_f_arr.max()
-            f_spread_local = f_max_local - f_min_local
+            # Log-scale quality: distinguishes f=0.001 vs f=0.01 far better than linear.
+            # Bad individuals (log_quality≈0) always get scale=1 (full exploration),
+            # so they can escape local optima regardless of population ranking.
+            pop_log_f = np.log10(pop_f_arr + 1e-10)
+            log_f_max = float(pop_log_f.max())
+            log_f_spread = float(log_f_max - pop_log_f.min())
 
             # Air sigma: large when converged (need to escape), small when diverse
             # Normalized diversity: uniform distribution gives std ≈ 0.289 * span
@@ -284,9 +289,13 @@ class VirusOptimizer(BaseOptimizer):
             if n_local > 0:
                 parent_idx = rng.choice(n, size=n_local, p=weights)
                 for pi in parent_idx:
-                    quality = (f_max_local - pop_f_arr[pi]) / (f_spread_local + 1e-30)
+                    log_quality = float(np.clip(
+                        (log_f_max - np.log10(pop_f_arr[pi] + 1e-10)) / (log_f_spread + 1e-30),
+                        0.0, 1.0))
                     age_ratio = min(pop_age[pi] / max(self.lifespan, 1), 1.0)
-                    combined = 0.5 * quality + 0.5 * age_ratio
+                    # Age amplifies exploitation only for good individuals:
+                    # bad(log_q=0) → combined=0 always; good+old(log_q=1,age=1) → combined=1
+                    combined = log_quality * (0.7 + 0.3 * age_ratio)
                     scale = self.sigma_min_ratio ** combined
                     sigma_i = sigma * scale * sigma_d
                     child = pop_x[pi] + rng.normal(0, sigma_i, self.dim)
@@ -382,15 +391,14 @@ class VirusOptimizer(BaseOptimizer):
                 if i not in replaced:
                     pop_age[i] += 1
 
-            # Per-individual effective sigma = sigma × scale(quality, age)
-            pf_end = np.array(pop_f)
-            pa_end = np.array(pop_age, dtype=float)
-            f_max_e = pf_end.max()
-            f_spread_e = pf_end.max() - pf_end.min()
-            quality_e   = (f_max_e - pf_end) / (f_spread_e + 1e-30)
-            age_ratio_e = np.minimum(pa_end / max(self.lifespan, 1), 1.0)
-            combined_e  = 0.5 * quality_e + 0.5 * age_ratio_e
-            scale_e     = self.sigma_min_ratio ** combined_e
+            # Per-individual effective sigma (log-scale quality, same formula as above)
+            pf_end   = np.array(pop_f)
+            pa_end   = np.array(pop_age, dtype=float)
+            lf_end   = np.log10(pf_end + 1e-10)
+            lq_e     = np.clip((lf_end.max() - lf_end) / (float(lf_end.max() - lf_end.min()) + 1e-30), 0.0, 1.0)
+            ar_e     = np.minimum(pa_end / max(self.lifespan, 1), 1.0)
+            combined_e = lq_e * (0.7 + 0.3 * ar_e)
+            scale_e    = self.sigma_min_ratio ** combined_e
             history_pop_sigma.append(float(sigma) * scale_e)
             sigma *= self.sigma_decay
             history_pop.append(np.array(pop_x).copy())
