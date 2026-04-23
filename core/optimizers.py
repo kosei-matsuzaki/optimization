@@ -141,7 +141,7 @@ class VirusOptimizer(BaseOptimizer):
         bloom_size: int = 2,
         crowd_radius_frac: float = 1e-5,
         max_crowd_fraction: float = 0.10,
-        sigma_min_ratio: float = 0.10,
+        sigma_min_ratio: float = 0.05,
         air_sigma_min: float = 1.5,
         air_sigma_max: float = 5.0,
     ):
@@ -217,7 +217,7 @@ class VirusOptimizer(BaseOptimizer):
         _f0_spread = float(init_f.max() - init_f.min())
         _q0 = (_f0_max - init_f) / (_f0_spread + 1e-30)
         _a0 = np.minimum(init_age / max(self.lifespan, 1), 1.0)
-        _s0 = self.sigma_min_ratio + (1.0 - (0.5 * _q0 + 0.5 * _a0)) * (1.0 - self.sigma_min_ratio)
+        _s0 = self.sigma_min_ratio ** (0.5 * _q0 + 0.5 * _a0)
         history_pop_sigma: list[np.ndarray] = [float(sigma) * _s0]
 
         best_so_far = float(np.min(init_f))
@@ -287,7 +287,7 @@ class VirusOptimizer(BaseOptimizer):
                     quality = (f_max_local - pop_f_arr[pi]) / (f_spread_local + 1e-30)
                     age_ratio = min(pop_age[pi] / max(self.lifespan, 1), 1.0)
                     combined = 0.5 * quality + 0.5 * age_ratio
-                    scale = self.sigma_min_ratio + (1.0 - combined) * (1.0 - self.sigma_min_ratio)
+                    scale = self.sigma_min_ratio ** combined
                     sigma_i = sigma * scale * sigma_d
                     child = pop_x[pi] + rng.normal(0, sigma_i, self.dim)
                     child = np.clip(child, lo, hi)
@@ -390,7 +390,7 @@ class VirusOptimizer(BaseOptimizer):
             quality_e   = (f_max_e - pf_end) / (f_spread_e + 1e-30)
             age_ratio_e = np.minimum(pa_end / max(self.lifespan, 1), 1.0)
             combined_e  = 0.5 * quality_e + 0.5 * age_ratio_e
-            scale_e     = self.sigma_min_ratio + (1.0 - combined_e) * (1.0 - self.sigma_min_ratio)
+            scale_e     = self.sigma_min_ratio ** combined_e
             history_pop_sigma.append(float(sigma) * scale_e)
             sigma *= self.sigma_decay
             history_pop.append(np.array(pop_x).copy())
