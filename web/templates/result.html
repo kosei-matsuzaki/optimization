@@ -125,8 +125,12 @@
       </div>
       <ul class="results-list">
         {% for r in all_results %}
-        <li>
-          <a href="/results/{{ r }}" {% if r == run_id %}class="active"{% endif %}>{{ r }}</a>
+        <li style="display:flex; align-items:center; gap:4px;">
+          <a href="/results/{{ r }}" {% if r == run_id %}class="active"{% endif %} style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;">{{ r }}</a>
+          <button onclick="deleteResult('{{ r }}')" title="削除"
+            style="flex-shrink:0; background:none; border:none; color:var(--muted); cursor:pointer; font-size:13px; padding:1px 4px; border-radius:3px; line-height:1;"
+            onmouseover="this.style.background='var(--danger)';this.style.color='#fff'"
+            onmouseout="this.style.background='none';this.style.color='var(--muted)'">×</button>
         </li>
         {% endfor %}
       </ul>
@@ -443,6 +447,21 @@ async function buildUnifiedTable(func) {
 
 function htmlesc(s) {
   return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+// ── Delete result ──
+async function deleteResult(runId) {
+  if (!confirm(`「${runId}」を削除しますか？\nこの操作は元に戻せません。`)) return;
+  const res = await fetch(`/api/results/${encodeURIComponent(runId)}`, { method: 'DELETE' });
+  const data = await res.json();
+  if (data.ok) {
+    if (runId === RUN_ID) { location.href = '/'; return; }
+    const li = [...document.querySelectorAll('.results-list li')]
+      .find(el => el.querySelector(`a[href="/results/${runId}"]`));
+    if (li) li.remove();
+  } else {
+    alert(data.message || '削除に失敗しました');
+  }
 }
 
 // ── Dim tabs ──

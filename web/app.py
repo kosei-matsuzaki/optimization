@@ -252,6 +252,17 @@ def api_stats(run_id: str, dim: str, func_name: str):
     return jsonify({"headers": headers, "rows": rows})
 
 
+@app.route("/api/results/<run_id>", methods=["DELETE"])
+def api_delete_result(run_id: str):
+    if not run_id or "/" in run_id or ".." in run_id:
+        return jsonify({"ok": False, "message": "Invalid ID"}), 400
+    run_dir = RESULTS_DIR / run_id
+    if not run_dir.exists() or not run_dir.is_dir():
+        return jsonify({"ok": False, "message": "Not found"}), 404
+    shutil.rmtree(run_dir)
+    return jsonify({"ok": True})
+
+
 @app.route("/media/<path:filepath>")
 def media(filepath: str):
     full_path = RESULTS_DIR / filepath
