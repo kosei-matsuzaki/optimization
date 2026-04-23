@@ -307,7 +307,6 @@ function _stopMirror() {
   if (_mirror) {
     cancelAnimationFrame(_mirror.rafId);
     if (_mirror.canvas.parentNode) _mirror.canvas.remove();
-    _mirror.img.style.opacity = '';
     _mirror = null;
   }
   const btn = document.getElementById('pause-btn');
@@ -319,9 +318,9 @@ function _startMirror(img) {
   const canvas = document.createElement('canvas');
   canvas.width  = img.naturalWidth  || 800;
   canvas.height = img.naturalHeight || 600;
-  canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:block;';
+  // z-index:1 layers canvas on top of img; img stays visible so browser keeps animating it
+  canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;display:block;';
   const ctx = canvas.getContext('2d');
-  img.style.opacity = '0';
   img.parentElement.appendChild(canvas);
 
   const m = { canvas, ctx, img, rafId: null, paused: false, lastTs: 0 };
