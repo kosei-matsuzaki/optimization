@@ -84,6 +84,30 @@
   .unified-table td, .unified-table th { white-space: nowrap; }
   .unified-table th:not(:first-child),
   .unified-table td:not(:first-child) { text-align: right; }
+
+  /* ── GIF pause button ───────────────────────────────────────────────────── */
+  .media-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+  }
+  #pause-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    z-index: 10;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+  }
+  #pause-btn:hover { background: rgba(0,0,0,0.80); }
   </style>
 </head>
 <body>
@@ -161,8 +185,11 @@
         <button data-type="population">集団の動き</button>
         <button data-type="landscape">関数地形</button>
       </div>
-      <div class="media-display" id="media-display" onclick="openOverlay()">
-        <span class="placeholder">Select a function from the sidebar.</span>
+      <div class="media-wrapper">
+        <div class="media-display" id="media-display" onclick="openOverlay()">
+          <span class="placeholder">Select a function from the sidebar.</span>
+        </div>
+        <button id="pause-btn" title="Pause animation" onclick="event.stopPropagation(); togglePause()">⏸</button>
       </div>
     </div>
 
@@ -242,22 +269,67 @@ function selectFunc(func) {
   buildUnifiedTable(func);
 }
 
+// ── Pause / play GIF ──
+let _pausedCanvas = null;
+let _pausedImg    = null;
+
+function _resetPause() {
+  if (_pausedCanvas && _pausedImg) {
+    _pausedCanvas.replaceWith(_pausedImg);
+  }
+  _pausedCanvas = null;
+  _pausedImg    = null;
+  const btn = document.getElementById('pause-btn');
+  if (btn) { btn.textContent = '⏸'; btn.title = 'Pause animation'; }
+}
+
+function togglePause() {
+  const display = document.getElementById('media-display');
+  const btn     = document.getElementById('pause-btn');
+  if (_pausedCanvas) {
+    _resetPause();
+  } else {
+    const img = display.querySelector('img');
+    if (!img) return;
+    const canvas = document.createElement('canvas');
+    canvas.width  = img.naturalWidth  || 800;
+    canvas.height = img.naturalHeight || 600;
+    canvas.style.maxWidth  = '100%';
+    canvas.style.maxHeight = img.style.maxHeight || '';
+    try {
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      _pausedImg = img;
+      img.replaceWith(canvas);
+      _pausedCanvas = canvas;
+      if (btn) { btn.textContent = '▶'; btn.title = 'Resume animation'; }
+    } catch(e) { /* cross-origin or not yet loaded */ }
+  }
+}
+
 // ── Media ──
 function updateMedia() {
   if (!currentFunc || !currentDim) return;
+  _resetPause();
   const display = document.getElementById('media-display');
+  const btn     = document.getElementById('pause-btn');
   display.innerHTML = '<span class="placeholder">Loading…</span>';
-  const src = currentType === 'landscape'
-    ? `/media/${RUN_ID}/${currentDim}/${currentFunc}.svg`
-    : `/media/${RUN_ID}/${currentDim}/${currentFunc}_${currentType}.gif`;
+  const isGif = currentType !== 'landscape';
+  const src = isGif
+    ? `/media/${RUN_ID}/${currentDim}/${currentFunc}_${currentType}.gif`
+    : `/media/${RUN_ID}/${currentDim}/${currentFunc}.svg`;
   currentMediaSrc = src;
   const img = document.createElement('img');
   img.src = src;
   img.alt = `${currentFunc} ${currentType}`;
-  img.onload  = () => { display.innerHTML = ''; display.appendChild(img); };
+  img.onload  = () => {
+    display.innerHTML = '';
+    display.appendChild(img);
+    if (btn) btn.style.display = isGif ? 'flex' : 'none';
+  };
   img.onerror = () => {
     display.innerHTML = '<span class="placeholder">Not available for this type.</span>';
     currentMediaSrc = null;
+    if (btn) btn.style.display = 'none';
   };
 }
 
@@ -267,6 +339,7 @@ document.getElementById('media-selector').addEventListener('click', e => {
   document.querySelectorAll('#media-selector button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   currentType = btn.dataset.type;
+  _resetPause();
   updateMedia();
 });
 
@@ -333,8 +406,23 @@ async function buildUnifiedTable(func) {
 
   // Rank colors for summary
   const bfColors  = rankColors(summaryRows.map(r => r.mean_best_f), false);
-  const srColors  = rankColors(summaryRows.map(r => parseInt(r.success_rate)), true);
+  const sr2Colors = rankColors(summaryRows.map(r => parseFloat(r['sr_1e-2'])), true);
+  const sr4Colors = rankColors(summaryRows.map(r => parseFloat(r['sr_1e-4'] ?? r.success_rate)), true);
+  const ertColors = rankColors(summaryRows.map(r => r.ert === 'inf' || r.ert == null ? 'Infinity' : r.ert), false);
   const orColors  = rankColors(summaryRows.map(r => r.mean_optima_rate), true);
+
+  function fmtERT(val) {
+    if (val == null || val === '' || val === 'inf') return '—';
+    const n = parseFloat(val);
+    return isNaN(n) || !isFinite(n) ? '—' : Math.round(n).toLocaleString();
+  }
+  function fmtSR(val) {
+    if (val == null || val === '') return '—';
+    // already formatted as "67%" or raw float 0.667
+    if (typeof val === 'string' && val.endsWith('%')) return val;
+    const n = parseFloat(val);
+    return isNaN(n) ? '—' : (n * 100).toFixed(0) + '%';
+  }
 
   let html = `
   <div class="table-wrap">
@@ -343,7 +431,9 @@ async function buildUnifiedTable(func) {
       <tr>
         <th style="text-align:left; min-width:150px;">Method / Seed</th>
         <th>best_f</th>
-        <th>success</th>
+        <th>SR@1e-2</th>
+        <th>SR@1e-4</th>
+        <th>ERT</th>
         <th>time (s)</th>
         <th>optima rate</th>
         <th>evals</th>
@@ -361,7 +451,9 @@ async function buildUnifiedTable(func) {
           ${method}
         </div></td>
         <td class="${bfColors[si]}">${fmtNum(sr.mean_best_f)}</td>
-        <td class="${srColors[si]}">${sr.success_rate}</td>
+        <td class="${sr2Colors[si]}">${fmtSR(sr['sr_1e-2'])}</td>
+        <td class="${sr4Colors[si]}">${fmtSR(sr['sr_1e-4'] ?? sr.success_rate)}</td>
+        <td class="${ertColors[si]}">${fmtERT(sr.ert)}</td>
         <td>${fmtNum(sr.mean_time_s)}</td>
         <td class="${orColors[si]}">${fmtNum(sr.mean_optima_rate)}</td>
         <td style="color:var(--muted);">—</td>
@@ -373,7 +465,8 @@ async function buildUnifiedTable(func) {
         <tr class="run-row" data-method="${htmlesc(method)}" style="display:none;">
           <td class="run-cell">seed ${run.seed}</td>
           <td>${fmtNum(run.best_f)}</td>
-          <td class="${ok ? 'cell-success' : 'cell-failure'}">${ok ? '✓' : '✗'}</td>
+          <td colspan="2" class="${ok ? 'cell-success' : 'cell-failure'}" style="text-align:center;">${ok ? '✓' : '✗'}</td>
+          <td style="color:var(--muted);">—</td>
           <td>${fmtNum(run.time_s)}</td>
           <td>${isNaN(ors) ? '—' : ors.toFixed(2)}</td>
           <td>${run.n_evals ?? '—'}</td>

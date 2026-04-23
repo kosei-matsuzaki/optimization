@@ -119,8 +119,8 @@ def _draw_trajectory(
 
     if benchmark.optima_pos:
         for opt in benchmark.optima_pos:
-            ax.plot(opt[0], opt[1], "*", color="yellow", markersize=8,
-                    markeredgecolor="black", markeredgewidth=0.4, zorder=5)
+            ax.plot(opt[0], opt[1], "+", color="gold", markersize=9,
+                    markeredgewidth=1.8, zorder=7)
 
     ax.set_xlim(lo, hi)
     ax.set_ylim(lo, hi)
@@ -209,8 +209,8 @@ def save_function_figure(
         ax_land.contour(X, Y, Z_plot, levels=20, colors="white", linewidths=0.3, alpha=0.4)
         if benchmark.optima_pos:
             for opt in benchmark.optima_pos:
-                ax_land.plot(opt[0], opt[1], "o", color="yellow", markersize=9,
-                             markeredgecolor="black", markeredgewidth=0.6, zorder=5)
+                ax_land.plot(opt[0], opt[1], "+", color="gold", markersize=10,
+                             markeredgewidth=2.0, zorder=7)
         ax_land.set_xlim(lo, hi); ax_land.set_ylim(lo, hi)
         ax_land.set_xlabel(r"$x_1$"); ax_land.set_ylabel(r"$x_2$")
         ax_land.set_title("Landscape")
@@ -292,8 +292,8 @@ def _make_grid_fig(n_methods: int) -> tuple:
 def _draw_optima(ax: plt.Axes, benchmark: BenchmarkFunction) -> None:
     if benchmark.optima_pos:
         for opt in benchmark.optima_pos:
-            ax.plot(opt[0], opt[1], "o", color="yellow", markersize=7,
-                    markeredgecolor="black", markeredgewidth=0.4, zorder=6)
+            ax.plot(opt[0], opt[1], "+", color="gold", markersize=9,
+                    markeredgewidth=1.8, zorder=7)
 
 
 # ---------------------------------------------------------------------------
