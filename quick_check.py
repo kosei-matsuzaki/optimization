@@ -22,22 +22,32 @@ from core.visualize import (
     save_3d_evals_gif, save_3d_population_gif, save_stats,
 )
 
-# (function_name, dimension) — one representative per BBOB group, for each dim
+# (function_name, dimension) — two representatives per BBOB group, for each dim
 _QUICK_FUNCTIONS: list[tuple[str, int]] = [
-    # 2D — one per group + custom
-    ("F01-Sphere",          2),   # separable
-    ("F08-Rosenbrock",      2),   # moderate-cond
-    ("F10-EllipsoidalRot",  2),   # ill-cond
-    ("F15-RastriginRot",    2),   # multimodal
-    ("F20-Schwefel",        2),   # weak-structure
-    ("C01-Himmelblau",      2),   # 4 global optima
-    ("C02-SixHumpCamel",    2),   # 2 global optima
-    # 3D
-    ("F01-Sphere",          3),   # separable
-    ("F08-Rosenbrock",      3),   # moderate-cond
-    ("F10-EllipsoidalRot",  3),   # ill-cond
-    ("F15-RastriginRot",    3),   # multimodal
-    ("F20-Schwefel",        3),   # weak-structure
+    # 2D — two per group + custom
+    ("F01-Sphere",           2),   # separable        — unimodal baseline
+    ("F03-RastriginSep",     2),   # separable        — separable multimodal
+    ("F08-Rosenbrock",       2),   # moderate-cond    — banana valley
+    ("F09-RosenbrockRot",    2),   # moderate-cond    — rotated, harder
+    ("F10-EllipsoidalRot",   2),   # ill-cond         — cond ≈ 10^6
+    ("F12-BentCigar",        2),   # ill-cond         — extreme cond ≈ 10^6
+    ("F15-RastriginRot",     2),   # multimodal       — structured landscape
+    ("F17-SchafferF7",       2),   # multimodal       — irregular rough landscape
+    ("F20-Schwefel",         2),   # weak-structure   — deceptive optima
+    ("F21-Gallagher101",     2),   # weak-structure   — 101 Gaussian peaks
+    ("C01-Himmelblau",       2),   # custom           — 4 global optima
+    ("C02-SixHumpCamel",     2),   # custom           — 2 global optima
+    # 3D — two per group
+    ("F01-Sphere",           3),
+    ("F03-RastriginSep",     3),
+    ("F08-Rosenbrock",       3),
+    ("F09-RosenbrockRot",    3),
+    ("F10-EllipsoidalRot",   3),
+    ("F12-BentCigar",        3),
+    ("F15-RastriginRot",     3),
+    ("F17-SchafferF7",       3),
+    ("F20-Schwefel",         3),
+    ("F21-Gallagher101",     3),
 ]
 
 _DIM_LOOKUP: dict[int, dict[str, object]] = {
