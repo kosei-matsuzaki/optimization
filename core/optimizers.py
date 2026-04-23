@@ -213,7 +213,12 @@ class VirusOptimizer(BaseOptimizer):
         history_x: list[np.ndarray] = list(init_x)
         history_f: list[float] = list(init_f)
         history_pop: list[np.ndarray] = [init_x.copy()]
-        history_pop_sigma: list[np.ndarray] = [np.full(self.n_pop, float(sigma))]
+        _f0_max = float(init_f.max())
+        _f0_spread = float(init_f.max() - init_f.min())
+        _q0 = (_f0_max - init_f) / (_f0_spread + 1e-30)
+        _a0 = np.minimum(init_age / max(self.lifespan, 1), 1.0)
+        _s0 = self.sigma_min_ratio + (1.0 - (0.5 * _q0 + 0.5 * _a0)) * (1.0 - self.sigma_min_ratio)
+        history_pop_sigma: list[np.ndarray] = [float(sigma) * _s0]
 
         best_so_far = float(np.min(init_f))
         no_improve = 0
@@ -377,7 +382,16 @@ class VirusOptimizer(BaseOptimizer):
                 if i not in replaced:
                     pop_age[i] += 1
 
-            history_pop_sigma.append(np.full(len(pop_x), float(sigma)))
+            # Per-individual effective sigma = sigma × scale(quality, age)
+            pf_end = np.array(pop_f)
+            pa_end = np.array(pop_age, dtype=float)
+            f_max_e = pf_end.max()
+            f_spread_e = pf_end.max() - pf_end.min()
+            quality_e   = (f_max_e - pf_end) / (f_spread_e + 1e-30)
+            age_ratio_e = np.minimum(pa_end / max(self.lifespan, 1), 1.0)
+            combined_e  = 0.5 * quality_e + 0.5 * age_ratio_e
+            scale_e     = self.sigma_min_ratio + (1.0 - combined_e) * (1.0 - self.sigma_min_ratio)
+            history_pop_sigma.append(float(sigma) * scale_e)
             sigma *= self.sigma_decay
             history_pop.append(np.array(pop_x).copy())
 
