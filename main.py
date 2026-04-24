@@ -23,6 +23,8 @@ _BASE_OPTIMIZERS = {
     "GA":    (GAOptimizer,           {}),
     "SaVOA": (SaVOAOptimizer,        {}),
     "VSO":   (VirusOptimizer,        {}),
+    "VSO-A": (VirusOptimizer,        {"dormant_mode": "aging"}),
+    "VSO-C": (VirusOptimizer,        {"dormant_mode": "replace"}),
 }
 
 

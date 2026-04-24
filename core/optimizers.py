@@ -144,6 +144,7 @@ class VirusOptimizer(BaseOptimizer):
         pop_shrink_trigger: int = 20,
         pop_change_cooldown: int = 30,
         lifespan_range: int = 4,
+        dormant_mode: str = "freeze",
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
@@ -166,6 +167,7 @@ class VirusOptimizer(BaseOptimizer):
         self.pop_shrink_trigger = pop_shrink_trigger
         self.pop_change_cooldown = pop_change_cooldown
         self.lifespan_range = lifespan_range
+        self.dormant_mode = dormant_mode  # "freeze" | "aging" | "replace"
 
     @staticmethod
     def _reflect(x: np.ndarray, lo: float, hi: float) -> np.ndarray:
@@ -271,6 +273,8 @@ class VirusOptimizer(BaseOptimizer):
 
             if n_dead == 0:
                 pop_age[active_idx] += 1
+                if self.dormant_mode == "aging":
+                    pop_age[~pop_active] += 1
                 sigma *= self.sigma_decay
             else:
                 weights = self._softmax_weights(pop_f_arr)
@@ -351,6 +355,8 @@ class VirusOptimizer(BaseOptimizer):
                 if replaced_slots:
                     replaced_mask[replaced_slots] = True
                 pop_age[active_idx[~replaced_mask[active_idx]]] += 1
+                if self.dormant_mode == "aging":
+                    pop_age[~pop_active] += 1
 
                 sigma *= self.sigma_decay
 
@@ -363,8 +369,49 @@ class VirusOptimizer(BaseOptimizer):
                     best_dormant = dormant_idx[np.argsort(pop_f[dormant_idx])]
                     n_react = min(self.pop_change_by * 2, self.n_pop - n_active, len(best_dormant))
                     if n_react > 0:
-                        pop_active[best_dormant[:n_react]] = True
-                        pop_age[best_dormant[:n_react]] = 0
+                        slots = best_dormant[:n_react]
+                        if self.dormant_mode == "aging":
+                            # Aged-out dormant individuals get fresh random positions on wakeup.
+                            aged_out_slots = slots[pop_age[slots] > pop_lifespan[slots]]
+                            if len(aged_out_slots) > 0:
+                                new_xs = rng.uniform(lo, hi, (len(aged_out_slots), self.dim))
+                                for i, slot in enumerate(aged_out_slots):
+                                    if len(history_f) >= max_evals:
+                                        break
+                                    pop_x[slot] = new_xs[i]
+                                    pop_f[slot] = float(self.func(pop_x[slot]))
+                                    pop_lifespan[slot] = self._sample_lifespans(rng, 1)[0]
+                                    history_x.append(pop_x[slot].copy())
+                                    history_f.append(pop_f[slot])
+                                    if pop_f[slot] < best_so_far:
+                                        best_so_far = pop_f[slot]
+                                        no_improve = 0
+                                    else:
+                                        no_improve += 1
+                        elif self.dormant_mode == "replace":
+                            # Discard dormant position; generate offspring from current active parents.
+                            wts_react = self._softmax_weights(pop_f[active_idx])
+                            for slot in slots:
+                                if len(history_f) >= max_evals:
+                                    break
+                                parent_local = rng.choice(n, p=wts_react)
+                                new_x = self._reflect(
+                                    pop_x[active_idx[parent_local]] + rng.standard_normal(self.dim) * sigma,
+                                    lo, hi,
+                                )
+                                new_f = float(self.func(new_x))
+                                pop_x[slot] = new_x
+                                pop_f[slot] = new_f
+                                pop_lifespan[slot] = self._sample_lifespans(rng, 1)[0]
+                                history_x.append(new_x.copy())
+                                history_f.append(new_f)
+                                if new_f < best_so_far:
+                                    best_so_far = new_f
+                                    no_improve = 0
+                                else:
+                                    no_improve += 1
+                        pop_active[slots] = True
+                        pop_age[slots] = 0
                         # Evict top active stuck near a local optimum.
                         pool = active_idx[~np.isin(active_idx, elite_arr)]
                         evict = pool[np.argsort(pop_f[pool])][:self.pop_change_by]
