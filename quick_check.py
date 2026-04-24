@@ -61,6 +61,7 @@ _OPTIMIZERS = {
     "GA":     (GAOptimizer,    {}),
     "SaVOA":  (SaVOAOptimizer, {}),
     "VSO":    (VirusOptimizer, {}),
+    "VSO-SL": (VirusOptimizer, {"lifespan_range": 4}),
 }
 
 
