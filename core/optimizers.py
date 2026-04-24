@@ -143,7 +143,7 @@ class VirusOptimizer(BaseOptimizer):
         pop_grow_trigger: int = 200,
         pop_shrink_trigger: int = 20,
         pop_change_cooldown: int = 30,
-        lifespan_range: int = 0,
+        lifespan_range: int = 4,
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
@@ -227,11 +227,7 @@ class VirusOptimizer(BaseOptimizer):
         pop_f = np.array([self.func(x) for x in pop_x])              # (n_pop,)
         pop_lifespan = self._sample_lifespans(rng, self.n_pop)        # (n_pop,) int
         # Stochastic lifespan: individual variation desynchronises deaths → age=0 OK.
-        # Fixed lifespan: randomise initial ages to prevent a synchronised death wave.
-        if self.lifespan_range > 0:
-            pop_age = np.zeros(self.n_pop, dtype=int)
-        else:
-            pop_age = rng.integers(0, self.lifespan, size=self.n_pop)
+        pop_age = np.zeros(self.n_pop, dtype=int)
         pop_active = np.ones(self.n_pop, dtype=bool)
 
         history_x: list[np.ndarray] = [row.copy() for row in pop_x]
