@@ -102,21 +102,103 @@
     gap: 10px;
   }
   .result-card-wrap {
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--surface-2);
-    overflow: hidden;
-    transition: border-color .14s, transform .1s;
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    transition: border-color .15s, box-shadow .15s, transform .12s;
   }
-  .result-card-wrap:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .result-card-wrap:hover { border-color: var(--accent); box-shadow: var(--shadow); transform: translateY(-2px); }
+  .result-card-wrap.is-quick    { border-left: 3px solid var(--accent-muted); }
+  .result-card-wrap.is-workflow { border-left: 3px solid var(--success); }
+
   .result-card {
     display: block;
-    padding: 12px 14px;
+    padding: 13px 36px 13px 14px;
     text-decoration: none;
+    border-radius: var(--radius);
   }
-  .result-card:hover { background: var(--accent-light); }
-  .result-card-date { font-size: 12px; font-weight: 700; color: var(--text); font-family: var(--mono); }
-  .result-card-meta { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+  .result-card-date {
+    font-size: 12.5px; font-weight: 700;
+    color: var(--text); font-family: var(--mono);
+    letter-spacing: -.2px; line-height: 1.4;
+  }
+  .result-card-time {
+    font-size: 11px; color: var(--muted);
+    font-family: var(--mono); margin-top: 1px;
+  }
+  .result-card-meta {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 7px;
+  }
+  .result-card-commit {
+    font-size: 10px; color: var(--muted);
+    font-family: var(--mono);
+    background: var(--surface-2);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+  .result-type-badge {
+    font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .4px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-light);
+    color: var(--muted);
+  }
+  .result-type-badge:empty { display: none; }
+
+  /* ── Card kebab menu ─────────────────────────────────────────────────────── */
+  .card-menu-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--muted);
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .12s, background .12s, color .12s;
+    z-index: 1;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+  .result-card-wrap:hover .card-menu-btn,
+  .result-card-wrap .card-menu-btn.open { opacity: 1; }
+  .card-menu-btn:hover, .card-menu-btn.open {
+    background: var(--border); color: var(--text);
+  }
+
+  .card-menu-dropdown {
+    display: none;
+    position: absolute;
+    top: 34px; right: 6px;
+    min-width: 128px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 6px 20px rgba(0,0,0,.15);
+    z-index: 100;
+    overflow: hidden;
+  }
+  .card-menu-dropdown.open { display: block; }
+  .card-menu-dropdown button {
+    display: block; width: 100%;
+    padding: 9px 14px; text-align: left;
+    font-size: 12px; font-weight: 500;
+    background: transparent; border: none;
+    color: var(--text-2); cursor: pointer;
+    transition: background .1s;
+  }
+  .card-menu-dropdown button:hover { background: var(--accent-light); color: var(--accent); }
+  .card-menu-dropdown .danger { color: var(--text-2); }
+  .card-menu-dropdown .danger:hover { background: rgba(201,42,42,.08); color: var(--danger); }
 
   @media (max-width: 720px) {
     .controls-grid { grid-template-columns: 1fr; }
@@ -164,7 +246,7 @@
         <div class="form-grid" style="margin-bottom:12px;">
           <div class="form-row">
             <label for="n-runs">n_runs</label>
-            <input type="number" id="n-runs" name="n_runs" value="3" min="1" max="20">
+            <input type="number" id="n-runs" name="n_runs" value="10" min="1" max="20">
           </div>
           <div class="form-row">
             <label for="max-evals">max_evals</label>
@@ -198,7 +280,7 @@
             </div>
             <div class="form-row">
               <label for="gh-max-evals">max_evals</label>
-              <input type="number" id="gh-max-evals" name="max_evals" value="5000" min="100" max="50000" step="100">
+              <input type="number" id="gh-max-evals" name="max_evals" value="15000" min="100" max="50000" step="100">
             </div>
           </div>
           <button type="submit" class="btn btn-outline" id="gh-btn">⚡ Trigger Workflow</button>
@@ -230,12 +312,20 @@
     {% if results %}
     <div class="result-grid">
       {% for r in results %}
-      <div class="result-card-wrap">
+      <div class="result-card-wrap" id="card-{{ r }}">
         <a href="/results/{{ r }}" class="result-card" data-name="{{ r }}">
           <div class="result-card-date"></div>
-          <div class="result-card-meta"></div>
-          {% if 'quick' in r %}<span class="tag" style="margin-top:6px; display:inline-block;">quick</span>{% endif %}
+          <div class="result-card-time"></div>
+          <div class="result-card-meta">
+            <span class="result-card-commit"></span>
+            <span class="result-type-badge"></span>
+          </div>
         </a>
+        <button class="card-menu-btn" onclick="toggleCardMenu('{{ r }}', event)" title="操作">⋮</button>
+        <div class="card-menu-dropdown" id="menu-{{ r }}">
+          <button onclick="renameResult('{{ r }}', event)">✏ 名前変更</button>
+          <button class="danger" onclick="deleteResult('{{ r }}', event)">🗑 削除</button>
+        </div>
       </div>
       {% endfor %}
     </div>
@@ -251,29 +341,54 @@
 
 <div id="toast" class="toast"></div>
 
-<script id="page-data" type="application/json">{{ results | tojson }}</script>
+<script id="page-data" type="application/json">{{ {"results": results, "meta": results_meta} | tojson }}</script>
 
 <script>
-function parseResultName(name) {
-  const m = name.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})_([^_]+)/);
-  if (!m) return { date: name, commit: '' };
-  return { date: `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}`, commit: m[7] };
+const _pd = JSON.parse(document.getElementById('page-data').textContent);
+const ALL_RESULTS  = _pd.results;
+const RESULTS_META = _pd.meta || {};
+
+function getCardInfo(name) {
+  const m = RESULTS_META[name] || {};
+  let date = '', time = '', commit = m.commit || '', type = m.type || '';
+  if (m.created_at) {
+    const [d, t] = m.created_at.split('T');
+    date = d || '';
+    time = t ? t.slice(0, 5) : '';
+  } else {
+    // fallback: parse from folder name
+    const rx = name.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})_([^_]+)/);
+    if (rx) {
+      date = `${rx[1]}-${rx[2]}-${rx[3]}`;
+      time = `${rx[4]}:${rx[5]}`;
+      if (!commit) commit = rx[7];
+      if (!type) type = name.includes('quick') ? 'quick' : 'workflow';
+    } else {
+      date = name;
+    }
+  }
+  return { date, time, commit, type };
 }
 
-const ALL_RESULTS = JSON.parse(document.getElementById('page-data').textContent);
-
 document.querySelectorAll('.result-card[data-name]').forEach(card => {
-  const { date, commit } = parseResultName(card.dataset.name);
+  const { date, time, commit, type } = getCardInfo(card.dataset.name);
   card.querySelector('.result-card-date').textContent = date;
-  card.querySelector('.result-card-meta').textContent = commit ? `@ ${commit}` : '';
+  card.querySelector('.result-card-time').textContent = time;
+  const commitEl = card.querySelector('.result-card-commit');
+  if (commitEl) commitEl.textContent = commit;
+  const typeBadge = card.querySelector('.result-type-badge');
+  if (typeBadge) typeBadge.textContent = type === 'quick' ? 'quick' : type === 'workflow' ? 'workflow' : '';
+  const wrap = card.closest('.result-card-wrap');
+  if (type === 'quick') wrap.classList.add('is-quick');
+  else if (type === 'workflow') wrap.classList.add('is-workflow');
 });
 
 document.getElementById('quick-count').textContent =
-  ALL_RESULTS.filter(r => r.includes('quick')).length;
+  ALL_RESULTS.filter(r => (RESULTS_META[r]?.type || '') === 'quick').length;
 
 if (ALL_RESULTS.length) {
-  const { date, commit } = parseResultName(ALL_RESULTS[0]);
-  document.getElementById('latest-date').textContent = date;
+  const { date, time, commit } = getCardInfo(ALL_RESULTS[0]);
+  document.getElementById('latest-date').textContent = `${date} ${time}`.trim();
   document.getElementById('latest-commit').textContent = commit ? `@ ${commit}` : '';
 }
 
@@ -465,6 +580,64 @@ function pollDownload(jobId, ghRunId) {
   };
 
   setTimeout(tick, interval);
+}
+
+// ── Card kebab menu ──
+let _openMenu = null;
+
+function toggleCardMenu(runId, e) {
+  e.preventDefault(); e.stopPropagation();
+  const btn  = e.currentTarget;
+  const menu = document.getElementById(`menu-${runId}`);
+  const isOpen = menu.classList.contains('open');
+  closeAllMenus();
+  if (!isOpen) {
+    menu.classList.add('open');
+    btn.classList.add('open');
+    _openMenu = runId;
+  }
+}
+
+function closeAllMenus() {
+  document.querySelectorAll('.card-menu-dropdown.open').forEach(m => m.classList.remove('open'));
+  document.querySelectorAll('.card-menu-btn.open').forEach(b => b.classList.remove('open'));
+  _openMenu = null;
+}
+
+document.addEventListener('click', closeAllMenus);
+
+// ── Rename result ──
+async function renameResult(runId, e) {
+  e.preventDefault(); e.stopPropagation();
+  closeAllMenus();
+  const newName = prompt('新しい名前を入力してください:', runId);
+  if (!newName || newName === runId) return;
+  const form = new FormData();
+  form.append('new_name', newName);
+  const res = await fetch(`/api/results/${encodeURIComponent(runId)}/rename`, { method: 'POST', body: form });
+  const data = await res.json();
+  if (data.ok) {
+    showToast(`名前を変更しました: ${data.new_name}`, 'ok');
+    setTimeout(() => location.reload(), 800);
+  } else {
+    showToast(data.message || '名前変更に失敗しました', 'err');
+  }
+}
+
+// ── Delete result (dashboard) ──
+async function deleteResult(runId, e) {
+  e.preventDefault(); e.stopPropagation();
+  closeAllMenus();
+  if (!confirm(`「${runId}」を削除しますか？\nこの操作は元に戻せません。`)) return;
+  const res = await fetch(`/api/results/${encodeURIComponent(runId)}`, { method: 'DELETE' });
+  const data = await res.json();
+  if (data.ok) {
+    const card = document.getElementById(`card-${runId}`);
+    if (card) card.remove();
+    showToast('削除しました', 'ok');
+  } else {
+    showToast(data.message || '削除に失敗しました', 'err');
+  }
 }
 
 function resumeDownloadPolling() {

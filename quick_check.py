@@ -56,11 +56,11 @@ _DIM_LOOKUP: dict[int, dict[str, object]] = {
 }
 
 _OPTIMIZERS = {
-    "CMA-ES": (CMAESOptimizer,          {}),
-    "PSO":    (PSOOptimizer,            {}),
-    "GA":     (GAOptimizer,             {}),
-    "SaVOA":  (SaVOAOptimizer,          {}),
-    "VSO":    (VirusOptimizer,          {}),
+    "CMA-ES": (CMAESOptimizer, {}),
+    "PSO":    (PSOOptimizer,   {}),
+    "GA":     (GAOptimizer,    {}),
+    "SaVOA":  (SaVOAOptimizer, {}),
+    "VSO":    (VirusOptimizer, {}),
 }
 
 
@@ -100,7 +100,7 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int) -> No
     print(f"Saved → {dim_dir.resolve()}/")
 
 
-def main(n_runs: int = 3, max_evals: int = 2000, output_dir: Path = Path("results/quick")) -> None:
+def main(n_runs: int = 10, max_evals: int = 2000, output_dir: Path = Path("results/quick")) -> None:
     output_dir = Path(output_dir)
     print(f"quick_check  n_runs={n_runs}  max_evals={max_evals}")
 
@@ -117,7 +117,7 @@ def main(n_runs: int = 3, max_evals: int = 2000, output_dir: Path = Path("result
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n-runs",     type=int, default=3,                    help="Number of runs per method")
+    parser.add_argument("--n-runs",     type=int, default=10,                   help="Number of runs per method")
     parser.add_argument("--max-evals",  type=int, default=2000,                 help="Max function evaluations per run")
     parser.add_argument("--output-dir", type=Path, default=Path("results/quick"), help="Output directory")
     args = parser.parse_args()

@@ -52,14 +52,32 @@ cmd_download() {
   # artifact is named "results", its contents go directly into $dir
   mv "$tmp/results/"* "$dir/"
   rm -rf "$tmp"
+  printf '{\n  "type": "workflow",\n  "created_at": "%s",\n  "commit": "%s",\n  "gh_run_id": "%s"\n}\n' \
+    "$(date +%Y-%m-%dT%H:%M:%S)" \
+    "$(git rev-parse --short HEAD 2>/dev/null || echo 'nogit')" \
+    "$run_id" > "$dir/result.json"
   echo "Saved to: ${dir}/"
 }
 
 # ── quick ─────────────────────────────────────────────────────────────────────
 cmd_quick() {
   local dir="${RESULTS_ROOT}/$(_version)_quick"
+  local n_runs=10 max_evals=2000
+  local pass_args=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --n-runs)    n_runs="$2";    pass_args+=("$1" "$2"); shift 2 ;;
+      --max-evals) max_evals="$2"; pass_args+=("$1" "$2"); shift 2 ;;
+      *)           pass_args+=("$1"); shift ;;
+    esac
+  done
   echo "Quick check → ${dir}/"
-  python3 quick_check.py --output-dir "$dir" "$@"
+  mkdir -p "$dir"
+  printf '{\n  "type": "quick",\n  "created_at": "%s",\n  "commit": "%s",\n  "n_runs": %s,\n  "max_evals": %s\n}\n' \
+    "$(date +%Y-%m-%dT%H:%M:%S)" \
+    "$(git rev-parse --short HEAD 2>/dev/null || echo 'nogit')" \
+    "$n_runs" "$max_evals" > "$dir/result.json"
+  python3 quick_check.py --output-dir "$dir" "${pass_args[@]+"${pass_args[@]}"}"
 }
 
 # ── list ──────────────────────────────────────────────────────────────────────
@@ -113,7 +131,7 @@ Usage: ./run.sh <command> [options]
 
   quick [--n-runs N] [--max-evals N]
       ローカルで軽量確認を実行
-      デフォルト: --n-runs 3 --max-evals 2000
+      デフォルト: --n-runs 10 --max-evals 2000
       保存先: results/YYYYMMDD_HHMMSS_<commit>_quick/
 
   list

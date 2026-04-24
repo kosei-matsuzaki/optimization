@@ -117,9 +117,7 @@ class VirusOptimizer(BaseOptimizer):
     """Epidemic-inspired optimizer.
 
     Individuals (infected hosts) spread locally or via air transmission.
-    Low f(x) → high infection probability.
-    Population fluctuates within [n_pop, n_pop_max]; elites are immortal.
-    Crowding control scatters excess individuals clustered near optima.
+    Low f(x) → high infection probability. Elites are immortal.
     """
 
     def __init__(
@@ -127,7 +125,6 @@ class VirusOptimizer(BaseOptimizer):
         benchmark: BenchmarkFunction,
         seed: int = 42,
         n_pop: int = 20,
-        n_pop_max: int = 40,
         lifespan: int = 5,
         sigma: float = 0.2,
         sigma_decay: float = 0.99,
@@ -138,16 +135,17 @@ class VirusOptimizer(BaseOptimizer):
         niche_radius: float = 1.0,
         niche_radius_min: float = 0.05,
         elite_quality_factor: float = 1.0,
-        bloom_size: int = 2,
-        crowd_radius_frac: float = 1e-5,
-        max_crowd_fraction: float = 0.10,
         sigma_min_ratio: float = 0.05,
         air_sigma_min: float = 1.5,
         air_sigma_max: float = 5.0,
+        n_pop_min: int = 5,
+        pop_change_by: int = 5,
+        pop_grow_trigger: int = 200,
+        pop_shrink_trigger: int = 20,
+        pop_change_cooldown: int = 30,
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
-        self.n_pop_max = n_pop_max
         self.lifespan = lifespan
         self.sigma = sigma
         self.sigma_decay = sigma_decay
@@ -158,18 +156,29 @@ class VirusOptimizer(BaseOptimizer):
         self.niche_radius = niche_radius
         self.niche_radius_min = niche_radius_min
         self.elite_quality_factor = elite_quality_factor
-        self.bloom_size = bloom_size
-        self.crowd_radius_frac = crowd_radius_frac
-        self.max_crowd_fraction = max_crowd_fraction
         self.sigma_min_ratio = sigma_min_ratio
         self.air_sigma_min = air_sigma_min
         self.air_sigma_max = air_sigma_max
+        self.n_pop_min = n_pop_min
+        self.pop_change_by = pop_change_by
+        self.pop_grow_trigger = pop_grow_trigger
+        self.pop_shrink_trigger = pop_shrink_trigger
+        self.pop_change_cooldown = pop_change_cooldown
+
+    @staticmethod
+    def _reflect(x: np.ndarray, lo: float, hi: float) -> np.ndarray:
+        """Reflect out-of-bounds values back into [lo, hi] instead of clamping."""
+        span = hi - lo
+        x_rel = (x - lo) % (2 * span)
+        x_rel = np.where(x_rel > span, 2 * span - x_rel, x_rel)
+        return x_rel + lo
 
     def _niche_elites(self, pop_x: np.ndarray, pop_f: np.ndarray,
                       niche_radius: float | None = None) -> set:
         """Dynamically select spatially diverse elites that meet a quality threshold."""
         if niche_radius is None:
             niche_radius = self.niche_radius
+        n_elite_max = self.n_elite_max
         f_best = pop_f.min()
         f_spread = np.percentile(pop_f, 75) - f_best
         quality_cutoff = f_best + self.elite_quality_factor * max(f_spread, 1e-30)
@@ -183,7 +192,7 @@ class VirusOptimizer(BaseOptimizer):
                 for e in elite_idx
             ):
                 elite_idx.add(int(candidate))
-            if len(elite_idx) >= self.n_elite_max:
+            if len(elite_idx) >= n_elite_max:
                 break
         return elite_idx
 
@@ -201,6 +210,9 @@ class VirusOptimizer(BaseOptimizer):
         sigma = self.sigma * span
         sigma_init_mean = float(np.mean(sigma))
 
+        # Virtual breathing: n_pop_min > 0 enables active-mask mode
+        adaptive = self.n_pop_min > 0 and self.n_pop_min < self.n_pop
+
         # Internal storage as lists for variable-length population
         init_x = rng.uniform(lo, hi, (self.n_pop, self.dim))
         init_f = np.array([self.func(x) for x in init_x])
@@ -209,6 +221,7 @@ class VirusOptimizer(BaseOptimizer):
         pop_x: list[np.ndarray] = [init_x[i].copy() for i in range(self.n_pop)]
         pop_f: list[float] = list(init_f)
         pop_age: list[int] = list(init_age)
+        pop_active: list[bool] = [True] * self.n_pop
 
         history_x: list[np.ndarray] = list(init_x)
         history_f: list[float] = list(init_f)
@@ -220,187 +233,158 @@ class VirusOptimizer(BaseOptimizer):
         history_pop_sigma: list[np.ndarray] = [float(sigma) * _s0]
 
         best_so_far = float(np.min(init_f))
-        no_improve = 0
-        force_air_slots: set[int] = set()
-        sigma_d = np.ones(self.dim)
+        no_improve = self.pop_shrink_trigger  # neutral start
+        pop_cooldown = self.pop_change_cooldown  # warmup: no size change for first N iters
 
         while len(history_f) < max_evals:
-            n = len(pop_x)
-            pop_x_arr = np.array(pop_x)
-            pop_f_arr = np.array(pop_f)
-
-            k_top = max(2, n // 4)
-            top_k_x = pop_x_arr[np.argsort(pop_f_arr)[:k_top]]
-            dim_var = np.var(top_k_x, axis=0)
-            mean_var = float(np.mean(dim_var)) + 1e-30
-            sigma_d_target = np.clip(np.sqrt(dim_var / mean_var), 0.1, 10.0)
-            sigma_d = sigma_d * 0.95 + sigma_d_target * 0.05
-            sigma_d /= (float(sigma_d.mean()) + 1e-30)
+            # Work only with active individuals
+            active_idx = [i for i in range(len(pop_x)) if pop_active[i]]
+            n = len(active_idx)
+            pop_x_arr = np.array([pop_x[i] for i in active_idx])
+            pop_f_arr = np.array([pop_f[i] for i in active_idx])
 
             sigma_mean = float(np.mean(sigma))
             sigma_ratio = sigma_mean / sigma_init_mean
             niche_radius_dyn = max(self.niche_radius_min, self.niche_radius * sigma_ratio)
-            crowd_radius = self.crowd_radius_frac * sigma_mean
-
             top5_x = pop_x_arr[np.argsort(pop_f_arr)[:min(5, n)]]
             top5_spread = float(np.mean(np.std(top5_x, axis=0))) / span
             # Unimodal detection: only collapse niches when near the global optimum (f≈0),
             # not when merely clustered at a local optimum (multimodal functions).
             unimodal_converged = top5_spread < 0.05 and best_so_far < 1e-3
             niche_radius_eff = self.niche_radius_min if unimodal_converged else niche_radius_dyn
-            elite_idx = self._niche_elites(pop_x_arr, pop_f_arr, niche_radius_eff)
+            # elite_local: indices into active_idx; elite_global: indices into full pop lists
+            elite_local = self._niche_elites(pop_x_arr, pop_f_arr, niche_radius_eff)
+            elite_global = {active_idx[i] for i in elite_local}
 
-            # Mark dead: age exceeded lifespan, excluding elites
-            dead_idx = [
-                i for i in range(n)
-                if pop_age[i] > self.lifespan and i not in elite_idx
+            # Mark dead: aged-out active non-elites
+            dead_global = [
+                active_idx[i] for i in range(n)
+                if pop_age[active_idx[i]] > self.lifespan and active_idx[i] not in elite_global
             ]
-            n_dead = len(dead_idx)
+            n_dead = len(dead_global)
 
             if n_dead == 0:
-                for i in range(n):
+                for i in active_idx:
                     pop_age[i] += 1
                 sigma *= self.sigma_decay
-                continue
+            else:
+                weights = self._softmax_weights(pop_f_arr)
 
-            weights = self._softmax_weights(pop_f_arr)
+                stagnation_ratio = min(no_improve / max(self.stagnation_limit, 1), 1.0)
+                air_ratio_eff = self.air_ratio + (0.5 - self.air_ratio) * stagnation_ratio ** 2
+                n_air = max(0, round(air_ratio_eff * n_dead))
+                n_local = n_dead - n_air
 
-            stagnation_ratio = min(no_improve / max(self.stagnation_limit, 1), 1.0)
-            air_ratio_eff = self.air_ratio + (0.5 - self.air_ratio) * stagnation_ratio ** 2
-            n_air = max(0, round(air_ratio_eff * n_dead))
-            n_local = n_dead - n_air
+                # Log-scale quality: distinguishes f=0.001 vs f=0.01 far better than linear.
+                # Bad individuals (log_quality≈0) always get scale=1 (full exploration),
+                # so they can escape local optima regardless of population ranking.
+                pop_log_f = np.log10(pop_f_arr + 1e-10)
+                log_f_max = float(pop_log_f.max())
+                log_f_spread = float(log_f_max - pop_log_f.min())
 
-            # Log-scale quality: distinguishes f=0.001 vs f=0.01 far better than linear.
-            # Bad individuals (log_quality≈0) always get scale=1 (full exploration),
-            # so they can escape local optima regardless of population ranking.
-            pop_log_f = np.log10(pop_f_arr + 1e-10)
-            log_f_max = float(pop_log_f.max())
-            log_f_spread = float(log_f_max - pop_log_f.min())
+                # Air sigma: large when converged (need to escape), small when diverse
+                # Normalized diversity: uniform distribution gives std ≈ 0.289 * span
+                pop_diversity = np.mean(np.std(pop_x_arr, axis=0) / span)
+                diversity_ratio = np.clip(pop_diversity / 0.289, 0.0, 1.0)
 
-            # Air sigma: large when converged (need to escape), small when diverse
-            # Normalized diversity: uniform distribution gives std ≈ 0.289 * span
-            pop_diversity = np.mean(np.std(pop_x_arr, axis=0) / span)
-            diversity_ratio = np.clip(pop_diversity / 0.289, 0.0, 1.0)
-            air_sigma_factor = self.air_sigma_max - (self.air_sigma_max - self.air_sigma_min) * diversity_ratio
-            air_sigma_base = np.maximum(sigma, sigma_init_mean * 0.3)
-            air_sigma_vec = air_sigma_base * air_sigma_factor * sigma_d
+                air_sigma_factor = self.air_sigma_max - (self.air_sigma_max - self.air_sigma_min) * diversity_ratio
+                air_sigma_base = np.maximum(sigma, sigma_init_mean * 0.3)
+                air_sigma_vec = air_sigma_base * air_sigma_factor
 
-            new_xs: list[np.ndarray] = []
-            if n_local > 0:
-                parent_idx = rng.choice(n, size=n_local, p=weights)
-                for pi in parent_idx:
-                    log_quality = float(np.clip(
-                        (log_f_max - np.log10(pop_f_arr[pi] + 1e-10)) / (log_f_spread + 1e-30),
-                        0.0, 1.0))
-                    age_ratio = min(pop_age[pi] / max(self.lifespan, 1), 1.0)
-                    # Age amplifies exploitation only for good individuals:
-                    # bad(log_q=0) → combined=0 always; good+old(log_q=1,age=1) → combined=1
-                    combined = log_quality * (0.7 + 0.3 * age_ratio)
-                    scale = self.sigma_min_ratio ** combined
-                    sigma_i = sigma * scale * sigma_d
-                    child = pop_x[pi] + rng.normal(0, sigma_i, self.dim)
-                    child = np.clip(child, lo, hi)
+                new_xs: list[np.ndarray] = []
+                if n_local > 0:
+                    local_idx_local = rng.choice(n, size=n_local, p=weights)
+                    for li in local_idx_local:
+                        gi = active_idx[li]
+                        log_quality = float(np.clip(
+                            (log_f_max - np.log10(pop_f_arr[li] + 1e-10)) / (log_f_spread + 1e-30),
+                            0.0, 1.0))
+                        age_ratio = min(pop_age[gi] / max(self.lifespan, 1), 1.0)
+                        combined = log_quality * (0.7 + 0.3 * age_ratio)
+                        scale = self.sigma_min_ratio ** combined
+                        sigma_i = sigma * scale
+                        child = pop_x[gi] + rng.normal(0, sigma_i, self.dim)
+                        child = self._reflect(child, lo, hi)
+                        new_xs.append(child)
+                for _ in range(n_air):
+                    li = int(rng.integers(0, n))
+                    gi = active_idx[li]
+                    child = pop_x[gi] + rng.normal(0, air_sigma_vec, self.dim)
+                    child = self._reflect(child, lo, hi)
                     new_xs.append(child)
-            for _ in range(n_air):
-                pi = rng.integers(0, n)
-                child = pop_x[pi] + rng.normal(0, air_sigma_vec, self.dim)
-                child = np.clip(child, lo, hi)
-                new_xs.append(child)
 
-            # Place offspring into dead slots
-            replaced: set[int] = set()
-            improved_this_gen = False
-            for slot, x in zip(dead_idx, new_xs):
-                if slot in force_air_slots:
-                    force_air_slots.discard(slot)
-                    pi = rng.integers(0, n)
-                    x = pop_x[pi] + rng.normal(0, air_sigma_vec, self.dim)
-                    x = np.clip(x, lo, hi)
-                f = self.func(x)
-                pop_x[slot] = x
-                pop_f[slot] = f
-                pop_age[slot] = 0
-                replaced.add(slot)
-                history_x.append(x.copy())
-                history_f.append(f)
+                # Place offspring into dead slots
+                replaced_global: set[int] = set()
+                for slot, x in zip(dead_global, new_xs):
+                    f = self.func(x)
+                    pop_x[slot] = x
+                    pop_f[slot] = f
+                    pop_age[slot] = 0
+                    replaced_global.add(slot)
+                    history_x.append(x.copy())
+                    history_f.append(f)
 
-                if f < best_so_far:
-                    best_so_far = f
-                    no_improve = 0
-                    improved_this_gen = True
-                else:
-                    no_improve += 1
-
-                if len(history_f) >= max_evals or no_improve >= self.stagnation_limit:
-                    break
-
-            if no_improve >= self.stagnation_limit:
-                break
-
-            # Bloom: add individuals on improvement
-            if improved_this_gen and len(history_f) < max_evals:
-                n_add = min(self.bloom_size, self.n_pop_max - len(pop_x))
-                for _ in range(n_add):
-                    if len(history_f) >= max_evals:
-                        break
-                    bx = pop_x[int(np.argmin(np.array(pop_f)))] + rng.normal(0, sigma, self.dim) * 2.0
-                    bx = np.clip(bx, lo, hi)
-                    bf = self.func(bx)
-                    pop_x.append(bx)
-                    pop_f.append(bf)
-                    pop_age.append(0)
-                    history_x.append(bx.copy())
-                    history_f.append(bf)
-                    if bf < best_so_far:
-                        best_so_far = bf
+                    if f < best_so_far:
+                        best_so_far = f
                         no_improve = 0
                     else:
                         no_improve += 1
 
-            # Cap: remove worst non-elite individuals if over n_pop_max
-            while len(pop_x) > self.n_pop_max:
-                px_arr = np.array(pop_x)
-                pf_arr = np.array(pop_f)
-                ei = self._niche_elites(px_arr, pf_arr, niche_radius_eff)
-                candidates = [i for i in range(len(pop_x)) if i not in ei]
-                if not candidates:
+                    if len(history_f) >= max_evals or no_improve >= self.stagnation_limit:
+                        break
+
+                if no_improve >= self.stagnation_limit:
                     break
-                worst = candidates[int(np.argmax(pf_arr[candidates]))]
-                pop_x.pop(worst)
-                pop_f.pop(worst)
-                pop_age.pop(worst)
 
-            # Crowding control: force-age excess individuals near each elite
-            if crowd_radius > 0 and diversity_ratio > 0.05:
-                px_arr = np.array(pop_x)
-                pf_arr = np.array(pop_f)
-                ei = self._niche_elites(px_arr, pf_arr, niche_radius_eff)
-                max_near = max(1, int(self.max_crowd_fraction * len(pop_x)))
-                for e in ei:
-                    dists = np.linalg.norm(px_arr - px_arr[e], axis=1)
-                    near = [i for i in np.where(dists < crowd_radius)[0]
-                            if i not in ei]
-                    if len(near) > max_near:
-                        near_sorted = sorted(near, key=lambda i: pop_f[i], reverse=True)
-                        for i in near_sorted[max_near:]:
-                            pop_age[i] = self.lifespan + 1
-                            force_air_slots.add(i)
+                # Age active survivors
+                for i in active_idx:
+                    if i not in replaced_global:
+                        pop_age[i] += 1
 
-            # Age survivors
-            for i in range(len(pop_x)):
-                if i not in replaced:
-                    pop_age[i] += 1
+                sigma *= self.sigma_decay
 
-            # Per-individual effective sigma (log-scale quality, same formula as above)
-            pf_end   = np.array(pop_f)
-            pa_end   = np.array(pop_age, dtype=float)
+            # Virtual breathing: deactivate when improving, reactivate when stagnating
+            if adaptive and pop_cooldown == 0:
+                n_active = sum(pop_active)
+                dormant_idx = [i for i in range(len(pop_x)) if not pop_active[i]]
+                if no_improve >= self.pop_grow_trigger and n_active < self.n_pop:
+                    # Reactivate best dormant individuals (2x change_by).
+                    best_dormant = sorted(dormant_idx, key=lambda i: pop_f[i])
+                    n_react = min(self.pop_change_by * 2, self.n_pop - n_active, len(best_dormant))
+                    if n_react > 0:
+                        for i in best_dormant[:n_react]:
+                            pop_active[i] = True
+                            pop_age[i] = 0
+                        # Evict top active stuck near a local optimum.
+                        pool = [i for i in active_idx if i not in elite_global]
+                        evict = sorted(pool, key=lambda i: pop_f[i])[:self.pop_change_by]
+                        for i in evict:
+                            pop_active[i] = False
+                        # Do NOT reset no_improve — let it decay naturally as new individuals improve.
+                        pop_cooldown = self.pop_change_cooldown
+                elif no_improve < self.pop_shrink_trigger and n_active > self.n_pop_min:
+                    # Deactivate worst non-elite active individuals (virtual shrink)
+                    cur_elite = elite_global
+                    deactivatable = sorted(
+                        [i for i in active_idx if i not in cur_elite],
+                        key=lambda i: pop_f[i], reverse=True
+                    )
+                    n_deact = min(self.pop_change_by, n_active - self.n_pop_min, len(deactivatable))
+                    if n_deact > 0:
+                        for i in deactivatable[:n_deact]:
+                            pop_active[i] = False
+                        pop_cooldown = self.pop_change_cooldown
+            else:
+                pop_cooldown = max(0, pop_cooldown - 1)
+
+            pf_end   = np.array([pop_f[i]   for i in active_idx])
+            pa_end   = np.array([pop_age[i] for i in active_idx], dtype=float)
             lf_end   = np.log10(pf_end + 1e-10)
             lq_e     = np.clip((lf_end.max() - lf_end) / (float(lf_end.max() - lf_end.min()) + 1e-30), 0.0, 1.0)
             ar_e     = np.minimum(pa_end / max(self.lifespan, 1), 1.0)
             combined_e = lq_e * (0.7 + 0.3 * ar_e)
             scale_e    = self.sigma_min_ratio ** combined_e
             history_pop_sigma.append(float(sigma) * scale_e)
-            sigma *= self.sigma_decay
             history_pop.append(np.array(pop_x).copy())
 
         result = self._make_result(history_x, history_f, history_pop)

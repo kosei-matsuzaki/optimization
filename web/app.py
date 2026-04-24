@@ -71,9 +71,46 @@ def _current_commit() -> str:
         return "nogit"
 
 
+def _write_result_meta(run_dir: Path, meta: dict) -> None:
+    try:
+        with open(run_dir / "result.json", "w") as f:
+            json.dump(meta, f, indent=2)
+    except Exception:
+        pass
+
+
+def _read_result_meta(run_dir: Path) -> dict:
+    path = run_dir / "result.json"
+    if path.exists():
+        try:
+            with open(path) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    # Fallback: derive from directory name
+    name = run_dir.name
+    parts = name.split("_")
+    meta: dict = {"type": "quick" if "quick" in name else "workflow"}
+    if len(parts) >= 2 and len(parts[0]) == 8 and len(parts[1]) == 6:
+        d, t = parts[0], parts[1]
+        meta["created_at"] = f"{d[:4]}-{d[4:6]}-{d[6:]}T{t[:2]}:{t[2:4]}:{t[4:]}"
+        if len(parts) >= 3:
+            meta["commit"] = parts[2]
+    return meta
+
+
 # ── quick run job ─────────────────────────────────────────────────────────────
 
 def _run_job(job_id: str, n_runs: int, max_evals: int, out_dir: str) -> None:
+    out_path = Path(out_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+    _write_result_meta(out_path, {
+        "type": "quick",
+        "created_at": datetime.datetime.now().isoformat(timespec="seconds"),
+        "commit": _current_commit(),
+        "n_runs": n_runs,
+        "max_evals": max_evals,
+    })
     proc = subprocess.Popen(
         ["python3", str(QUICK_CHECK),
          "--n-runs", str(n_runs),
@@ -100,7 +137,7 @@ def _download_job(job_id: str, gh_run_id: str, dest_dir: Path) -> None:
                 capture_output=True, text=True, cwd=str(BASE_DIR),
             )
             if dl.returncode != 0:
-                dest_dir.rmdir()
+                shutil.rmtree(dest_dir, ignore_errors=True)
                 _dl_jobs[job_id].update(
                     status="failed",
                     message=dl.stderr.strip() or "Download failed.",
@@ -116,6 +153,12 @@ def _download_job(job_id: str, gh_run_id: str, dest_dir: Path) -> None:
                     shutil.rmtree(target) if target.is_dir() else target.unlink()
                 shutil.move(str(item), str(dest_dir))
 
+        _write_result_meta(dest_dir, {
+            "type": "workflow",
+            "created_at": datetime.datetime.now().isoformat(timespec="seconds"),
+            "commit": _current_commit(),
+            "gh_run_id": gh_run_id,
+        })
         _dl_jobs[job_id].update(
             status="done",
             result_dir=dest_dir.name,
@@ -129,7 +172,9 @@ def _download_job(job_id: str, gh_run_id: str, dest_dir: Path) -> None:
 
 @app.route("/")
 def index():
-    return render_template("index.html", results=_list_results())
+    results = _list_results()
+    results_meta = {r: _read_result_meta(RESULTS_DIR / r) for r in results}
+    return render_template("index.html", results=results, results_meta=results_meta)
 
 
 @app.route("/methods")
@@ -250,6 +295,23 @@ def api_stats(run_id: str, dim: str, func_name: str):
         headers = reader.fieldnames or []
         rows = list(reader)
     return jsonify({"headers": headers, "rows": rows})
+
+
+@app.route("/api/results/<run_id>/rename", methods=["POST"])
+def api_rename_result(run_id: str):
+    if not run_id or "/" in run_id or ".." in run_id:
+        return jsonify({"ok": False, "message": "Invalid ID"}), 400
+    run_dir = RESULTS_DIR / run_id
+    if not run_dir.exists() or not run_dir.is_dir():
+        return jsonify({"ok": False, "message": "Not found"}), 404
+    new_name = request.form.get("new_name", "").strip()
+    if not new_name or "/" in new_name or ".." in new_name:
+        return jsonify({"ok": False, "message": "Invalid name"}), 400
+    new_dir = RESULTS_DIR / new_name
+    if new_dir.exists():
+        return jsonify({"ok": False, "message": "Name already exists"}), 409
+    run_dir.rename(new_dir)
+    return jsonify({"ok": True, "new_name": new_name})
 
 
 @app.route("/api/results/<run_id>", methods=["DELETE"])

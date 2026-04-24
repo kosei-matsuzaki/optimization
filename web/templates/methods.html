@@ -8,7 +8,6 @@
   <style>
   .page { max-width: 1100px; margin: 0 auto; padding: 28px 36px 60px; }
 
-  /* ── Section headings ───────────────────────────────────────────────────── */
   .sec-heading {
     font-size: 20px; font-weight: 800; color: var(--text);
     letter-spacing: -.5px; margin: 40px 0 6px;
@@ -19,10 +18,9 @@
     background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
   }
   .sec-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-
   .h3 { font-size: 14px; font-weight: 700; color: var(--text); margin: 24px 0 10px; }
 
-  /* ── Comparison table ───────────────────────────────────────────────────── */
+  /* ── Comparison table ── */
   .cmp-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 12px; }
   .cmp-table th { background: var(--surface-2); padding: 9px 14px; font-weight: 700; font-size: 10.5px;
     text-transform: uppercase; letter-spacing: .5px; color: var(--muted);
@@ -32,10 +30,10 @@
   .cmp-table tr.proposed td:first-child { border-left: 3px solid var(--accent); font-weight: 700; }
   .cmp-table tr:hover td { background: var(--accent-light); }
 
-  /* ── VSO layout ─────────────────────────────────────────────────────────── */
+  /* ── VSO layout ── */
   .vso-layout { display: grid; grid-template-columns: 1fr 420px; gap: 24px; align-items: start; margin-bottom: 28px; }
 
-  /* ── Search space visualization ─────────────────────────────────────────── */
+  /* ── Search space visualization ── */
   .search-space {
     position: relative; height: 280px;
     background: #0d1117; border-radius: var(--radius);
@@ -76,19 +74,9 @@
     position: absolute; font-size: 10px; font-weight: 600;
     color: rgba(255,255,255,.45); pointer-events: none;
   }
-  .ss-arrow {
-    position: absolute; pointer-events: none;
-    animation: arrow-fade 5s ease-in-out infinite;
-  }
-  /* legend */
-  .ss-legend {
-    position: absolute; bottom: 10px; right: 10px;
-    display: flex; flex-direction: column; gap: 4px;
-  }
-  .ss-legend-item {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 10px; color: rgba(255,255,255,.5);
-  }
+  .ss-arrow { position: absolute; pointer-events: none; animation: arrow-fade 5s ease-in-out infinite; }
+  .ss-legend { position: absolute; bottom: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .ss-legend-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: rgba(255,255,255,.5); }
   .ss-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
   @keyframes breathe {
@@ -100,8 +88,7 @@
     50%       { box-shadow: 0 0 0 8px rgba(255,107,107,.12), 0 0 20px rgba(255,107,107,.15); }
   }
   @keyframes ring-pulse {
-    0%, 100% { opacity: .45; }
-    50%       { opacity: .7; }
+    0%, 100% { opacity: .45; } 50% { opacity: .7; }
   }
   @keyframes star-glow {
     0%, 100% { text-shadow: 0 0 8px rgba(249,199,79,.7); }
@@ -116,12 +103,10 @@
     100% { left: 77%; top: 22%; opacity: 0; }
   }
   @keyframes arrow-fade {
-    0%, 30% { opacity: 0; }
-    40%, 60% { opacity: .7; }
-    70%, 100% { opacity: 0; }
+    0%, 30% { opacity: 0; } 40%, 60% { opacity: .7; } 70%, 100% { opacity: 0; }
   }
 
-  /* ── Flowchart ───────────────────────────────────────────────────────────── */
+  /* ── Flowchart ── */
   .flowchart { display: flex; flex-direction: column; align-items: center; }
   .fc-row { display: flex; gap: 10px; align-items: stretch; width: 100%; }
   .fc-step {
@@ -137,6 +122,7 @@
   .fc-step.green { border-left-color: var(--success); }
   .fc-step.orange{ border-left-color: var(--warn); }
   .fc-step.purple{ border-left-color: #ae3ec9; }
+  .fc-step.gray  { border-left-color: #636e8a; }
 
   .fc-num {
     width: 26px; height: 26px; border-radius: 50%;
@@ -148,50 +134,45 @@
   .fc-num.green  { background: var(--success); }
   .fc-num.orange { background: var(--warn); }
   .fc-num.purple { background: #ae3ec9; }
+  .fc-num.gray   { background: #636e8a; }
 
   .fc-body strong { font-size: 12.5px; color: var(--text); display: block; }
   .fc-body span   { font-size: 11px; color: var(--muted); line-height: 1.5; }
 
-  .fc-arrow {
-    display: flex; justify-content: center; align-items: center;
-    height: 22px; color: var(--muted); font-size: 14px;
-  }
-  .fc-fork {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 10px; width: 100%;
-  }
+  .fc-arrow { display: flex; justify-content: center; align-items: center; height: 22px; color: var(--muted); font-size: 14px; }
+  .fc-fork { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
 
-  /* ── Method cards ────────────────────────────────────────────────────────── */
-  .method-cards {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-    gap: 16px; margin-top: 4px;
-  }
-  .method-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    box-shadow: var(--shadow-sm);
-  }
-  .method-card-name {
-    font-size: 14px; font-weight: 800; color: var(--text);
-    margin-bottom: 4px;
-  }
-  .method-card-type {
-    font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .6px; color: var(--muted); margin-bottom: 12px;
-  }
+  /* ── Method cards ── */
+  .method-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; margin-top: 4px; }
+  .method-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow-sm); }
+  .method-card-name { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+  .method-card-type { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 12px; }
   .method-diagram { margin-bottom: 12px; }
   .method-card p { font-size: 12px; color: var(--text-2); line-height: 1.6; }
 
-  /* ── Small diagrams (SVG) ────────────────────────────────────────────────── */
   .mini-diagram {
-    background: var(--surface-2);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
+    background: var(--surface-2); border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm); overflow: hidden;
   }
 
+  /* ── Detail mechanism diagrams ── */
+  .detail-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px; margin-bottom: 32px;
+  }
+  .detail-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+  }
+  .detail-card-title {
+    font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 10px;
+  }
+  .detail-card svg { width: 100%; height: auto; display: block; }
+  .detail-note { font-size: 10.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+  @media (max-width: 900px) {
+    .detail-grid { grid-template-columns: 1fr; }
+  }
   @media (max-width: 860px) {
     .vso-layout { grid-template-columns: 1fr; }
     .page { padding: 16px 16px 40px; }
@@ -216,7 +197,7 @@
 
   <!-- ── 概要比較 ── -->
   <h2 class="sec-heading">手法の概要</h2>
-  <p class="sec-sub">本実験で比較する6手法の一覧。VSO が提案手法、その他はベースライン。</p>
+  <p class="sec-sub">本実験で比較する5手法の一覧。VSO が提案手法、その他はベースライン。</p>
 
   <div style="overflow-x:auto;">
   <table class="cmp-table">
@@ -229,8 +210,8 @@
       <tr class="proposed">
         <td>VSO <span class="tag">提案</span></td>
         <td>群知能</td>
-        <td>可変（20〜40）</td>
-        <td>感染確率×ニッチ選択。局所感染＋空気感染。bloom による一時増殖</td>
+        <td>可変（5〜20）</td>
+        <td>感染確率×ニッチ選択。局所感染＋空気感染。寿命制・σ 減衰・仮想呼吸</td>
         <td>多最適解・複数コロニー維持が必要な問題</td>
       </tr>
       <tr>
@@ -243,30 +224,23 @@
       <tr>
         <td>PSO</td>
         <td>群知能</td>
-        <td>30</td>
+        <td>固定（30）</td>
         <td>各粒子が「自身の最良点」と「群の最良点」へ引き寄せられる速度更新</td>
         <td>低次元の連続最適化。実装がシンプル</td>
       </tr>
       <tr>
         <td>GA</td>
         <td>進化的手法</td>
-        <td>50</td>
+        <td>固定（50）</td>
         <td>SBX 交叉 ＋ 多項式突然変異。エリート選択で次世代へ</td>
         <td>汎用。離散・組合せにも応用しやすい</td>
       </tr>
       <tr>
-        <td>VOA</td>
-        <td>群知能</td>
-        <td>可変</td>
-        <td>強力個体が局所探索、普通個体が誘導またはランダム探索</td>
-        <td>VSO との直接比較用（同じウイルス着想）</td>
-      </tr>
-      <tr>
         <td>SaVOA</td>
         <td>群知能</td>
-        <td>可変</td>
-        <td>VOA の自己適応版。σ を乗法的に更新（改善→×1.2、停滞→×0.9）</td>
-        <td>VOA の手動チューニング不要バージョン</td>
+        <td>固定（30）</td>
+        <td>強力個体が局所探索、普通個体が誘導またはランダム探索。σ を乗法的に自己適応</td>
+        <td>VSO との直接比較用（同じウイルス着想）</td>
       </tr>
     </tbody>
   </table>
@@ -290,19 +264,19 @@
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
         <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px;">
           <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--accent); margin-bottom:5px;">局所感染</div>
-          <div style="font-size:12px; color:var(--text-2); line-height:1.6;">親の近傍に Gauss ノイズで子を生成。親の品質と年齢に応じて探索幅を自動調整。</div>
+          <div style="font-size:12px; color:var(--text-2); line-height:1.6;">親の近傍に Gauss ノイズで子を生成。親の対数品質と年齢比に応じてσをべき乗スケーリング。</div>
         </div>
         <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px;">
           <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--warn); margin-bottom:5px;">空気感染</div>
-          <div style="font-size:12px; color:var(--text-2); line-height:1.6;">遠くへ大きくジャンプ。集団が収束するほど半径が拡大し、停滞を防ぐ。</div>
+          <div style="font-size:12px; color:var(--text-2); line-height:1.6;">遠くへ大きくジャンプ。集団が収束するほど σ_air を拡大し、停滞を防ぐ。</div>
         </div>
         <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px;">
           <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#ae3ec9; margin-bottom:5px;">ニッチ選択</div>
           <div style="font-size:12px; color:var(--text-2); line-height:1.6;">空間的に離れた複数のエリートを同時保護。多最適解問題でも複数コロニーを維持。</div>
         </div>
         <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px;">
-          <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--success); margin-bottom:5px;">寿命 &amp; Bloom</div>
-          <div style="font-size:12px; color:var(--text-2); line-height:1.6;">個体は lifespan 世代で自然死。改善があった世代に bloom で追加個体を生成。</div>
+          <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--success); margin-bottom:5px;">寿命管理 + 仮想呼吸</div>
+          <div style="font-size:12px; color:var(--text-2); line-height:1.6;">個体は lifespan 世代で自然死し、空きスロットに子を配置。停滞時に dormant 化（縮小）・活性復帰（拡大）で個体数を動的制御。</div>
         </div>
       </div>
     </div>
@@ -311,34 +285,26 @@
     <div>
       <div class="h3">探索空間のイメージ</div>
       <div class="search-space">
-        <!-- Two basins of attraction -->
         <div class="basin" style="left:30%;top:42%;width:210px;height:175px;"></div>
         <div class="basin" style="left:72%;top:65%;width:185px;height:155px;"></div>
-        <!-- Niche rings -->
         <div class="niche-ring" style="left:30%;top:42%;width:115px;height:115px;"></div>
-        <div class="niche-ring" style="left:72%;top:65%;width:105px;height:105px;" style="animation-delay:.8s;"></div>
-        <!-- Optima markers -->
+        <div class="niche-ring" style="left:72%;top:65%;width:105px;height:105px;"></div>
         <div class="optima" style="left:30%;top:42%;">★</div>
         <div class="optima" style="left:72%;top:65%;">★</div>
-        <!-- Colony 1 members -->
         <div class="dot elite" style="background:#ff6b6b;width:13px;height:13px;left:30%;top:42%;"></div>
         <div class="dot" style="background:var(--accent-muted);width:9px;height:9px;left:25%;top:36%;animation-delay:.4s;"></div>
         <div class="dot" style="background:var(--accent-muted);width:9px;height:9px;left:34%;top:48%;animation-delay:.9s;"></div>
         <div class="dot" style="background:var(--accent-muted);width:8px;height:8px;left:23%;top:47%;animation-delay:1.4s;"></div>
         <div class="dot" style="background:var(--accent-muted);width:8px;height:8px;left:36%;top:36%;animation-delay:.2s;"></div>
         <div class="dot" style="background:var(--accent-muted);width:7px;height:7px;left:27%;top:50%;animation-delay:1.8s;"></div>
-        <!-- Colony 2 members -->
         <div class="dot elite" style="background:#ff6b6b;width:13px;height:13px;left:72%;top:65%;animation-delay:.5s;"></div>
         <div class="dot" style="background:var(--accent-muted);width:9px;height:9px;left:67%;top:60%;animation-delay:1.1s;"></div>
         <div class="dot" style="background:var(--accent-muted);width:9px;height:9px;left:77%;top:69%;animation-delay:.6s;"></div>
         <div class="dot" style="background:var(--accent-muted);width:8px;height:8px;left:66%;top:70%;animation-delay:1.6s;"></div>
         <div class="dot" style="background:var(--accent-muted);width:8px;height:8px;left:78%;top:59%;animation-delay:.3s;"></div>
-        <!-- Wanderers (not yet in colony) -->
         <div class="dot" style="background:rgba(116,143,252,.6);width:7px;height:7px;left:52%;top:25%;animation-delay:2.1s;"></div>
         <div class="dot" style="background:rgba(116,143,252,.6);width:7px;height:7px;left:15%;top:68%;animation-delay:2.6s;"></div>
-        <!-- Air infection dot (animated long jump) -->
         <div class="dot air" style="width:9px;height:9px;"></div>
-        <!-- Air infection arrow (SVG overlay) -->
         <svg class="ss-arrow" style="left:0;top:0;width:100%;height:100%;position:absolute;">
           <defs>
             <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
@@ -348,11 +314,9 @@
           <path d="M 123 118 Q 250 50 315 62" stroke="rgba(249,199,79,.5)" stroke-width="1.5"
             stroke-dasharray="4,3" fill="none" marker-end="url(#arrowhead)"/>
         </svg>
-        <!-- Labels -->
         <div class="ss-label" style="left:8%;bottom:56%;">コロニー 1</div>
         <div class="ss-label" style="right:10%;bottom:26%;">コロニー 2</div>
         <div class="ss-label" style="left:40%;top:12%;color:rgba(249,199,79,.5);">空気感染</div>
-        <!-- Legend -->
         <div class="ss-legend">
           <div class="ss-legend-item"><div class="ss-legend-dot" style="background:#ff6b6b;box-shadow:0 0 4px #ff6b6b;"></div>エリート（保護）</div>
           <div class="ss-legend-item"><div class="ss-legend-dot" style="background:var(--accent-muted);"></div>通常個体</div>
@@ -376,7 +340,7 @@
         <div class="fc-num blue">1</div>
         <div class="fc-body">
           <strong>ニッチ選択</strong>
-          <span>f 値の良い順に走査し、互いに <code>niche_radius</code> 以上離れた個体を最大 <code>n_elite_max</code> 個だけエリートとして保護（不死）</span>
+          <span>f 値の良い順に走査し、互いに <code>niche_radius</code> 以上離れた個体を最大 <code>n_elite_max=6</code> 個だけエリートとして保護（不死）</span>
         </div>
       </div>
     </div>
@@ -387,7 +351,7 @@
         <div class="fc-num red">2</div>
         <div class="fc-body">
           <strong>死亡判定</strong>
-          <span>age &gt; lifespan の個体を除去。エリートは不死。空きスロット数を記録</span>
+          <span>age &gt; <code>lifespan=5</code> の個体を除去。エリートは不死。空きスロット数を記録</span>
         </div>
       </div>
     </div>
@@ -398,7 +362,7 @@
         <div class="fc-num blue">3</div>
         <div class="fc-body">
           <strong>感染確率の計算</strong>
-          <span>softmax(−(f − f_max) / T) で各個体の「感染力」を計算。f が低い個体ほど高い確率で親になる</span>
+          <span>softmax((f_max − f) / T) で各個体の重みを計算。f が低い個体ほど高い確率で親になる</span>
         </div>
       </div>
     </div>
@@ -409,25 +373,14 @@
         <div class="fc-num green">4a</div>
         <div class="fc-body">
           <strong>局所感染（1 − air_ratio）</strong>
-          <span>選ばれた親の近傍に Gauss ノイズ。<br>σ_i ∝ 品質×年齢 で探索幅を自動調整</span>
+          <span>σ_i = σ × r<sup>q×(0.7+0.3a)</sup>（r=sigma_min_ratio=0.05、q=対数品質、a=年齢比）。悪個体(q=0)は常に σ_i=σ で広域探索。良くて高齢(q=1,a=1)は σ_i=0.05σ で精密探索</span>
         </div>
       </div>
       <div class="fc-step orange">
         <div class="fc-num orange">4b</div>
         <div class="fc-body">
           <strong>空気感染（air_ratio）</strong>
-          <span>遠距離ジャンプ。σ_air は集団の空間分散に応じて適応変化（収束時↑、分散時↓）</span>
-        </div>
-      </div>
-    </div>
-    <div class="fc-arrow">↓</div>
-
-    <div class="fc-row">
-      <div class="fc-step purple">
-        <div class="fc-num purple">5</div>
-        <div class="fc-body">
-          <strong>Bloom（改善時のみ）</strong>
-          <span>best_f が更新された世代に限り、<code>bloom_size</code> 個の追加個体を生成（上限 <code>n_pop_max</code>）</span>
+          <span>σ_air = σ_base × factor。factor は集団多様性比に応じ air_sigma_min=1.5〜air_sigma_max=5.0 の間で変化（収束時↑、分散時↓）。停滞長期化で air_ratio が最大 0.5 まで増加</span>
         </div>
       </div>
     </div>
@@ -435,10 +388,23 @@
 
     <div class="fc-row">
       <div class="fc-step red">
-        <div class="fc-num red">6</div>
+        <div class="fc-num red">5</div>
         <div class="fc-body">
-          <strong>過密制御</strong>
-          <span>上限 <code>n_pop_max</code> 超過分を除去。エリート周辺の過密個体を強制老化して多様性を維持</span>
+          <strong>σ 減衰</strong>
+          <span>σ_global × sigma_decay（=0.99）で縮小。世代を重ねるほど探索幅が収束する</span>
+        </div>
+      </div>
+    </div>
+    <div class="fc-arrow">↓</div>
+
+    <div class="fc-row">
+      <div class="fc-step purple">
+        <div class="fc-num purple">6</div>
+        <div class="fc-body">
+          <strong>仮想呼吸（Virtual Breathing）</strong>
+          <span>改善が続く（no_improve &lt; pop_shrink_trigger）→ 非エリート下位を dormant 化して縮小。
+          停滞が深まる（no_improve ≥ pop_grow_trigger）→ 優良 dormant を復活させ、非エリート上位を dormant 化して局所解を脱出。
+          個体数は n_pop_min〜n_pop の範囲で動的に変化</span>
         </div>
       </div>
     </div>
@@ -447,9 +413,245 @@
   </div><!-- /max-width -->
 
 
+  <!-- ── 動作メカニズムの詳細 ── -->
+  <h2 class="sec-heading">動作メカニズムの詳細</h2>
+  <p class="sec-sub">子の選ばれ方・σ スケーリング・エリートの空間管理をビジュアル化。</p>
+
+  <div class="detail-grid">
+
+    <!-- ① 親の選ばれ方 -->
+    <div class="detail-card">
+      <div class="detail-card-title">① 親の選ばれ方（softmax 感染確率）</div>
+      <!-- f values: 0.001, 0.1, 1.0, 5.0, 20.0 → weights: 43.9%, 39.7%, 16.1%, 0.3%, ≈0% -->
+      <svg viewBox="0 0 255 152" xmlns="http://www.w3.org/2000/svg">
+        <!-- Y-axis baseline -->
+        <line x1="57" y1="18" x2="57" y2="143" stroke="#2a2f45" stroke-width="0.8"/>
+        <!-- Grid lines -->
+        <line x1="57" y1="143" x2="235" y2="143" stroke="#2a2f45" stroke-width="0.8"/>
+
+        <!-- Row 1: f=0.001 → 43.9% (bar width 120px = 100% of max) -->
+        <circle cx="14" cy="30" r="5" fill="#40c057"/>
+        <text x="23" y="34" font-size="8" fill="#8892b0">f=0.001</text>
+        <rect x="59" y="24" width="120" height="12" rx="2" fill="#40c057" opacity="0.85"/>
+        <text x="183" y="34" font-size="8" font-weight="700" fill="#40c057">43.9%</text>
+
+        <!-- Row 2: f=0.1 → 39.7% (bar width 108.5px) -->
+        <circle cx="14" cy="54" r="5" fill="#69db7c"/>
+        <text x="23" y="58" font-size="8" fill="#8892b0">f=0.1</text>
+        <rect x="59" y="48" width="108" height="12" rx="2" fill="#69db7c" opacity="0.85"/>
+        <text x="183" y="58" font-size="8" font-weight="700" fill="#69db7c">39.7%</text>
+
+        <!-- Row 3: f=1.0 → 16.1% (bar width 44px) -->
+        <circle cx="14" cy="78" r="5" fill="#f9c74f"/>
+        <text x="23" y="82" font-size="8" fill="#8892b0">f=1.0</text>
+        <rect x="59" y="72" width="44" height="12" rx="2" fill="#f9c74f" opacity="0.85"/>
+        <text x="183" y="82" font-size="8" font-weight="700" fill="#f9c74f">16.1%</text>
+
+        <!-- Row 4: f=5.0 → 0.3% (min visible bar) -->
+        <circle cx="14" cy="102" r="5" fill="#fd7e14"/>
+        <text x="23" y="106" font-size="8" fill="#8892b0">f=5.0</text>
+        <rect x="59" y="96" width="4" height="12" rx="1" fill="#fd7e14" opacity="0.7"/>
+        <text x="183" y="106" font-size="8" fill="#fd7e14">0.3%</text>
+
+        <!-- Row 5: f=20.0 → ≈0% -->
+        <circle cx="14" cy="126" r="5" fill="#ff6b6b"/>
+        <text x="23" y="130" font-size="8" fill="#8892b0">f=20.0</text>
+        <line x1="59" y1="132" x2="68" y2="132" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="2,2" opacity="0.45"/>
+        <text x="183" y="130" font-size="8" fill="rgba(255,107,107,.45)">≈ 0%</text>
+
+        <!-- Formula -->
+        <text x="127" y="150" text-anchor="middle" font-size="7.5" fill="#636e8a">w_i ∝ exp((f_max − f_i) / T),  T=temperature=1.0</text>
+      </svg>
+      <div class="detail-note">
+        f が最小の個体が選ばれやすい。ただし完全に確定的ではなく、悪い個体もわずかに選ばれる（探索性の維持）。
+      </div>
+    </div>
+
+    <!-- ② σ のスケーリング -->
+    <div class="detail-card">
+      <div class="detail-card-title">② 個体ごとの σ スケーリング（品質 × 年齢）</div>
+      <!--
+        σ_i = σ_global × 0.05^(q × (0.7 + 0.3×a))
+        q=log_quality [0,1],  a=age_ratio [0,1]
+        Chart: x=q(0→1), y=σ_i/σ_global(0→1), viewBox 0 0 255 175
+        Chart area: x=[38,228], y=[15,135]  (190×120px)
+        x_px = 38 + q*190,  y_px = 15 + (1-scale)*120
+        Curves: age=0 (blue), age=0.5 (orange), age=1 (red)
+      -->
+      <svg viewBox="0 0 255 175" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ax" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto">
+            <path d="M0,0 L0,5 L5,2.5z" fill="#2a2f45"/>
+          </marker>
+        </defs>
+
+        <!-- Grid lines -->
+        <line x1="38" y1="75" x2="228" y2="75" stroke="#1e2535" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <line x1="38" y1="129" x2="228" y2="129" stroke="#1e2535" stroke-width="0.8" stroke-dasharray="3,3"/>
+
+        <!-- Axes -->
+        <line x1="38" y1="15" x2="38" y2="137" stroke="#2a2f45" stroke-width="1"/>
+        <line x1="36" y1="135" x2="230" y2="135" stroke="#2a2f45" stroke-width="1" marker-end="url(#ax)"/>
+
+        <!-- Y axis labels -->
+        <text x="34" y="19" text-anchor="end" font-size="7.5" fill="#636e8a">100%</text>
+        <text x="34" y="79" text-anchor="end" font-size="7.5" fill="#636e8a">50%</text>
+        <text x="34" y="133" text-anchor="end" font-size="7.5" fill="#636e8a">5%</text>
+        <text x="8" y="80" text-anchor="middle" font-size="7" fill="#636e8a" transform="rotate(-90 8 80)">σ_i / σ_global</text>
+
+        <!-- Y tick marks -->
+        <line x1="36" y1="15" x2="40" y2="15" stroke="#2a2f45" stroke-width="0.8"/>
+        <line x1="36" y1="75" x2="40" y2="75" stroke="#2a2f45" stroke-width="0.8"/>
+        <line x1="36" y1="129" x2="40" y2="129" stroke="#2a2f45" stroke-width="0.8"/>
+
+        <!-- X axis labels -->
+        <text x="38" y="146" text-anchor="middle" font-size="7.5" fill="#636e8a">0</text>
+        <text x="133" y="146" text-anchor="middle" font-size="7.5" fill="#636e8a">0.5</text>
+        <text x="228" y="146" text-anchor="middle" font-size="7.5" fill="#636e8a">1</text>
+        <text x="133" y="156" text-anchor="middle" font-size="7" fill="#636e8a">log_quality（0=最悪, 1=最良）</text>
+
+        <!-- X tick marks -->
+        <line x1="38" y1="133" x2="38" y2="137" stroke="#2a2f45" stroke-width="0.8"/>
+        <line x1="133" y1="133" x2="133" y2="137" stroke="#2a2f45" stroke-width="0.8"/>
+        <line x1="228" y1="133" x2="228" y2="137" stroke="#2a2f45" stroke-width="0.8"/>
+
+        <!-- Curve age=0: points at q=0,0.1,...,1.0 -->
+        <!-- scale=0.05^(q*0.7), y=15+(1-scale)*120 -->
+        <!-- q=0:y=15, q=0.1:y=37.6, q=0.2:y=56.2, q=0.3:y=70.9, q=0.4:y=83, q=0.5:y=92.7, q=0.6:y=100.8, q=0.7:y=107.3, q=0.8:y=112.6, q=0.9:y=116.8, q=1:y=120.2 -->
+        <polyline points="38,15 57,37.6 76,56.2 95,70.9 114,83 133,92.7 152,100.8 171,107.3 190,112.6 209,116.8 228,120.2"
+          fill="none" stroke="#4c6ef5" stroke-width="1.8" stroke-linejoin="round"/>
+
+        <!-- Curve age=0.5: scale=0.05^(q*0.85) -->
+        <!-- q=0:y=15, q=0.1:y=40.7, q=0.2:y=60.8, q=0.3:y=76.7, q=0.4:y=89.2, q=0.5:y=98.9, q=0.6:y=106.7, q=0.7:y=112.7, q=0.8:y=117.5, q=0.9:y=121.2, q=1:y=125.6 -->
+        <polyline points="38,15 57,40.7 76,60.8 95,76.7 114,89.2 133,98.9 152,106.7 171,112.7 190,117.5 209,121.2 228,125.6"
+          fill="none" stroke="#f9c74f" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="5,2"/>
+
+        <!-- Curve age=1: scale=0.05^(q*1.0) -->
+        <!-- q=0:y=15, q=0.1:y=46.1, q=0.2:y=69.1, q=0.3:y=86.2, q=0.4:y=98.8, q=0.5:y=108.1, q=0.6:y=115.1, q=0.7:y=120.2, q=0.8:y=124.1, q=0.9:y=127, q=1:y=129 -->
+        <polyline points="38,15 57,46.1 76,69.1 95,86.2 114,98.8 133,108.1 152,115.1 171,120.2 190,124.1 209,127 228,129"
+          fill="none" stroke="#ff6b6b" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="2,2"/>
+
+        <!-- Annotation: q=0, all same -->
+        <text x="42" y="12" font-size="7" fill="#8892b0">←全個体 σ_i=σ</text>
+
+        <!-- Annotation: q=1 endpoints -->
+        <text x="230" y="122" font-size="6.5" fill="#4c6ef5">12%</text>
+        <text x="230" y="128" font-size="6.5" fill="#f9c74f">8%</text>
+        <text x="230" y="134" font-size="6.5" fill="#ff6b6b">5%</text>
+
+        <!-- Legend -->
+        <rect x="45" y="160" width="8" height="2" fill="#4c6ef5" rx="1"/>
+        <text x="57" y="163" font-size="7.5" fill="#8892b0">age=0（若い）</text>
+        <line x1="105" y1="162" x2="113" y2="162" stroke="#f9c74f" stroke-width="1.8" stroke-dasharray="4,1.5"/>
+        <text x="117" y="163" font-size="7.5" fill="#8892b0">age=0.5</text>
+        <line x1="162" y1="162" x2="170" y2="162" stroke="#ff6b6b" stroke-width="1.8" stroke-dasharray="2,2"/>
+        <text x="174" y="163" font-size="7.5" fill="#8892b0">age=1（高齢）</text>
+      </svg>
+      <div class="detail-note">
+        悪個体（q=0）は年齢によらず σ_i=σ で広域探索。良くて高齢な個体（q=1,a=1）は σ_i=0.05σ で精密探索。
+        sigma_min_ratio=0.05、sigma_decay=0.99/gen で σ_global も世代ごとに縮小。
+      </div>
+    </div>
+
+    <!-- ③ ニッチ選択によるエリート管理 -->
+    <div class="detail-card">
+      <div class="detail-card-title">③ ニッチ選択によるエリート管理</div>
+      <!--
+        5 individuals in 2D space.
+        1(65,80): rank1 best → SELECTED 1st elite
+        2(175,70): rank2 → SELECTED 2nd elite (dist to 1 = 113 > niche_radius)
+        3(80,68): rank3 → REJECTED (dist to 1 ≈ 19 < niche_radius=45)
+        4(160,84): rank4 → REJECTED (dist to 2 ≈ 18 < niche_radius=45)
+        5(120,30): rank5 → below quality cutoff (grey)
+        niche_radius = 45px
+      -->
+      <svg viewBox="0 0 255 165" xmlns="http://www.w3.org/2000/svg">
+
+        <!-- Background -->
+        <rect x="0" y="0" width="255" height="145" rx="4" fill="#0d1117"/>
+
+        <!-- Quality cutoff band -->
+        <rect x="90" y="10" width="80" height="40" rx="3" fill="rgba(100,100,100,.06)"/>
+        <text x="130" y="22" text-anchor="middle" font-size="7" fill="#636e8a">品質カットオフ以下</text>
+        <text x="130" y="31" text-anchor="middle" font-size="6.5" fill="#4a505e">（elite_quality_factor により除外）</text>
+
+        <!-- Niche radius circles for selected elites -->
+        <circle cx="65" cy="88" r="45" fill="none" stroke="rgba(255,107,107,.35)" stroke-width="1.2" stroke-dasharray="4,3"/>
+        <circle cx="175" cy="76" r="45" fill="none" stroke="rgba(255,107,107,.35)" stroke-width="1.2" stroke-dasharray="4,3"/>
+
+        <!-- Basin gradients (soft glow) -->
+        <radialGradient id="g1" cx="65" cy="88" r="45" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#40c057" stop-opacity="0.18"/>
+          <stop offset="100%" stop-color="#40c057" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="g2" cx="175" cy="76" r="45" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#4c6ef5" stop-opacity="0.18"/>
+          <stop offset="100%" stop-color="#4c6ef5" stop-opacity="0"/>
+        </radialGradient>
+        <circle cx="65" cy="88" r="45" fill="url(#g1)"/>
+        <circle cx="175" cy="76" r="45" fill="url(#g2)"/>
+
+        <!-- Individual 5 (rank 5, grey, quality cutoff) at (120,30) -->
+        <circle cx="120" cy="35" r="8" fill="#2a2f45" stroke="#636e8a" stroke-width="1"/>
+        <text x="120" y="38" text-anchor="middle" font-size="7" fill="#636e8a">5</text>
+        <text x="136" y="36" font-size="7" fill="#4a505e">品質不足</text>
+
+        <!-- Individual 3 (rank 3, rejected, inside elite 1 niche) at (80,72) -->
+        <circle cx="80" cy="72" r="8" fill="#2a1a0a" stroke="#f9c74f" stroke-width="1.2"/>
+        <text x="80" y="75" text-anchor="middle" font-size="7" fill="#f9c74f">3</text>
+        <!-- X mark -->
+        <line x1="74" y1="62" x2="86" y2="62" stroke="#ff6b6b" stroke-width="1.8"/>
+        <line x1="74" y1="62" x2="86" y2="62" stroke="#ff6b6b" stroke-width="1.8" transform="rotate(90 80 62)"/>
+        <text x="80" y="59" text-anchor="middle" font-size="6.5" fill="#ff6b6b">✕ 近すぎ</text>
+
+        <!-- Individual 4 (rank 4, rejected, inside elite 2 niche) at (160,88) -->
+        <circle cx="160" cy="88" r="8" fill="#2a1a0a" stroke="#f9c74f" stroke-width="1.2"/>
+        <text x="160" y="91" text-anchor="middle" font-size="7" fill="#f9c74f">4</text>
+        <!-- X mark -->
+        <line x1="154" y1="78" x2="166" y2="78" stroke="#ff6b6b" stroke-width="1.8"/>
+        <line x1="154" y1="78" x2="166" y2="78" stroke="#ff6b6b" stroke-width="1.8" transform="rotate(90 160 78)"/>
+        <text x="160" y="75" text-anchor="middle" font-size="6.5" fill="#ff6b6b">✕ 近すぎ</text>
+
+        <!-- Individual 1 (rank 1, selected 1st elite) at (65,88) -->
+        <circle cx="65" cy="88" r="9" fill="#0a2a0f" stroke="#40c057" stroke-width="2"/>
+        <text x="65" y="91" text-anchor="middle" font-size="7.5" fill="#40c057" font-weight="700">1</text>
+        <text x="26" y="85" font-size="7" fill="#40c057">① 選択</text>
+        <text x="26" y="94" font-size="6.5" fill="#636e8a">（最良）</text>
+
+        <!-- Individual 2 (rank 2, selected 2nd elite) at (175,76) -->
+        <circle cx="175" cy="76" r="9" fill="#0a0f2a" stroke="#4c6ef5" stroke-width="2"/>
+        <text x="175" y="79" text-anchor="middle" font-size="7.5" fill="#4c6ef5" font-weight="700">2</text>
+        <text x="186" y="73" font-size="7" fill="#4c6ef5">② 選択</text>
+        <text x="186" y="82" font-size="6.5" fill="#636e8a">（十分遠い）</text>
+
+        <!-- Distance annotation between 1 and 3 -->
+        <line x1="65" y1="88" x2="80" y2="72" stroke="rgba(255,107,107,.4)" stroke-width="0.8" stroke-dasharray="2,2"/>
+        <text x="67" y="79" font-size="6" fill="rgba(255,107,107,.6)">d&lt;r</text>
+
+        <!-- niche_radius label -->
+        <text x="32" y="119" font-size="7" fill="rgba(255,107,107,.5)">niche_radius</text>
+        <line x1="65" y1="133" x2="110" y2="133" stroke="rgba(255,107,107,.4)" stroke-width="0.8" stroke-dasharray="2,2"/>
+        <text x="87" y="129" text-anchor="middle" font-size="6.5" fill="rgba(255,107,107,.5)">r</text>
+
+        <!-- Legend -->
+        <circle cx="8" cy="151" r="4" fill="#0a2a0f" stroke="#40c057" stroke-width="1.5"/>
+        <text x="16" y="154" font-size="7" fill="#8892b0">選択（エリート）</text>
+        <circle cx="88" cy="151" r="4" fill="#2a1a0a" stroke="#f9c74f" stroke-width="1.2"/>
+        <text x="96" y="154" font-size="7" fill="#8892b0">空間的に近い→除外</text>
+        <circle cx="190" cy="151" r="4" fill="#2a2f45" stroke="#636e8a" stroke-width="1"/>
+        <text x="198" y="154" font-size="7" fill="#8892b0">品質不足</text>
+      </svg>
+      <div class="detail-note">
+        f 値昇順に走査し、既存エリートから距離 &gt; niche_radius なら追加。最大 n_elite_max=6 個のエリートが別々の盆地を占拠し、世代をまたいで不死として保護される。niche_radius は σ_global の縮小に比例して動的に縮小（niche_radius_min=0.05 で下限）。
+      </div>
+    </div>
+
+  </div><!-- /detail-grid -->
+
+
   <!-- ── ベースライン ── -->
   <h2 class="sec-heading">ベースライン手法</h2>
-  <p class="sec-sub">VSO と比較する5つの既存アルゴリズム。</p>
+  <p class="sec-sub">VSO と比較する4つの既存アルゴリズム。</p>
 
   <div class="method-cards">
 
@@ -459,23 +661,19 @@
       <div class="method-card-type">進化戦略</div>
       <div class="method-diagram mini-diagram" style="height:90px; display:flex; align-items:center; justify-content:center;">
         <svg viewBox="0 0 160 90" width="160" height="90">
-          <!-- Round initial distribution -->
           <ellipse cx="80" cy="45" rx="30" ry="30" fill="none" stroke="rgba(66,99,235,.3)" stroke-width="1.5" stroke-dasharray="3,2"/>
           <text x="80" y="12" text-anchor="middle" font-size="8" fill="#8892b0">初期（円形）</text>
-          <!-- Adapted ellipse (elongated diagonally) -->
           <ellipse cx="80" cy="45" rx="58" ry="16" fill="none" stroke="var(--accent)" stroke-width="1.5"
             transform="rotate(-30 80 45)"/>
           <text x="120" y="70" font-size="8" fill="var(--accent)">適応後（楕円）</text>
-          <!-- Center dot -->
           <circle cx="80" cy="45" r="3" fill="var(--accent)"/>
-          <!-- Arrow showing adaptation -->
           <path d="M 55 30 Q 65 20 72 32" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#a1)"/>
           <defs><marker id="a1" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto">
             <path d="M0,0 L0,5 L5,2.5z" fill="var(--accent)"/>
           </marker></defs>
         </svg>
       </div>
-      <p>探索分布の形（共分散行列）を世代ごとに適応学習。関数の等高線に合わせた楕円形探索が可能。単峰・滑らかな問題に強いが、多峰では局所解に陥りやすい。</p>
+      <p>探索分布の形（共分散行列）を世代ごとに適応学習。関数の等高線に合わせた楕円形探索が可能。単峰・滑らかな問題に強いが、多峰では局所解に陥りやすい。収束後は最良点から再スタートする再起動戦略も実装。</p>
     </div>
 
     <!-- PSO -->
@@ -487,10 +685,8 @@
           <defs><marker id="a2" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto">
             <path d="M0,0 L0,5 L5,2.5z" fill="var(--accent)"/>
           </marker></defs>
-          <!-- Global best star -->
           <text x="120" y="25" font-size="13" fill="#f9c74f" text-anchor="middle">★</text>
           <text x="120" y="35" font-size="7" fill="#8892b0" text-anchor="middle">gbest</text>
-          <!-- Particles with velocity arrows -->
           <circle cx="30" cy="65" r="5" fill="var(--accent-muted)"/>
           <path d="M30 65 L60 42" stroke="var(--accent)" stroke-width="1.2" fill="none" marker-end="url(#a2)"/>
           <circle cx="50" cy="70" r="5" fill="var(--accent-muted)"/>
@@ -509,22 +705,17 @@
       <div class="method-card-type">進化的アルゴリズム — 遺伝的アルゴリズム</div>
       <div class="method-diagram mini-diagram" style="height:90px; display:flex; align-items:center; justify-content:center;">
         <svg viewBox="0 0 160 90" width="160" height="90">
-          <!-- Parent 1 -->
           <rect x="5" y="10" width="60" height="18" rx="3" fill="rgba(66,99,235,.15)" stroke="var(--accent)" stroke-width="1"/>
           <rect x="5" y="10" width="30" height="18" rx="3" fill="rgba(66,99,235,.35)"/>
           <text x="35" y="22" font-size="8" fill="var(--text)" text-anchor="middle">Parent 1</text>
-          <!-- Parent 2 -->
           <rect x="5" y="34" width="60" height="18" rx="3" fill="rgba(47,158,68,.15)" stroke="var(--success)" stroke-width="1"/>
           <rect x="35" y="34" width="30" height="18" rx="3" fill="rgba(47,158,68,.35)"/>
           <text x="35" y="46" font-size="8" fill="var(--text)" text-anchor="middle">Parent 2</text>
-          <!-- Crossover symbol -->
           <text x="80" y="30" font-size="18" fill="var(--muted)" text-anchor="middle">✕</text>
-          <!-- Child -->
           <rect x="95" y="20" width="60" height="18" rx="3" fill="rgba(174,62,201,.2)" stroke="#ae3ec9" stroke-width="1"/>
           <rect x="95" y="20" width="30" height="18" rx="3" fill="rgba(66,99,235,.35)"/>
           <rect x="125" y="20" width="30" height="18" rx="3" fill="rgba(47,158,68,.35)"/>
           <text x="125" y="32" font-size="8" fill="var(--text)" text-anchor="middle">Child</text>
-          <!-- Mutation dot -->
           <circle cx="140" cy="19" r="4" fill="var(--warn)" opacity=".8"/>
           <text x="148" y="16" font-size="7" fill="var(--warn)">突然変異</text>
           <text x="80" y="82" font-size="7" fill="#8892b0" text-anchor="middle">SBX 交叉 → 多項式突然変異</text>
@@ -533,23 +724,23 @@
       <p>2つの親から SBX（Simulated Binary Crossover）で子を生成し、多項式突然変異を加える。エリート選択で上位個体を次世代に引き継ぐ。汎用性が高い。</p>
     </div>
 
-    <!-- VOA / SaVOA -->
+    <!-- SaVOA -->
     <div class="method-card">
-      <div class="method-card-name">VOA / SaVOA</div>
-      <div class="method-card-type">群知能 — ウイルス最適化（既存手法）</div>
+      <div class="method-card-name">SaVOA</div>
+      <div class="method-card-type">群知能 — 自己適応ウイルス最適化</div>
       <div class="method-diagram mini-diagram" style="height:90px; display:flex; align-items:center; justify-content:center; padding:10px 12px;">
         <div style="width:100%;">
           <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
-            <div style="flex:1; background:rgba(66,99,235,.2); border:1px solid var(--accent); border-radius:3px; padding:4px 6px; font-size:9px; color:var(--accent); text-align:center; font-weight:600;">強力個体<br><span style="font-size:8px;color:var(--muted);">局所探索</span></div>
-            <div style="font-size:10px; color:var(--muted);">分割</div>
-            <div style="flex:1; background:rgba(116,143,252,.1); border:1px solid var(--border); border-radius:3px; padding:4px 6px; font-size:9px; color:var(--muted); text-align:center;">普通個体<br><span style="font-size:8px;">誘導 or ランダム</span></div>
+            <div style="flex:1; background:rgba(66,99,235,.2); border:1px solid var(--accent); border-radius:3px; padding:4px 6px; font-size:9px; color:var(--accent); text-align:center; font-weight:600;">強力個体<br><span style="font-size:8px;color:var(--muted);">Gauss 局所探索</span></div>
+            <div style="font-size:10px; color:var(--muted);">+</div>
+            <div style="flex:1; background:rgba(116,143,252,.1); border:1px solid var(--border); border-radius:3px; padding:4px 6px; font-size:9px; color:var(--muted); text-align:center;">普通個体<br><span style="font-size:8px;">向き変異 or ランダム</span></div>
           </div>
           <div style="font-size:9px; color:var(--muted); text-align:center; line-height:1.5;">
-            SaVOA は σ を乗法的に自己適応<br>改善→×1.2 / 停滞→×0.9
+            σ を乗法的に自己適応<br>改善→×1.2（上限 0.5σ_span）/ 停滞→×0.9（下限 1e-8）
           </div>
         </div>
       </div>
-      <p>Liang &amp; Juarez (2016) のウイルス模倣アルゴリズム。個体を強力・普通に二分して役割を割り当てる。VSO と同じウイルス着想だが、ニッチ選択や寿命概念を持たない。</p>
+      <p>ウイルス模倣アルゴリズム（Liang &amp; Juarez 2016 準拠）。個体を上位 20%「強力」と残り「普通」に二分して役割を割り当てる。VSO と同じウイルス着想だが、ニッチ選択・寿命・bloom 機構を持たない。個体数は固定30。</p>
     </div>
 
   </div><!-- /method-cards -->
@@ -557,33 +748,33 @@
 
   <!-- ── VSO vs 既存手法の違い ── -->
   <h2 class="sec-heading">VSO が既存手法と異なる点</h2>
-  <p class="sec-sub">特に VOA/SaVOA との比較が重要。同じウイルス着想でも設計が根本的に異なる。</p>
+  <p class="sec-sub">特に SaVOA との比較が重要。同じウイルス着想でも設計が根本的に異なる。</p>
 
   <div style="overflow-x:auto;">
   <table class="cmp-table">
     <thead>
-      <tr><th>観点</th><th>VOA / SaVOA</th><th>VSO（提案）</th></tr>
+      <tr><th>観点</th><th>SaVOA</th><th>VSO（提案）</th></tr>
     </thead>
     <tbody>
       <tr>
         <td>個体の更新</td>
-        <td>毎世代すべての個体を置換</td>
+        <td>毎世代すべての個体を置換（親＋子を合流して上位 n を選択）</td>
         <td><strong>寿命制</strong>：死んだ個体のみ置換。エリートは不死</td>
       </tr>
       <tr>
         <td>探索幅の制御</td>
-        <td>σ を世代単位でリセット or 乗算</td>
-        <td>親の品質 ＋ 年齢で個体ごとに σ をスケーリング</td>
+        <td>σ を世代単位で乗法的に適応（改善→×1.2、停滞→×0.9）。全個体同一 σ</td>
+        <td>親の対数品質 ＋ 年齢比で個体ごとに σ をべき乗スケーリング（σ_min_ratio=0.05〜1 の範囲）</td>
       </tr>
       <tr>
         <td>エリート保護</td>
-        <td>上位 k 個体を選択（空間非考慮）</td>
-        <td><strong>ニッチ選択</strong>：空間的に離れた複数コロニーを同時保護</td>
+        <td>上位 k 個体を fitness のみで選択（空間非考慮）</td>
+        <td><strong>ニッチ選択</strong>：空間的に離れた複数コロニーを同時保護（最大6個）</td>
       </tr>
       <tr>
         <td>個体数</td>
-        <td>固定</td>
-        <td>改善時に一時増加（bloom）し、上限 n_pop_max で制御</td>
+        <td>固定（30）</td>
+        <td>可変（5〜20）。仮想呼吸で停滞時に dormant 化・復活。死んだスロットにのみ子を配置</td>
       </tr>
       <tr>
         <td>多最適解への対応</td>
