@@ -8,11 +8,15 @@
 - コードの変更後は、リモートのワークフローをトリガーして結果を確認する。
 
 ### quick_check.py / run.sh の実行について
-- `quick_check.py` はローカルでの軽量動作確認専用スクリプト。ローカル実行してよい。
-- BBOB 代表4関数・3 run・2000 evals で動作確認する（本番実験ではない）。
-- **動作テストは必ず `./run.sh quick` を使うこと。`python3 quick_check.py` を直接呼ばない。**
+- `quick_check.py` はローカルでの軽量動作確認専用スクリプト。
+- **`./run.sh quick` はユーザーから「検証して」「比較して」「分析して」などの明示的な指示があった場合のみ実行する。コード変更後の自動動作確認目的では実行しない。**
+- `./run.sh quick` を使うこと。`python3 quick_check.py` を直接呼ばない。
 - 実験管理には `run.sh` を使う（trigger / download / quick / list / status）。
 - 結果はすべて `results/YYYYMMDD_HHMMSS_<commit>/` にバージョン管理される。
+
+### git push について
+- **`git push` はユーザーから明示的に指示されるまで行わない。**
+- コミットまでは行ってよいが、push は必ず指示を待つこと。
 
 ### README.md の更新
 - コード・機能・パラメータ・実験設定に変更があった際は、**必ず README.md を更新**すること。
