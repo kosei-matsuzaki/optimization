@@ -79,10 +79,14 @@ def _process_bench(args: tuple) -> list[tuple]:
     if bench.dim == 2:
         save_runs_gif(bench, results_per_method, output_dir=output_dir)
         save_evals_gif(bench, results_per_method, output_dir=output_dir)
+        save_evals_gif(bench, results_per_method, output_dir=output_dir, best=False)
         save_population_gif(bench, results_per_method, output_dir=output_dir)
+        save_population_gif(bench, results_per_method, output_dir=output_dir, best=False)
     elif bench.dim == 3:
         save_3d_evals_gif(bench, results_per_method, output_dir=output_dir)
+        save_3d_evals_gif(bench, results_per_method, output_dir=output_dir, best=False)
         save_3d_population_gif(bench, results_per_method, output_dir=output_dir)
+        save_3d_population_gif(bench, results_per_method, output_dir=output_dir, best=False)
     save_stats(bench, results_per_method, times_per_method, output_dir=output_dir)
 
     return rows

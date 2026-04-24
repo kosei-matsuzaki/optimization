@@ -376,15 +376,20 @@ def save_evals_gif(
     output_dir: str | Path = "results",
     step: int = 100,
     fps: int = 6,
+    best: bool = True,
 ) -> None:
-    """Animate eval-point accumulation (best run per method)."""
+    """Animate eval-point accumulation (best or worst run per method)."""
     if benchmark.dim != 2:
         return
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     methods = list(results_per_method.keys())
-    runs = [min(results_per_method[m], key=lambda r: r.best_f) for m in methods]
+    runs = [
+        min(results_per_method[m], key=lambda r: r.best_f) if best
+        else max(results_per_method[m], key=lambda r: r.best_f)
+        for m in methods
+    ]
     lo, hi = benchmark.bounds
 
     X, Y, Z = _contour_data(benchmark, resolution=150)
@@ -416,13 +421,14 @@ def save_evals_gif(
             n_shown = min(comp_limit, len(run.history_x))
             bv = run.history_best[n_shown - 1] if n_shown > 0 else float("inf")
             ax.set_title(f"{method}  e={n_shown}  f={bv:.2e}", fontsize=8)
-        fig.suptitle(f"{benchmark.name}  [{benchmark.category}]  — eval accumulation",
-                     fontsize=10)
         return []
 
+    suffix = "" if best else "_failed"
+    note = "eval accumulation" if best else "eval accumulation (failed run)"
+    fig.suptitle(f"{benchmark.name}  [{benchmark.category}]  — {note}", fontsize=10)
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
-    ani.save(str(output_dir / f"{benchmark.name}_evals.gif"),
+    ani.save(str(output_dir / f"{benchmark.name}_evals{suffix}.gif"),
              writer=animation.PillowWriter(fps=fps))
     plt.close(fig)
 
@@ -437,15 +443,20 @@ def save_population_gif(
     output_dir: str | Path = "results",
     pop_frames: int = 30,
     fps: int = 6,
+    best: bool = True,
 ) -> None:
-    """Animate population distribution over generations (best run per method)."""
+    """Animate population distribution over generations (best or worst run per method)."""
     if benchmark.dim != 2:
         return
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     methods = list(results_per_method.keys())
-    runs = [min(results_per_method[m], key=lambda r: r.best_f) for m in methods]
+    runs = [
+        min(results_per_method[m], key=lambda r: r.best_f) if best
+        else max(results_per_method[m], key=lambda r: r.best_f)
+        for m in methods
+    ]
     lo, hi = benchmark.bounds
 
     X, Y, Z = _contour_data(benchmark, resolution=150)
@@ -501,13 +512,14 @@ def save_population_gif(
             eval_label = evals[fi] if fi >= 0 and evals else frame_idx + 1
             sigma_note = "  [○=σ]" if has_sigma else ""
             ax.set_title(f"{method}  eval={eval_label}{sigma_note}", fontsize=8)
-        fig.suptitle(f"{benchmark.name}  [{benchmark.category}]  — population",
-                     fontsize=10)
         return []
 
+    suffix = "" if best else "_failed"
+    note = "population" if best else "population (failed run)"
+    fig.suptitle(f"{benchmark.name}  [{benchmark.category}]  — {note}", fontsize=10)
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
-    ani.save(str(output_dir / f"{benchmark.name}_population.gif"),
+    ani.save(str(output_dir / f"{benchmark.name}_population{suffix}.gif"),
              writer=animation.PillowWriter(fps=fps))
     plt.close(fig)
 
@@ -534,6 +546,7 @@ def save_3d_evals_gif(
     output_dir: str | Path = "results",
     fps: int = 8,
     n_frames: int = 40,
+    best: bool = True,
 ) -> None:
     """Accumulate eval points in 3D, colored by log(1+f).  bright = near optimum."""
     if benchmark.dim != 3:
@@ -544,7 +557,11 @@ def save_3d_evals_gif(
     from matplotlib.colors import Normalize
 
     methods = list(results_per_method.keys())
-    runs = [min(results_per_method[m], key=lambda r: r.best_f) for m in methods]
+    runs = [
+        min(results_per_method[m], key=lambda r: r.best_f) if best
+        else max(results_per_method[m], key=lambda r: r.best_f)
+        for m in methods
+    ]
     lo, hi = benchmark.bounds
 
     all_f_log = np.log1p([f for r in runs for f in r.history_f])
@@ -585,16 +602,17 @@ def save_3d_evals_gif(
             ax.tick_params(labelsize=6)
             n_shown = min(comp_limit, len(run.history_x))
             ax.set_title(f"{method}  eval={n_shown}", fontsize=8)
-        fig.suptitle(
-            f"{benchmark.name}  [{benchmark.category}]  — 3D eval accumulation"
-            f"   * = global optimum",
-            fontsize=9,
-        )
         return []
 
+    suffix = "" if best else "_failed"
+    note = "3D eval accumulation" if best else "3D eval accumulation (failed run)"
+    fig.suptitle(
+        f"{benchmark.name}  [{benchmark.category}]  — {note}   * = global optimum",
+        fontsize=9,
+    )
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
-    ani.save(str(output_dir / f"{benchmark.name}_evals.gif"),
+    ani.save(str(output_dir / f"{benchmark.name}_evals{suffix}.gif"),
              writer=animation.PillowWriter(fps=fps))
     plt.close(fig)
 
@@ -609,6 +627,7 @@ def save_3d_population_gif(
     output_dir: str | Path = "results",
     pop_frames: int = 30,
     fps: int = 6,
+    best: bool = True,
 ) -> None:
     """Population in 3D colored by distance to optimum; camera rotates 180°."""
     if benchmark.dim != 3:
@@ -619,7 +638,11 @@ def save_3d_population_gif(
     from matplotlib.colors import Normalize
 
     methods = list(results_per_method.keys())
-    runs = [min(results_per_method[m], key=lambda r: r.best_f) for m in methods]
+    runs = [
+        min(results_per_method[m], key=lambda r: r.best_f) if best
+        else max(results_per_method[m], key=lambda r: r.best_f)
+        for m in methods
+    ]
     lo, hi = benchmark.bounds
     opt_pos = (np.array(benchmark.optima_pos[0])
                if benchmark.optima_pos else None)
@@ -687,16 +710,17 @@ def save_3d_population_gif(
             ax.view_init(elev=25, azim=azim)
             eval_label = evals[fi] if fi >= 0 and evals else frame_idx + 1
             ax.set_title(f"{method}  eval={eval_label}", fontsize=8)
-        fig.suptitle(
-            f"{benchmark.name}  [{benchmark.category}]  — 3D population"
-            f"   * = global optimum",
-            fontsize=9,
-        )
         return []
 
+    suffix = "" if best else "_failed"
+    note = "3D population" if best else "3D population (failed run)"
+    fig.suptitle(
+        f"{benchmark.name}  [{benchmark.category}]  — {note}   * = global optimum",
+        fontsize=9,
+    )
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
-    ani.save(str(output_dir / f"{benchmark.name}_population.gif"),
+    ani.save(str(output_dir / f"{benchmark.name}_population{suffix}.gif"),
              writer=animation.PillowWriter(fps=fps))
     plt.close(fig)
 

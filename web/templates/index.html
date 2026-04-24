@@ -351,29 +351,28 @@ const RESULTS_META = _pd.meta || {};
 function getCardInfo(name) {
   const m = RESULTS_META[name] || {};
   let date = '', time = '', commit = m.commit || '', type = m.type || '';
+  const rx = name.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})_([^_]+)/);
+  if (rx) {
+    date = `${rx[1]}-${rx[2]}-${rx[3]}`;
+    time = `${rx[4]}:${rx[5]}`;
+    if (!commit) commit = rx[7];
+    if (!type) type = name.includes('quick') ? 'quick' : 'workflow';
+  }
   if (m.created_at) {
     const [d, t] = m.created_at.split('T');
-    date = d || '';
-    time = t ? t.slice(0, 5) : '';
-  } else {
-    // fallback: parse from folder name
-    const rx = name.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})_([^_]+)/);
-    if (rx) {
-      date = `${rx[1]}-${rx[2]}-${rx[3]}`;
-      time = `${rx[4]}:${rx[5]}`;
-      if (!commit) commit = rx[7];
-      if (!type) type = name.includes('quick') ? 'quick' : 'workflow';
-    } else {
-      date = name;
-    }
+    date = d || date;
+    time = t ? t.slice(0, 5) : time;
   }
-  return { date, time, commit, type };
+  // For timestamp-named folders show date as title; for renamed folders show the name.
+  const title = rx ? date : name;
+  const sub   = rx ? time : `${date} ${time}`.trim();
+  return { title, sub, date, time, commit, type };
 }
 
 document.querySelectorAll('.result-card[data-name]').forEach(card => {
-  const { date, time, commit, type } = getCardInfo(card.dataset.name);
-  card.querySelector('.result-card-date').textContent = date;
-  card.querySelector('.result-card-time').textContent = time;
+  const { title, sub, commit, type } = getCardInfo(card.dataset.name);
+  card.querySelector('.result-card-date').textContent = title;
+  card.querySelector('.result-card-time').textContent = sub;
   const commitEl = card.querySelector('.result-card-commit');
   if (commitEl) commitEl.textContent = commit;
   const typeBadge = card.querySelector('.result-type-badge');
@@ -388,7 +387,7 @@ document.getElementById('quick-count').textContent =
 
 if (ALL_RESULTS.length) {
   const { date, time, commit } = getCardInfo(ALL_RESULTS[0]);
-  document.getElementById('latest-date').textContent = `${date} ${time}`.trim();
+  document.getElementById('latest-date').textContent = date ? `${date} ${time}`.trim() : ALL_RESULTS[0];
   document.getElementById('latest-commit').textContent = commit ? `@ ${commit}` : '';
 }
 
