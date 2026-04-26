@@ -11,15 +11,16 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from core.benchmarks import BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME
+from core.benchmarks import BENCHMARKS_BY_NAME
 from core.optimizers import (
     CMAESOptimizer, VirusOptimizer, PSOOptimizer,
     GAOptimizer, SaVOAOptimizer,
 )
 from core.runner import run_experiment, summarize
 from core.visualize import (
-    save_function_figure, save_runs_gif, save_evals_gif, save_population_gif,
-    save_3d_evals_gif, save_3d_population_gif, save_stats,
+    save_landscape_svg, save_convergence_svg,
+    save_method_runs_anim, save_method_evals_anim, save_method_population_anim,
+    save_method_vso_svg, save_stats,
 )
 
 # (function_name, dimension) — two representatives per BBOB group, for each dim
@@ -37,32 +38,29 @@ _QUICK_FUNCTIONS: list[tuple[str, int]] = [
     ("F21-Gallagher101",     2),   # weak-structure   — 101 Gaussian peaks
     ("C01-Himmelblau",       2),   # custom           — 4 global optima
     ("C02-SixHumpCamel",     2),   # custom           — 2 global optima
-    # 3D — two per group
-    ("F01-Sphere",           3),
-    ("F03-RastriginSep",     3),
-    ("F08-Rosenbrock",       3),
-    ("F09-RosenbrockRot",    3),
-    ("F10-EllipsoidalRot",   3),
-    ("F12-BentCigar",        3),
-    ("F15-RastriginRot",     3),
-    ("F17-SchafferF7",       3),
-    ("F20-Schwefel",         3),
-    ("F21-Gallagher101",     3),
 ]
 
 _DIM_LOOKUP: dict[int, dict[str, object]] = {
     2: BENCHMARKS_BY_NAME,
-    3: BENCHMARKS_3D_BY_NAME,
 }
 
 _OPTIMIZERS = {
-    "CMA-ES": (CMAESOptimizer, {}),
-    "PSO":    (PSOOptimizer,   {}),
-    "GA":     (GAOptimizer,    {}),
-    "SaVOA":  (SaVOAOptimizer, {}),
-    "VSO":    (VirusOptimizer, {}),
-    "VSO-A":  (VirusOptimizer, {"dormant_mode": "aging"}),
-    "VSO-C":  (VirusOptimizer, {"dormant_mode": "replace"}),
+    "sd99-mr50":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.50}),
+    "sd99-mr40":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.40}),
+    "sd99-mr30":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.30}),
+    "sd99-mr20":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.20}),
+    "sd99-mr15":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.15}),
+    "sd99-mr10":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.10}),
+    "sd99-mr07":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.07}),
+    "sd99-mr05":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.05}),
+    "sd999-mr50": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.50}),
+    "sd999-mr40": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.40}),
+    "sd999-mr30": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.30}),
+    "sd999-mr20": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.20}),
+    "sd999-mr15": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.15}),
+    "sd999-mr10": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.10}),
+    "sd999-mr07": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.07}),
+    "sd999-mr05": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.05}),
 }
 
 
@@ -90,19 +88,23 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int) -> No
                 f"{s['mean']:>12.4e} {s['std']:>12.4e} "
                 f"{s['sr_1e-2']:>7.0%} {s['success_rate']:>8.0%}{ert_str}"
             )
-        save_function_figure(bench, results_per_method, output_dir=dim_dir)
-        if bench.dim == 2:
-            save_runs_gif(bench, results_per_method, output_dir=dim_dir)
-            save_evals_gif(bench, results_per_method, output_dir=dim_dir)
-            save_evals_gif(bench, results_per_method, output_dir=dim_dir, best=False)
-            save_population_gif(bench, results_per_method, output_dir=dim_dir)
-            save_population_gif(bench, results_per_method, output_dir=dim_dir, best=False)
-        elif bench.dim == 3:
-            save_3d_evals_gif(bench, results_per_method, output_dir=dim_dir)
-            save_3d_evals_gif(bench, results_per_method, output_dir=dim_dir, best=False)
-            save_3d_population_gif(bench, results_per_method, output_dir=dim_dir)
-            save_3d_population_gif(bench, results_per_method, output_dir=dim_dir, best=False)
+
+        # Per-method visualizations
+        for method_name, results in results_per_method.items():
+            if bench.dim == 2:
+                save_method_runs_anim(bench, results, method_name, output_dir=dim_dir)
+                save_method_evals_anim(bench, results, method_name, output_dir=dim_dir, best=True)
+                save_method_evals_anim(bench, results, method_name, output_dir=dim_dir, best=False)
+                save_method_population_anim(bench, results, method_name, output_dir=dim_dir, best=True)
+                save_method_population_anim(bench, results, method_name, output_dir=dim_dir, best=False)
+            save_method_vso_svg(bench, results, method_name, output_dir=dim_dir, best=True)
+            save_method_vso_svg(bench, results, method_name, output_dir=dim_dir, best=False)
+
+        # Function-level outputs
+        save_landscape_svg(bench, output_dir=dim_dir)
+        save_convergence_svg(bench, results_per_method, output_dir=dim_dir)
         save_stats(bench, results_per_method, times_per_method, output_dir=dim_dir)
+
     print(f"Saved → {dim_dir.resolve()}/")
 
 

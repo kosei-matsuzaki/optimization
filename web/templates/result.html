@@ -6,188 +6,362 @@
   <title>{{ run_id }} — Optimization Lab</title>
   <link rel="stylesheet" href="/static/style.css">
   <style>
-  /* ── Media tabs ─────────────────────────────────────────────────────────── */
-  .media-tabs {
+  /* ── View mode tabs ───────────────────────────────────────────────────────── */
+  .view-mode-bar {
     display: flex;
-    border-bottom: 2px solid var(--border);
-    margin-bottom: 16px;
     gap: 2px;
-  }
-  .media-tabs button {
-    padding: 9px 26px;
-    border: 1px solid transparent;
-    border-bottom: none;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    padding: 8px 10px;
     background: var(--surface-2);
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: -2px;
-    transition: color .14s, background .14s, border-color .14s;
-    white-space: nowrap;
-  }
-  .media-tabs button:hover { background: var(--bg); color: var(--text-2); }
-  .media-tabs button.active {
-    background: var(--surface);
-    color: var(--accent);
-    border-color: var(--border);
-    border-bottom-color: var(--surface);
-  }
-
-  /* ── Unified results table ──────────────────────────────────────────────── */
-  .method-row {
-    cursor: pointer;
-    user-select: none;
-    background: var(--surface) !important;
-  }
-  .method-row:hover td { background: var(--accent-light) !important; }
-  .method-row td { border-bottom: 1px solid var(--border); }
-
-  .method-cell {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-weight: 700;
-    color: var(--text);
-    white-space: nowrap;
-  }
-  .expand-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px; height: 16px;
-    font-size: 8px;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    transition: background .12s;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
-  .method-row[data-expanded="true"] .expand-toggle { background: var(--accent-light); color: var(--accent); }
-
-  .run-row td {
-    background: var(--surface-2) !important;
-    border-bottom: 1px solid var(--border-light) !important;
-    color: var(--text-2);
-    font-size: 11.5px;
-  }
-  .run-row:last-of-type td { border-bottom: 2px solid var(--border) !important; }
-  .run-cell {
-    padding-left: 32px !important;
-    color: var(--muted);
-    font-family: var(--mono);
-    font-size: 11px !important;
-  }
-
-  /* column alignment for the unified table */
-  .unified-table td, .unified-table th { white-space: nowrap; }
-  .unified-table th:not(:first-child),
-  .unified-table td:not(:first-child) { text-align: right; }
-
-  /* ── Column tooltips ────────────────────────────────────────────────────── */
-  /* ── Sidebar result kebab menu ──────────────────────────────────────────── */
-  .sidebar-run-item {
-    display: flex;
-    align-items: center;
-    position: relative;
-    gap: 2px;
-  }
-  .sidebar-run-item > a { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .sidebar-run-menu-btn {
-    flex-shrink: 0;
-    width: 20px; height: 20px;
-    display: flex; align-items: center; justify-content: center;
-    background: transparent;
-    border: none;
-    border-radius: 3px;
-    color: var(--muted);
-    font-size: 14px;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity .12s, background .12s;
-    line-height: 1;
-    padding: 0;
-  }
-  .sidebar-run-item:hover .sidebar-run-menu-btn,
-  .sidebar-run-menu-btn.open { opacity: 1; }
-  .sidebar-run-menu-btn:hover, .sidebar-run-menu-btn.open {
-    background: var(--border); color: var(--text);
-  }
-  .sidebar-run-dropdown {
-    display: none;
-    position: fixed;
-    min-width: 128px;
-    background: var(--surface);
+  .vm-btn {
+    flex: 1;
+    padding: 5px 0;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    box-shadow: 0 6px 20px rgba(0,0,0,.15);
-    z-index: 500;
-    overflow: hidden;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .13s, color .13s, border-color .13s;
+    letter-spacing: .1px;
+  }
+  .vm-btn:hover { color: var(--text-2); border-color: var(--accent-muted); }
+  .vm-btn.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-color: var(--accent-muted);
+  }
+
+  /* ── Sidebar: current run header ─────────────────────────────────────────── */
+  .sidebar-run-header {
+    flex-shrink: 0;
+    padding: 12px 14px 13px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+  }
+  .srh-topbar { display: flex; align-items: center; gap: 5px; margin-bottom: 9px; }
+  .srh-type-chip {
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .7px; padding: 2px 8px; border-radius: 10px; line-height: 1.7;
+  }
+  .srh-type-chip.quick    { background: rgba(124,58,237,.12); color: #7c3aed; }
+  .srh-type-chip.workflow { background: rgba(2,132,199,.12);  color: #0284c7; }
+  .srh-type-chip.unknown  { background: var(--accent-light);  color: var(--accent); }
+  .srh-icon-btn {
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    background: transparent; border: 1px solid var(--border); border-radius: 5px;
+    color: var(--muted); font-size: 13px; cursor: pointer;
+    transition: background .13s, border-color .13s, color .13s; flex-shrink: 0;
+  }
+  .srh-icon-btn.rename-btn:hover { background: var(--accent-light); border-color: var(--accent-muted); color: var(--accent); }
+  .srh-icon-btn.delete-btn:hover { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+  .sidebar-run-id {
+    font-family: var(--mono); font-size: 12.5px; font-weight: 700; color: var(--text);
+    word-break: break-all; line-height: 1.45; margin-bottom: 8px;
+  }
+  .sidebar-run-meta { display: flex; flex-direction: column; gap: 3px; }
+  .srm-line { font-size: 10.5px; color: var(--muted); font-family: var(--mono); line-height: 1.4; }
+  .srm-line.srm-primary { font-size: 11px; color: var(--text-2); font-weight: 500; }
+  .srm-line.srm-small { font-size: 10px; opacity: .72; }
+
+  /* ── Sidebar: other results (collapsible) ────────────────────────────────── */
+  .sidebar-runs-section {
+    flex-shrink: 0; border: none; border-bottom: 1px solid var(--border-light);
+  }
+  .sidebar-runs-section summary {
+    padding: 9px 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    list-style: none; user-select: none; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .7px; color: var(--muted); transition: color .12s;
+  }
+  .sidebar-runs-section summary::-webkit-details-marker { display: none; }
+  .sidebar-runs-section summary:hover { color: var(--text-2); }
+  .sidebar-runs-section[open] summary { color: var(--text-2); }
+  .sidebar-runs-toggle { margin-left: auto; font-weight: 400; transition: transform .15s; }
+  .sidebar-runs-section[open] .sidebar-runs-toggle { transform: rotate(90deg); }
+  .sidebar-runs-section .results-list { padding: 2px 0 8px; }
+
+  /* ── Sidebar: run list items ─────────────────────────────────────────────── */
+  .sidebar-run-item { display: flex; align-items: center; position: relative; gap: 2px; }
+  .sidebar-run-item > a {
+    flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 5px; overflow: hidden;
+  }
+  .srun-primary { font-family: var(--mono); font-size: 11.5px; font-weight: 600; color: inherit; white-space: nowrap; flex-shrink: 0; }
+  .srun-raw { font-family: var(--mono); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sidebar-runs-section .results-list li a:hover { background: transparent; color: inherit; }
+  .sidebar-run-item:hover { background: var(--accent-light); border-radius: var(--radius-sm); }
+  .sidebar-run-item:hover > a { color: var(--accent); }
+  .sidebar-run-menu-btn {
+    flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center;
+    justify-content: center; background: transparent; border: none; border-radius: 50%;
+    color: var(--muted); font-size: 14px; cursor: pointer;
+    opacity: 0; transition: opacity .12s, background .12s; line-height: 1; padding: 0;
+  }
+  .sidebar-run-item:hover .sidebar-run-menu-btn, .sidebar-run-menu-btn.open { opacity: 1; }
+  .sidebar-run-menu-btn:hover, .sidebar-run-menu-btn.open { background: rgba(79,70,229,.15); color: var(--accent); }
+  .sidebar-run-dropdown {
+    display: none; position: fixed; min-width: 128px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); box-shadow: 0 6px 20px rgba(0,0,0,.15); z-index: 500; overflow: hidden;
   }
   .sidebar-run-dropdown.open { display: block; }
   .sidebar-run-dropdown button {
-    display: block; width: 100%;
-    padding: 8px 14px; text-align: left;
-    font-size: 11.5px; font-weight: 500;
-    background: transparent; border: none;
-    color: var(--text-2); cursor: pointer;
-    transition: background .1s;
+    display: block; width: 100%; padding: 8px 14px; text-align: left; font-size: 11.5px;
+    font-weight: 500; background: transparent; border: none; color: var(--text-2); cursor: pointer; transition: background .1s;
   }
   .sidebar-run-dropdown button:hover { background: var(--accent-light); color: var(--accent); }
   .sidebar-run-dropdown .danger:hover { background: rgba(201,42,42,.08); color: var(--danger); }
 
-  th[data-tip] { cursor: help; }
-  .col-tip {
-    position: fixed;
-    background: #1a1e2e;
-    color: #ccd3f0;
-    border: 1px solid #353b55;
-    padding: 7px 11px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-family: var(--mono);
-    white-space: pre-line;
-    max-width: 300px;
-    z-index: 9999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.45);
-    line-height: 1.6;
-    pointer-events: none;
+  /* ── Dimension tabs ──────────────────────────────────────────────────────── */
+  #dim-tabs {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 3px; gap: 2px; margin-bottom: 0;
   }
+  #dim-tabs button {
+    border: none; background: transparent; border-radius: 4px; font-size: 11px;
+    padding: 4px 11px; color: var(--text-2); font-weight: 600;
+    transition: background .13s, color .13s, box-shadow .13s;
+  }
+  #dim-tabs button:hover:not(.active) { background: rgba(255,255,255,.7); color: var(--text); }
+  #dim-tabs button.active {
+    background: var(--surface); color: var(--accent);
+    box-shadow: 0 1px 3px rgba(15,23,42,.10), 0 0 0 1px rgba(15,23,42,.06);
+  }
+
+  /* ── Function / Method list ──────────────────────────────────────────────── */
+  .func-group-header {
+    font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .7px; color: var(--muted); padding: 10px 9px 3px;
+    pointer-events: none; user-select: none; display: flex; align-items: center; gap: 5px;
+  }
+  .func-group-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  #func-list a, #method-list a {
+    border-left: 2px solid transparent !important;
+    padding-left: 9px !important;
+  }
+
+  /* ── Compare mode: filter panels ─────────────────────────────────────────── */
+  #compare-panel {
+    flex: 1; overflow-y: auto; display: none; flex-direction: column; gap: 0;
+  }
+  .cmp-section { border-bottom: 1px solid var(--border-light); }
+  .cmp-section-header {
+    font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .7px; color: var(--muted); padding: 8px 10px 4px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .cmp-select-all {
+    font-size: 9px; font-weight: 600; color: var(--accent);
+    background: none; border: none; cursor: pointer; padding: 0 2px;
+  }
+  .cmp-check-list { padding: 2px 6px 8px; display: flex; flex-direction: column; gap: 1px; }
+  .cmp-check-item {
+    display: flex; align-items: center; gap: 6px; padding: 3px 4px;
+    border-radius: 4px; cursor: pointer; font-size: 11px; color: var(--text-2);
+    transition: background .1s;
+  }
+  .cmp-check-item:hover { background: var(--accent-light); }
+  .cmp-check-item input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+  .cmp-check-item label { cursor: pointer; font-family: var(--mono); font-size: 11px; }
+
+  /* ── View selector (media type) ──────────────────────────────────────────── */
+  .view-selector {
+    display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 16px;
+    border-bottom: 2px solid var(--border); padding: 0;
+  }
+  .vs-btn {
+    padding: 9px 16px; border: none; border-bottom: 2.5px solid transparent; margin-bottom: -2px;
+    border-radius: 0; background: transparent; color: var(--muted); font-size: 12px;
+    font-weight: 500; cursor: pointer; transition: color .13s, border-color .13s, background .13s;
+    white-space: nowrap; letter-spacing: .1px;
+  }
+  .vs-btn:hover { color: var(--text-2); background: var(--surface-2); }
+  .vs-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  /* ── Card function badge ─────────────────────────────────────────────────── */
+  .card-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .card-title-label {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .6px; white-space: nowrap;
+  }
+  .card-func-badge {
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700;
+    background: var(--accent-light); color: var(--accent);
+    padding: 2px 9px; border-radius: var(--radius-sm); letter-spacing: -.2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .card-func-badge:empty, .card-func-badge.empty { display: none; }
+
+  /* ── Media grid (Function mode: all methods, Method mode: all functions) ─── */
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .grid-cell {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    overflow: hidden;
+    cursor: zoom-in;
+    transition: border-color .13s, box-shadow .13s;
+  }
+  .grid-cell:hover { border-color: var(--accent-muted); box-shadow: 0 2px 8px rgba(79,70,229,.12); }
+  .grid-cell-label {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    color: var(--muted); padding: 5px 8px 4px; background: var(--surface);
+    border-bottom: 1px solid var(--border-light); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .grid-cell img { display: block; width: 100%; height: auto; }
+  .grid-cell.not-available { cursor: default; opacity: .4; }
+  .grid-cell.not-available .grid-cell-img-wrap::after {
+    content: "not available"; display: flex; align-items: center; justify-content: center;
+    height: 80px; font-size: 11px; color: var(--muted);
+  }
+  .grid-cell-img-wrap { position: relative; }
+  .grid-cell-img-wrap img { display: block; width: 100%; height: auto; }
+
+  /* Single media display (legacy / single method fallback) */
+  .media-display {
+    min-height: 220px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface-2); display: flex; align-items: center; justify-content: center;
+    cursor: zoom-in; overflow: hidden;
+  }
+  .media-display img { display: block; max-width: 100%; height: auto; }
+
+  /* ── Compare mode: matrix table ──────────────────────────────────────────── */
+  .compare-matrix { width: 100%; border-collapse: collapse; }
+  .compare-matrix th {
+    font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--accent);
+    background: var(--accent-light); padding: 5px 8px; text-align: center;
+    border: 1px solid var(--border); white-space: nowrap;
+  }
+  .compare-matrix td {
+    border: 1px solid var(--border); padding: 4px; vertical-align: top;
+    min-width: 180px;
+  }
+  .compare-matrix td.row-header {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    color: var(--text-2); background: var(--surface-2); white-space: nowrap;
+    padding: 6px 10px; vertical-align: middle;
+  }
+  .compare-cell { position: relative; }
+  .compare-cell img { display: block; width: 100%; height: auto; cursor: zoom-in; }
+  .compare-cell.not-available { display: flex; align-items: center; justify-content: center;
+    height: 80px; color: var(--muted); font-size: 10px; }
+
+  /* ── Unified results table ───────────────────────────────────────────────── */
+  .method-row { cursor: pointer; user-select: none; background: var(--surface) !important; }
+  .method-row:hover td { background: var(--accent-light) !important; }
+  .method-row td { border-bottom: 1px solid var(--border); }
+  .method-cell { display: flex; align-items: center; gap: 7px; font-weight: 700; color: var(--text); white-space: nowrap; }
+  .expand-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; font-size: 9px; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 4px;
+    transition: background .12s, border-color .12s; flex-shrink: 0; background: var(--surface-2);
+  }
+  .method-row[data-expanded="true"] .expand-toggle { background: var(--accent-light); color: var(--accent); border-color: var(--accent-muted); }
+  .run-row td {
+    background: var(--surface-2) !important; border-bottom: 1px solid var(--border-light) !important;
+    color: var(--text-2); font-size: 11.5px;
+  }
+  .run-row:last-of-type td { border-bottom: 2px solid var(--border) !important; }
+  .run-cell { padding-left: 36px !important; color: var(--muted); font-family: var(--mono); font-size: 11px !important; }
+  .unified-table td, .unified-table th { white-space: nowrap; }
+  .unified-table th:not(:first-child), .unified-table td:not(:first-child) { text-align: right; }
+
+  /* ── Column legend ───────────────────────────────────────────────────────── */
+  .col-legend { margin-top: 14px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); overflow: hidden; }
+  .col-legend summary {
+    list-style: none; padding: 7px 12px; background: var(--surface-2);
+    border-bottom: 1px solid var(--border-light); font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .7px; color: var(--muted); cursor: pointer;
+    user-select: none; display: flex; align-items: center; gap: 5px; transition: color .12s;
+  }
+  .col-legend summary::-webkit-details-marker { display: none; }
+  .col-legend summary:hover { color: var(--text-2); }
+  .col-legend[open] summary { color: var(--text-2); }
+  .col-legend-toggle { margin-left: auto; font-weight: 400; transition: transform .15s; }
+  .col-legend[open] .col-legend-toggle { transform: rotate(90deg); }
+  .col-legend-body {
+    padding: 10px 14px; display: grid; grid-template-columns: max-content 1fr;
+    align-items: baseline; row-gap: 6px; column-gap: 14px; background: var(--surface);
+  }
+  .col-legend-key {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    background: var(--accent-light); color: var(--accent); padding: 1px 7px;
+    border-radius: 3px; white-space: nowrap; justify-self: start; align-self: center;
+  }
+  .col-legend-desc { color: var(--text-2); font-size: 11.5px; line-height: 1.55; }
   </style>
+  <script src="/static/modal.js"></script>
 </head>
 <body>
 
 <header class="header">
-  <h1>Optimization Lab</h1>
-  <span class="subtitle">Results Viewer</span>
+  <a href="/" class="header-back" title="ホームへ戻る">←</a>
+  <h1>Results</h1>
   <span class="header-spacer"></span>
-  <span class="header-badge">VSO Research</span>
+  <nav class="header-nav">
+    <a href="/methods" class="nav-link">Methods</a>
+  </nav>
 </header>
 
 <div class="layout">
   <aside class="sidebar">
 
-    <!-- Results navigation -->
-    <div class="sidebar-section" style="flex-shrink:0; max-height:180px; overflow-y:auto;">
-      <div class="section-header">
-        <span class="section-title">Results</span>
+    <!-- Current run header -->
+    <div class="sidebar-run-header" id="sidebar-run-header">
+      <div class="srh-topbar">
+        <span class="srh-type-chip unknown" id="srh-type-chip">—</span>
+        <span style="flex:1;"></span>
+        <button class="srh-icon-btn rename-btn" onclick="renameResult('{{ run_id }}')" title="名前変更">✏</button>
+        <button class="srh-icon-btn delete-btn" onclick="deleteResult('{{ run_id }}')" title="削除">🗑</button>
       </div>
+      <div class="sidebar-run-id" id="sidebar-run-id">{{ run_id }}</div>
+      <div class="sidebar-run-meta" id="sidebar-run-meta"></div>
+    </div>
+
+    <!-- Other results (collapsible) -->
+    {% if all_results|length > 1 %}
+    <details class="sidebar-runs-section">
+      <summary>
+        他の結果 ({{ all_results|length - 1 }})
+        <span class="sidebar-runs-toggle">▶</span>
+      </summary>
       <ul class="results-list">
         {% for r in all_results %}
+        {% if r != run_id %}
         <li class="sidebar-run-item">
-          <a href="/results/{{ r }}" {% if r == run_id %}class="active"{% endif %}>{{ r }}</a>
+          <a href="/results/{{ r }}">
+            <span class="srun-raw">{{ r }}</span>
+          </a>
           <button class="sidebar-run-menu-btn" onclick="toggleSidebarMenu('{{ r }}', event)" title="操作">⋮</button>
           <div class="sidebar-run-dropdown" id="srmenu-{{ r }}">
             <button onclick="renameResult('{{ r }}')">✏ 名前変更</button>
             <button class="danger" onclick="deleteResult('{{ r }}')">🗑 削除</button>
           </div>
         </li>
+        {% endif %}
         {% endfor %}
       </ul>
-    </div>
+    </details>
+    {% endif %}
 
     {% if dims %}
+
+    <!-- View mode tabs -->
+    <div class="view-mode-bar">
+      <button class="vm-btn active" id="vm-function" onclick="switchViewMode('function')">Function</button>
+      <button class="vm-btn" id="vm-method" onclick="switchViewMode('method')">Method</button>
+      <button class="vm-btn" id="vm-compare" onclick="switchViewMode('compare')">Compare</button>
+    </div>
 
     <!-- Dimension -->
     {% if dims|length > 1 %}
@@ -205,8 +379,8 @@
     </div>
     {% endif %}
 
-    <!-- Function list -->
-    <div class="sidebar-section" style="flex:1; overflow-y:auto;">
+    <!-- Function mode: function list -->
+    <div class="sidebar-section" id="func-panel" style="flex:1; overflow-y:auto;">
       <div class="section-header">
         <span class="section-title">Function</span>
         <span class="tag" id="func-count"></span>
@@ -214,37 +388,76 @@
       <ul class="results-list" id="func-list"></ul>
     </div>
 
+    <!-- Method mode: method list -->
+    <div class="sidebar-section" id="method-panel" style="flex:1; overflow-y:auto; display:none;">
+      <div class="section-header">
+        <span class="section-title">Method</span>
+        <span class="tag" id="method-count"></span>
+      </div>
+      <ul class="results-list" id="method-list"></ul>
+    </div>
+
+    <!-- Compare mode: function + method multi-select -->
+    <div id="compare-panel">
+      <div class="cmp-section">
+        <div class="cmp-section-header">
+          <span>Functions</span>
+          <button class="cmp-select-all" onclick="cmpSelectAll('func')">全選択</button>
+        </div>
+        <div class="cmp-check-list" id="cmp-func-list"></div>
+      </div>
+      <div class="cmp-section">
+        <div class="cmp-section-header">
+          <span>Methods</span>
+          <button class="cmp-select-all" onclick="cmpSelectAll('method')">全選択</button>
+        </div>
+        <div class="cmp-check-list" id="cmp-method-list"></div>
+      </div>
+    </div>
+
     {% endif %}
   </aside>
 
   <main class="main">
-    <div class="breadcrumb">
-      <a href="/">Home</a>
-      <span class="sep">/</span>
-      <span class="current">{{ run_id }}</span>
-    </div>
-
     {% if dims %}
 
-    <!-- Visualization -->
+    <!-- Visualization type selector -->
     <div class="card">
-      <div class="card-title" id="media-card-title">Visualization</div>
-      <div class="media-tabs" id="media-selector">
-        <button class="active" data-type="evals">評価点の蓄積</button>
-        <button data-type="evals_failed">評価点 (失敗)</button>
-        <button data-type="runs">探索軌跡</button>
-        <button data-type="population">集団の動き</button>
-        <button data-type="population_failed">集団 (失敗)</button>
-        <button data-type="landscape">関数地形</button>
+      <div class="card-header-row">
+        <span class="card-title-label">Visualization</span>
+        <span class="card-func-badge" id="media-func-badge"></span>
       </div>
-      <div class="media-display" id="media-display" onclick="openOverlay()">
+      <div class="view-selector" id="media-selector"></div>
+
+      <!-- Function mode: multi-method grid -->
+      <div id="media-grid-wrap" style="display:none;">
+        <div class="media-grid" id="media-grid"></div>
+      </div>
+
+      <!-- Method mode: multi-function grid -->
+      <div id="method-grid-wrap" style="display:none;">
+        <div class="media-grid" id="method-grid"></div>
+      </div>
+
+      <!-- Compare mode: matrix -->
+      <div id="compare-matrix-wrap" style="display:none;">
+        <div class="table-wrap">
+          <table class="compare-matrix" id="compare-matrix"></table>
+        </div>
+      </div>
+
+      <!-- Legacy / single image fallback -->
+      <div class="media-display" id="media-display" onclick="openOverlay(currentMediaSrc)" style="display:none;">
         <span class="placeholder">Select a function from the sidebar.</span>
       </div>
     </div>
 
-    <!-- Unified Results table -->
-    <div class="card">
-      <div class="card-title">Results — <span id="results-func-label" style="text-transform:none;letter-spacing:0;font-size:11px;font-family:var(--mono);"></span></div>
+    <!-- Results table (Function mode only) -->
+    <div class="card" id="results-card">
+      <div class="card-header-row">
+        <span class="card-title-label">Results</span>
+        <span class="card-func-badge" id="results-func-badge"></span>
+      </div>
       <div id="unified-table-container">
         <p class="empty-state">Select a function.</p>
       </div>
@@ -261,47 +474,260 @@
   <img id="overlay-img" src="" alt="">
 </div>
 
-<script id="page-data" type="application/json">{{ {"run_id": run_id, "dims": dims, "dims_data": dims_data} | tojson }}</script>
+<script id="page-data" type="application/json">{{ {"run_id": run_id, "dims": dims, "dims_data": dims_data, "all_results_meta": all_results_meta} | tojson }}</script>
 
 <script>
 const _pd    = JSON.parse(document.getElementById('page-data').textContent);
 const RUN_ID = _pd.run_id;
 const DIMS   = _pd.dims;
-const DIMS_DATA = _pd.dims_data;
+let   DIMS_DATA = _pd.dims_data;
+const ALL_RESULTS_META = _pd.all_results_meta || {};
 
-let currentDim  = DIMS[0] || null;
-let currentFunc = null;
-let currentType = 'evals';
+let viewMode      = 'function';
+let currentDim    = DIMS[0] || null;
+let currentFunc   = null;
+let currentMethod = null;
+let currentType   = 'evals';
 let currentMediaSrc = null;
+let mediaIndex    = null;  // loaded from /api/media-index
 
-// ── Dimension switch ──
+// Compare mode selections
+let cmpSelectedFuncs   = new Set();
+let cmpSelectedMethods = new Set();
+
+// ── ALL_TYPE_LABELS ──────────────────────────────────────────────────────────
+const TYPE_LABELS = {
+  'evals':              '評価点の蓄積',
+  'evals_failed':       '評価点 (失敗)',
+  'runs':               '探索軌跡',
+  'population':         '集団の動き',
+  'population_failed':  '集団 (失敗)',
+  'landscape':          '関数地形',
+  'convergence':        '収束曲線',
+  'vso_dyn':            'VSO動態',
+  'vso_dyn_failed':     'VSO動態 (失敗)',
+  '3devals':            '3D 評価点',
+  '3devals_failed':     '3D 評価点 (失敗)',
+  '3dpopulation':       '3D 集団',
+  '3dpopulation_failed':'3D 集団 (失敗)',
+};
+
+// Type display order
+const TYPE_ORDER = [
+  'evals', 'evals_failed', 'runs', 'population', 'population_failed',
+  'landscape', 'convergence', 'vso_dyn', 'vso_dyn_failed',
+  '3devals', '3devals_failed', '3dpopulation', '3dpopulation_failed',
+];
+
+// ── URL hash persistence: #dim2/F01-Sphere ──
+function _parseHash() {
+  const h = location.hash.slice(1);
+  if (!h) return { dim: null, func: null };
+  const parts = h.split('/');
+  return parts.length >= 2
+    ? { dim: parts[0], func: decodeURIComponent(parts.slice(1).join('/')) }
+    : { dim: null,     func: decodeURIComponent(parts[0]) };
+}
+function _updateHash() {
+  if (!currentDim || !currentFunc) return;
+  history.replaceState(null, '', `#${currentDim}/${encodeURIComponent(currentFunc)}`);
+}
+
+// ── Sidebar run header init ──
+function initSidebarRunHeader() {
+  const meta = ALL_RESULTS_META[RUN_ID] || {};
+  const chip = document.getElementById('srh-type-chip');
+  const hdr  = document.getElementById('sidebar-run-header');
+  if (chip) {
+    const type = meta.type || '';
+    chip.textContent = type || '—';
+    chip.className = `srh-type-chip ${type || 'unknown'}`;
+  }
+  if (hdr) {
+    const color = meta.type === 'quick' ? '#7c3aed' : meta.type === 'workflow' ? '#0284c7' : 'var(--accent)';
+    hdr.style.borderTopColor = color;
+  }
+  const idEl = document.getElementById('sidebar-run-id');
+  if (idEl) idEl.textContent = RUN_ID;
+  const metaEl = document.getElementById('sidebar-run-meta');
+  if (metaEl) {
+    const lines = [];
+    if (meta.created_at) {
+      const [d, t] = meta.created_at.split('T');
+      lines.push({ cls: 'srm-primary', text: d + (t ? '  ' + t.slice(0, 5) : '') });
+    }
+    const runInfo = [];
+    if (meta.n_runs    != null) runInfo.push(`${meta.n_runs} runs`);
+    if (meta.max_evals != null) runInfo.push(`${Number(meta.max_evals).toLocaleString()} evals`);
+    if (runInfo.length) lines.push({ cls: '', text: runInfo.join(' · ') });
+    if (meta.commit)    lines.push({ cls: 'srm-small', text: meta.commit });
+    metaEl.innerHTML = lines.map(l =>
+      `<span class="srm-line${l.cls ? ' ' + l.cls : ''}">${l.text}</span>`
+    ).join('');
+  }
+  document.querySelectorAll('.sidebar-runs-section .srun-raw').forEach(el => {
+    el.className = 'srun-primary';
+  });
+}
+
+// ── Function groups ──
+const FUNC_GROUPS = [
+  { label: 'Separable',      color: '#4e9af1', ids: ['f01','f02','f03','f04','f05'] },
+  { label: 'Moderate',       color: '#7dc87d', ids: ['f06','f07','f08','f09'] },
+  { label: 'High Cond.',     color: '#e5a94c', ids: ['f10','f11','f12','f13','f14'] },
+  { label: 'Multi-modal',    color: '#c07fe0', ids: ['f15','f16','f17','f18','f19'] },
+  { label: 'Weak Structure', color: '#e06060', ids: ['f20','f21','f22','f23','f24'] },
+];
+function getFuncGroup(name) {
+  const lc = name.toLowerCase();
+  return FUNC_GROUPS.find(g => g.ids.some(id => lc.startsWith(id))) || null;
+}
+
+// ── Media URL resolver ──────────────────────────────────────────────────────
+function mediaUrl(func, method, type) {
+  if (!mediaIndex || mediaIndex.format === 'legacy') {
+    // Legacy file naming
+    if (type === 'landscape')     return `/media/${RUN_ID}/${currentDim}/${func}.svg`;
+    if (type === 'convergence')   return `/media/${RUN_ID}/${currentDim}/${func}_convergence.svg`;
+    if (type === 'vso_dyn')       return `/media/${RUN_ID}/${currentDim}/${func}_vso_dyn.svg`;
+    if (type === 'vso_dyn_failed') return `/media/${RUN_ID}/${currentDim}/${func}_vso_dyn_failed.svg`;
+    return `/media/${RUN_ID}/${currentDim}/${func}_${type}.gif`;
+  }
+  // New format
+  if (type === 'landscape')  return `/media/${RUN_ID}/${currentDim}/${func}_landscape.svg`;
+  if (type === 'convergence') return `/media/${RUN_ID}/${currentDim}/${func}_convergence.svg`;
+  const entry = mediaIndex.files.find(
+    f => f.func === func && f.method === method && f.type === type
+  );
+  const ext = entry?.ext || 'webp';
+  return `/media/${RUN_ID}/${currentDim}/${func}_${method}_${type}.${ext}`;
+}
+
+// ── Build view type selector from index ────────────────────────────────────
+function buildTypeSelector() {
+  const sel = document.getElementById('media-selector');
+  sel.innerHTML = '';
+
+  let types;
+  if (mediaIndex && mediaIndex.format === 'new') {
+    types = TYPE_ORDER.filter(t => mediaIndex.types.includes(t));
+  } else {
+    // Legacy default types
+    types = ['evals','evals_failed','runs','population','population_failed','landscape','vso_dyn','vso_dyn_failed'];
+  }
+
+  if (!types.includes(currentType)) currentType = types[0] || 'evals';
+
+  types.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'vs-btn' + (t === currentType ? ' active' : '');
+    btn.dataset.type = t;
+    btn.textContent = TYPE_LABELS[t] || t;
+    sel.appendChild(btn);
+  });
+}
+
+// ── Switch view mode ────────────────────────────────────────────────────────
+function switchViewMode(mode) {
+  viewMode = mode;
+  ['function','method','compare'].forEach(m => {
+    document.getElementById(`vm-${m}`).classList.toggle('active', m === mode);
+  });
+
+  // Show/hide sidebar panels
+  document.getElementById('func-panel').style.display    = mode === 'function' ? '' : 'none';
+  document.getElementById('method-panel').style.display  = mode === 'method'   ? '' : 'none';
+  document.getElementById('compare-panel').style.display = mode === 'compare'  ? 'flex' : 'none';
+
+  // Show/hide main panels
+  const isLegacy = !mediaIndex || mediaIndex.format === 'legacy';
+  document.getElementById('media-grid-wrap').style.display    = (mode === 'function' && !isLegacy) ? '' : 'none';
+  document.getElementById('method-grid-wrap').style.display   = mode === 'method'   ? '' : 'none';
+  document.getElementById('compare-matrix-wrap').style.display = mode === 'compare'  ? '' : 'none';
+  document.getElementById('media-display').style.display      = (mode === 'function' && isLegacy) ? '' : 'none';
+  document.getElementById('results-card').style.display       = mode === 'function'  ? '' : 'none';
+
+  if (mode === 'function') {
+    if (isLegacy) updateLegacyMedia(); else renderFunctionGrid();
+  } else if (mode === 'method') {
+    buildMethodList();
+    renderMethodGrid();
+  } else if (mode === 'compare') {
+    buildComparePanel();
+    renderCompareMatrix();
+  }
+}
+
+// ── Dimension switch ─────────────────────────────────────────────────────────
 function switchDim(dim) {
   currentDim = dim;
   document.querySelectorAll('#dim-tabs button')
     .forEach(b => b.classList.toggle('active', b.dataset.dim === dim));
-  buildFuncList();
+  loadMediaIndex().then(() => {
+    buildTypeSelector();
+    buildFuncList();
+    if (viewMode === 'method') {
+      buildMethodList();
+      renderMethodGrid();
+    } else if (viewMode === 'compare') {
+      buildComparePanel();
+      renderCompareMatrix();
+    }
+  });
 }
 
-// ── Function list ──
+// ── Load media index from API ────────────────────────────────────────────────
+async function loadMediaIndex() {
+  try {
+    const res = await fetch(`/api/media-index/${encodeURIComponent(RUN_ID)}/${currentDim}`);
+    if (res.ok) {
+      mediaIndex = await res.json();
+    }
+  } catch (_) {
+    mediaIndex = null;
+  }
+}
+
+// ── Function list ────────────────────────────────────────────────────────────
 function buildFuncList() {
-  const list = document.getElementById('func-list');
+  const list    = document.getElementById('func-list');
   const countEl = document.getElementById('func-count');
   list.innerHTML = '';
   const functions = (DIMS_DATA[currentDim] || {}).functions || [];
   if (countEl) countEl.textContent = functions.length;
+
+  let lastGroupLabel = null;
+  let customHeaderAdded = false;
   functions.forEach((f, i) => {
+    const grp    = getFuncGroup(f);
+    const grpKey = grp ? grp.label : '__custom__';
+    if (grpKey !== lastGroupLabel) {
+      lastGroupLabel = grpKey;
+      const hdr = document.createElement('li');
+      hdr.className = 'func-group-header';
+      if (grp) {
+        hdr.innerHTML = `<span class="func-group-dot" style="background:${grp.color}"></span>${grp.label}`;
+      } else if (!customHeaderAdded) {
+        customHeaderAdded = true;
+        hdr.innerHTML = `<span class="func-group-dot" style="background:var(--muted)"></span>Custom`;
+      }
+      list.appendChild(hdr);
+    }
     const li = document.createElement('li');
     const a  = document.createElement('a');
     a.href = '#';
     a.textContent = f;
     a.dataset.func = f;
-    if (i === 0) a.classList.add('active');
+    if (grp) a.style.setProperty('border-left-color', grp.color, 'important');
     a.addEventListener('click', e => { e.preventDefault(); selectFunc(f); });
     li.appendChild(a);
     list.appendChild(li);
   });
-  if (functions.length) selectFunc(functions[0]);
-  else {
+
+  if (functions.length) {
+    const { func: hashFunc } = _parseHash();
+    selectFunc(hashFunc && functions.includes(hashFunc) ? hashFunc : functions[0]);
+  } else {
     document.getElementById('media-display').innerHTML =
       '<span class="placeholder">No functions found.</span>';
     document.getElementById('unified-table-container').innerHTML = '';
@@ -312,20 +738,231 @@ function selectFunc(func) {
   currentFunc = func;
   document.querySelectorAll('#func-list a')
     .forEach(a => a.classList.toggle('active', a.dataset.func === func));
-  document.getElementById('results-func-label').textContent = func;
-  document.getElementById('media-card-title').textContent = `Visualization — ${func}`;
-  updateMedia();
+  document.querySelectorAll('.card-func-badge').forEach(el => el.textContent = func);
+  _updateHash();
+
+  const isLegacy = !mediaIndex || mediaIndex.format === 'legacy';
+  if (isLegacy) {
+    updateLegacyMedia();
+  } else {
+    renderFunctionGrid();
+  }
   buildUnifiedTable(func);
 }
 
-// ── Media ──
-function updateMedia() {
+// ── Method list (Method mode) ────────────────────────────────────────────────
+function buildMethodList() {
+  const list    = document.getElementById('method-list');
+  const countEl = document.getElementById('method-count');
+  list.innerHTML = '';
+  const methods = (mediaIndex && mediaIndex.methods) ? mediaIndex.methods : [];
+  if (countEl) countEl.textContent = methods.length;
+
+  if (!methods.length) {
+    list.innerHTML = '<li style="padding:10px;color:var(--muted);font-size:11px;">手法別データなし (new format required)</li>';
+    return;
+  }
+
+  methods.forEach((m, i) => {
+    const li = document.createElement('li');
+    const a  = document.createElement('a');
+    a.href = '#';
+    a.textContent = m;
+    a.dataset.method = m;
+    if (i === 0 && !currentMethod) { currentMethod = m; a.classList.add('active'); }
+    if (m === currentMethod) a.classList.add('active');
+    a.addEventListener('click', e => { e.preventDefault(); selectMethod(m); });
+    li.appendChild(a);
+    list.appendChild(li);
+  });
+
+  if (!currentMethod && methods.length) currentMethod = methods[0];
+}
+
+function selectMethod(method) {
+  currentMethod = method;
+  document.querySelectorAll('#method-list a')
+    .forEach(a => a.classList.toggle('active', a.dataset.method === method));
+  document.getElementById('media-func-badge').textContent = method;
+  renderMethodGrid();
+}
+
+// ── Render: Function mode grid (all methods for current function) ─────────────
+function renderFunctionGrid() {
+  const grid = document.getElementById('media-grid');
+  grid.innerHTML = '';
+  if (!currentFunc || !mediaIndex) return;
+
+  const methods = mediaIndex.methods || [];
+  if (!methods.length) {
+    grid.innerHTML = '<p class="empty-state">手法別データがありません。</p>';
+    return;
+  }
+
+  // For landscape/convergence (no method), show as single cell
+  if (currentType === 'landscape' || currentType === 'convergence') {
+    const url = mediaUrl(currentFunc, null, currentType);
+    grid.appendChild(makeGridCell(currentFunc, null, currentType, url, currentFunc));
+    return;
+  }
+
+  methods.forEach(method => {
+    const url = mediaUrl(currentFunc, method, currentType);
+    grid.appendChild(makeGridCell(currentFunc, method, currentType, url, method));
+  });
+}
+
+// ── Render: Method mode grid (all functions for current method) ──────────────
+function renderMethodGrid() {
+  const grid = document.getElementById('method-grid');
+  grid.innerHTML = '';
+  if (!currentMethod || !mediaIndex) return;
+
+  const funcs = mediaIndex.funcs || [];
+  if (!funcs.length) {
+    grid.innerHTML = '<p class="empty-state">関数データがありません。</p>';
+    return;
+  }
+
+  funcs.forEach(func => {
+    const url = mediaUrl(func, currentMethod, currentType);
+    grid.appendChild(makeGridCell(func, currentMethod, currentType, url, func));
+  });
+}
+
+// ── Render: Compare mode matrix ──────────────────────────────────────────────
+function renderCompareMatrix() {
+  const table = document.getElementById('compare-matrix');
+  table.innerHTML = '';
+  if (!mediaIndex) return;
+
+  const funcs   = [...cmpSelectedFuncs];
+  const methods = [...cmpSelectedMethods];
+  if (!funcs.length || !methods.length) {
+    table.innerHTML = '<tr><td style="padding:20px;color:var(--muted);font-size:12px;">関数と手法を選択してください。</td></tr>';
+    return;
+  }
+
+  // Header row
+  const thead = document.createElement('thead');
+  const hrow  = document.createElement('tr');
+  hrow.appendChild(Object.assign(document.createElement('th'), { textContent: '' }));
+  methods.forEach(m => {
+    const th = document.createElement('th');
+    th.textContent = m;
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow);
+  table.appendChild(thead);
+
+  // Data rows
+  const tbody = document.createElement('tbody');
+  funcs.forEach(func => {
+    const tr = document.createElement('tr');
+    const th = document.createElement('td');
+    th.className = 'row-header';
+    th.textContent = func;
+    tr.appendChild(th);
+    methods.forEach(method => {
+      const td = document.createElement('td');
+      const url = mediaUrl(func, method, currentType);
+      const div = document.createElement('div');
+      div.className = 'compare-cell';
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = `${func} / ${method}`;
+      img.style.cursor = 'zoom-in';
+      img.onclick = () => openOverlay(url);
+      img.onerror = () => { div.className = 'compare-cell not-available'; div.textContent = '—'; div.innerHTML = '<span style="color:var(--muted);font-size:10px;">N/A</span>'; };
+      div.appendChild(img);
+      td.appendChild(div);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+}
+
+// ── Grid cell factory ────────────────────────────────────────────────────────
+function makeGridCell(func, method, type, url, label) {
+  const cell = document.createElement('div');
+  cell.className = 'grid-cell';
+
+  const lbl = document.createElement('div');
+  lbl.className = 'grid-cell-label';
+  lbl.textContent = label;
+  cell.appendChild(lbl);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'grid-cell-img-wrap';
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = label;
+  img.loading = 'lazy';
+  img.onerror = () => cell.classList.add('not-available');
+  img.onclick = () => openOverlay(url);
+  wrap.appendChild(img);
+  cell.appendChild(wrap);
+
+  return cell;
+}
+
+// ── Compare panel checkboxes ─────────────────────────────────────────────────
+function buildComparePanel() {
+  if (!mediaIndex) return;
+  const funcs   = mediaIndex.funcs   || [];
+  const methods = mediaIndex.methods || [];
+
+  // Init selections if empty
+  if (!cmpSelectedFuncs.size)   funcs.slice(0, 4).forEach(f => cmpSelectedFuncs.add(f));
+  if (!cmpSelectedMethods.size) methods.forEach(m => cmpSelectedMethods.add(m));
+
+  buildCheckList('cmp-func-list', funcs, cmpSelectedFuncs, (f, checked) => {
+    if (checked) cmpSelectedFuncs.add(f); else cmpSelectedFuncs.delete(f);
+    renderCompareMatrix();
+  });
+  buildCheckList('cmp-method-list', methods, cmpSelectedMethods, (m, checked) => {
+    if (checked) cmpSelectedMethods.add(m); else cmpSelectedMethods.delete(m);
+    renderCompareMatrix();
+  });
+}
+
+function buildCheckList(containerId, items, selected, onChange) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'cmp-check-item';
+    const id = `chk-${containerId}-${item}`;
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.id = id;
+    chk.checked = selected.has(item);
+    chk.onchange = () => onChange(item, chk.checked);
+    const lbl = document.createElement('label');
+    lbl.htmlFor = id;
+    lbl.textContent = item;
+    div.append(chk, lbl);
+    container.appendChild(div);
+  });
+}
+
+function cmpSelectAll(type) {
+  if (!mediaIndex) return;
+  const items = type === 'func' ? (mediaIndex.funcs || []) : (mediaIndex.methods || []);
+  const set   = type === 'func' ? cmpSelectedFuncs : cmpSelectedMethods;
+  const containerId = type === 'func' ? 'cmp-func-list' : 'cmp-method-list';
+  items.forEach(i => set.add(i));
+  document.querySelectorAll(`#${containerId} input[type=checkbox]`).forEach(c => { c.checked = true; });
+  renderCompareMatrix();
+}
+
+// ── Legacy: single image display ─────────────────────────────────────────────
+function updateLegacyMedia() {
   if (!currentFunc || !currentDim) return;
   const display = document.getElementById('media-display');
   display.innerHTML = '<span class="placeholder">Loading…</span>';
-  const src = currentType === 'landscape'
-    ? `/media/${RUN_ID}/${currentDim}/${currentFunc}.svg`
-    : `/media/${RUN_ID}/${currentDim}/${currentFunc}_${currentType}.gif`;
+  const src = mediaUrl(currentFunc, null, currentType);
   currentMediaSrc = src;
   const img = document.createElement('img');
   img.src = src;
@@ -337,19 +974,11 @@ function updateMedia() {
   };
 }
 
-document.getElementById('media-selector').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-type]');
-  if (!btn) return;
-  document.querySelectorAll('#media-selector button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentType = btn.dataset.type;
-  updateMedia();
-});
-
-// ── Fullscreen ──
-function openOverlay() {
-  if (!currentMediaSrc) return;
-  document.getElementById('overlay-img').src = currentMediaSrc;
+// ── Fullscreen overlay ────────────────────────────────────────────────────────
+function openOverlay(src) {
+  if (!src) return;
+  currentMediaSrc = src;
+  document.getElementById('overlay-img').src = src;
   document.getElementById('media-overlay').classList.add('open');
 }
 function closeOverlay() {
@@ -357,7 +986,25 @@ function closeOverlay() {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
 
-// ── Number formatting ──
+// ── Type selector events ─────────────────────────────────────────────────────
+document.getElementById('media-selector').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-type]');
+  if (!btn) return;
+  document.querySelectorAll('#media-selector button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentType = btn.dataset.type;
+
+  if (viewMode === 'function') {
+    const isLegacy = !mediaIndex || mediaIndex.format === 'legacy';
+    if (isLegacy) updateLegacyMedia(); else renderFunctionGrid();
+  } else if (viewMode === 'method') {
+    renderMethodGrid();
+  } else if (viewMode === 'compare') {
+    renderCompareMatrix();
+  }
+});
+
+// ── Number formatting ─────────────────────────────────────────────────────────
 function fmtNum(val) {
   const f = parseFloat(val);
   if (isNaN(f) || val === '' || val == null) return val ?? '—';
@@ -366,7 +1013,6 @@ function fmtNum(val) {
     ? f.toPrecision(4) : f.toExponential(2);
 }
 
-// ── Rank color ──
 function rankColors(values, higherBetter) {
   const nums = values.map(v => parseFloat(v));
   const valid = nums.filter(v => !isNaN(v));
@@ -374,25 +1020,24 @@ function rankColors(values, higherBetter) {
   const sorted = [...valid].sort((a, b) => a - b);
   return nums.map(v => {
     if (isNaN(v)) return '';
-    const pos = sorted.indexOf(v);
+    const pos  = sorted.indexOf(v);
     const rank = higherBetter ? sorted.length - 1 - pos : pos;
-    const n = sorted.length;
-    if (rank === 0) return 'cell-best';
-    if (rank <= Math.floor(n * 0.25)) return 'cell-good';
-    if (rank <= Math.floor(n * 0.5))  return 'cell-mid';
-    if (rank < n - 1) return 'cell-bad';
+    const n    = sorted.length;
+    if (rank === 0)                      return 'cell-best';
+    if (rank <= Math.floor(n * 0.25))    return 'cell-good';
+    if (rank <= Math.floor(n * 0.5))     return 'cell-mid';
+    if (rank < n - 1)                    return 'cell-bad';
     return 'cell-worst';
   });
 }
 
-// ── Unified table ──
+// ── Unified table ─────────────────────────────────────────────────────────────
 async function buildUnifiedTable(func) {
   const container = document.getElementById('unified-table-container');
   container.innerHTML = '<p class="empty-state">Loading…</p>';
 
   const summaryRows = (DIMS_DATA[currentDim]?.summary || [])
     .filter(r => r.function === func);
-
   if (!summaryRows.length) {
     container.innerHTML = '<p class="empty-state">No data.</p>';
     return;
@@ -401,13 +1046,11 @@ async function buildUnifiedTable(func) {
   const res = await fetch(`/api/stats/${RUN_ID}/${currentDim}/${func}`);
   const { rows: statRows } = await res.json();
 
-  // Group per-run rows by method
   const byMethod = {};
   (statRows || []).forEach(r => {
     (byMethod[r.method] = byMethod[r.method] || []).push(r);
   });
 
-  // Rank colors for summary
   const bfColors  = rankColors(summaryRows.map(r => r.mean_best_f), false);
   const sr2Colors = rankColors(summaryRows.map(r => parseFloat(r['sr_1e-2'])), true);
   const sr4Colors = rankColors(summaryRows.map(r => parseFloat(r['sr_1e-4'] ?? r.success_rate)), true);
@@ -421,30 +1064,38 @@ async function buildUnifiedTable(func) {
   }
   function fmtSR(val) {
     if (val == null || val === '') return '—';
-    // already formatted as "67%" or raw float 0.667
     if (typeof val === 'string' && val.endsWith('%')) return val;
     const n = parseFloat(val);
     return isNaN(n) ? '—' : (n * 100).toFixed(0) + '%';
   }
 
-  const TH = (label, tip, extra='') =>
-    `<th${tip ? ` data-tip="${tip.replace(/"/g,'&quot;')}"` : ''}${extra ? ' '+extra : ''}>${label}</th>`;
+  const COLS = [
+    { label: 'Method / Seed', desc: 'Click ▶ to expand per-run details.' },
+    { label: 'best_f',        desc: 'Mean of final best f(x) across all runs. Lower is better. BBOB functions: global minimum = 0.' },
+    { label: 'SR@1e-2',       desc: 'Success Rate f ≤ 1×10⁻². Fraction of runs reaching f < 0.01 (loose convergence target).' },
+    { label: 'SR@1e-4',       desc: 'Success Rate f ≤ 1×10⁻⁴. BBOB standard success target. Fraction of successful runs.' },
+    { label: 'ERT',           desc: 'Expected Running Time (BBOB standard). ERT = Σ evals_to_target / n_success. Failed runs are penalized with max_evals. — means no successful run.' },
+    { label: 'time (s)',      desc: 'Mean wall-clock time per run (seconds).' },
+    { label: 'optima rate',   desc: 'Fraction of distinct global optima found per run (capture radius ε = 0.1 × span). N/A for single-optimum functions.' },
+    { label: 'evals',         desc: 'Total function evaluations used in this run.' },
+  ];
+
+  const TH = (label, extra='') => `<th${extra ? ' '+extra : ''}>${label}</th>`;
+  const legendItems = COLS.map(c =>
+    `<span class="col-legend-key">${c.label}</span><span class="col-legend-desc">${c.desc}</span>`
+  ).join('');
 
   let html = `
+  <details class="col-legend">
+    <summary>凡例<span class="col-legend-toggle">▶</span></summary>
+    <div class="col-legend-body">${legendItems}</div>
+  </details>
   <div class="table-wrap">
   <table class="unified-table">
-    <thead>
-      <tr>
-        ${TH('Method / Seed', 'Click ▶ to expand per-run details.', 'style="text-align:left;min-width:150px;"')}
-        ${TH('best_f', 'Mean of final best f(x) across all runs.\nLower is better.\nBBOB functions: global minimum = 0.')}
-        ${TH('SR@1e-2', 'Success Rate  f ≤ 1×10⁻²\nFraction of runs reaching f < 0.01.\n(loose convergence target)')}
-        ${TH('SR@1e-4', 'Success Rate  f ≤ 1×10⁻⁴\nBBOB standard success target.\nFraction of successful runs.')}
-        ${TH('ERT', 'Expected Running Time  (BBOB standard)\n\nERT = Σ evals_to_target / n_success\n\nFailed runs are penalized with max_evals.\n— means no successful run.')}
-        ${TH('time (s)', 'Mean wall-clock time per run (seconds).')}
-        ${TH('optima rate', 'Fraction of distinct global optima found\nper run (capture radius ε = 0.1 × span).\nN/A for single-optimum functions.')}
-        ${TH('evals', 'Total function evaluations\nused in this run.')}
-      </tr>
-    </thead>
+    <thead><tr>
+      ${TH('Method / Seed', 'style="text-align:left;min-width:150px;"')}
+      ${TH('best_f')} ${TH('SR@1e-2')} ${TH('SR@1e-4')} ${TH('ERT')} ${TH('time (s)')} ${TH('optima rate')} ${TH('evals')}
+    </tr></thead>
     <tbody id="unified-tbody">`;
 
   summaryRows.forEach((sr, si) => {
@@ -483,7 +1134,6 @@ async function buildUnifiedTable(func) {
   html += '</tbody></table></div>';
   container.innerHTML = html;
 
-  // Expand / collapse
   container.querySelector('#unified-tbody').addEventListener('click', e => {
     const row = e.target.closest('.method-row');
     if (!row) return;
@@ -502,7 +1152,7 @@ function htmlesc(s) {
   return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 }
 
-// ── Sidebar run kebab menu ──
+// ── Sidebar run kebab menu ────────────────────────────────────────────────────
 function toggleSidebarMenu(runId, e) {
   e.preventDefault(); e.stopPropagation();
   const btn  = e.currentTarget;
@@ -510,9 +1160,7 @@ function toggleSidebarMenu(runId, e) {
   const isOpen = menu.classList.contains('open');
   closeAllSidebarMenus();
   if (!isOpen) {
-    menu.classList.add('open');
-    btn.classList.add('open');
-    // Position the fixed dropdown below the button
+    menu.classList.add('open'); btn.classList.add('open');
     const r = btn.getBoundingClientRect();
     menu.style.top  = (r.bottom + 4) + 'px';
     menu.style.left = Math.max(4, r.right - menu.offsetWidth) + 'px';
@@ -524,27 +1172,27 @@ function closeAllSidebarMenus() {
 }
 document.addEventListener('click', closeAllSidebarMenus);
 
-// ── Rename result ──
+// ── Rename result ─────────────────────────────────────────────────────────────
 async function renameResult(runId) {
   closeAllSidebarMenus();
-  const newName = prompt('新しい名前を入力してください:', runId);
+  const newName = await dlg.prompt('新しい名前を入力してください:', runId);
   if (!newName || newName === runId) return;
   const form = new FormData();
   form.append('new_name', newName);
-  const res = await fetch(`/api/results/${encodeURIComponent(runId)}/rename`, { method: 'POST', body: form });
+  const res  = await fetch(`/api/results/${encodeURIComponent(runId)}/rename`, { method: 'POST', body: form });
   const data = await res.json();
   if (data.ok) {
     location.href = `/results/${encodeURIComponent(data.new_name)}`;
   } else {
-    alert(data.message || '名前変更に失敗しました');
+    await dlg.alert(data.message || '名前変更に失敗しました');
   }
 }
 
-// ── Delete result ──
+// ── Delete result ─────────────────────────────────────────────────────────────
 async function deleteResult(runId) {
   closeAllSidebarMenus();
-  if (!confirm(`「${runId}」を削除しますか？\nこの操作は元に戻せません。`)) return;
-  const res = await fetch(`/api/results/${encodeURIComponent(runId)}`, { method: 'DELETE' });
+  if (!await dlg.confirm(`「${runId}」を削除しますか？\nこの操作は元に戻せません。`)) return;
+  const res  = await fetch(`/api/results/${encodeURIComponent(runId)}`, { method: 'DELETE' });
   const data = await res.json();
   if (data.ok) {
     if (runId === RUN_ID) { location.href = '/'; return; }
@@ -552,42 +1200,72 @@ async function deleteResult(runId) {
       .find(el => el.querySelector(`a[href="/results/${runId}"]`));
     if (li) li.remove();
   } else {
-    alert(data.message || '削除に失敗しました');
+    await dlg.alert(data.message || '削除に失敗しました');
   }
 }
 
-// ── Dim tabs ──
+// ── Dim tabs ──────────────────────────────────────────────────────────────────
 document.getElementById('dim-tabs').addEventListener('click', e => {
   const btn = e.target.closest('button[data-dim]');
   if (btn) switchDim(btn.dataset.dim);
 });
 
-// ── Init ──
-if (currentDim) buildFuncList();
-
-// ── Column tooltips (body-level to escape overflow:auto clipping) ──
+// ── Init ──────────────────────────────────────────────────────────────────────
+initSidebarRunHeader();
 (function() {
-  let tip = null;
-  document.addEventListener('mouseover', e => {
-    const th = e.target.closest('th[data-tip]');
-    if (!th) return;
-    if (tip) { tip.remove(); tip = null; }
-    tip = document.createElement('div');
-    tip.className = 'col-tip';
-    tip.textContent = th.dataset.tip;
-    tip.style.cssText = 'left:0;top:-9999px;';
-    document.body.appendChild(tip);
-    const r = th.getBoundingClientRect();
-    const w = tip.offsetWidth, h = tip.offsetHeight;
-    const x = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 8));
-    const y = r.top - h - 8;
-    tip.style.left = x + 'px';
-    tip.style.top  = (y < 8 ? r.bottom + 8 : y) + 'px';
-  });
-  document.addEventListener('mouseout', e => {
-    if (e.target.closest('th[data-tip]') && tip) { tip.remove(); tip = null; }
-  });
+  const { dim: hashDim } = _parseHash();
+  if (hashDim && DIMS.includes(hashDim) && hashDim !== currentDim) {
+    currentDim = hashDim;
+    document.querySelectorAll('#dim-tabs button')
+      .forEach(b => b.classList.toggle('active', b.dataset.dim === currentDim));
+  }
 })();
+
+if (currentDim) {
+  loadMediaIndex().then(() => {
+    buildTypeSelector();
+    buildFuncList();
+    // Show the appropriate media container for Function mode
+    const isLegacy = !mediaIndex || mediaIndex.format === 'legacy';
+    document.getElementById('media-grid-wrap').style.display = (!isLegacy) ? '' : 'none';
+    document.getElementById('media-display').style.display   = isLegacy ? '' : 'none';
+    if (isLegacy) {
+      document.getElementById('media-display').innerHTML =
+        '<span class="placeholder">Select a function from the sidebar.</span>';
+    }
+  });
+}
+
+// ── Auto-sync polling (every 15 s) ────────────────────────────────────────────
+let _lastFuncKey = JSON.stringify(DIMS_DATA[DIMS[0]]?.functions ?? []);
+let _lastSummKey = '';
+
+async function pollResultData() {
+  try {
+    const res = await fetch(`/api/result-data/${encodeURIComponent(RUN_ID)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const newFuncs = data.dims_data[currentDim]?.functions ?? [];
+    const newSumm  = data.dims_data[currentDim]?.summary   ?? [];
+    const funcKey  = JSON.stringify(newFuncs);
+    const summKey  = JSON.stringify(newSumm.filter(r => r.function === currentFunc));
+
+    if (funcKey !== _lastFuncKey) {
+      _lastFuncKey = funcKey;
+      DIMS_DATA = data.dims_data;
+      await loadMediaIndex();
+      buildTypeSelector();
+      buildFuncList();
+    }
+    if (currentFunc && summKey !== _lastSummKey) {
+      _lastSummKey = summKey;
+      DIMS_DATA = data.dims_data;
+      buildUnifiedTable(currentFunc);
+    }
+  } catch (_) {}
+}
+setInterval(pollResultData, 15000);
 </script>
 
 </body>

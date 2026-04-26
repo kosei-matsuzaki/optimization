@@ -9,8 +9,10 @@ from core.optimizers import (
 )
 from core.runner import run_experiment, summarize
 from core.visualize import (
-    save_function_figure, save_runs_gif, save_evals_gif, save_population_gif,
-    save_3d_evals_gif, save_3d_population_gif, save_stats,
+    save_landscape_svg, save_convergence_svg,
+    save_method_runs_anim, save_method_evals_anim, save_method_population_anim,
+    save_method_3devals_anim, save_method_3dpopulation_anim,
+    save_method_vso_svg, save_stats,
 )
 
 
@@ -19,12 +21,10 @@ MAX_EVALS = 5000
 OUTPUT_DIR = Path("results")
 
 _BASE_OPTIMIZERS = {
-    "PSO":   (PSOOptimizer,          {}),
-    "GA":    (GAOptimizer,           {}),
-    "SaVOA": (SaVOAOptimizer,        {}),
-    "VSO":   (VirusOptimizer,        {}),
-    "VSO-A": (VirusOptimizer,        {"dormant_mode": "aging"}),
-    "VSO-C": (VirusOptimizer,        {"dormant_mode": "replace"}),
+    "PSO":      (PSOOptimizer,       {}),
+    "GA":       (GAOptimizer,        {}),
+    "SaVOA":    (SaVOAOptimizer,     {}),
+    "VSO":      (VirusOptimizer,     {}),
 }
 
 
@@ -36,11 +36,7 @@ def _make_optimizers(sigma0: float) -> dict:
 
 
 def _process_bench(args: tuple) -> list[tuple]:
-    """Worker: run all optimizers on one benchmark and return result rows.
-
-    Receives (bench_name, bench_dim, ...) instead of a BenchmarkFunction object
-    to avoid pickling ioh closures, which are not serialisable.
-    """
+    """Worker: run all optimizers on one benchmark and return result rows."""
     import warnings
     warnings.filterwarnings("ignore")
     import matplotlib
@@ -49,7 +45,6 @@ def _process_bench(args: tuple) -> list[tuple]:
     bench_name, bench_dim, n_runs, max_evals, output_dir_str = args
     output_dir = Path(output_dir_str)
 
-    # Reconstruct benchmark locally so ioh closures stay within this process.
     from core.benchmarks import _make_bbob, _himmelblau, _six_hump_camel, _BBOB_SPECS
     if bench_name == "C01-Himmelblau":
         bench = _himmelblau()
@@ -77,18 +72,24 @@ def _process_bench(args: tuple) -> list[tuple]:
         s = summarize(results)
         rows.append((bench.name, bench.category, method_name, s, sum(times) / len(times)))
 
-    save_function_figure(bench, results_per_method, output_dir=output_dir)
-    if bench.dim == 2:
-        save_runs_gif(bench, results_per_method, output_dir=output_dir)
-        save_evals_gif(bench, results_per_method, output_dir=output_dir)
-        save_evals_gif(bench, results_per_method, output_dir=output_dir, best=False)
-        save_population_gif(bench, results_per_method, output_dir=output_dir)
-        save_population_gif(bench, results_per_method, output_dir=output_dir, best=False)
-    elif bench.dim == 3:
-        save_3d_evals_gif(bench, results_per_method, output_dir=output_dir)
-        save_3d_evals_gif(bench, results_per_method, output_dir=output_dir, best=False)
-        save_3d_population_gif(bench, results_per_method, output_dir=output_dir)
-        save_3d_population_gif(bench, results_per_method, output_dir=output_dir, best=False)
+        # Per-method visualizations
+        if bench.dim == 2:
+            save_method_runs_anim(bench, results, method_name, output_dir=output_dir)
+            save_method_evals_anim(bench, results, method_name, output_dir=output_dir, best=True)
+            save_method_evals_anim(bench, results, method_name, output_dir=output_dir, best=False)
+            save_method_population_anim(bench, results, method_name, output_dir=output_dir, best=True)
+            save_method_population_anim(bench, results, method_name, output_dir=output_dir, best=False)
+        elif bench.dim == 3:
+            save_method_3devals_anim(bench, results, method_name, output_dir=output_dir, best=True)
+            save_method_3devals_anim(bench, results, method_name, output_dir=output_dir, best=False)
+            save_method_3dpopulation_anim(bench, results, method_name, output_dir=output_dir, best=True)
+            save_method_3dpopulation_anim(bench, results, method_name, output_dir=output_dir, best=False)
+        save_method_vso_svg(bench, results, method_name, output_dir=output_dir, best=True)
+        save_method_vso_svg(bench, results, method_name, output_dir=output_dir, best=False)
+
+    # Function-level outputs (all methods combined)
+    save_landscape_svg(bench, output_dir=output_dir)
+    save_convergence_svg(bench, results_per_method, output_dir=output_dir)
     save_stats(bench, results_per_method, times_per_method, output_dir=output_dir)
 
     return rows
