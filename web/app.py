@@ -94,19 +94,13 @@ def _list_functions(run_dir: Path, dim: str) -> list[str]:
 
     funcs: set[str] = set()
 
-    # New format: {Func}_landscape.svg or {Func}_convergence.svg
+    # Primary: {Func}_landscape.svg or {Func}_convergence.svg
     for p in dim_dir.glob("*_landscape.svg"):
         funcs.add(p.stem[: -len("_landscape")])
     for p in dim_dir.glob("*_convergence.svg"):
         funcs.add(p.stem[: -len("_convergence")])
 
-    # Legacy format: {Func}.svg  (pattern [FC]##-Name, no type suffix)
-    if not funcs:
-        for p in dim_dir.glob("*.svg"):
-            if re.match(r"^[FC]\d{2}-\w+$", p.stem):
-                funcs.add(p.stem)
-
-    # Fallback: summary.csv (available once stats are written)
+    # Fallback: summary.csv (before landscape SVGs are written)
     if not funcs:
         summary_path = run_dir / dim / "summary.csv"
         if summary_path.exists():
@@ -118,7 +112,7 @@ def _list_functions(run_dir: Path, dim: str) -> list[str]:
     return sorted(funcs)
 
 
-# Known visualization types for filename parsing
+# Known visualization types for filename parsing (longest-first to avoid prefix clash)
 _ANIM_TYPES = [
     "3dpopulation_failed", "3devals_failed",
     "population_failed", "evals_failed", "vso_dyn_failed",
@@ -132,88 +126,48 @@ def _build_media_index(run_dir: Path, dim: str) -> dict:
     dim_dir = run_dir / dim
     funcs = _list_functions(run_dir, dim)
     if not funcs:
-        return {"funcs": [], "methods": [], "types": [], "files": [], "format": "legacy"}
-
-    # Detect format by presence of *_landscape.svg
-    is_new = any((dim_dir / f"{func}_landscape.svg").exists() for func in funcs[:5])
+        return {"funcs": [], "methods": [], "types": [], "files": []}
 
     files: list[dict] = []
     methods_seen: set[str] = set()
     types_seen: set[str] = set()
 
-    if is_new:
-        for func in funcs:
-            # Function-level SVGs
-            for type_, suffix in [("landscape", "_landscape.svg"), ("convergence", "_convergence.svg")]:
-                if (dim_dir / f"{func}{suffix}").exists():
-                    files.append({"func": func, "method": None, "type": type_, "ext": "svg"})
-                    types_seen.add(type_)
-
-            # Per-method files: {func}_{method}_{type}.{ext}
-            for ext in ("webp", "gif", "svg"):
-                for p in sorted(dim_dir.glob(f"{func}_*.{ext}")):
-                    stem = p.stem  # e.g. F01-Sphere_VSO_evals
-                    rest = stem[len(func) + 1:]  # e.g. VSO_evals
-                    if not rest or rest in ("landscape", "convergence"):
-                        continue
-                    # Match known type suffix
-                    matched_type = next(
-                        (t for t in _ANIM_TYPES if rest.endswith(f"_{t}") or rest == t),
-                        None,
-                    )
-                    if matched_type:
-                        method_part = rest[: -(len(matched_type) + 1)] if rest != matched_type else None
-                    else:
-                        continue
-                    if not method_part:
-                        continue
-                    # Avoid duplicate (prefer webp over gif)
-                    existing = next(
-                        (f for f in files
-                         if f["func"] == func and f["method"] == method_part
-                         and f["type"] == matched_type),
-                        None,
-                    )
-                    if existing:
-                        continue
-                    methods_seen.add(method_part)
-                    types_seen.add(matched_type)
-                    files.append({
-                        "func": func, "method": method_part,
-                        "type": matched_type, "ext": ext,
-                    })
-
-        return {
-            "funcs": sorted(funcs),
-            "methods": sorted(methods_seen),
-            "types": sorted(types_seen),
-            "files": files,
-            "format": "new",
-        }
-
-    # Legacy format
-    legacy_map = [
-        ("landscape",          "svg", lambda f: f"{f}.svg"),
-        ("evals",              "gif", lambda f: f"{f}_evals.gif"),
-        ("evals_failed",       "gif", lambda f: f"{f}_evals_failed.gif"),
-        ("runs",               "gif", lambda f: f"{f}_runs.gif"),
-        ("population",         "gif", lambda f: f"{f}_population.gif"),
-        ("population_failed",  "gif", lambda f: f"{f}_population_failed.gif"),
-        ("vso_dyn",            "svg", lambda f: f"{f}_vso_dyn.svg"),
-        ("vso_dyn_failed",     "svg", lambda f: f"{f}_vso_dyn_failed.svg"),
-    ]
     for func in funcs:
-        for type_, ext, fname_fn in legacy_map:
-            if (dim_dir / fname_fn(func)).exists():
-                files.append({"func": func, "method": None, "type": type_, "ext": ext})
+        # Function-level SVGs
+        for type_, suffix in [("landscape", "_landscape.svg"), ("convergence", "_convergence.svg")]:
+            if (dim_dir / f"{func}{suffix}").exists():
+                files.append({"func": func, "method": None, "type": type_, "ext": "svg"})
                 types_seen.add(type_)
+
+        # Per-method files: {func}_{method}_{type}.{ext}
+        for ext in ("webp", "gif", "svg"):
+            for p in sorted(dim_dir.glob(f"{func}_*.{ext}")):
+                stem = p.stem  # e.g. F01-Sphere_VSO_evals
+                rest = stem[len(func) + 1:]  # e.g. VSO_evals
+                if not rest or rest in ("landscape", "convergence"):
+                    continue
+                matched_type = next(
+                    (t for t in _ANIM_TYPES if rest.endswith(f"_{t}") or rest == t),
+                    None,
+                )
+                if not matched_type:
+                    continue
+                method_part = rest[: -(len(matched_type) + 1)] if rest != matched_type else None
+                if not method_part:
+                    continue
+                # Prefer webp over gif (skip duplicates)
+                if any(f["func"] == func and f["method"] == method_part
+                       and f["type"] == matched_type for f in files):
+                    continue
+                methods_seen.add(method_part)
+                types_seen.add(matched_type)
+                files.append({"func": func, "method": method_part, "type": matched_type, "ext": ext})
 
     return {
         "funcs": sorted(funcs),
-        "methods": [],
+        "methods": sorted(methods_seen),
         "types": sorted(types_seen),
         "files": files,
-        "format": "legacy",
     }
 
 
@@ -223,6 +177,109 @@ def _read_summary(run_dir: Path, dim: str) -> list[dict]:
         return []
     with open(path, newline="") as f:
         return list(csv.DictReader(f))
+
+
+def _compute_overall_ranking(run_dir: Path, dim: str) -> dict:
+    """Compute Friedman-rank-based overall ranking across all functions."""
+    import numpy as np
+
+    rows = _read_summary(run_dir, dim)
+    if not rows:
+        return {"methods": [], "categories": [], "funcs": [],
+                "leaderboard": [], "func_ranks": {}, "func_categories": {}}
+
+    def parse_sr(s: str) -> float:
+        if not s or s == "N/A":
+            return 0.0
+        return float(s.strip("%")) / 100.0
+
+    def parse_ert(s: str) -> float:
+        try:
+            return float(s)
+        except (ValueError, TypeError):
+            return float("inf")
+
+    def parse_bf(s: str) -> float:
+        try:
+            return float(s)
+        except (ValueError, TypeError):
+            return float("inf")
+
+    funcs   = sorted(set(r["function"] for r in rows))
+    methods = sorted(set(r["method"]   for r in rows))
+    func_categories: dict[str, str] = {}
+    data: dict[str, dict] = {}
+    for row in rows:
+        f, m = row["function"], row["method"]
+        func_categories[f] = row.get("category", "unknown")
+        data.setdefault(f, {})[m] = {
+            "sr":  parse_sr(row.get("sr_1e-4", "0%")),
+            "ert": parse_ert(row.get("ert", "inf")),
+            "bf":  parse_bf(row.get("mean_best_f", "inf")),
+        }
+
+    # Friedman ranks per function with tie-averaging
+    func_ranks: dict[str, dict[str, float]] = {}
+    for func in funcs:
+        md = data.get(func, {})
+
+        def sort_key(m: str, _md: dict = md) -> tuple:
+            d = _md.get(m, {"sr": 0.0, "ert": float("inf"), "bf": float("inf")})
+            return (-d["sr"], d["ert"], d["bf"])
+
+        ordered = sorted(methods, key=sort_key)
+        ranks: dict[str, float] = {}
+        i = 0
+        while i < len(ordered):
+            j = i
+            ki = sort_key(ordered[i])
+            while j < len(ordered) and sort_key(ordered[j]) == ki:
+                j += 1
+            avg = (i + j + 1) / 2  # 1-indexed average rank
+            for m in ordered[i:j]:
+                ranks[m] = avg
+            i = j
+        func_ranks[func] = ranks
+
+    categories = sorted(set(func_categories.values()))
+
+    leaderboard = []
+    for method in methods:
+        rank_vals = [func_ranks.get(f, {}).get(method, float(len(methods))) for f in funcs]
+        sr_vals   = [data.get(f, {}).get(method, {}).get("sr", 0.0) for f in funcs]
+        mean_rank = float(np.mean(rank_vals))
+        rank_std  = float(np.std(rank_vals))
+        mean_sr   = float(np.mean(sr_vals))
+        n_best  = sum(1 for f in funcs if func_ranks.get(f, {}).get(method, 0) == 1.0)
+        n_worst = sum(1 for f in funcs
+                      if func_ranks.get(f, {}).get(method, 0) == float(len(methods)))
+        cat_sr: dict[str, float | None] = {}
+        for cat in categories:
+            cf = [f for f in funcs if func_categories.get(f) == cat]
+            cat_sr[cat] = (
+                float(np.mean([data.get(f, {}).get(method, {}).get("sr", 0.0) for f in cf]))
+                if cf else None
+            )
+        leaderboard.append({
+            "method":      method,
+            "mean_rank":   round(mean_rank, 2),
+            "rank_std":    round(rank_std,  2),
+            "mean_sr":     round(mean_sr,   4),
+            "n_best":      n_best,
+            "n_worst":     n_worst,
+            "category_sr": {k: (round(v, 4) if v is not None else None)
+                            for k, v in cat_sr.items()},
+        })
+
+    leaderboard.sort(key=lambda x: (x["mean_rank"], -x["mean_sr"]))
+    return {
+        "methods":         methods,
+        "categories":      categories,
+        "funcs":           funcs,
+        "func_categories": func_categories,
+        "leaderboard":     leaderboard,
+        "func_ranks":      func_ranks,
+    }
 
 
 def _current_commit() -> str:
@@ -600,6 +657,16 @@ def api_result_data(run_id: str):
         for dim in dims
     }
     return jsonify({"dims": dims, "dims_data": dims_data})
+
+
+@app.route("/api/overall/<run_id>/<dim>")
+def api_overall(run_id: str, dim: str):
+    if not run_id or "/" in run_id or ".." in run_id:
+        return jsonify({"error": "invalid"}), 400
+    run_dir = RESULTS_DIR / run_id
+    if not run_dir.exists():
+        return jsonify({"error": "not found"}), 404
+    return jsonify(_compute_overall_ranking(run_dir, dim))
 
 
 if __name__ == "__main__":

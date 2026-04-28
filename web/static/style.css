@@ -656,24 +656,4 @@ td.cell-failure { color: var(--danger);  font-weight: 700; }
   color: var(--accent);
 }
 
-/* ── result.html: media-display override (legacy single image) ─────────────── */
-.media-display {
-  min-height: 220px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: zoom-in;
-  overflow: hidden;
-}
-.media-display img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
-.media-display .placeholder {
-  color: var(--muted);
-  font-size: 12.5px;
-}
+

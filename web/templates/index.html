@@ -21,9 +21,9 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 16px 20px;
+    padding: 18px 20px;
     box-shadow: var(--shadow-sm);
-    border-left: 4px solid transparent;
+    border-left: 3px solid transparent;
   }
   .stat-card.blue  { border-left-color: var(--accent); }
   .stat-card.green { border-left-color: var(--success); }
@@ -34,21 +34,32 @@
     text-transform: uppercase;
     letter-spacing: .8px;
     color: var(--muted);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  .stat-value    { font-size: 32px; font-weight: 700; color: var(--text); line-height: 1; }
+  .stat-icon {
+    width: 18px; height: 18px;
+    border-radius: 4px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px;
+  }
+  .stat-card.blue  .stat-icon { background: var(--accent-light); color: var(--accent); }
+  .stat-card.green .stat-icon { background: var(--success-bg);   color: var(--success); }
+  .stat-card.gold  .stat-icon { background: var(--warn-bg);      color: var(--warn); }
+  .stat-value    { font-size: 30px; font-weight: 800; color: var(--text); line-height: 1; letter-spacing: -.5px; }
   .stat-value-sm { font-size: 14px; font-weight: 700; color: var(--text); font-family: var(--mono); }
-  .stat-sub      { font-size: 10.5px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+  .stat-sub      { font-size: 10.5px; color: var(--muted); font-family: var(--mono); margin-top: 4px; }
 
-  /* ── Controls ────────────────────────────────────────────────────────────── */
-  .controls-grid {
+  /* ── Main grid (controls left · results right) ───────────────────────────── */
+  .main-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 360px 1fr;
     gap: 18px;
-    margin-bottom: 18px;
     align-items: start;
   }
-  .right-col { display: flex; flex-direction: column; gap: 18px; }
+  .controls-col { display: flex; flex-direction: column; gap: 18px; }
 
   .panel-card {
     background: var(--surface);
@@ -58,163 +69,171 @@
     box-shadow: var(--shadow-sm);
   }
   .panel-title {
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 700;
-    color: var(--text);
-    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-light);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
   }
-  .panel-title .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    flex-shrink: 0;
+  .panel-icon {
+    width: 18px; height: 18px;
+    border-radius: 4px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; flex-shrink: 0;
   }
-  .panel-title .dot.green { background: var(--success); }
+  .panel-icon.blue   { background: var(--accent-light); color: var(--accent); }
+  .panel-icon.green  { background: var(--success-bg);   color: var(--success); }
+  .panel-icon.purple { background: rgba(124,58,237,.12); color: #7c3aed; }
 
   /* GH run rows inside Remote Runs */
   .gh-runs-scroll { max-height: 220px; overflow-y: auto; }
 
-  /* ── Results grid ────────────────────────────────────────────────────────── */
-  .results-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px 22px;
-    box-shadow: var(--shadow-sm);
+  /* ── Results table ───────────────────────────────────────────────────────── */
+  .results-table-wrap {
+    overflow-y: auto;
+    max-height: calc(100vh - 230px);
+    overflow-x: hidden;
   }
-  .results-section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
   }
-  .results-section-title {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text);
-  }
-  .result-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-    gap: 10px;
-  }
-  .result-card-wrap {
-    position: relative;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
-    box-shadow: var(--shadow-sm);
-    transition: border-color .15s, box-shadow .15s, transform .12s;
-  }
-  .result-card-wrap:hover { border-color: var(--accent); box-shadow: var(--shadow); transform: translateY(-2px); }
-  .result-card-wrap.is-quick    { border-left: 3px solid var(--accent-muted); }
-  .result-card-wrap.is-workflow { border-left: 3px solid var(--success); }
-
-  .result-card {
-    display: block;
-    padding: 13px 36px 13px 14px;
-    text-decoration: none;
-    border-radius: var(--radius);
-  }
-  .result-card-date {
-    font-size: 12.5px; font-weight: 700;
-    color: var(--text); font-family: var(--mono);
-    letter-spacing: -.2px; line-height: 1.4;
-  }
-  .result-card-time {
-    font-size: 11px; color: var(--muted);
-    font-family: var(--mono); margin-top: 1px;
-  }
-  .result-card-meta {
-    display: flex; align-items: center; gap: 6px;
-    margin-top: 7px;
-  }
-  .result-card-commit {
-    font-size: 10px; color: var(--muted);
-    font-family: var(--mono);
+  .results-table thead th {
+    position: sticky; top: 0; z-index: 2;
     background: var(--surface-2);
-    border: 1px solid var(--border-light);
-    border-radius: 3px;
-    padding: 1px 5px;
-  }
-  .result-type-badge {
-    font-size: 9px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .4px;
-    padding: 1px 5px;
-    border-radius: 3px;
-    background: var(--surface-2);
-    border: 1px solid var(--border-light);
+    padding: 6px 10px;
+    text-align: left;
+    font-size: 9.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .6px;
     color: var(--muted);
+    border-bottom: 2px solid var(--accent);
+    white-space: nowrap; user-select: none;
   }
-  .result-type-badge:empty { display: none; }
+  .results-table thead th.sortable { cursor: pointer; }
+  .results-table thead th.sortable:hover { color: var(--text-2); }
+  .results-table thead th.sort-asc::after  { content: " ↑"; color: var(--accent); }
+  .results-table thead th.sort-desc::after { content: " ↓"; color: var(--accent); }
+  .results-table thead th:nth-child(1) { width: auto; }
+  .results-table thead th:nth-child(2) { width: 66px; }
+  .results-table thead th:nth-child(3) { width: 86px; }
+  .results-table thead th:nth-child(4) { width: 114px; }
+  .results-table thead th:nth-child(5) { width: 58px; }
+  .results-table thead th:nth-child(6) { width: 70px; }
+  .results-table thead th:nth-child(7) { width: 30px; }
 
-  /* ── Card kebab menu ─────────────────────────────────────────────────────── */
+  .rt-row { border-bottom: 1px solid var(--border-light); transition: background .1s; }
+  .rt-row:last-child { border-bottom: none; }
+  .results-table tbody tr:hover td { background: var(--accent-light) !important; }
+  .rt-row td {
+    padding: 7px 10px; vertical-align: middle;
+    font-family: var(--mono); font-size: 11.5px;
+    color: var(--text-2); border-bottom: none;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+  .rt-link {
+    color: var(--text); text-decoration: none;
+    font-weight: 600; font-size: 11.5px;
+    display: block; overflow: hidden;
+    white-space: nowrap; text-overflow: ellipsis;
+  }
+  .rt-row:hover .rt-link { color: var(--accent); }
+
+  .rt-type-chip {
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; padding: 2px 7px;
+    border-radius: 10px; white-space: nowrap; line-height: 1.6;
+  }
+  .rt-type-chip.quick    { background: rgba(124,58,237,.12); color: #7c3aed; }
+  .rt-type-chip.workflow { background: rgba(2,132,199,.12);  color: #0284c7; }
+  .rt-type-chip.unknown  { display: none; }
+
+  .rt-date { display: block; font-size: 11px; color: var(--text-2); }
+  .rt-time { display: block; font-size: 10px; color: var(--muted); }
+
+  .rt-params { font-size: 10.5px; color: var(--muted); }
+  .rt-commit { font-size: 10.5px; color: var(--muted); }
+
+  .rc-status {
+    display: none; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; white-space: nowrap;
+  }
+  .rc-status.visible { display: flex; }
+  .rc-status.done    { color: var(--success); }
+  .rc-status.running { color: var(--accent); }
+  .rc-status.stopped { color: var(--warn); }
+  .rc-status.failed  { color: var(--danger); }
+  .rc-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .rc-dot.done    { background: var(--success); }
+  .rc-dot.running { background: var(--accent); animation: rc-pulse 1.4s ease-in-out infinite; }
+  .rc-dot.stopped { background: var(--warn); }
+  .rc-dot.failed  { background: var(--danger); }
+  @keyframes rc-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .4; transform: scale(.7); }
+  }
+
+  /* ── Row kebab menu ──────────────────────────────────────────────────────── */
+  .rt-actions-cell { padding: 0 10px 0 4px !important; text-align: center; }
   .card-menu-btn {
-    position: absolute;
-    top: 8px; right: 8px;
     width: 24px; height: 24px;
-    display: flex; align-items: center; justify-content: center;
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    color: var(--muted);
-    font-size: 16px;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity .12s, background .12s, color .12s;
-    z-index: 1;
-    line-height: 1;
-    letter-spacing: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: none; border-radius: 50%;
+    color: var(--muted); font-size: 16px; cursor: pointer;
+    opacity: 0; transition: opacity .12s, background .12s, color .12s;
+    line-height: 1; letter-spacing: 0;
   }
-  .result-card-wrap:hover .card-menu-btn,
-  .result-card-wrap .card-menu-btn.open { opacity: 1; }
-  .card-menu-btn:hover, .card-menu-btn.open {
-    background: var(--border); color: var(--text);
-  }
+  .rt-row:hover .card-menu-btn,
+  .card-menu-btn.open { opacity: 1; }
+  .card-menu-btn:hover, .card-menu-btn.open { background: var(--border); color: var(--text); }
 
   .card-menu-dropdown {
-    display: none;
-    position: absolute;
-    top: 34px; right: 6px;
+    display: none; position: fixed;
     min-width: 128px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    box-shadow: 0 6px 20px rgba(0,0,0,.15);
-    z-index: 100;
-    overflow: hidden;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); box-shadow: 0 6px 20px rgba(0,0,0,.15);
+    z-index: 200; overflow: hidden;
   }
   .card-menu-dropdown.open { display: block; }
   .card-menu-dropdown button {
-    display: block; width: 100%;
-    padding: 9px 14px; text-align: left;
+    display: block; width: 100%; padding: 9px 14px; text-align: left;
     font-size: 12px; font-weight: 500;
-    background: transparent; border: none;
-    color: var(--text-2); cursor: pointer;
+    background: transparent; border: none; color: var(--text-2); cursor: pointer;
     transition: background .1s;
   }
   .card-menu-dropdown button:hover { background: var(--accent-light); color: var(--accent); }
-  .card-menu-dropdown .danger { color: var(--text-2); }
   .card-menu-dropdown .danger:hover { background: rgba(201,42,42,.08); color: var(--danger); }
+  .card-menu-dropdown .stop-job { color: var(--danger); font-weight: 600; }
+  .card-menu-dropdown .stop-job:hover { background: rgba(201,42,42,.08); color: var(--danger); }
 
-  @media (max-width: 720px) {
-    .controls-grid { grid-template-columns: 1fr; }
+  @keyframes card-appear {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .card-new { animation: card-appear .3s ease both; }
+
+  @media (max-width: 860px) {
+    .main-grid { grid-template-columns: 1fr; }
     .stats-row { grid-template-columns: 1fr; }
     .dashboard { padding: 16px; }
   }
   </style>
+  <script src="/static/modal.js"></script>
 </head>
 <body>
 
 <header class="header">
-  <h1>Optimization Lab</h1>
-  <span class="subtitle">VSO Research Dashboard</span>
+  <h1>Dashboard</h1>
   <span class="header-spacer"></span>
-  <a href="/methods" style="font-size:12px; font-weight:600; color:rgba(255,255,255,.85); text-decoration:none; padding:5px 12px; border-radius:20px; border:1px solid rgba(255,255,255,.3); transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background=''">手法解説</a>
-  <span class="header-badge">VSO Research</span>
+  <nav class="header-nav">
+    <a href="/methods" class="nav-link">Methods</a>
+  </nav>
 </header>
 
 <div class="dashboard">
@@ -222,56 +241,60 @@
   <!-- Stats -->
   <div class="stats-row">
     <div class="stat-card blue">
-      <div class="stat-label">Total Results</div>
+      <div class="stat-label"><span class="stat-icon">⚗</span>Total Results</div>
       <div class="stat-value">{{ results|length }}</div>
     </div>
     <div class="stat-card green">
-      <div class="stat-label">Latest Run</div>
+      <div class="stat-label"><span class="stat-icon">✓</span>Latest Run</div>
       <div class="stat-value-sm" id="latest-date">—</div>
       <div class="stat-sub" id="latest-commit"></div>
     </div>
     <div class="stat-card gold">
-      <div class="stat-label">Quick Runs</div>
+      <div class="stat-label"><span class="stat-icon">▶</span>Quick Runs</div>
       <div class="stat-value" id="quick-count">0</div>
     </div>
   </div>
 
-  <!-- Controls: Quick Run (left) | GH Actions + Remote Runs (right) -->
-  <div class="controls-grid">
+  <!-- Main layout: controls (left) · results (right) -->
+  <div class="main-grid">
 
-    <!-- Quick Run -->
-    <div class="panel-card">
-      <div class="panel-title"><span class="dot"></span> Quick Run (local)</div>
-      <form id="run-form">
-        <div class="form-grid" style="margin-bottom:12px;">
-          <div class="form-row">
-            <label for="n-runs">n_runs</label>
-            <input type="number" id="n-runs" name="n_runs" value="10" min="1" max="20">
+    <!-- Left: controls stacked -->
+    <div class="controls-col">
+
+      <!-- Quick Run -->
+      <div class="panel-card">
+        <div class="panel-title"><span class="panel-icon blue">▶</span>Quick Run</div>
+        <form id="run-form">
+          <div class="form-grid" style="margin-bottom:10px;">
+            <div class="form-row">
+              <label for="n-runs">n_runs</label>
+              <input type="number" id="n-runs" name="n_runs" value="10" min="1" max="20">
+            </div>
+            <div class="form-row">
+              <label for="max-evals">max_evals</label>
+              <input type="number" id="max-evals" name="max_evals" value="2000" min="100" max="20000" step="100">
+            </div>
           </div>
-          <div class="form-row">
-            <label for="max-evals">max_evals</label>
-            <input type="number" id="max-evals" name="max_evals" value="2000" min="100" max="20000" step="100">
+          <div class="label-input-row">
+            <span class="label-input-key">実験名</span>
+            <input type="text" id="run-label" name="label" placeholder="省略可（省略時はコミットハッシュ）" maxlength="40" autocomplete="off">
           </div>
+          <button type="submit" class="btn btn-primary" id="run-btn">▶ Run</button>
+        </form>
+        <div id="job-status" style="display:none; margin-top:14px;">
+          <div class="job-bar">
+            <span id="job-badge" class="badge badge-running"><span class="spinner"></span>&nbsp;Running</span>
+            <span id="job-result-link" style="display:none; font-size:12px; margin-left:4px;">
+              → <a id="job-result-anchor" href="#" style="color:var(--accent);">View result</a>
+            </span>
+          </div>
+          <div id="terminal" class="terminal"></div>
         </div>
-        <button type="submit" class="btn btn-primary" id="run-btn">▶ Run</button>
-      </form>
-      <div id="job-status" style="display:none; margin-top:14px;">
-        <div class="job-bar">
-          <span id="job-badge" class="badge badge-running"><span class="spinner"></span>&nbsp;Running</span>
-          <span id="job-result-link" style="display:none; font-size:12px; margin-left:4px;">
-            → <a id="job-result-anchor" href="#" style="color:var(--accent);">View result</a>
-          </span>
-        </div>
-        <div id="terminal" class="terminal"></div>
       </div>
-    </div>
-
-    <!-- Right column -->
-    <div class="right-col">
 
       <!-- GitHub Actions -->
       <div class="panel-card">
-        <div class="panel-title"><span class="dot green"></span> GitHub Actions</div>
+        <div class="panel-title"><span class="panel-icon green">⚡</span>GitHub Actions</div>
         <form id="gh-form">
           <div class="form-grid" style="margin-bottom:12px;">
             <div class="form-row">
@@ -289,64 +312,126 @@
 
       <!-- Remote Runs -->
       <div class="panel-card">
-        <div class="panel-title" style="margin-bottom:10px;">
-          <span class="dot" style="background:var(--accent-muted);"></span>
-          Remote Runs
-          <span class="header-spacer"></span>
+        <div class="panel-title">
+          <span class="panel-icon purple">↻</span>Remote Runs
+          <span style="flex:1;"></span>
           <button class="section-action" onclick="loadGhRuns()">↻ Refresh</button>
         </div>
         <div class="gh-runs-scroll">
-          <div id="gh-runs-list"><p class="empty-state">Click Refresh to load.</p></div>
+          <div id="gh-runs-list"><p class="empty-state"><span class="spinner"></span> Loading…</p></div>
         </div>
       </div>
 
     </div>
-  </div>
 
-  <!-- Recent Results -->
-  <div class="results-section">
-    <div class="results-section-header">
-      <span class="results-section-title">Results</span>
-      <span class="tag">{{ results|length }}</span>
-    </div>
-    {% if results %}
-    <div class="result-grid">
-      {% for r in results %}
-      <div class="result-card-wrap" id="card-{{ r }}">
-        <a href="/results/{{ r }}" class="result-card" data-name="{{ r }}">
-          <div class="result-card-date"></div>
-          <div class="result-card-time"></div>
-          <div class="result-card-meta">
-            <span class="result-card-commit"></span>
-            <span class="result-type-badge"></span>
-          </div>
-        </a>
-        <button class="card-menu-btn" onclick="toggleCardMenu('{{ r }}', event)" title="操作">⋮</button>
-        <div class="card-menu-dropdown" id="menu-{{ r }}">
-          <button onclick="renameResult('{{ r }}', event)">✏ 名前変更</button>
-          <button class="danger" onclick="deleteResult('{{ r }}', event)">🗑 削除</button>
-        </div>
+    <!-- Right: Results (tall) -->
+    <div class="panel-card" id="results-panel">
+      <div class="panel-title">
+        <span class="panel-icon blue">⊞</span>Results
+        <span style="flex:1;"></span>
+        <span class="tag" id="results-count-tag">{{ results|length }}</span>
       </div>
-      {% endfor %}
+      {% if results %}
+      <div class="results-table-wrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="name"   onclick="sortResults('name')">Name</th>
+              <th class="sortable" data-sort="type"   onclick="sortResults('type')">Type</th>
+              <th class="sortable" data-sort="date"   onclick="sortResults('date')">Date</th>
+              <th class="sortable" data-sort="params" onclick="sortResults('params')">Params</th>
+              <th class="sortable" data-sort="commit" onclick="sortResults('commit')">Commit</th>
+              <th class="sortable" data-sort="status" onclick="sortResults('status')">Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody">
+            {% for r in results %}
+            <tr class="rt-row" id="card-{{ r }}" data-name="{{ r }}">
+              <td><a href="/results/{{ r }}" class="rt-link"></a></td>
+              <td><span class="rt-type-chip unknown"></span></td>
+              <td><span class="rt-date"></span><span class="rt-time"></span></td>
+              <td class="rt-params"></td>
+              <td class="rt-commit"></td>
+              <td><div class="rc-status"><span class="rc-dot"></span><span class="rc-label"></span></div></td>
+              <td class="rt-actions-cell">
+                <button class="card-menu-btn" onclick="toggleCardMenu('{{ r }}', event)" title="操作">⋮</button>
+                <div class="card-menu-dropdown" id="menu-{{ r }}">
+                  <button class="stop-job" style="display:none;" onclick="stopCurrentJob()">■ 実行停止</button>
+                  <button onclick="renameResult('{{ r }}', event)">✏ 名前変更</button>
+                  <button class="danger" onclick="deleteResult('{{ r }}', event)">🗑 削除</button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="results-empty" style="text-align:center; padding:28px 0;">
+        <div style="font-size:13px; font-weight:600; color:var(--text-2); margin-bottom:4px;">No results yet</div>
+        <div style="font-size:12px; color:var(--muted);">Run a Quick Check or trigger a GitHub Actions workflow.</div>
+      </div>
+      {% endif %}
     </div>
-    {% else %}
-    <div style="text-align:center; padding:36px 0;">
-      <div style="font-size:13px; font-weight:600; color:var(--text-2); margin-bottom:4px;">No results yet</div>
-      <div style="font-size:12px; color:var(--muted);">Run a Quick Check or trigger a GitHub Actions workflow.</div>
-    </div>
-    {% endif %}
+
   </div>
 
 </div>
 
 <div id="toast" class="toast"></div>
 
-<script id="page-data" type="application/json">{{ {"results": results, "meta": results_meta} | tojson }}</script>
+<script id="page-data" type="application/json">{{ {"results": results, "meta": results_meta, "running": running} | tojson }}</script>
 
 <script>
 const _pd = JSON.parse(document.getElementById('page-data').textContent);
 const ALL_RESULTS  = _pd.results;
-const RESULTS_META = _pd.meta || {};
+let   RESULTS_META = _pd.meta || {};
+let   runningSet   = new Set(_pd.running || []);
+
+const STATUS_LABEL = { done: '完了', running: '実行中', stopped: '中断', failed: '失敗' };
+
+// ── Table sort ──
+let _sortCol = 'date', _sortDir = -1;
+const STATUS_ORDER = { running: 0, done: 1, failed: 2, stopped: 3, '': 4 };
+
+function _sortKey(name, col) {
+  const m = RESULTS_META[name] || {};
+  switch (col) {
+    case 'name':   return name;
+    case 'type':   return m.type || '';
+    case 'date':   return m.created_at || name;
+    case 'params': return (m.max_evals || 0) * 1000 + (m.n_runs || 0);
+    case 'commit': return m.commit || '';
+    case 'status': {
+      const s = runningSet.has(name) ? 'running' : (m.status || (m.type ? 'done' : ''));
+      return STATUS_ORDER[s] ?? 4;
+    }
+  }
+  return '';
+}
+
+function sortResults(col) {
+  if (_sortCol === col) _sortDir *= -1;
+  else { _sortCol = col; _sortDir = 1; }
+
+  const tbody = document.getElementById('results-tbody');
+  if (!tbody) return;
+
+  [...tbody.querySelectorAll('.rt-row[data-name]')]
+    .sort((a, b) => {
+      const va = _sortKey(a.dataset.name, col);
+      const vb = _sortKey(b.dataset.name, col);
+      if (typeof va === 'number') return (va - vb) * _sortDir;
+      return String(va).localeCompare(String(vb)) * _sortDir;
+    })
+    .forEach(r => tbody.appendChild(r));
+
+  document.querySelectorAll('.results-table thead th[data-sort]').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.sort === col) th.classList.add(_sortDir === 1 ? 'sort-asc' : 'sort-desc');
+  });
+}
 
 function getCardInfo(name) {
   const m = RESULTS_META[name] || {};
@@ -363,24 +448,56 @@ function getCardInfo(name) {
     date = d || date;
     time = t ? t.slice(0, 5) : time;
   }
-  // For timestamp-named folders show date as title; for renamed folders show the name.
-  const title = rx ? date : name;
+  const title = name;
   const sub   = rx ? time : `${date} ${time}`.trim();
-  return { title, sub, date, time, commit, type };
+  // Status: running overrides saved status; result.json present without status → done
+  const status = runningSet.has(name) ? 'running' : (m.status || (m.type ? 'done' : ''));
+  // n_runs / max_evals summary
+  const evalsStr = [
+    m.n_runs    != null ? `${m.n_runs} runs` : null,
+    m.max_evals != null ? `${Number(m.max_evals).toLocaleString()} evals` : null,
+  ].filter(Boolean).join(' · ');
+  const metaStr = [sub, evalsStr].filter(Boolean).join('  ·  ');
+  return { title, sub, date, time, commit, type, status, evalsStr, metaStr };
 }
 
-document.querySelectorAll('.result-card[data-name]').forEach(card => {
-  const { title, sub, commit, type } = getCardInfo(card.dataset.name);
-  card.querySelector('.result-card-date').textContent = title;
-  card.querySelector('.result-card-time').textContent = sub;
-  const commitEl = card.querySelector('.result-card-commit');
+function applyCardInfo(row, name) {
+  const { title, date, time, evalsStr, commit, type, status } = getCardInfo(name);
+  const linkEl = row.querySelector('.rt-link');
+  if (linkEl) linkEl.textContent = title;
+  const typeChip = row.querySelector('.rt-type-chip');
+  if (typeChip) { typeChip.textContent = type || ''; typeChip.className = `rt-type-chip ${type || 'unknown'}`; }
+  const dateEl = row.querySelector('.rt-date');
+  if (dateEl) dateEl.textContent = date;
+  const timeEl = row.querySelector('.rt-time');
+  if (timeEl) timeEl.textContent = time;
+  const paramsEl = row.querySelector('.rt-params');
+  if (paramsEl) paramsEl.textContent = evalsStr;
+  const commitEl = row.querySelector('.rt-commit');
   if (commitEl) commitEl.textContent = commit;
-  const typeBadge = card.querySelector('.result-type-badge');
-  if (typeBadge) typeBadge.textContent = type === 'quick' ? 'quick' : type === 'workflow' ? 'workflow' : '';
-  const wrap = card.closest('.result-card-wrap');
-  if (type === 'quick') wrap.classList.add('is-quick');
-  else if (type === 'workflow') wrap.classList.add('is-workflow');
+  const statusDiv = row.querySelector('.rc-status');
+  const dot       = row.querySelector('.rc-dot');
+  const label     = row.querySelector('.rc-label');
+  if (status && statusDiv && dot && label) {
+    statusDiv.className = `rc-status visible ${status}`;
+    dot.className = `rc-dot ${status}`;
+    label.textContent = STATUS_LABEL[status] || status;
+  }
+  if (type === 'quick') row.classList.add('is-quick');
+  else if (type === 'workflow') row.classList.add('is-workflow');
+  const stopBtn = row.querySelector('.stop-job');
+  if (stopBtn) stopBtn.style.display = status === 'running' ? '' : 'none';
+}
+
+document.querySelectorAll('.rt-row[data-name]').forEach(row => {
+  applyCardInfo(row, row.dataset.name);
 });
+
+// Apply initial sort indicator (date ↓)
+(function() {
+  const th = document.querySelector(`.results-table thead th[data-sort="${_sortCol}"]`);
+  if (th) th.classList.add(_sortDir === 1 ? 'sort-asc' : 'sort-desc');
+})();
 
 document.getElementById('quick-count').textContent =
   ALL_RESULTS.filter(r => (RESULTS_META[r]?.type || '') === 'quick').length;
@@ -390,6 +507,136 @@ if (ALL_RESULTS.length) {
   document.getElementById('latest-date').textContent = date ? `${date} ${time}`.trim() : ALL_RESULTS[0];
   document.getElementById('latest-commit').textContent = commit ? `@ ${commit}` : '';
 }
+
+// ── HTML escape ──
+function _esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Create a result card DOM element ──
+function createResultCard(name) {
+  const { title, date, time, evalsStr, commit, type, status } = getCardInfo(name);
+  const typeClass    = type === 'quick' ? ' is-quick' : type === 'workflow' ? ' is-workflow' : '';
+  const typeChipCls  = type || 'unknown';
+  const statusHtml   = status
+    ? `<div class="rc-status visible ${status}"><span class="rc-dot ${status}"></span><span class="rc-label">${_esc(STATUS_LABEL[status] || status)}</span></div>`
+    : `<div class="rc-status"><span class="rc-dot"></span><span class="rc-label"></span></div>`;
+  const row = document.createElement('tr');
+  row.className = `rt-row${typeClass}`;
+  row.id = `card-${name}`;
+  row.dataset.name = name;
+  row.innerHTML = `
+    <td><a href="/results/${encodeURIComponent(name)}" class="rt-link">${_esc(title)}</a></td>
+    <td><span class="rt-type-chip ${typeChipCls}">${_esc(type || '')}</span></td>
+    <td><span class="rt-date">${_esc(date)}</span><span class="rt-time">${_esc(time)}</span></td>
+    <td class="rt-params">${_esc(evalsStr)}</td>
+    <td class="rt-commit">${_esc(commit)}</td>
+    <td>${statusHtml}</td>
+    <td class="rt-actions-cell">
+      <button class="card-menu-btn" onclick="toggleCardMenu(${JSON.stringify(name)},event)" title="操作">⋮</button>
+      <div class="card-menu-dropdown" id="menu-${_esc(name)}">
+        <button class="stop-job" style="display:${status === 'running' ? '' : 'none'};" onclick="stopCurrentJob()">■ 実行停止</button>
+        <button onclick="renameResult(${JSON.stringify(name)},event)">✏ 名前変更</button>
+        <button class="danger" onclick="deleteResult(${JSON.stringify(name)},event)">🗑 削除</button>
+      </div>
+    </td>`;
+  return row;
+}
+
+// ── Auto-refresh results panel ──
+const _knownResults = new Set(ALL_RESULTS);
+
+async function refreshResults() {
+  try {
+    const res = await fetch('/api/results');
+    if (!res.ok) return;
+    const { results, meta, running } = await res.json();
+
+    // Always refresh running set (status may change without new results)
+    runningSet = new Set(running || []);
+
+    // Refresh status dots and stop buttons on existing rows
+    document.querySelectorAll('.rt-row[data-name]').forEach(row => {
+      const name = row.dataset.name;
+      const savedMeta = meta[name] || {};
+      const status = runningSet.has(name) ? 'running' : (savedMeta.status || (savedMeta.type ? 'done' : ''));
+      const statusDiv = row.querySelector('.rc-status');
+      const dot       = row.querySelector('.rc-dot');
+      const label     = row.querySelector('.rc-label');
+      if (status && statusDiv && dot && label) {
+        statusDiv.className = `rc-status visible ${status}`;
+        dot.className = `rc-dot ${status}`;
+        label.textContent = STATUS_LABEL[status] || status;
+      }
+      const stopBtn = row.querySelector('.stop-job');
+      if (stopBtn) stopBtn.style.display = status === 'running' ? '' : 'none';
+    });
+
+    const newResults = results.filter(r => !_knownResults.has(r));
+    if (!newResults.length) return;
+
+    // Update tracking state
+    newResults.forEach(r => _knownResults.add(r));
+    Object.assign(RESULTS_META, meta);
+
+    // Stat cards
+    const totalEl = document.querySelector('.stat-card.blue .stat-value');
+    if (totalEl) totalEl.textContent = results.length;
+    document.getElementById('quick-count').textContent =
+      results.filter(r => (meta[r]?.type || '') === 'quick').length;
+    if (results.length) {
+      const { date, time, commit } = getCardInfo(results[0]);
+      const ldEl = document.getElementById('latest-date');
+      const lcEl = document.getElementById('latest-commit');
+      if (ldEl) ldEl.textContent = date ? `${date} ${time}`.trim() : results[0];
+      if (lcEl) lcEl.textContent = commit ? `@ ${commit}` : '';
+    }
+
+    // Get or create results-tbody inside results-panel
+    const panel = document.getElementById('results-panel');
+    let tbody = document.getElementById('results-tbody');
+    if (!tbody) {
+      const placeholder = panel.querySelector('[style*="text-align"]');
+      if (placeholder) placeholder.remove();
+      const wrap = document.createElement('div');
+      wrap.className = 'results-table-wrap';
+      wrap.innerHTML = `<table class="results-table">
+        <thead><tr>
+          <th class="sortable" data-sort="name"   onclick="sortResults('name')">Name</th>
+          <th class="sortable" data-sort="type"   onclick="sortResults('type')">Type</th>
+          <th class="sortable" data-sort="date"   onclick="sortResults('date')">Date</th>
+          <th class="sortable" data-sort="params" onclick="sortResults('params')">Params</th>
+          <th class="sortable" data-sort="commit" onclick="sortResults('commit')">Commit</th>
+          <th class="sortable" data-sort="status" onclick="sortResults('status')">Status</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="results-tbody"></tbody>
+      </table>`;
+      panel.appendChild(wrap);
+      tbody = document.getElementById('results-tbody');
+    }
+
+    // Prepend new rows (newest first)
+    newResults.forEach(r => {
+      if (!document.getElementById(`card-${r}`)) {
+        const row = createResultCard(r);
+        row.classList.add('card-new');
+        tbody.prepend(row);
+      }
+    });
+
+    // Update count tag
+    const countTag = document.getElementById('results-count-tag');
+    if (countTag) countTag.textContent = results.length;
+
+  } catch (_) {}
+}
+
+// Poll every 15 seconds
+setInterval(refreshResults, 15000);
+
+// Load remote workflow runs once on page load (no periodic refresh)
+loadGhRuns();
 
 // ── Toast ──
 function showToast(msg, type) {
@@ -407,6 +654,10 @@ const jobResultAnchor = document.getElementById('job-result-anchor');
 const runBtn = document.getElementById('run-btn');
 let pollingInterval = null;
 let lastLineCount = 0;
+let currentJobId = null;
+
+const QUICK_JOB_KEY = 'quick_job_id';
+
 
 function colorLine(line) {
   const el = document.createElement('div');
@@ -434,6 +685,7 @@ function pollStatus(jobId) {
       terminal.scrollTop = terminal.scrollHeight;
       if (data.status !== 'running') {
         runBtn.disabled = false;
+        localStorage.removeItem(QUICK_JOB_KEY);
         if (data.status === 'done') {
           jobBadge.className = 'badge badge-done';
           jobBadge.textContent = '✓ Done';
@@ -442,7 +694,11 @@ function pollStatus(jobId) {
             jobResultLink.style.display = 'inline';
           }
           showToast('Run completed!', 'ok');
-          setTimeout(() => location.reload(), 1500);
+          setTimeout(refreshResults, 600);
+        } else if (data.status === 'stopped') {
+          jobBadge.className = 'badge badge-failed';
+          jobBadge.textContent = '■ Stopped';
+          showToast('Run stopped.', 'warn');
         } else {
           jobBadge.className = 'badge badge-failed';
           jobBadge.textContent = '✗ Failed';
@@ -463,8 +719,85 @@ function pollStatus(jobId) {
   setTimeout(tick, interval);
 }
 
+async function stopCurrentJob() {
+  try {
+    if (currentJobId) {
+      await fetch(`/api/stop/${currentJobId}`, { method: 'POST' });
+    } else {
+      await fetch('/api/shell-stop', { method: 'POST' });
+    }
+  } catch (_) {}
+}
+
+// ── Shell job polling (run.sh quick) ──
+function pollShellJob() {
+  const tick = async () => {
+    try {
+      const res = await fetch('/api/shell-job');
+      if (!res.ok) return;
+      const { running } = await res.json();
+      if (!running) {
+        runBtn.disabled = false;
+        jobBadge.className = 'badge badge-done';
+        jobBadge.textContent = 'Shell job ended';
+        return;
+      }
+    } catch (_) {}
+    setTimeout(tick, 3000);
+  };
+  setTimeout(tick, 3000);
+}
+
+// ── Restore running job after page navigation ──
+(async () => {
+  // 1) Web-started job (localStorage)
+  const savedJobId = localStorage.getItem(QUICK_JOB_KEY);
+  if (savedJobId) {
+    try {
+      const res = await fetch(`/api/status/${savedJobId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'running') {
+          currentJobId = savedJobId;
+          lastLineCount = data.output.length;
+          document.getElementById('job-status').style.display = 'block';
+          jobBadge.className = 'badge badge-running';
+          jobBadge.innerHTML = '<span class="spinner"></span>&nbsp;Running';
+          runBtn.disabled = true;
+          data.output.forEach(line => terminal.appendChild(colorLine(line)));
+          terminal.scrollTop = terminal.scrollHeight;
+          pollStatus(savedJobId);
+          return;
+        }
+      }
+    } catch (_) {}
+    localStorage.removeItem(QUICK_JOB_KEY);
+  }
+
+  // 2) Shell-started job (.quick.pid)
+  try {
+    const res = await fetch('/api/shell-job');
+    if (res.ok) {
+      const { running } = await res.json();
+      if (running) {
+        document.getElementById('job-status').style.display = 'block';
+        jobBadge.className = 'badge badge-running';
+        jobBadge.innerHTML = '<span class="spinner"></span>&nbsp;Running <span style="font-size:10px;opacity:.7;">(run.sh)</span>';
+        terminal.style.display = 'none';
+        runBtn.disabled = true;
+        pollShellJob();
+      }
+    }
+  } catch (_) {}
+})();
+
 document.getElementById('run-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const nRuns    = document.getElementById('n-runs').value;
+  const maxEvals = document.getElementById('max-evals').value;
+  const label    = document.getElementById('run-label').value.trim();
+  const info = `n_runs:     ${nRuns}\nmax_evals:  ${maxEvals}` + (label ? `\n実験名:     ${label}` : '');
+  if (!await dlg.run(info)) return;
   if (pollingInterval) pollingInterval.stop();
   terminal.innerHTML = '';
   lastLineCount = 0;
@@ -475,12 +808,18 @@ document.getElementById('run-form').addEventListener('submit', async (e) => {
   jobResultLink.style.display = 'none';
   const res = await fetch('/api/run', { method: 'POST', body: new FormData(e.target) });
   const { job_id } = await res.json();
+  currentJobId = job_id;
+  localStorage.setItem(QUICK_JOB_KEY, job_id);
   pollStatus(job_id);
 });
 
 // ── GitHub Actions ──
 document.getElementById('gh-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const nRuns    = document.getElementById('gh-n-runs').value;
+  const maxEvals = document.getElementById('gh-max-evals').value;
+  const info = `n_runs:     ${nRuns}\nmax_evals:  ${maxEvals}\n\nGitHub Actions でワークフローを実行します。`;
+  if (!await dlg.trigger(info)) return;
   const btn = document.getElementById('gh-btn');
   btn.disabled = true; btn.textContent = 'Triggering…';
   const res = await fetch('/api/gh-trigger', { method: 'POST', body: new FormData(e.target) });
@@ -532,10 +871,13 @@ async function loadGhRuns() {
 const DL_JOB_KEY = 'dl_job';
 
 async function startDownload(ghRunId) {
+  const label = await dlg.prompt('この結果の実験名を入力してください（省略可）:', '');
+  if (label === null) return;
   const btn = document.getElementById(`dl-btn-${ghRunId}`);
   if (btn) { btn.disabled = true; btn.textContent = 'Starting…'; }
   const form = new FormData();
   form.append('run_id', ghRunId);
+  form.append('label', label);
   const res = await fetch('/api/download', { method: 'POST', body: form });
   const { job_id } = await res.json();
   localStorage.setItem(DL_JOB_KEY, JSON.stringify({ job_id, gh_run_id: ghRunId }));
@@ -563,7 +905,7 @@ function pollDownload(jobId, ghRunId) {
         if (btn) { btn.disabled = false; btn.textContent = '⬇ Download'; }
         if (data.status === 'done') {
           showToast(data.message, 'ok');
-          setTimeout(() => location.reload(), 1200);
+          setTimeout(refreshResults, 600);
         } else {
           showToast(data.message, 'err');
         }
@@ -593,6 +935,9 @@ function toggleCardMenu(runId, e) {
   if (!isOpen) {
     menu.classList.add('open');
     btn.classList.add('open');
+    const r = btn.getBoundingClientRect();
+    menu.style.top  = (r.bottom + 4) + 'px';
+    menu.style.left = Math.max(4, r.right - 132) + 'px';
     _openMenu = runId;
   }
 }
@@ -609,7 +954,7 @@ document.addEventListener('click', closeAllMenus);
 async function renameResult(runId, e) {
   e.preventDefault(); e.stopPropagation();
   closeAllMenus();
-  const newName = prompt('新しい名前を入力してください:', runId);
+  const newName = await dlg.prompt('新しい名前を入力してください:', runId);
   if (!newName || newName === runId) return;
   const form = new FormData();
   form.append('new_name', newName);
@@ -627,7 +972,7 @@ async function renameResult(runId, e) {
 async function deleteResult(runId, e) {
   e.preventDefault(); e.stopPropagation();
   closeAllMenus();
-  if (!confirm(`「${runId}」を削除しますか？\nこの操作は元に戻せません。`)) return;
+  if (!await dlg.confirm(`「${runId}」を削除しますか？\nこの操作は元に戻せません。`)) return;
   const res = await fetch(`/api/results/${encodeURIComponent(runId)}`, { method: 'DELETE' });
   const data = await res.json();
   if (data.ok) {

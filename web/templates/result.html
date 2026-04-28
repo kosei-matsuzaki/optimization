@@ -226,14 +226,6 @@
   .grid-cell-img-wrap { position: relative; }
   .grid-cell-img-wrap img { display: block; width: 100%; height: auto; }
 
-  /* Single media display (legacy / single method fallback) */
-  .media-display {
-    min-height: 220px; border: 1px solid var(--border); border-radius: var(--radius-sm);
-    background: var(--surface-2); display: flex; align-items: center; justify-content: center;
-    cursor: zoom-in; overflow: hidden;
-  }
-  .media-display img { display: block; max-width: 100%; height: auto; }
-
   /* ── Compare mode: matrix table ──────────────────────────────────────────── */
   .compare-matrix { width: 100%; border-collapse: collapse; }
   .compare-matrix th {
@@ -275,6 +267,35 @@
   .run-cell { padding-left: 36px !important; color: var(--muted); font-family: var(--mono); font-size: 11px !important; }
   .unified-table td, .unified-table th { white-space: nowrap; }
   .unified-table th:not(:first-child), .unified-table td:not(:first-child) { text-align: right; }
+
+  /* ── Overall evaluation ─────────────────────────────────────────────────── */
+  .overall-table { width:100%; border-collapse:collapse; }
+  .overall-table th {
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--muted); padding:6px 10px; background:var(--surface-2);
+    border:1px solid var(--border); white-space:nowrap; text-align:center;
+  }
+  .overall-table th:first-child { text-align:left; min-width:120px; }
+  .overall-table td {
+    font-family:var(--mono); font-size:12px; padding:6px 10px;
+    border:1px solid var(--border); text-align:right; white-space:nowrap;
+  }
+  .overall-table td:first-child { text-align:left; font-weight:700; color:var(--text); }
+  .rank-gold   { background:rgba(255,200,0,.18); }
+  .rank-silver { background:rgba(180,180,180,.18); }
+  .rank-bronze { background:rgba(180,110,50,.14); }
+  .heatmap-cell { text-align:center !important; font-size:11.5px; font-weight:600; padding:5px 8px; }
+  .heatmap-null { background:var(--surface-2); color:var(--muted); }
+  .rank-profile-cell { text-align:center !important; font-size:11px; }
+  .rank-profile-best { background:rgba(100,200,100,.22); }
+  .rank-profile-worst { background:rgba(220,80,80,.16); }
+  .overall-details-summary {
+    cursor:pointer; font-size:10px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.7px; color:var(--muted); padding:2px 0; list-style:none;
+    user-select:none; transition:color .12s;
+  }
+  .overall-details-summary:hover { color:var(--text-2); }
+  .overall-details-summary::-webkit-details-marker { display:none; }
 
   /* ── Column legend ───────────────────────────────────────────────────────── */
   .col-legend { margin-top: 14px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); overflow: hidden; }
@@ -422,7 +443,7 @@
     {% if dims %}
 
     <!-- Visualization type selector -->
-    <div class="card">
+    <div class="card" id="media-card">
       <div class="card-header-row">
         <span class="card-title-label">Visualization</span>
         <span class="card-func-badge" id="media-func-badge"></span>
@@ -446,10 +467,7 @@
         </div>
       </div>
 
-      <!-- Legacy / single image fallback -->
-      <div class="media-display" id="media-display" onclick="openOverlay(currentMediaSrc)" style="display:none;">
-        <span class="placeholder">Select a function from the sidebar.</span>
-      </div>
+
     </div>
 
     <!-- Results table (Function mode only) -->
@@ -460,6 +478,30 @@
       </div>
       <div id="unified-table-container">
         <p class="empty-state">Select a function.</p>
+      </div>
+    </div>
+
+    <!-- Overall evaluation cards (shown when 全体評価 is selected) -->
+    <div id="overall-wrap" style="display:none;">
+      <div class="card">
+        <div class="card-header-row">
+          <span class="card-title-label">総合ランキング</span>
+          <span style="font-size:10px;color:var(--muted);">Friedmanランク（低い＝優）· 全関数を対象 · 同着は平均ランク</span>
+        </div>
+        <div id="overall-leaderboard-container"></div>
+      </div>
+      <div class="card">
+        <div class="card-header-row">
+          <span class="card-title-label">カテゴリ別 SR@1e-4</span>
+          <span style="font-size:10px;color:var(--muted);">各カテゴリの平均成功率（赤=低・緑=高）· 手法は総合ランキング順</span>
+        </div>
+        <div id="overall-heatmap-container"></div>
+      </div>
+      <div class="card">
+        <details>
+          <summary class="overall-details-summary">関数別ランク詳細</summary>
+          <div id="overall-rank-table-container" style="margin-top:12px;"></div>
+        </details>
       </div>
     </div>
 
@@ -518,6 +560,17 @@ const TYPE_ORDER = [
   'landscape', 'convergence', 'vso_dyn', 'vso_dyn_failed',
   '3devals', '3devals_failed', '3dpopulation', '3dpopulation_failed',
 ];
+
+// ── Overall evaluation constants ─────────────────────────────────────────────
+const CAT_LABELS = {
+  'separable':      'Separable',
+  'moderate-cond':  'Moderate',
+  'ill-cond':       'High Cond.',
+  'multimodal':     'Multi-modal',
+  'weak-structure': 'Weak Structure',
+  'multi-optima':   'Custom',
+};
+let overallData = null;
 
 // ── URL hash persistence: #dim2/F01-Sphere ──
 function _parseHash() {
@@ -585,36 +638,27 @@ function getFuncGroup(name) {
 
 // ── Media URL resolver ──────────────────────────────────────────────────────
 function mediaUrl(func, method, type) {
-  if (!mediaIndex || mediaIndex.format === 'legacy') {
-    // Legacy file naming
-    if (type === 'landscape')     return `/media/${RUN_ID}/${currentDim}/${func}.svg`;
-    if (type === 'convergence')   return `/media/${RUN_ID}/${currentDim}/${func}_convergence.svg`;
-    if (type === 'vso_dyn')       return `/media/${RUN_ID}/${currentDim}/${func}_vso_dyn.svg`;
-    if (type === 'vso_dyn_failed') return `/media/${RUN_ID}/${currentDim}/${func}_vso_dyn_failed.svg`;
-    return `/media/${RUN_ID}/${currentDim}/${func}_${type}.gif`;
-  }
-  // New format
-  if (type === 'landscape')  return `/media/${RUN_ID}/${currentDim}/${func}_landscape.svg`;
+  if (type === 'landscape')   return `/media/${RUN_ID}/${currentDim}/${func}_landscape.svg`;
   if (type === 'convergence') return `/media/${RUN_ID}/${currentDim}/${func}_convergence.svg`;
-  const entry = mediaIndex.files.find(
+  const entry = mediaIndex?.files.find(
     f => f.func === func && f.method === method && f.type === type
   );
   const ext = entry?.ext || 'webp';
   return `/media/${RUN_ID}/${currentDim}/${func}_${method}_${type}.${ext}`;
 }
 
+// Types that are always shown when funcs exist (function-level, not method-level)
+const FUNC_LEVEL_TYPES = new Set(['landscape', 'convergence']);
+
 // ── Build view type selector from index ────────────────────────────────────
 function buildTypeSelector() {
   const sel = document.getElementById('media-selector');
   sel.innerHTML = '';
 
-  let types;
-  if (mediaIndex && mediaIndex.format === 'new') {
-    types = TYPE_ORDER.filter(t => mediaIndex.types.includes(t));
-  } else {
-    // Legacy default types
-    types = ['evals','evals_failed','runs','population','population_failed','landscape','vso_dyn','vso_dyn_failed'];
-  }
+  const hasFuncs = mediaIndex && mediaIndex.funcs && mediaIndex.funcs.length > 0;
+  const types = hasFuncs
+    ? TYPE_ORDER.filter(t => FUNC_LEVEL_TYPES.has(t) || mediaIndex.types.includes(t))
+    : [];
 
   if (!types.includes(currentType)) currentType = types[0] || 'evals';
 
@@ -640,15 +684,13 @@ function switchViewMode(mode) {
   document.getElementById('compare-panel').style.display = mode === 'compare'  ? 'flex' : 'none';
 
   // Show/hide main panels
-  const isLegacy = !mediaIndex || mediaIndex.format === 'legacy';
-  document.getElementById('media-grid-wrap').style.display    = (mode === 'function' && !isLegacy) ? '' : 'none';
+  document.getElementById('media-grid-wrap').style.display    = mode === 'function' ? '' : 'none';
   document.getElementById('method-grid-wrap').style.display   = mode === 'method'   ? '' : 'none';
   document.getElementById('compare-matrix-wrap').style.display = mode === 'compare'  ? '' : 'none';
-  document.getElementById('media-display').style.display      = (mode === 'function' && isLegacy) ? '' : 'none';
   document.getElementById('results-card').style.display       = mode === 'function'  ? '' : 'none';
 
   if (mode === 'function') {
-    if (isLegacy) updateLegacyMedia(); else renderFunctionGrid();
+    renderFunctionGrid();
   } else if (mode === 'method') {
     buildMethodList();
     renderMethodGrid();
@@ -660,6 +702,7 @@ function switchViewMode(mode) {
 
 // ── Dimension switch ─────────────────────────────────────────────────────────
 function switchDim(dim) {
+  overallData = null;
   currentDim = dim;
   document.querySelectorAll('#dim-tabs button')
     .forEach(b => b.classList.toggle('active', b.dataset.dim === dim));
@@ -696,6 +739,20 @@ function buildFuncList() {
   const functions = (DIMS_DATA[currentDim] || {}).functions || [];
   if (countEl) countEl.textContent = functions.length;
 
+  // 全体評価エントリを先頭に追加
+  const overallLi = document.createElement('li');
+  overallLi.id = 'overall-sidebar-item';
+  const overallA = document.createElement('a');
+  overallA.href = '#';
+  overallA.id = 'overall-sidebar-link';
+  overallA.textContent = '全体評価';
+  overallA.style.setProperty('border-left-color', 'var(--accent)', 'important');
+  overallA.style.fontWeight = '700';
+  overallA.style.color = 'var(--accent)';
+  overallA.addEventListener('click', e => { e.preventDefault(); selectOverall(); });
+  overallLi.appendChild(overallA);
+  list.appendChild(overallLi);
+
   let lastGroupLabel = null;
   let customHeaderAdded = false;
   functions.forEach((f, i) => {
@@ -728,25 +785,18 @@ function buildFuncList() {
     const { func: hashFunc } = _parseHash();
     selectFunc(hashFunc && functions.includes(hashFunc) ? hashFunc : functions[0]);
   } else {
-    document.getElementById('media-display').innerHTML =
-      '<span class="placeholder">No functions found.</span>';
     document.getElementById('unified-table-container').innerHTML = '';
   }
 }
 
 function selectFunc(func) {
+  setOverallMode(false);
   currentFunc = func;
   document.querySelectorAll('#func-list a')
     .forEach(a => a.classList.toggle('active', a.dataset.func === func));
   document.querySelectorAll('.card-func-badge').forEach(el => el.textContent = func);
   _updateHash();
-
-  const isLegacy = !mediaIndex || mediaIndex.format === 'legacy';
-  if (isLegacy) {
-    updateLegacyMedia();
-  } else {
-    renderFunctionGrid();
-  }
+  renderFunctionGrid();
   buildUnifiedTable(func);
 }
 
@@ -759,7 +809,7 @@ function buildMethodList() {
   if (countEl) countEl.textContent = methods.length;
 
   if (!methods.length) {
-    list.innerHTML = '<li style="padding:10px;color:var(--muted);font-size:11px;">手法別データなし (new format required)</li>';
+    list.innerHTML = '<li style="padding:10px;color:var(--muted);font-size:11px;">手法データがありません。</li>';
     return;
   }
 
@@ -793,16 +843,16 @@ function renderFunctionGrid() {
   grid.innerHTML = '';
   if (!currentFunc || !mediaIndex) return;
 
-  const methods = mediaIndex.methods || [];
-  if (!methods.length) {
-    grid.innerHTML = '<p class="empty-state">手法別データがありません。</p>';
+  // Function-level types (landscape/convergence): single full-width cell
+  if (FUNC_LEVEL_TYPES.has(currentType)) {
+    const url = mediaUrl(currentFunc, null, currentType);
+    grid.appendChild(makeGridCell(currentFunc, null, currentType, url, currentFunc));
     return;
   }
 
-  // For landscape/convergence (no method), show as single cell
-  if (currentType === 'landscape' || currentType === 'convergence') {
-    const url = mediaUrl(currentFunc, null, currentType);
-    grid.appendChild(makeGridCell(currentFunc, null, currentType, url, currentFunc));
+  const methods = mediaIndex.methods || [];
+  if (!methods.length) {
+    grid.innerHTML = '<p class="empty-state">手法別データがありません。</p>';
     return;
   }
 
@@ -816,7 +866,7 @@ function renderFunctionGrid() {
 function renderMethodGrid() {
   const grid = document.getElementById('method-grid');
   grid.innerHTML = '';
-  if (!currentMethod || !mediaIndex) return;
+  if (!mediaIndex) return;
 
   const funcs = mediaIndex.funcs || [];
   if (!funcs.length) {
@@ -824,6 +874,16 @@ function renderMethodGrid() {
     return;
   }
 
+  // Function-level types (landscape/convergence): ignore selected method
+  if (FUNC_LEVEL_TYPES.has(currentType)) {
+    funcs.forEach(func => {
+      const url = mediaUrl(func, null, currentType);
+      grid.appendChild(makeGridCell(func, null, currentType, url, func));
+    });
+    return;
+  }
+
+  if (!currentMethod) return;
   funcs.forEach(func => {
     const url = mediaUrl(func, currentMethod, currentType);
     grid.appendChild(makeGridCell(func, currentMethod, currentType, url, func));
@@ -838,6 +898,43 @@ function renderCompareMatrix() {
 
   const funcs   = [...cmpSelectedFuncs];
   const methods = [...cmpSelectedMethods];
+
+  // Function-level types: render a simple per-function grid (no method axis)
+  if (FUNC_LEVEL_TYPES.has(currentType)) {
+    if (!funcs.length) {
+      table.innerHTML = '<tr><td style="padding:20px;color:var(--muted);font-size:12px;">関数を選択してください。</td></tr>';
+      return;
+    }
+    const thead = document.createElement('thead');
+    const hrow  = document.createElement('tr');
+    hrow.appendChild(Object.assign(document.createElement('th'), { textContent: '' }));
+    const th = document.createElement('th');
+    th.textContent = TYPE_LABELS[currentType] || currentType;
+    hrow.appendChild(th);
+    thead.appendChild(hrow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    funcs.forEach(func => {
+      const tr = document.createElement('tr');
+      const rowHdr = document.createElement('td');
+      rowHdr.className = 'row-header';
+      rowHdr.textContent = func;
+      tr.appendChild(rowHdr);
+      const td = document.createElement('td');
+      const url = mediaUrl(func, null, currentType);
+      const div = document.createElement('div');
+      div.className = 'compare-cell';
+      const img = document.createElement('img');
+      img.src = url; img.alt = func; img.style.cursor = 'zoom-in';
+      img.onclick = () => openOverlay(url);
+      img.onerror = () => { div.className = 'compare-cell not-available'; div.innerHTML = '<span style="color:var(--muted);font-size:10px;">N/A</span>'; };
+      div.appendChild(img); td.appendChild(div); tr.appendChild(td);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    return;
+  }
+
   if (!funcs.length || !methods.length) {
     table.innerHTML = '<tr><td style="padding:20px;color:var(--muted);font-size:12px;">関数と手法を選択してください。</td></tr>';
     return;
@@ -873,7 +970,7 @@ function renderCompareMatrix() {
       img.alt = `${func} / ${method}`;
       img.style.cursor = 'zoom-in';
       img.onclick = () => openOverlay(url);
-      img.onerror = () => { div.className = 'compare-cell not-available'; div.textContent = '—'; div.innerHTML = '<span style="color:var(--muted);font-size:10px;">N/A</span>'; };
+      img.onerror = () => { div.className = 'compare-cell not-available'; div.innerHTML = '<span style="color:var(--muted);font-size:10px;">N/A</span>'; };
       div.appendChild(img);
       td.appendChild(div);
       tr.appendChild(td);
@@ -957,21 +1054,131 @@ function cmpSelectAll(type) {
   renderCompareMatrix();
 }
 
-// ── Legacy: single image display ─────────────────────────────────────────────
-function updateLegacyMedia() {
-  if (!currentFunc || !currentDim) return;
-  const display = document.getElementById('media-display');
-  display.innerHTML = '<span class="placeholder">Loading…</span>';
-  const src = mediaUrl(currentFunc, null, currentType);
-  currentMediaSrc = src;
-  const img = document.createElement('img');
-  img.src = src;
-  img.alt = `${currentFunc} ${currentType}`;
-  img.onload  = () => { display.innerHTML = ''; display.appendChild(img); };
-  img.onerror = () => {
-    display.innerHTML = '<span class="placeholder">Not available for this type.</span>';
-    currentMediaSrc = null;
-  };
+// ── Overall evaluation ────────────────────────────────────────────────────────
+function setOverallMode(on) {
+  document.getElementById('media-card').style.display   = on ? 'none' : '';
+  document.getElementById('results-card').style.display = on ? 'none' : '';
+  document.getElementById('overall-wrap').style.display = on ? '' : 'none';
+}
+
+async function selectOverall() {
+  currentFunc = '__overall__';
+  document.querySelectorAll('#func-list a').forEach(a => a.classList.remove('active'));
+  document.getElementById('overall-sidebar-link')?.classList.add('active');
+  document.querySelectorAll('.card-func-badge').forEach(el => el.textContent = '');
+  setOverallMode(true);
+  if (!overallData) await fetchOverallData();
+  renderOverall();
+}
+
+async function fetchOverallData() {
+  try {
+    const res = await fetch(`/api/overall/${encodeURIComponent(RUN_ID)}/${currentDim}`);
+    if (res.ok) overallData = await res.json();
+  } catch (_) { overallData = null; }
+}
+
+function renderOverall() {
+  if (!overallData || !overallData.leaderboard) {
+    document.getElementById('overall-leaderboard-container').innerHTML =
+      '<p class="empty-state">データがありません。</p>';
+    return;
+  }
+  _renderLeaderboard();
+  _renderHeatmap();
+  _renderRankProfile();
+}
+
+function _renderLeaderboard() {
+  const lb = overallData.leaderboard;
+  const rankColors_mr  = rankColors(lb.map(r => r.mean_rank), false);
+  const rankColors_sr  = rankColors(lb.map(r => r.mean_sr),   true);
+
+  let html = '<div class="table-wrap"><table class="overall-table"><thead><tr>';
+  html += '<th>#</th><th style="text-align:left;">Method</th>';
+  html += '<th>Mean Rank</th><th>±Std</th><th>Mean SR@1e-4</th>';
+  html += '<th>#Best</th><th>#Worst</th>';
+  html += '</tr></thead><tbody>';
+
+  lb.forEach((row, i) => {
+    const rowCls = i === 0 ? 'rank-gold' : i === 1 ? 'rank-silver' : i === 2 ? 'rank-bronze' : '';
+    html += `<tr class="${rowCls}">`;
+    html += `<td style="text-align:center;color:var(--muted);">${i + 1}</td>`;
+    html += `<td style="text-align:left;font-weight:700;">${htmlesc(row.method)}</td>`;
+    html += `<td class="${rankColors_mr[i]}">${row.mean_rank.toFixed(2)}</td>`;
+    html += `<td style="color:var(--muted);">±${row.rank_std.toFixed(2)}</td>`;
+    html += `<td class="${rankColors_sr[i]}">${(row.mean_sr * 100).toFixed(1)}%</td>`;
+    html += `<td style="text-align:center;">${row.n_best}</td>`;
+    html += `<td style="text-align:center;color:${row.n_worst > 0 ? 'var(--danger)' : 'var(--muted)'};">${row.n_worst}</td>`;
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('overall-leaderboard-container').innerHTML = html;
+}
+
+function _heatmapBg(sr) {
+  // 0=red(hsl 0), 1=green(hsl 120), using pastel lightness
+  const h = Math.round(sr * 120);
+  return `hsl(${h},55%,82%)`;
+}
+
+function _renderHeatmap() {
+  const lb   = overallData.leaderboard;
+  const cats = overallData.categories || [];
+
+  let html = '<div class="table-wrap"><table class="overall-table"><thead><tr>';
+  html += '<th style="text-align:left;">Method</th>';
+  cats.forEach(c => { html += `<th>${htmlesc(CAT_LABELS[c] || c)}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  lb.forEach((row, i) => {
+    const rowCls = i === 0 ? 'rank-gold' : i === 1 ? 'rank-silver' : i === 2 ? 'rank-bronze' : '';
+    html += `<tr class="${rowCls}">`;
+    html += `<td style="text-align:left;font-weight:700;">${htmlesc(row.method)}</td>`;
+    cats.forEach(c => {
+      const v = row.category_sr?.[c];
+      if (v == null) {
+        html += `<td class="heatmap-cell heatmap-null">—</td>`;
+      } else {
+        const bg = _heatmapBg(v);
+        html += `<td class="heatmap-cell" style="background:${bg};color:#222;">${(v * 100).toFixed(0)}%</td>`;
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('overall-heatmap-container').innerHTML = html;
+}
+
+function _renderRankProfile() {
+  const lb    = overallData.leaderboard;
+  const funcs = overallData.funcs || [];
+  const fr    = overallData.func_ranks || {};
+  const nMeth = lb.length;
+
+  // Short function labels (strip prefix like "F01-")
+  const shortLabel = f => f.replace(/^[FC]\d+-/, '');
+
+  let html = '<div class="table-wrap"><table class="overall-table"><thead><tr>';
+  html += '<th style="text-align:left;">Method</th>';
+  funcs.forEach(f => { html += `<th title="${htmlesc(f)}">${htmlesc(shortLabel(f))}</th>`; });
+  html += '<th>Mean</th>';
+  html += '</tr></thead><tbody>';
+
+  lb.forEach((row, ri) => {
+    const rowCls = ri === 0 ? 'rank-gold' : ri === 1 ? 'rank-silver' : ri === 2 ? 'rank-bronze' : '';
+    html += `<tr class="${rowCls}">`;
+    html += `<td style="text-align:left;font-weight:700;">${htmlesc(row.method)}</td>`;
+    funcs.forEach(f => {
+      const rank = fr[f]?.[row.method];
+      const cellCls = rank == null ? '' : rank === 1 ? 'rank-profile-best' : rank >= nMeth ? 'rank-profile-worst' : '';
+      html += `<td class="rank-profile-cell ${cellCls}">${rank != null ? rank % 1 === 0 ? rank : rank.toFixed(1) : '—'}</td>`;
+    });
+    html += `<td class="rank-profile-cell" style="font-weight:700;">${row.mean_rank.toFixed(2)}</td>`;
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('overall-rank-table-container').innerHTML = html;
 }
 
 // ── Fullscreen overlay ────────────────────────────────────────────────────────
@@ -995,8 +1202,7 @@ document.getElementById('media-selector').addEventListener('click', e => {
   currentType = btn.dataset.type;
 
   if (viewMode === 'function') {
-    const isLegacy = !mediaIndex || mediaIndex.format === 'legacy';
-    if (isLegacy) updateLegacyMedia(); else renderFunctionGrid();
+    renderFunctionGrid();
   } else if (viewMode === 'method') {
     renderMethodGrid();
   } else if (viewMode === 'compare') {
@@ -1225,14 +1431,7 @@ if (currentDim) {
   loadMediaIndex().then(() => {
     buildTypeSelector();
     buildFuncList();
-    // Show the appropriate media container for Function mode
-    const isLegacy = !mediaIndex || mediaIndex.format === 'legacy';
-    document.getElementById('media-grid-wrap').style.display = (!isLegacy) ? '' : 'none';
-    document.getElementById('media-display').style.display   = isLegacy ? '' : 'none';
-    if (isLegacy) {
-      document.getElementById('media-display').innerHTML =
-        '<span class="placeholder">Select a function from the sidebar.</span>';
-    }
+    document.getElementById('media-grid-wrap').style.display = '';
   });
 }
 
