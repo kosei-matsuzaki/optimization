@@ -665,18 +665,37 @@ def save_method_vso_svg(
             ax.semilogy(g, med, color=color, linewidth=1.4, label="median σᵢ", zorder=4)
             ax.fill_between(g, q25, q75, color=color, alpha=0.28, zorder=2, label="Q25–Q75")
             ax.fill_between(g, mn,  mx,  color=color, alpha=0.10, zorder=1)
+    # Scatter: actual sigma used per evaluated offspring (starts after initial pop)
+    se = run.history_sigma_eval
+    if se:
+        n_init = run.n_evals - len(se)  # eval index where offspring recording begins
+        se_arr = np.array(se, dtype=float)
+        valid = np.isfinite(se_arr)
+        x_sc = np.arange(n_init, n_init + len(se_arr))[valid]
+        y_sc = se_arr[valid]
+        if len(x_sc) > 0:
+            ax.scatter(x_sc, y_sc, s=4, color=color, alpha=0.18, linewidths=0,
+                       zorder=2, label="σ per offspring")
     ax.set_title(method_name, fontsize=8)
     ax.tick_params(labelsize=7)
     ax.legend(fontsize=6, loc="upper right")
     ax.grid(True, which="both", alpha=0.18)
 
-    # ── Row 1: Elite water level ───────────────────────────────────────────────
+    # ── Row 1: Elite water level + best_f ─────────────────────────────────────
     ax = axes[1][0]
     cutoffs = run.history_elite_cutoff
     n_el    = run.history_n_elite
     if cutoffs:
         xs = evals if evals is not None and len(evals) == len(cutoffs) else np.arange(len(cutoffs))
         ax.semilogy(xs, cutoffs, color=color, linewidth=1.4, label="elite cutoff")
+        # best_f on the same log-scale left axis
+        hb = run.history_best
+        if hb:
+            hb_arr = np.array(hb)
+            hb_pos = np.where(hb_arr > 0, hb_arr, np.nan)
+            x_bf = np.arange(len(hb_arr))
+            ax.semilogy(x_bf, np.where(np.isfinite(hb_pos), hb_pos, np.nan),
+                        color="steelblue", linewidth=1.2, alpha=0.85, label="best f")
         if n_el:
             ax2 = ax.twinx()
             g2 = xs[:len(n_el)]

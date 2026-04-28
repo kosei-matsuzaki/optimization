@@ -2,6 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional
+import math
 import numpy as np
 import cma
 
@@ -19,6 +20,16 @@ class OptimizeResult:
     n_evals: int
     # per-individual sigma per generation (n,) array; empty = not recorded
     history_pop_sigma: list[np.ndarray] = field(default_factory=list)
+    # VSO-specific dynamics (one entry per generation; empty for non-VSO)
+    history_sigma_global: list[float] = field(default_factory=list)
+    history_n_active: list[int] = field(default_factory=list)
+    history_n_elite: list[int] = field(default_factory=list)
+    history_no_improve: list[int] = field(default_factory=list)
+    history_elite_cutoff: list[float] = field(default_factory=list)
+    history_eval_count: list[int] = field(default_factory=list)
+    # sigma actually used to generate each offspring (one per eval after init pop;
+    # nan = random reactivation with no parent sigma)
+    history_sigma_eval: list[float] = field(default_factory=list)
 
 
 class BaseOptimizer(ABC):
@@ -139,12 +150,15 @@ class VirusOptimizer(BaseOptimizer):
         air_sigma_min: float = 1.5,
         air_sigma_max: float = 5.0,
         n_pop_min: int = 5,
-        pop_change_by: int = 5,
+        pop_change_by: int = 2,
         pop_grow_trigger: int = 200,
         pop_shrink_trigger: int = 20,
         pop_change_cooldown: int = 30,
         lifespan_range: int = 4,
         dormant_mode: str = "freeze",
+        air_noise: str = "normal",
+        adaptive_air_ratio: bool = False,
+        log_slope_threshold: float = 1e-4,
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
@@ -168,6 +182,9 @@ class VirusOptimizer(BaseOptimizer):
         self.pop_change_cooldown = pop_change_cooldown
         self.lifespan_range = lifespan_range
         self.dormant_mode = dormant_mode  # "freeze" | "aging" | "replace"
+        self.air_noise = air_noise            # "uniform" | "normal"
+        self.adaptive_air_ratio = adaptive_air_ratio
+        self.log_slope_threshold = log_slope_threshold
 
     @staticmethod
     def _reflect(x: np.ndarray, lo: float, hi: float) -> np.ndarray:
@@ -185,14 +202,16 @@ class VirusOptimizer(BaseOptimizer):
         return rng.integers(lo_ls, hi_ls + 1, size=n)
 
     def _niche_elites(self, pop_x: np.ndarray, pop_f: np.ndarray,
-                      niche_radius: float | None = None) -> set:
+                      niche_radius: float | None = None,
+                      best_f_global: float | None = None,
+                      eqf_override: float | None = None) -> set:
         """Dynamically select spatially diverse elites that meet a quality threshold."""
         if niche_radius is None:
             niche_radius = self.niche_radius
         n_elite_max = self.n_elite_max
-        f_best = pop_f.min()
-        f_spread = np.percentile(pop_f, 75) - f_best
-        quality_cutoff = f_best + self.elite_quality_factor * max(f_spread, 1e-30)
+        f_ref = best_f_global if best_f_global is not None else pop_f.min()
+        eqf = eqf_override if eqf_override is not None else self.elite_quality_factor
+        quality_cutoff = f_ref + eqf * max(f_ref, 1e-8)
 
         elite_idx: list[int] = []
         elite_pos: list[np.ndarray] = []
@@ -214,6 +233,12 @@ class VirusOptimizer(BaseOptimizer):
         scores -= scores.max()
         w = np.exp(scores)
         return w / w.sum()
+
+    def _meaningful_improvement(self, f: float, log_best_ref: float, evals_since_reset: int) -> bool:
+        if evals_since_reset == 0:
+            return True
+        slope = (log_best_ref - math.log10(f + 1e-300)) / evals_since_reset
+        return slope >= self.log_slope_threshold
 
     def optimize(self, max_evals: int = 5000) -> OptimizeResult:
         rng = np.random.default_rng(self.seed)
@@ -240,10 +265,19 @@ class VirusOptimizer(BaseOptimizer):
         _a0  = np.minimum(pop_age.astype(float) / np.maximum(pop_lifespan.astype(float), 1), 1.0)
         _s0  = self.sigma_min_ratio ** (_lq0 * (0.7 + 0.3 * _a0))
         history_pop_sigma: list[np.ndarray] = [float(sigma) * _s0]
+        history_sigma_global: list[float] = []
+        history_n_active: list[int] = []
+        history_n_elite: list[int] = []
+        history_no_improve: list[int] = []
+        history_elite_cutoff: list[float] = []
+        history_eval_count: list[int] = []
+        history_sigma_eval: list[float] = []
 
         best_so_far = float(pop_f.min())
         no_improve = self.pop_shrink_trigger  # neutral start
-        pop_cooldown = self.pop_change_cooldown  # warmup: no size change for first N iters
+        pop_cooldown = self.pop_change_cooldown
+        log_best_ref = math.log10(best_so_far + 1e-300)  # log10(f) at last meaningful reset
+        evals_since_reset = 0                             # evals elapsed since last meaningful reset
 
         while len(history_f) < max_evals:
             active_idx = np.where(pop_active)[0]
@@ -260,8 +294,15 @@ class VirusOptimizer(BaseOptimizer):
             # not when merely clustered at a local optimum (multimodal functions).
             unimodal_converged = top5_spread < 0.05 and best_so_far < 1e-3
             niche_radius_eff = self.niche_radius_min if unimodal_converged else niche_radius_dyn
+            # Dynamic elite_quality_factor: narrow (strict) when dispersed, wide (lenient) when clustered
+            pop_diversity = np.mean(np.std(pop_x_arr, axis=0) / span)
+            diversity_ratio = float(np.clip(pop_diversity / 0.289, 0.0, 1.0))
+            eqf_lo = self.elite_quality_factor * 0.3  # dispersed → strict cutoff
+            eqf_hi = self.elite_quality_factor * 3.0  # clustered → lenient cutoff
+            eqf_eff = eqf_hi - (eqf_hi - eqf_lo) * diversity_ratio
             # elite_local: indices into active_idx; elite_global: indices into full pop arrays
-            elite_local = self._niche_elites(pop_x_arr, pop_f_arr, niche_radius_eff)
+            elite_local = self._niche_elites(pop_x_arr, pop_f_arr, niche_radius_eff,
+                                             best_f_global=best_so_far, eqf_override=eqf_eff)
             elite_global = {active_idx[i] for i in elite_local}
             elite_arr = np.fromiter(elite_global, dtype=int) if elite_global else np.empty(0, dtype=int)
 
@@ -271,30 +312,41 @@ class VirusOptimizer(BaseOptimizer):
             dead_global = active_idx[aged_out & not_elite_mask]
             n_dead = len(dead_global)
 
+            stagnation_ratio = min(no_improve / max(self.stagnation_limit, 1), 1.0)
+
             if n_dead == 0:
                 pop_age[active_idx] += 1
                 if self.dormant_mode == "aging":
                     pop_age[~pop_active] += 1
                 sigma *= self.sigma_decay
+                # When all active individuals are elite, no births occur and
+                # history_f never grows → stagnation counter must still advance
+                # so the pop_grow_trigger and stagnation_limit eventually fire.
+                no_improve += 1
+                if no_improve >= self.stagnation_limit:
+                    break
             else:
                 weights = self._softmax_weights(pop_f_arr)
 
-                stagnation_ratio = min(no_improve / max(self.stagnation_limit, 1), 1.0)
-                air_ratio_eff = self.air_ratio + (0.5 - self.air_ratio) * stagnation_ratio ** 2
+                if self.adaptive_air_ratio:
+                    air_ratio_lo = self.air_ratio * 0.5
+                    air_ratio_hi = min(0.7, self.air_ratio * 3.0)
+                    air_ratio_eff = air_ratio_lo + (air_ratio_hi - air_ratio_lo) * stagnation_ratio
+                else:
+                    air_ratio_eff = self.air_ratio + (0.5 - self.air_ratio) * stagnation_ratio ** 2
                 n_air = max(0, round(air_ratio_eff * n_dead))
                 n_local = n_dead - n_air
 
-                # Log-scale quality: distinguishes f=0.001 vs f=0.01 far better than linear.
-                # Bad individuals (log_quality≈0) always get scale=1 (full exploration),
-                # so they can escape local optima regardless of population ranking.
+                # Log-scale quality anchored to global best (history-wide).
+                # When population converges to a local optimum, all f_i ≈ f_pop_max
+                # but best_so_far may be far better → lq ≈ 0 → σ_i = σ_global (full exploration).
                 pop_log_f = np.log10(pop_f_arr + 1e-10)
                 log_f_max = float(pop_log_f.max())
-                log_f_spread = float(log_f_max - pop_log_f.min())
+                log_f_best = float(np.log10(best_so_far + 1e-10))  # anchored to history best
+                log_f_spread = log_f_max - log_f_best
 
                 # Air sigma: large when converged (need to escape), small when diverse
-                # Normalized diversity: uniform distribution gives std ≈ 0.289 * span
-                pop_diversity = np.mean(np.std(pop_x_arr, axis=0) / span)
-                diversity_ratio = np.clip(pop_diversity / 0.289, 0.0, 1.0)
+                # diversity_ratio already computed above before elite selection
                 air_sigma_factor = self.air_sigma_max - (self.air_sigma_max - self.air_sigma_min) * diversity_ratio
                 air_sigma_base = np.maximum(sigma, sigma_init_mean * 0.3)
                 air_sigma_vec = air_sigma_base * air_sigma_factor
@@ -317,12 +369,23 @@ class VirusOptimizer(BaseOptimizer):
 
                 if n_air > 0:
                     air_li = rng.integers(0, n, size=n_air)
-                    noise_air = rng.standard_normal((n_air, self.dim))
+                    if self.air_noise == "uniform":
+                        noise_air = rng.uniform(-1.0, 1.0, (n_air, self.dim))
+                    else:
+                        noise_air = rng.standard_normal((n_air, self.dim))
                     new_air = self._reflect(pop_x[active_idx[air_li]] + noise_air * air_sigma_vec, lo, hi)
                 else:
                     new_air = np.empty((0, self.dim))
 
                 new_xs = np.concatenate([new_local, new_air], axis=0)
+
+                # Per-child sigma: local children use individual sigma_i, air children use air_sigma_vec
+                _sc: list[np.ndarray] = []
+                if n_local > 0:
+                    _sc.append(sigma_i)
+                if n_air > 0:
+                    _sc.append(np.full(n_air, float(air_sigma_vec)))
+                _sigma_children = np.concatenate(_sc) if _sc else np.array([])
 
                 # Evaluate and place offspring into dead slots
                 replaced_slots: list[int] = []
@@ -336,9 +399,16 @@ class VirusOptimizer(BaseOptimizer):
                     replaced_slots.append(slot)
                     history_x.append(x.copy())
                     history_f.append(f)
+                    history_sigma_eval.append(float(_sigma_children[k]) if k < len(_sigma_children) else float(sigma))
+                    evals_since_reset += 1
                     if f < best_so_far:
                         best_so_far = f
-                        no_improve = 0
+                        if self._meaningful_improvement(f, log_best_ref, evals_since_reset):
+                            no_improve = 0
+                            log_best_ref = math.log10(f + 1e-300)
+                            evals_since_reset = 0
+                        else:
+                            no_improve += 1
                     else:
                         no_improve += 1
                     if len(history_f) >= max_evals or no_improve >= self.stagnation_limit:
@@ -350,7 +420,7 @@ class VirusOptimizer(BaseOptimizer):
                 if no_improve >= self.stagnation_limit:
                     break
 
-                # Age active survivors
+                # Age active survivors (per-generation)
                 replaced_mask = np.zeros(self.n_pop, dtype=bool)
                 if replaced_slots:
                     replaced_mask[replaced_slots] = True
@@ -383,9 +453,16 @@ class VirusOptimizer(BaseOptimizer):
                                     pop_lifespan[slot] = self._sample_lifespans(rng, 1)[0]
                                     history_x.append(pop_x[slot].copy())
                                     history_f.append(pop_f[slot])
+                                    history_sigma_eval.append(float('nan'))  # random position, no parent sigma
+                                    evals_since_reset += 1
                                     if pop_f[slot] < best_so_far:
                                         best_so_far = pop_f[slot]
-                                        no_improve = 0
+                                        if self._meaningful_improvement(pop_f[slot], log_best_ref, evals_since_reset):
+                                            no_improve = 0
+                                            log_best_ref = math.log10(pop_f[slot] + 1e-300)
+                                            evals_since_reset = 0
+                                        else:
+                                            no_improve += 1
                                     else:
                                         no_improve += 1
                         elif self.dormant_mode == "replace":
@@ -405,18 +482,20 @@ class VirusOptimizer(BaseOptimizer):
                                 pop_lifespan[slot] = self._sample_lifespans(rng, 1)[0]
                                 history_x.append(new_x.copy())
                                 history_f.append(new_f)
+                                history_sigma_eval.append(float(sigma))  # replace mode uses global sigma
+                                evals_since_reset += 1
                                 if new_f < best_so_far:
                                     best_so_far = new_f
-                                    no_improve = 0
+                                    if self._meaningful_improvement(new_f, log_best_ref, evals_since_reset):
+                                        no_improve = 0
+                                        log_best_ref = math.log10(new_f + 1e-300)
+                                        evals_since_reset = 0
+                                    else:
+                                        no_improve += 1
                                 else:
                                     no_improve += 1
                         pop_active[slots] = True
                         pop_age[slots] = 0
-                        # Evict top active stuck near a local optimum.
-                        pool = active_idx[~np.isin(active_idx, elite_arr)]
-                        evict = pool[np.argsort(pop_f[pool])][:self.pop_change_by]
-                        pop_active[evict] = False
-                        # Do NOT reset no_improve — let it decay naturally as new individuals improve.
                         pop_cooldown = self.pop_change_cooldown
                 elif no_improve < self.pop_shrink_trigger and n_active > self.n_pop_min:
                     # Deactivate worst non-elite active individuals (virtual shrink)
@@ -437,9 +516,25 @@ class VirusOptimizer(BaseOptimizer):
             scale_e = self.sigma_min_ratio ** (lq_e * (0.7 + 0.3 * ar_e))
             history_pop_sigma.append(float(sigma) * scale_e)
             history_pop.append(pop_x.copy())
+            # --- VSO dynamics recording ---
+            history_sigma_global.append(float(sigma))
+            history_n_active.append(int(pop_active.sum()))
+            history_n_elite.append(len(elite_global))
+            history_no_improve.append(int(no_improve))
+            history_elite_cutoff.append(
+                best_so_far + eqf_eff * max(best_so_far, 1e-8)
+            )
+            history_eval_count.append(len(history_f))
 
         result = self._make_result(history_x, history_f, history_pop)
         result.history_pop_sigma = history_pop_sigma
+        result.history_sigma_global = history_sigma_global
+        result.history_n_active = history_n_active
+        result.history_n_elite = history_n_elite
+        result.history_no_improve = history_no_improve
+        result.history_elite_cutoff = history_elite_cutoff
+        result.history_eval_count = history_eval_count
+        result.history_sigma_eval = history_sigma_eval
         return result
 
 

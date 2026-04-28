@@ -191,10 +191,7 @@ VSO のエリート選択:
 | `n_pop_min` | 5 | 仮想呼吸の下限個体数（0 で無効） |
 | `lifespan` | 5 | 個体の寿命（世代数） |
 | `sigma` | 0.2 | 初期探索半径（探索範囲に対する比率） |
-| `sigma_decay` | 0.99 | 世代ごとの探索半径縮小率（適応モード時は下限） |
-| `sigma_decay_max` | 0.999 | 適応モード時の上限（停滞時に適用） |
-| `adaptive_sigma_decay` | False | True のとき改善 EMA に応じて sigma_decay を適応変化（改善中→sigma_decay、停滞中→sigma_decay_max） |
-| `sigma_ema_alpha` | 0.1 | 改善率 EMA の平滑化係数（≈1/α 世代の記憶長） |
+| `sigma_decay` | 0.99 | 世代ごとの探索半径縮小率 |
 | `air_ratio` | 0.2 | 空気感染の基準割合（進行中は×0.5、停滞時は×3 まで no_improve に応じて線形変化） |
 | `n_elite_max` | 6 | 保護するコロニー中心の最大数 |
 | `niche_radius` | 1.0 | コロニー間の最小距離（初期値）|
