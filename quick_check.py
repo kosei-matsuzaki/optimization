@@ -45,22 +45,11 @@ _DIM_LOOKUP: dict[int, dict[str, object]] = {
 }
 
 _OPTIMIZERS = {
-    "sd99-mr50":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.50}),
-    "sd99-mr40":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.40}),
-    "sd99-mr30":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.30}),
-    "sd99-mr20":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.20}),
-    "sd99-mr15":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.15}),
-    "sd99-mr10":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.10}),
-    "sd99-mr07":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.07}),
-    "sd99-mr05":  (VirusOptimizer, {"sigma_decay": 0.99,  "sigma_min_ratio": 0.05}),
-    "sd999-mr50": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.50}),
-    "sd999-mr40": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.40}),
-    "sd999-mr30": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.30}),
-    "sd999-mr20": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.20}),
-    "sd999-mr15": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.15}),
-    "sd999-mr10": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.10}),
-    "sd999-mr07": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.07}),
-    "sd999-mr05": (VirusOptimizer, {"sigma_decay": 0.999, "sigma_min_ratio": 0.05}),
+    "CMA-ES": (CMAESOptimizer,   {}),
+    "PSO":    (PSOOptimizer,     {}),
+    "GA":     (GAOptimizer,      {}),
+    "SaVOA":  (SaVOAOptimizer,   {}),
+    "VSO":    (VirusOptimizer,   {}),
 }
 
 
