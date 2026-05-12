@@ -152,9 +152,9 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
    │       σ_i         = σ × sigma_min_ratio ^ combined   ← 指数減衰
    │       悪い個体(log_quality≈0) → combined≈0 → σ_i=σ（全力探索）
    │       良くて高齢(log_quality≈1, age_ratio≈1) → σ_i=σ×sigma_min_ratio（精密探索）
-   └─ 空気感染（air_ratio の割合）
-       └─ ランダム親位置 + Uniform(−σ_air, +σ_air)
-           σ_air = σ × air_sigma_factor
+   └─ 空気感染（air_ratio の割合、固定）
+       └─ ランダム親位置 + Normal(0, σ_air)
+           σ_air = max(σ, 0.3 × σ_init) × air_sigma_factor
            air_sigma_factor = air_sigma_max − (air_sigma_max − air_sigma_min) × diversity_ratio
            diversity_ratio  = clip(集団の空間的分散 / 0.289, 0, 1)  ← 収束時↑、分散時↓
        子は反射境界条件（reflective clipping）で探索域内に収める
@@ -192,7 +192,7 @@ VSO のエリート選択:
 | `lifespan` | 5 | 個体の寿命（世代数） |
 | `sigma` | 0.2 | 初期探索半径（探索範囲に対する比率） |
 | `sigma_decay` | 0.99 | 世代ごとの探索半径縮小率 |
-| `air_ratio` | 0.2 | 空気感染の基準割合（進行中は×0.5、停滞時は×3 まで no_improve に応じて線形変化） |
+| `air_ratio` | 0.3 | 空気感染の固定割合 |
 | `n_elite_max` | 6 | 保護するコロニー中心の最大数 |
 | `niche_radius` | 1.0 | コロニー間の最小距離（初期値）|
 | `niche_radius_min` | 0.05 | niche_radius の下限 |

@@ -300,14 +300,11 @@
   .fc-fork-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-top: 3px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 11px 14px;
+    padding: 11px 15px;
     position: relative;
     transition: box-shadow .25s, border-color .25s;
   }
-  .fc-fork-card.c-green  { border-top-color: var(--success); }
-  .fc-fork-card.c-orange { border-top-color: var(--warn); }
   .fc-fork-num {
     font-size: 10px;
     font-weight: 700;
@@ -316,8 +313,8 @@
     margin-bottom: 6px;
     text-transform: uppercase;
   }
-  .fc-fork-card strong { font-size: 13.5px; font-weight: 800; color: var(--text); display: block; margin-bottom: 5px; letter-spacing: -.15px; }
-  .fc-fork-card span   { font-size: 12px; color: var(--text-2); line-height: 1.72; }
+  .fc-fork-card strong { font-size: 14px; font-weight: 800; color: var(--text); display: block; margin-bottom: 4px; letter-spacing: -.2px; }
+  .fc-fork-card span   { font-size: 12.5px; color: var(--text-2); line-height: 1.72; }
 
   /* ── Method cards ──────────────────────────────────────────────────── */
   .method-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-top: 4px; }
@@ -541,27 +538,27 @@
       transform: rotate(180deg);
     }
     .fc-card-expanded { padding-right: 28px; }
-    .fc-fork-card.fc-card-expanded { padding-right: 22px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .fc-card .fc-detail,
     .fc-fork-card .fc-detail { transition: none; }
   }
 
-  /* ── Step 4 fork — extend with params + mechanism inside fork cards ─ */
-  .fc-fork-card.fc-card-expanded { padding: 12px 14px 14px; }
+  /* ── Step 4 fork — narrower 2-column layout, otherwise identical to .fc-card ─ */
+  .fc-fork-card.fc-card-expanded { padding: 15px 18px 17px; }
   /* padding-top / margin-top は @media 内のコラプス状態（0）を
      ソース順で上書きしてしまうのでここでは指定しない */
   .fc-fork-card .fc-detail {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 0;
   }
-  .fc-fork-card .fc-params { gap: 4px; }
-  .fc-fork-card .fc-param-chip { font-size: 10.5px; padding: 4px 8px; }
-  .fc-fork-card .math-display { padding: 11px 14px; }
-  .fc-fork-card .math-display .katex { font-size: 1.08em; }
-  .fc-fork-card .algo-pseudo { font-size: 11.5px; padding: 10px 13px; }
-  .fc-fork-card .fc-note { font-size: 11.5px; line-height: 1.72; }
+  /* 単一子で .fc-detail のグリッド行を 1 行に保ち、内側を flex で縦積みする */
+  .fc-fork-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
 
   /* ── Scroll reveal ─────────────────────────────────────────────────── */
   .reveal { opacity: 0; transform: translateY(16px); transition: opacity .45s ease, transform .45s ease; }
@@ -797,51 +794,53 @@ elites ← []
       <div class="fc-fork-pair">
 
         <!-- 4a 局所感染 -->
-        <div class="fc-fork-card fc-card-expanded c-green">
+        <div class="fc-fork-card fc-card-expanded">
           <div class="fc-fork-num">4a — 局所感染（割合 1 − air_ratio）</div>
           <strong>局所感染（精密探索）</strong>&#x2060;
           <span class="fc-desc">親近傍にガウスノイズ \(\mathcal{N}(0,\sigma_i^2 I)\) で子を生成。親の <code>log_quality</code>（履歴ベストにアンカー）と年齢比でべき乗スケーリングし、悪い個体は広く、良くて高齢な個体は精密に探索。</span>
           <div class="fc-detail">
-            <div>
-              <div class="fc-pane-title">パラメータ</div>
-              <div class="fc-params">
-                <div class="fc-param-chip" title="局所感染（4a）以外のスロットで使う割合"><span class="pk">air_ratio</span><span class="pv">= 0.2</span></div>
-                <div class="fc-param-chip" title="σ_i / σ_global の下限（精密探索の最小幅）"><span class="pk">sigma_min_ratio</span><span class="pv">= 0.05</span></div>
+            <div class="fc-fork-inner">
+              <div>
+                <div class="fc-pane-title">パラメータ</div>
+                <div class="fc-params">
+                  <div class="fc-param-chip" title="局所感染（4a）以外のスロットで使う割合"><span class="pk">air_ratio</span><span class="pv">= 0.3</span></div>
+                  <div class="fc-param-chip" title="σ_i / σ_global の下限（精密探索の最小幅）"><span class="pk">sigma_min_ratio</span><span class="pv">= 0.05</span></div>
+                </div>
               </div>
-            </div>
-            <div class="fc-mechanism">
-              <div class="fc-pane-title">個体ごとの探索幅 \(\sigma_i\)</div>
-              <div class="math-display">\[ \sigma_i = \sigma_\text{global} \cdot \rho^{\,q_i\,(0.7 + 0.3\,a_i)}, \quad \rho = \sigma_\text{min ratio} \]</div>
-              <div class="math-display">\[ x_\text{child} = \mathrm{reflect}_{[\text{lo},\,\text{hi}]}\!\big(x_\text{parent} + \mathcal{N}(0,\,\sigma_i^2 I)\big) \]</div>
-              <div class="fc-note">
-                <span class="lbl">log_quality</span>\(q_i\) は集団 \(f_{\max}\) ではなく履歴ベストにアンカー（0 ＝ 最悪, 1 ＝ 最良）。局所収束時でも \(q_i \approx 0\) となり広域探索が継続する。<br>
-                <span class="lbl">年齢比</span>\(a_i = \mathrm{age}_i / \ell_i\)。良くて高齢な個体ほど \(\sigma_i\) を絞り精密化、若く悪い個体は \(\sigma_i \approx \sigma_\text{global}\) で広く探索。境界外は反射クリッピング。
+              <div class="fc-mechanism">
+                <div class="fc-pane-title">個体ごとの探索幅 \(\sigma_i\)</div>
+                <div class="math-display">\[ \sigma_i = \sigma_\text{global} \cdot \rho^{\,q_i\,(0.7 + 0.3\,a_i)}, \quad \rho = \sigma_\text{min ratio} \]</div>
+                <div class="math-display">\[ x_\text{child} = \mathrm{reflect}_{[\text{lo},\,\text{hi}]}\!\big(x_\text{parent} + \mathcal{N}(0,\,\sigma_i^2 I)\big) \]</div>
+                <div class="fc-note">
+                  <span class="lbl">log_quality</span>\(q_i\) は集団 \(f_{\max}\) ではなく履歴ベストにアンカー（0 ＝ 最悪, 1 ＝ 最良）。局所収束時でも \(q_i \approx 0\) となり広域探索が継続する。<br>
+                  <span class="lbl">年齢比</span>\(a_i = \mathrm{age}_i / \ell_i\)。良くて高齢な個体ほど \(\sigma_i\) を絞り精密化、若く悪い個体は \(\sigma_i \approx \sigma_\text{global}\) で広く探索。境界外は反射クリッピング。
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- 4b 空気感染 -->
-        <div class="fc-fork-card fc-card-expanded c-orange">
+        <div class="fc-fork-card fc-card-expanded">
           <div class="fc-fork-num">4b — 空気感染（割合 air_ratio）</div>
           <strong>空気感染（広域ジャンプ）</strong>&#x2060;
-          <span class="fc-desc">ランダムな親位置に大きなノイズを加えて遠方へ跳躍。集団が収束しているときほど \(\sigma_\text{air}\) を拡大し、停滞が長期化すると <code>air_ratio</code> 自体も増えて探索量を上げる。</span>
+          <span class="fc-desc">ランダムな親位置に大きなノイズを加えて遠方へ跳躍。集団が収束しているときほど \(\sigma_\text{air}\) を拡大して脱出力を確保。<code>air_ratio</code> は固定割合。</span>
           <div class="fc-detail">
-            <div>
-              <div class="fc-pane-title">パラメータ</div>
-              <div class="fc-params">
-                <div class="fc-param-chip" title="集団分散時の σ_air 倍率"><span class="pk">air_sigma_min</span><span class="pv">= 1.5</span></div>
-                <div class="fc-param-chip" title="集団収束時の σ_air 倍率"><span class="pk">air_sigma_max</span><span class="pv">= 5.0</span></div>
-                <div class="fc-param-chip" title="True で停滞時に air_ratio を線形拡大（×3 まで）。False は二次"><span class="pk">adaptive_air_ratio</span><span class="pv">= False</span></div>
+            <div class="fc-fork-inner">
+              <div>
+                <div class="fc-pane-title">パラメータ</div>
+                <div class="fc-params">
+                  <div class="fc-param-chip" title="集団分散時の σ_air 倍率"><span class="pk">air_sigma_min</span><span class="pv">= 1.5</span></div>
+                  <div class="fc-param-chip" title="集団収束時の σ_air 倍率"><span class="pk">air_sigma_max</span><span class="pv">= 5.0</span></div>
+                </div>
               </div>
-            </div>
-            <div class="fc-mechanism">
-              <div class="fc-pane-title">空気感染の探索幅</div>
-              <div class="math-display">\[ d = \mathrm{clip}\!\left(\frac{\hat{\sigma}_x}{0.289},\; 0,\; 1\right) \quad \text{(集団分散の指標)} \]</div>
-              <div class="math-display">\[ \sigma_\text{air} = \max(\sigma_\text{global},\; 0.3\,\sigma_\text{init}) \cdot \left[\sigma_\text{air}^{\max} - (\sigma_\text{air}^{\max} - \sigma_\text{air}^{\min})\, d \right] \]</div>
-              <div class="math-display">\[ r_\text{air}^{(t)} = r_\text{air} + (0.5 - r_\text{air})\, s^2, \qquad s = \frac{n_\text{no improve}}{n_\text{stagnation limit}} \]</div>
-              <div class="fc-note">
-                <span class="lbl">フロア</span>\(\sigma_\text{global}\) が小さくなりすぎても \(0.3\,\sigma_\text{init}\) で底打ち → 終盤でも空気感染ジャンプの幅を確保。集団が収束するほど \(d \to 0\) で倍率が \(\sigma_\text{air}^{\max}\) に寄り、停滞が長引くほど \(s \to 1\) で空気感染の割合自体が拡大する。<code>air_noise=normal/uniform</code> で分布形状を切替可能（既定 normal）。
+              <div class="fc-mechanism">
+                <div class="fc-pane-title">空気感染の探索幅</div>
+                <div class="math-display">\[ d = \mathrm{clip}\!\left(\frac{\hat{\sigma}_x}{0.289},\; 0,\; 1\right) \quad \text{(集団分散の指標)} \]</div>
+                <div class="math-display">\[ \sigma_\text{air} = \max(\sigma_\text{global},\; 0.3\,\sigma_\text{init}) \cdot \left[\sigma_\text{air}^{\max} - (\sigma_\text{air}^{\max} - \sigma_\text{air}^{\min})\, d \right] \]</div>
+                <div class="fc-note">
+                  <span class="lbl">フロア</span>\(\sigma_\text{global}\) が小さくなりすぎても \(0.3\,\sigma_\text{init}\) で底打ち → 終盤でも空気感染ジャンプの幅を確保。集団が収束するほど \(d \to 0\) で倍率が \(\sigma_\text{air}^{\max}\) に寄り、空気感染ジャンプ幅が拡大する。<code>air_ratio</code> は停滞によらず固定。ノイズ分布は標準正規（\(\mathcal{N}(0,1)\)）。
+                </div>
               </div>
             </div>
           </div>
@@ -890,7 +889,7 @@ elites ← []
               <div class="fc-param-chip" title="縮小発動の停滞閾値（これ未満で縮小）"><span class="pk">pop_shrink_trigger</span><span class="pv">= 20</span></div>
               <div class="fc-param-chip" title="1 回の縮小/拡大で動かす個体数（拡大は ×2）"><span class="pk">pop_change_by</span><span class="pv">= 2</span></div>
               <div class="fc-param-chip" title="縮小/拡大後のクールダウン世代数"><span class="pk">pop_change_cooldown</span><span class="pv">= 30</span></div>
-              <div class="fc-param-chip" title="freeze=位置保持 / aging=dormant も加齢 / replace=復活時に新規子で置換"><span class="pk">dormant_mode</span><span class="pv">= freeze</span></div>
+              <div class="fc-param-chip" title="意味ある改善とみなす log10(f) 減少スロープの下限（no_improve リセット条件）"><span class="pk">log_slope_threshold</span><span class="pv">= 1e-4</span></div>
             </div>
           </div>
           <div class="fc-mechanism">
@@ -909,7 +908,8 @@ elites ← []
   cooldown ← pop_change_cooldown</pre>
             <div class="fc-note">
               <span class="lbl"><code>active</code></span>親候補・子配置対象（\(n_\text{pop}^{\min}\!\sim\!n_\text{pop}\) 個）。<br>
-              <span class="lbl"><code>dormant</code></span>退避中で対象外、位置は <code>dormant_mode</code> に従って保持／加齢／置換。各遷移後は <code>pop_change_cooldown</code> 世代ロックされ、振動を防ぐ。
+              <span class="lbl"><code>dormant</code></span>退避中で対象外、位置はそのまま保持され復活時に旧位置へ復元される（freeze）。各遷移後は <code>pop_change_cooldown</code> 世代ロックされ、振動を防ぐ。<br>
+              <span class="lbl"><code>no_improve</code></span>最後の<em>意味ある改善</em>（\(\log_{10} f\) の減少スロープが <code>log_slope_threshold</code> 以上）からの経過評価回数。改善があれば 0 にリセット、そうでなければ毎評価 +1。値が小さいほど活発に改善中、大きいほど停滞している指標。
             </div>
           </div>
         </div>

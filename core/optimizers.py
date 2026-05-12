@@ -139,7 +139,7 @@ class VirusOptimizer(BaseOptimizer):
         lifespan: int = 5,
         sigma: float = 0.2,
         sigma_decay: float = 0.99,
-        air_ratio: float = 0.2,
+        air_ratio: float = 0.3,
         n_elite_max: int = 6,
         temperature: float = 1.0,
         stagnation_limit: int = 2000,
@@ -155,9 +155,6 @@ class VirusOptimizer(BaseOptimizer):
         pop_shrink_trigger: int = 20,
         pop_change_cooldown: int = 30,
         lifespan_range: int = 4,
-        dormant_mode: str = "freeze",
-        air_noise: str = "normal",
-        adaptive_air_ratio: bool = False,
         log_slope_threshold: float = 1e-4,
     ):
         super().__init__(benchmark, seed)
@@ -181,9 +178,6 @@ class VirusOptimizer(BaseOptimizer):
         self.pop_shrink_trigger = pop_shrink_trigger
         self.pop_change_cooldown = pop_change_cooldown
         self.lifespan_range = lifespan_range
-        self.dormant_mode = dormant_mode  # "freeze" | "aging" | "replace"
-        self.air_noise = air_noise            # "uniform" | "normal"
-        self.adaptive_air_ratio = adaptive_air_ratio
         self.log_slope_threshold = log_slope_threshold
 
     @staticmethod
@@ -312,12 +306,8 @@ class VirusOptimizer(BaseOptimizer):
             dead_global = active_idx[aged_out & not_elite_mask]
             n_dead = len(dead_global)
 
-            stagnation_ratio = min(no_improve / max(self.stagnation_limit, 1), 1.0)
-
             if n_dead == 0:
                 pop_age[active_idx] += 1
-                if self.dormant_mode == "aging":
-                    pop_age[~pop_active] += 1
                 sigma *= self.sigma_decay
                 # When all active individuals are elite, no births occur and
                 # history_f never grows → stagnation counter must still advance
@@ -328,13 +318,7 @@ class VirusOptimizer(BaseOptimizer):
             else:
                 weights = self._softmax_weights(pop_f_arr)
 
-                if self.adaptive_air_ratio:
-                    air_ratio_lo = self.air_ratio * 0.5
-                    air_ratio_hi = min(0.7, self.air_ratio * 3.0)
-                    air_ratio_eff = air_ratio_lo + (air_ratio_hi - air_ratio_lo) * stagnation_ratio
-                else:
-                    air_ratio_eff = self.air_ratio + (0.5 - self.air_ratio) * stagnation_ratio ** 2
-                n_air = max(0, round(air_ratio_eff * n_dead))
+                n_air = max(0, round(self.air_ratio * n_dead))
                 n_local = n_dead - n_air
 
                 # Log-scale quality anchored to global best (history-wide).
@@ -369,10 +353,7 @@ class VirusOptimizer(BaseOptimizer):
 
                 if n_air > 0:
                     air_li = rng.integers(0, n, size=n_air)
-                    if self.air_noise == "uniform":
-                        noise_air = rng.uniform(-1.0, 1.0, (n_air, self.dim))
-                    else:
-                        noise_air = rng.standard_normal((n_air, self.dim))
+                    noise_air = rng.standard_normal((n_air, self.dim))
                     new_air = self._reflect(pop_x[active_idx[air_li]] + noise_air * air_sigma_vec, lo, hi)
                 else:
                     new_air = np.empty((0, self.dim))
@@ -425,8 +406,6 @@ class VirusOptimizer(BaseOptimizer):
                 if replaced_slots:
                     replaced_mask[replaced_slots] = True
                 pop_age[active_idx[~replaced_mask[active_idx]]] += 1
-                if self.dormant_mode == "aging":
-                    pop_age[~pop_active] += 1
 
                 sigma *= self.sigma_decay
 
@@ -435,65 +414,12 @@ class VirusOptimizer(BaseOptimizer):
                 n_active = int(pop_active.sum())
                 dormant_idx = np.where(~pop_active)[0]
                 if no_improve >= self.pop_grow_trigger and n_active < self.n_pop:
-                    # Reactivate best dormant individuals (2x change_by).
+                    # Reactivate best dormant individuals (2x change_by) — freeze:
+                    # restore stored positions as-is (no re-evaluation, no replacement).
                     best_dormant = dormant_idx[np.argsort(pop_f[dormant_idx])]
                     n_react = min(self.pop_change_by * 2, self.n_pop - n_active, len(best_dormant))
                     if n_react > 0:
                         slots = best_dormant[:n_react]
-                        if self.dormant_mode == "aging":
-                            # Aged-out dormant individuals get fresh random positions on wakeup.
-                            aged_out_slots = slots[pop_age[slots] > pop_lifespan[slots]]
-                            if len(aged_out_slots) > 0:
-                                new_xs = rng.uniform(lo, hi, (len(aged_out_slots), self.dim))
-                                for i, slot in enumerate(aged_out_slots):
-                                    if len(history_f) >= max_evals:
-                                        break
-                                    pop_x[slot] = new_xs[i]
-                                    pop_f[slot] = float(self.func(pop_x[slot]))
-                                    pop_lifespan[slot] = self._sample_lifespans(rng, 1)[0]
-                                    history_x.append(pop_x[slot].copy())
-                                    history_f.append(pop_f[slot])
-                                    history_sigma_eval.append(float('nan'))  # random position, no parent sigma
-                                    evals_since_reset += 1
-                                    if pop_f[slot] < best_so_far:
-                                        best_so_far = pop_f[slot]
-                                        if self._meaningful_improvement(pop_f[slot], log_best_ref, evals_since_reset):
-                                            no_improve = 0
-                                            log_best_ref = math.log10(pop_f[slot] + 1e-300)
-                                            evals_since_reset = 0
-                                        else:
-                                            no_improve += 1
-                                    else:
-                                        no_improve += 1
-                        elif self.dormant_mode == "replace":
-                            # Discard dormant position; generate offspring from current active parents.
-                            wts_react = self._softmax_weights(pop_f[active_idx])
-                            for slot in slots:
-                                if len(history_f) >= max_evals:
-                                    break
-                                parent_local = rng.choice(n, p=wts_react)
-                                new_x = self._reflect(
-                                    pop_x[active_idx[parent_local]] + rng.standard_normal(self.dim) * sigma,
-                                    lo, hi,
-                                )
-                                new_f = float(self.func(new_x))
-                                pop_x[slot] = new_x
-                                pop_f[slot] = new_f
-                                pop_lifespan[slot] = self._sample_lifespans(rng, 1)[0]
-                                history_x.append(new_x.copy())
-                                history_f.append(new_f)
-                                history_sigma_eval.append(float(sigma))  # replace mode uses global sigma
-                                evals_since_reset += 1
-                                if new_f < best_so_far:
-                                    best_so_far = new_f
-                                    if self._meaningful_improvement(new_f, log_best_ref, evals_since_reset):
-                                        no_improve = 0
-                                        log_best_ref = math.log10(new_f + 1e-300)
-                                        evals_since_reset = 0
-                                    else:
-                                        no_improve += 1
-                                else:
-                                    no_improve += 1
                         pop_active[slots] = True
                         pop_age[slots] = 0
                         pop_cooldown = self.pop_change_cooldown
