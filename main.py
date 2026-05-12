@@ -5,7 +5,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from core.benchmarks import BENCHMARKS, BENCHMARKS_3D, BENCHMARKS_4D, CUSTOM_BENCHMARKS, BenchmarkFunction
 from core.optimizers import (
-    CMAESOptimizer, VirusOptimizer, PSOOptimizer, GAOptimizer, SaVOAOptimizer,
+    CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer, GAOptimizer, SaVOAOptimizer,
 )
 from core.runner import run_experiment, summarize
 from core.visualize import (
@@ -16,7 +16,7 @@ from core.visualize import (
 )
 
 
-N_RUNS = 30
+N_RUNS = 100
 MAX_EVALS = 5000
 OUTPUT_DIR = Path("results")
 
@@ -24,7 +24,7 @@ _BASE_OPTIMIZERS = {
     "PSO":      (PSOOptimizer,       {}),
     "GA":       (GAOptimizer,        {}),
     "SaVOA":    (SaVOAOptimizer,     {}),
-    "VSO":      (VirusOptimizer,     {}),
+    "MC-ESO":   (MultiChannelEpidemicOptimizer, {}),
 }
 
 

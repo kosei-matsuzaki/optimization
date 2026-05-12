@@ -9,19 +9,55 @@ Usage:
 """
 from __future__ import annotations
 import argparse
+import csv
+import numpy as np
 from pathlib import Path
 
 from core.benchmarks import BENCHMARKS_BY_NAME
 from core.optimizers import (
-    CMAESOptimizer, VirusOptimizer, PSOOptimizer,
+    CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
     GAOptimizer, SaVOAOptimizer,
 )
-from core.runner import run_experiment, summarize
+from core.runner import run_experiment, summarize, wilcoxon_vs_reference
 from core.visualize import (
     save_landscape_svg, save_convergence_svg,
     save_method_runs_anim, save_method_evals_anim, save_method_population_anim,
     save_method_vso_svg, save_stats,
 )
+
+
+def _append_wilcoxon(dim_dir: Path, bench_name: str,
+                     results_per_method: dict, reference: str = "MC-ESO") -> None:
+    """Append paired Wilcoxon signed-rank rows comparing ``reference`` vs each
+    other method, for this benchmark's run results."""
+    if reference not in results_per_method:
+        return
+    ref_bests = np.array([r.best_f for r in results_per_method[reference]])
+    path = dim_dir / "wilcoxon.csv"
+    write_header = not path.exists()
+    with open(path, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=[
+            "function", "reference", "method", "n", "win_count", "tie_count",
+            "p_value_two_sided", "p_value_ref_better",
+        ])
+        if write_header:
+            writer.writeheader()
+        for method, results in results_per_method.items():
+            if method == reference:
+                continue
+            method_bests = np.array([r.best_f for r in results])
+            # We test "is reference better than method?" → reference (cand) < method (ref)
+            stat = wilcoxon_vs_reference(ref_bests, method_bests)
+            writer.writerow({
+                "function": bench_name,
+                "reference": reference,
+                "method": method,
+                "n": stat["n"],
+                "win_count": stat["win_count"],
+                "tie_count": stat["tie_count"],
+                "p_value_two_sided": f"{stat['p_value']:.4g}",
+                "p_value_ref_better": f"{stat['p_less']:.4g}",
+            })
 
 # (function_name, dimension) — two representatives per BBOB group, for each dim
 _QUICK_FUNCTIONS: list[tuple[str, int]] = [
@@ -44,21 +80,31 @@ _DIM_LOOKUP: dict[int, dict[str, object]] = {
     2: BENCHMARKS_BY_NAME,
 }
 
+# MC-ESO (Multi-Channel Epidemic Spread Optimizer) has its core mechanisms
+# (3-channel transmission + host competition + spillover restart) baked into
+# the base implementation. The only remaining optional flag is
+# `use_sigma_adapt` — gives tighter convergence on smooth problems but can
+# hurt deceptive multimodals (F20).
+_MCESO_VARIANTS: dict[str, dict] = {
+    "MC-ESO":          {},                            # base
+    "MC-ESO+sigma-ad": {"use_sigma_adapt": True},     # optional σ adaptation
+}
+
 _OPTIMIZERS = {
-    "CMA-ES": (CMAESOptimizer,   {}),
-    "PSO":    (PSOOptimizer,     {}),
-    "GA":     (GAOptimizer,      {}),
-    "SaVOA":  (SaVOAOptimizer,   {}),
-    "VSO":    (VirusOptimizer,   {}),
+    "CMA-ES": (CMAESOptimizer, {}),
+    "PSO":    (PSOOptimizer,   {}),
+    "GA":     (GAOptimizer,    {}),
+    "SaVOA":  (SaVOAOptimizer, {}),
+    **{name: (MultiChannelEpidemicOptimizer, kw) for name, kw in _MCESO_VARIANTS.items()},
 }
 
 
 def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int) -> None:
     """Run all functions in a dimension group and save results to dim_dir."""
     dim_dir.mkdir(parents=True, exist_ok=True)
-    print(f"\n{'Function':<22} {'Method':<10} {'Mean':>12} {'Std':>12} "
-          f"{'SR@1e-2':>8} {'SR@1e-4':>8} {'ERT':>9}")
-    print("-" * 83)
+    print(f"\n{'Function':<22} {'Method':<10} {'Mean':>12} "
+          f"{'SR@1e-1':>7} {'SR@1e-2':>7} {'SR@1e-4':>7} {'SR@1e-7':>7} {'SR@1e-10':>8} {'ERT':>9}")
+    print("-" * 100)
     for bench in benchmarks:
         sigma0 = 0.2 * (bench.bounds[1] - bench.bounds[0])
         results_per_method: dict = {}
@@ -71,11 +117,12 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int) -> No
             results_per_method[method] = results
             times_per_method[method] = times
             s = summarize(results)
-            ert_str = f"{s['ert']:>9.0f}" if s['ert'] < float('inf') else "     ---"
+            ert_str = f"{s['ert']:>9.0f}" if s['ert'] < float('inf') else "      ---"
             print(
                 f"{bench.name:<22} {method:<10} "
-                f"{s['mean']:>12.4e} {s['std']:>12.4e} "
-                f"{s['sr_1e-2']:>7.0%} {s['success_rate']:>8.0%}{ert_str}"
+                f"{s['mean']:>12.4e} "
+                f"{s['sr_1e-1']:>6.0%} {s['sr_1e-2']:>6.0%} {s['sr_1e-4']:>6.0%} "
+                f"{s['sr_1e-7']:>6.0%} {s['sr_1e-10']:>7.0%}{ert_str}"
             )
 
         # Per-method visualizations
@@ -93,19 +140,32 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int) -> No
         save_landscape_svg(bench, output_dir=dim_dir)
         save_convergence_svg(bench, results_per_method, output_dir=dim_dir)
         save_stats(bench, results_per_method, times_per_method, output_dir=dim_dir)
+        _append_wilcoxon(dim_dir, bench.name, results_per_method, reference="MC-ESO")
 
     print(f"Saved → {dim_dir.resolve()}/")
 
 
-def main(n_runs: int = 10, max_evals: int = 2000, output_dir: Path = Path("results/quick")) -> None:
+def main(
+    n_runs: int = 10,
+    max_evals: int = 2000,
+    output_dir: Path = Path("results/quick"),
+    funcs: list[str] | None = None,
+) -> None:
     output_dir = Path(output_dir)
-    print(f"quick_check  n_runs={n_runs}  max_evals={max_evals}")
+    print(f"quick_check  n_runs={n_runs}  max_evals={max_evals}  funcs={funcs or 'all'}")
+
+    func_filter = set(funcs) if funcs else None
 
     # Group BenchmarkFunction objects by dimension
     benchmarks_by_dim: dict[int, list] = {}
     for fname, dim in _QUICK_FUNCTIONS:
+        if func_filter is not None and fname not in func_filter:
+            continue
         bench = _DIM_LOOKUP[dim][fname]
         benchmarks_by_dim.setdefault(dim, []).append(bench)
+
+    if not benchmarks_by_dim:
+        raise SystemExit(f"No matching functions for filter {funcs}")
 
     for dim in sorted(benchmarks_by_dim):
         print(f"\n=== dim{dim} ===")
@@ -117,5 +177,8 @@ if __name__ == "__main__":
     parser.add_argument("--n-runs",     type=int, default=10,                   help="Number of runs per method")
     parser.add_argument("--max-evals",  type=int, default=2000,                 help="Max function evaluations per run")
     parser.add_argument("--output-dir", type=Path, default=Path("results/quick"), help="Output directory")
+    parser.add_argument("--funcs",      type=str, default=None,
+                        help="Comma-separated function names to run (default: all in _QUICK_FUNCTIONS)")
     args = parser.parse_args()
-    main(n_runs=args.n_runs, max_evals=args.max_evals, output_dir=args.output_dir)
+    funcs_list = [s.strip() for s in args.funcs.split(",")] if args.funcs else None
+    main(n_runs=args.n_runs, max_evals=args.max_evals, output_dir=args.output_dir, funcs=funcs_list)

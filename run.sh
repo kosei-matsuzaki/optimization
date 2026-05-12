@@ -15,7 +15,7 @@ RESULTS_ROOT="results"
 
 # ── trigger ──────────────────────────────────────────────────────────────────
 cmd_trigger() {
-  local n_runs=30 max_evals=5000
+  local n_runs=100 max_evals=5000
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --n-runs)    n_runs="$2";    shift 2 ;;
@@ -76,6 +76,7 @@ cmd_quick() {
     case "$1" in
       --n-runs)    n_runs="$2";    pass_args+=("$1" "$2"); shift 2 ;;
       --max-evals) max_evals="$2"; pass_args+=("$1" "$2"); shift 2 ;;
+      --funcs)     pass_args+=("$1" "$2"); shift 2 ;;
       --label)     label="$2";     shift 2 ;;
       *)           pass_args+=("$1"); shift ;;
     esac
@@ -178,7 +179,7 @@ Usage: ./run.sh <command> [options]
 
   trigger [--n-runs N] [--max-evals N]
       GitHub Actions ワークフローをトリガー
-      デフォルト: --n-runs 30 --max-evals 5000
+      デフォルト: --n-runs 100 --max-evals 5000
 
   download [RUN_ID] [--label NAME]
       完了済みワークフローの結果をダウンロード（省略時は最新）

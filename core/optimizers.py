@@ -20,7 +20,7 @@ class OptimizeResult:
     n_evals: int
     # per-individual sigma per generation (n,) array; empty = not recorded
     history_pop_sigma: list[np.ndarray] = field(default_factory=list)
-    # VSO-specific dynamics (one entry per generation; empty for non-VSO)
+    # MC-ESO-specific dynamics (one entry per generation; empty for non-MC-ESO)
     history_sigma_global: list[float] = field(default_factory=list)
     history_n_active: list[int] = field(default_factory=list)
     history_n_elite: list[int] = field(default_factory=list)
@@ -124,38 +124,95 @@ class CMAESOptimizer(BaseOptimizer):
         return self._make_result(history_x, history_f, history_pop)
 
 
-class VirusOptimizer(BaseOptimizer):
-    """Epidemic-inspired optimizer.
+class MultiChannelEpidemicOptimizer(BaseOptimizer):
+    """MC-ESO — Multi-Channel Epidemic Spread Optimizer.
 
-    Individuals (infected hosts) spread locally or via air transmission.
-    Low f(x) → high infection probability. Elites are immortal.
+    A population-based black-box optimizer that models the search as the
+    progression of an epidemic, in which infected hosts spread the pathogen
+    through **multiple distinct transmission channels** running in parallel.
+
+    Where conventional metaheuristics rely on a single reproduction operator
+    (DE = differential mutation, ES = Gaussian mutation, PSO = velocity-driven
+    move, GA = crossover), real epidemics propagate simultaneously via
+    qualitatively different routes — close-contact, droplet, and airborne —
+    each with a characteristic distance scale and directional structure.
+    MC-ESO mirrors this by mixing three transmission channels per generation:
+
+      • **Close-contact transmission** (local Gaussian):
+            x_child = x_parent + N(0, σ_i I)
+            Tight neighborhood spread; σ_i adapts to the host's relative
+            fitness and age, so well-adapted hosts probe finer.
+
+      • **Droplet transmission** (host-to-host, DE/current-to-best/1):
+            x_child = x_parent + F·(x_elite − x_parent) + F·(x_a − x_b)
+            A productive (niched-elite) strain donates its "phenotype" to the
+            parent, and a difference between two random hosts injects
+            population-shape-aware drift — this gives MC-ESO **implicit
+            covariance** without learning a covariance matrix.
+
+      • **Airborne transmission** (population-independent spread):
+            x_child = x_random_host + N(0, σ_air I)
+            Long-range aerosol spread for escaping local maxima; σ_air
+            inflates as the outbreak clusters.
+
+    These channels are complemented by three population-level mechanisms:
+
+      • **Strain coexistence** (niched elite pool): spatially separated
+        productive lineages are maintained as transmission seeds for the
+        droplet channel, preserving multi-basin coverage.
+
+      • **Host competition** (greedy μ+λ with rollback): each generation the
+        worst ``kill_fraction`` of hosts die and are replaced by offspring;
+        children that fail to outcompete the host they replaced are rolled
+        back. The outbreak monotonically improves.
+
+      • **Spillover event** (stagnation-triggered re-seed): when the outbreak
+        stalls (no improvement for ``restart_no_improve_threshold`` evals)
+        and the current best is still loose, the population spills over to
+        a fresh host pool around the best with σ = σ_init·``restart_sigma_ratio``.
+
+    Optional ``use_sigma_adapt`` enables multiplicative step-size adaptation
+    (× sigma_up on improvement, × sigma_down otherwise) for tighter convergence
+    on smooth landscapes at the cost of premature commitment on deceptive
+    multimodals.
     """
 
     def __init__(
         self,
         benchmark: BenchmarkFunction,
         seed: int = 42,
+        # ── Population / niching ────────────────────────────────────────
         n_pop: int = 20,
-        lifespan: int = 5,
+        n_elite_max: int = 6,
+        niche_radius: float = 1.0,             # min mutual distance between elites
+        # ── σ ──────────────────────────────────────────────────────────
         sigma: float = 0.2,
         sigma_decay: float = 0.99,
-        air_ratio: float = 0.3,
-        n_elite_max: int = 6,
-        temperature: float = 1.0,
-        stagnation_limit: int = 2000,
-        niche_radius: float = 1.0,
-        niche_radius_min: float = 0.05,
-        elite_quality_factor: float = 1.0,
         sigma_min_ratio: float = 0.05,
+        # ── Infection modes ────────────────────────────────────────────
+        air_ratio: float = 0.3,                # share of children = pure-random "air"
+        h2h_ratio: float = 0.4,                # share of children = host-to-host (DE-style)
+        h2h_F: float = 0.5,                    # h2h differential scale
         air_sigma_min: float = 1.5,
         air_sigma_max: float = 5.0,
-        n_pop_min: int = 5,
-        pop_change_by: int = 2,
-        pop_grow_trigger: int = 200,
-        pop_shrink_trigger: int = 20,
-        pop_change_cooldown: int = 30,
-        lifespan_range: int = 4,
+        # ── Greedy (μ+λ) replacement ───────────────────────────────────
+        kill_fraction: float = 0.25,           # fraction of active killed per gen (by f)
+        # ── Restart on stagnation ──────────────────────────────────────
+        restart_no_improve_threshold: int = 300,  # no_improve count that triggers restart
+        restart_sigma_ratio: float = 0.3,      # σ after restart, relative to σ_init
+        restart_quality_floor: float = 1e-8,   # skip restart if already below this f
+        # ── Misc ───────────────────────────────────────────────────────
+        lifespan: int = 5,                     # age normalizer for local σ_i scaling
+        temperature: float = 1.0,
+        stagnation_limit: int = 2000,
         log_slope_threshold: float = 1e-4,
+        # ── Optional: σ adaptation (gives tight convergence on smooth
+        #     problems but can hurt deceptive multimodals; off by default) ──
+        use_sigma_adapt: bool = False,
+        sigma_up: float = 1.2,
+        sigma_down: float = 0.9,
+        sigma_floor_ratio: float = 1e-6,
+        sigma_ceil_ratio: float = 1.0,
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
@@ -167,19 +224,24 @@ class VirusOptimizer(BaseOptimizer):
         self.temperature = temperature
         self.stagnation_limit = stagnation_limit
         self.niche_radius = niche_radius
-        self.niche_radius_min = niche_radius_min
-        self.elite_quality_factor = elite_quality_factor
         self.sigma_min_ratio = sigma_min_ratio
         self.air_sigma_min = air_sigma_min
         self.air_sigma_max = air_sigma_max
-        self.n_pop_min = n_pop_min
-        self.pop_change_by = pop_change_by
-        self.pop_grow_trigger = pop_grow_trigger
-        self.pop_shrink_trigger = pop_shrink_trigger
-        self.pop_change_cooldown = pop_change_cooldown
-        self.lifespan_range = lifespan_range
         self.log_slope_threshold = log_slope_threshold
+        self.h2h_ratio = h2h_ratio
+        self.h2h_F = h2h_F
+        self.kill_fraction = kill_fraction
+        self.restart_no_improve_threshold = restart_no_improve_threshold
+        self.restart_sigma_ratio = restart_sigma_ratio
+        self.restart_quality_floor = restart_quality_floor
+        # Optional σ adaptation
+        self.use_sigma_adapt = use_sigma_adapt
+        self.sigma_up = sigma_up
+        self.sigma_down = sigma_down
+        self.sigma_floor_ratio = sigma_floor_ratio
+        self.sigma_ceil_ratio = sigma_ceil_ratio
 
+    # ─────────────────────────────────────────────────────────────────────
     @staticmethod
     def _reflect(x: np.ndarray, lo: float, hi: float) -> np.ndarray:
         """Reflect out-of-bounds values back into [lo, hi] instead of clamping."""
@@ -188,36 +250,24 @@ class VirusOptimizer(BaseOptimizer):
         x_rel = np.where(x_rel > span, 2 * span - x_rel, x_rel)
         return x_rel + lo
 
-    def _sample_lifespans(self, rng: np.random.Generator, n: int) -> np.ndarray:
-        if self.lifespan_range <= 0:
-            return np.full(n, self.lifespan, dtype=int)
-        lo_ls = max(1, self.lifespan - self.lifespan_range)
-        hi_ls = self.lifespan + self.lifespan_range
-        return rng.integers(lo_ls, hi_ls + 1, size=n)
+    def _niche_elites(self, pop_x: np.ndarray, pop_f: np.ndarray) -> set:
+        """Strain coexistence: pick up to n_elite_max spatially-separated hosts.
 
-    def _niche_elites(self, pop_x: np.ndarray, pop_f: np.ndarray,
-                      niche_radius: float | None = None,
-                      best_f_global: float | None = None,
-                      eqf_override: float | None = None) -> set:
-        """Dynamically select spatially diverse elites that meet a quality threshold."""
-        if niche_radius is None:
-            niche_radius = self.niche_radius
-        n_elite_max = self.n_elite_max
-        f_ref = best_f_global if best_f_global is not None else pop_f.min()
-        eqf = eqf_override if eqf_override is not None else self.elite_quality_factor
-        quality_cutoff = f_ref + eqf * max(f_ref, 1e-8)
-
+        Walk candidates in f-ascending order, keep one if it is at least
+        ``niche_radius`` away from every strain already picked. The resulting
+        pool is the donor side of the droplet channel — children pulled toward
+        a randomly chosen strain rather than a single global best, preserving
+        multi-basin coverage.
+        """
         elite_idx: list[int] = []
         elite_pos: list[np.ndarray] = []
         for candidate in np.argsort(pop_f):
-            if pop_f[candidate] > quality_cutoff:
-                break
             if not elite_pos or np.all(
-                np.linalg.norm(pop_x[candidate] - np.array(elite_pos), axis=1) > niche_radius
+                np.linalg.norm(pop_x[candidate] - np.array(elite_pos), axis=1) > self.niche_radius
             ):
                 elite_idx.append(int(candidate))
                 elite_pos.append(pop_x[candidate])
-            if len(elite_idx) >= n_elite_max:
+            if len(elite_idx) >= self.n_elite_max:
                 break
         return set(elite_idx)
 
@@ -241,74 +291,105 @@ class VirusOptimizer(BaseOptimizer):
         sigma = self.sigma * span
         sigma_init_mean = float(np.mean(sigma))
 
-        adaptive = self.n_pop_min > 0 and self.n_pop_min < self.n_pop
-
         # Pre-allocate numpy arrays — avoids repeated list→array conversions per iteration
         pop_x = rng.uniform(lo, hi, (self.n_pop, self.dim))          # (n_pop, dim)
         pop_f = np.array([self.func(x) for x in pop_x])              # (n_pop,)
-        pop_lifespan = self._sample_lifespans(rng, self.n_pop)        # (n_pop,) int
-        # Stochastic lifespan: individual variation desynchronises deaths → age=0 OK.
+        # pop_age is the σ_i age-ratio normalizer divisor (scaled by self.lifespan).
+        # Death is f-based (μ+λ greedy), so age has no effect on survival.
         pop_age = np.zeros(self.n_pop, dtype=int)
-        pop_active = np.ones(self.n_pop, dtype=bool)
 
         history_x: list[np.ndarray] = [row.copy() for row in pop_x]
         history_f: list[float] = pop_f.tolist()
         history_pop: list[np.ndarray] = [pop_x.copy()]
         _lf0 = np.log10(pop_f + 1e-10)
         _lq0 = np.clip((_lf0.max() - _lf0) / (float(_lf0.max() - _lf0.min()) + 1e-30), 0.0, 1.0)
-        _a0  = np.minimum(pop_age.astype(float) / np.maximum(pop_lifespan.astype(float), 1), 1.0)
+        _a0  = np.minimum(pop_age.astype(float) / max(self.lifespan, 1), 1.0)
         _s0  = self.sigma_min_ratio ** (_lq0 * (0.7 + 0.3 * _a0))
         history_pop_sigma: list[np.ndarray] = [float(sigma) * _s0]
         history_sigma_global: list[float] = []
         history_n_active: list[int] = []
         history_n_elite: list[int] = []
         history_no_improve: list[int] = []
-        history_elite_cutoff: list[float] = []
         history_eval_count: list[int] = []
         history_sigma_eval: list[float] = []
 
         best_so_far = float(pop_f.min())
-        no_improve = self.pop_shrink_trigger  # neutral start
-        pop_cooldown = self.pop_change_cooldown
+        no_improve = 0
         log_best_ref = math.log10(best_so_far + 1e-300)  # log10(f) at last meaningful reset
         evals_since_reset = 0                             # evals elapsed since last meaningful reset
 
         while len(history_f) < max_evals:
-            active_idx = np.where(pop_active)[0]
-            n = len(active_idx)
+            # Spillover event: when the outbreak stalls, the population spills
+            # over to a fresh host pool around the global best, giving the search
+            # another chance to align onto a productive direction (essential for
+            # ill-conditioned landscapes). Quality-gated to avoid disturbing
+            # already-converged runs.
+            if (no_improve >= self.restart_no_improve_threshold
+                    and best_so_far > self.restart_quality_floor):
+                best_idx_global = int(np.argmin(pop_f))
+                x_best_snap = pop_x[best_idx_global].copy()
+                sigma_restart = sigma_init_mean * self.restart_sigma_ratio
+                for i in range(self.n_pop):
+                    if i == best_idx_global:
+                        continue
+                    new_x = self._reflect(
+                        x_best_snap + sigma_restart * rng.standard_normal(self.dim), lo, hi)
+                    f_new = float(self.func(new_x))
+                    pop_x[i] = new_x
+                    pop_f[i] = f_new
+                    pop_age[i] = 0
+                    history_x.append(new_x.copy())
+                    history_f.append(f_new)
+                    history_sigma_eval.append(float(sigma_restart))
+                    if f_new < best_so_far:
+                        best_so_far = f_new
+                    if len(history_f) >= max_evals:
+                        break
+                sigma = sigma_restart
+                no_improve = 0
+                log_best_ref = math.log10(best_so_far + 1e-300)
+                evals_since_reset = 0
+                pop_age[best_idx_global] = 0
+                if len(history_f) >= max_evals:
+                    break
+
+            active_idx = np.arange(self.n_pop)
+            n = self.n_pop
             pop_x_arr = pop_x[active_idx]
             pop_f_arr = pop_f[active_idx]
 
-            sigma_mean = float(np.mean(sigma))
-            sigma_ratio = sigma_mean / sigma_init_mean
-            niche_radius_dyn = max(self.niche_radius_min, self.niche_radius * sigma_ratio)
-            top5_x = pop_x_arr[np.argsort(pop_f_arr)[:min(5, n)]]
-            top5_spread = float(np.mean(np.std(top5_x, axis=0))) / span
-            # Unimodal detection: only collapse niches when near the global optimum (f≈0),
-            # not when merely clustered at a local optimum (multimodal functions).
-            unimodal_converged = top5_spread < 0.05 and best_so_far < 1e-3
-            niche_radius_eff = self.niche_radius_min if unimodal_converged else niche_radius_dyn
-            # Dynamic elite_quality_factor: narrow (strict) when dispersed, wide (lenient) when clustered
+            gen_best_before = best_so_far  # snapshot for optional σ adaptation
+
+            # Strain coexistence: niched-elite pool for the droplet channel's
+            # current-to-best pull. Spatial diversity is also fed to the airborne
+            # channel's σ modulator (denser cluster → larger aerosol jumps).
             pop_diversity = np.mean(np.std(pop_x_arr, axis=0) / span)
             diversity_ratio = float(np.clip(pop_diversity / 0.289, 0.0, 1.0))
-            eqf_lo = self.elite_quality_factor * 0.3  # dispersed → strict cutoff
-            eqf_hi = self.elite_quality_factor * 3.0  # clustered → lenient cutoff
-            eqf_eff = eqf_hi - (eqf_hi - eqf_lo) * diversity_ratio
-            # elite_local: indices into active_idx; elite_global: indices into full pop arrays
-            elite_local = self._niche_elites(pop_x_arr, pop_f_arr, niche_radius_eff,
-                                             best_f_global=best_so_far, eqf_override=eqf_eff)
+            elite_local = self._niche_elites(pop_x_arr, pop_f_arr)
             elite_global = {active_idx[i] for i in elite_local}
             elite_arr = np.fromiter(elite_global, dtype=int) if elite_global else np.empty(0, dtype=int)
 
-            # Dead: aged-out active non-elites
-            not_elite_mask = ~np.isin(active_idx, elite_arr)
-            aged_out = pop_age[active_idx] > pop_lifespan[active_idx]
-            dead_global = active_idx[aged_out & not_elite_mask]
+            # Host competition (μ+λ greedy): each gen, the worst K = kill_fraction · n
+            # hosts die (regardless of strain status — the global best always
+            # survives by not being in worst-K). Children that fail to outcompete
+            # the host they replaced are rolled back after evaluation.
+            n_kill = max(1, min(n, int(round(self.kill_fraction * n))))
+            worst_first = active_idx[np.argsort(pop_f[active_idx])[::-1]]
+            dead_global = worst_first[:n_kill]
             n_dead = len(dead_global)
+            if n_dead > 0:
+                dead_orig_x = pop_x[dead_global].copy()
+                dead_orig_f = pop_f[dead_global].copy()
+            else:
+                dead_orig_x = None
+                dead_orig_f = None
 
             if n_dead == 0:
                 pop_age[active_idx] += 1
-                sigma *= self.sigma_decay
+                # No offspring this gen → no σ signal. Keep σ unchanged under P1,
+                # use slow decay under baseline.
+                if not self.use_sigma_adapt:
+                    sigma *= self.sigma_decay
                 # When all active individuals are elite, no births occur and
                 # history_f never grows → stagnation counter must still advance
                 # so the pop_grow_trigger and stagnation_limit eventually fire.
@@ -318,8 +399,15 @@ class VirusOptimizer(BaseOptimizer):
             else:
                 weights = self._softmax_weights(pop_f_arr)
 
-                n_air = max(0, round(self.air_ratio * n_dead))
-                n_local = n_dead - n_air
+                # 3-channel split: close-contact (local Gaussian), droplet (h2h
+                # DE/current-to-best), airborne (random spread).
+                n_air = max(0, int(round(self.air_ratio * n_dead)))
+                n_h2h = max(0, int(round(self.h2h_ratio * n_dead))) if n >= 3 else 0
+                # If rounding overflows, trim airborne first (preserves the
+                # droplet/close-contact intent).
+                if n_air + n_h2h > n_dead:
+                    n_air = max(0, n_dead - n_h2h)
+                n_local = n_dead - n_air - n_h2h
 
                 # Log-scale quality anchored to global best (history-wide).
                 # When population converges to a local optimum, all f_i ≈ f_pop_max
@@ -343,27 +431,56 @@ class VirusOptimizer(BaseOptimizer):
                         (log_f_max - np.log10(pop_f[gi_arr] + 1e-10)) / (log_f_spread + 1e-30),
                         0.0, 1.0)
                     ar = np.minimum(
-                        pop_age[gi_arr].astype(float) / np.maximum(pop_lifespan[gi_arr].astype(float), 1),
-                        1.0)
+                        pop_age[gi_arr].astype(float) / max(self.lifespan, 1), 1.0)
                     sigma_i = sigma * (self.sigma_min_ratio ** (lq * (0.7 + 0.3 * ar)))
                     noise = rng.standard_normal((n_local, self.dim))
                     new_local = self._reflect(pop_x[gi_arr] + noise * sigma_i[:, None], lo, hi)
                 else:
+                    gi_arr = np.empty(0, dtype=int)
+                    sigma_i = np.empty(0)
                     new_local = np.empty((0, self.dim))
+
+                # Droplet channel (DE/current-to-best/1):
+                #   x_child = x_parent + F·(x_strain - x_parent) + F·(x_a - x_b)
+                # The diff term (x_a-x_b) injects population-shape-aware drift —
+                # this gives MC-ESO implicit anisotropy without a covariance matrix.
+                # The strain-pull term accelerates descent along narrow valleys.
+                if n_h2h > 0:
+                    h2h_parent_li = rng.choice(n, size=n_h2h, p=weights)
+                    h2h_parents_gi = active_idx[h2h_parent_li]
+                    h2h_a_li = rng.integers(0, n, size=n_h2h)
+                    h2h_b_li = rng.integers(0, n, size=n_h2h)
+                    diff = pop_x[active_idx[h2h_a_li]] - pop_x[active_idx[h2h_b_li]]
+                    if len(elite_arr) > 0:
+                        elite_pick = rng.choice(elite_arr, size=n_h2h)
+                        best_pull = pop_x[elite_pick] - pop_x[h2h_parents_gi]
+                        h2h_step = self.h2h_F * (best_pull + diff)
+                    else:
+                        h2h_step = self.h2h_F * diff
+                    new_h2h = self._reflect(pop_x[h2h_parents_gi] + h2h_step, lo, hi)
+                    h2h_step_norms = np.linalg.norm(h2h_step, axis=1)
+                else:
+                    h2h_parents_gi = np.empty(0, dtype=int)
+                    new_h2h = np.empty((0, self.dim))
+                    h2h_step_norms = np.empty(0)
 
                 if n_air > 0:
                     air_li = rng.integers(0, n, size=n_air)
+                    air_parents_gi = active_idx[air_li]
                     noise_air = rng.standard_normal((n_air, self.dim))
-                    new_air = self._reflect(pop_x[active_idx[air_li]] + noise_air * air_sigma_vec, lo, hi)
+                    new_air = self._reflect(pop_x[air_parents_gi] + noise_air * air_sigma_vec, lo, hi)
                 else:
+                    air_parents_gi = np.empty(0, dtype=int)
                     new_air = np.empty((0, self.dim))
 
-                new_xs = np.concatenate([new_local, new_air], axis=0)
+                new_xs = np.concatenate([new_local, new_h2h, new_air], axis=0)
 
-                # Per-child sigma: local children use individual sigma_i, air children use air_sigma_vec
+                # Per-child sigma: local→σ_i, h2h→|step|, air→air_sigma_vec
                 _sc: list[np.ndarray] = []
                 if n_local > 0:
                     _sc.append(sigma_i)
+                if n_h2h > 0:
+                    _sc.append(h2h_step_norms)
                 if n_air > 0:
                     _sc.append(np.full(n_air, float(air_sigma_vec)))
                 _sigma_children = np.concatenate(_sc) if _sc else np.array([])
@@ -380,8 +497,10 @@ class VirusOptimizer(BaseOptimizer):
                     replaced_slots.append(slot)
                     history_x.append(x.copy())
                     history_f.append(f)
-                    history_sigma_eval.append(float(_sigma_children[k]) if k < len(_sigma_children) else float(sigma))
+                    sigma_used_k = float(_sigma_children[k]) if k < len(_sigma_children) else float(sigma)
+                    history_sigma_eval.append(sigma_used_k)
                     evals_since_reset += 1
+
                     if f < best_so_far:
                         best_so_far = f
                         if self._meaningful_improvement(f, log_best_ref, evals_since_reset):
@@ -395,8 +514,13 @@ class VirusOptimizer(BaseOptimizer):
                     if len(history_f) >= max_evals or no_improve >= self.stagnation_limit:
                         break
 
-                if replaced_slots:
-                    pop_lifespan[replaced_slots] = self._sample_lifespans(rng, len(replaced_slots))
+                # Host-competition rollback: children worse than the host they
+                # replaced are reverted, so the outbreak monotonically improves.
+                if dead_orig_x is not None:
+                    for k, slot in enumerate(replaced_slots):
+                        if dead_orig_f[k] < pop_f[slot]:
+                            pop_x[slot] = dead_orig_x[k]
+                            pop_f[slot] = dead_orig_f[k]
 
                 if no_improve >= self.stagnation_limit:
                     break
@@ -407,49 +531,25 @@ class VirusOptimizer(BaseOptimizer):
                     replaced_mask[replaced_slots] = True
                 pop_age[active_idx[~replaced_mask[active_idx]]] += 1
 
-                sigma *= self.sigma_decay
+                if self.use_sigma_adapt:
+                    sigma *= self.sigma_up if best_so_far < gen_best_before else self.sigma_down
+                    sigma = max(span * self.sigma_floor_ratio,
+                                min(sigma, span * self.sigma_ceil_ratio))
+                else:
+                    sigma *= self.sigma_decay
 
-            # Virtual breathing: deactivate when improving, reactivate when stagnating
-            if adaptive and pop_cooldown == 0:
-                n_active = int(pop_active.sum())
-                dormant_idx = np.where(~pop_active)[0]
-                if no_improve >= self.pop_grow_trigger and n_active < self.n_pop:
-                    # Reactivate best dormant individuals (2x change_by) — freeze:
-                    # restore stored positions as-is (no re-evaluation, no replacement).
-                    best_dormant = dormant_idx[np.argsort(pop_f[dormant_idx])]
-                    n_react = min(self.pop_change_by * 2, self.n_pop - n_active, len(best_dormant))
-                    if n_react > 0:
-                        slots = best_dormant[:n_react]
-                        pop_active[slots] = True
-                        pop_age[slots] = 0
-                        pop_cooldown = self.pop_change_cooldown
-                elif no_improve < self.pop_shrink_trigger and n_active > self.n_pop_min:
-                    # Deactivate worst non-elite active individuals (virtual shrink)
-                    pool = active_idx[~np.isin(active_idx, elite_arr)]
-                    deactivatable = pool[np.argsort(pop_f[pool])[::-1]]
-                    n_deact = min(self.pop_change_by, n_active - self.n_pop_min, len(deactivatable))
-                    if n_deact > 0:
-                        pop_active[deactivatable[:n_deact]] = False
-                        pop_cooldown = self.pop_change_cooldown
-            else:
-                pop_cooldown = max(0, pop_cooldown - 1)
-
-            pf_end = pop_f[active_idx]
-            pa_end = pop_age[active_idx].astype(float)
-            lf_end = np.log10(pf_end + 1e-10)
+            # Per-generation dynamics recording (population always = n_pop)
+            pa_end = pop_age.astype(float)
+            lf_end = np.log10(pop_f + 1e-10)
             lq_e = np.clip((lf_end.max() - lf_end) / (float(lf_end.max() - lf_end.min()) + 1e-30), 0.0, 1.0)
             ar_e = np.minimum(pa_end / max(self.lifespan, 1), 1.0)
             scale_e = self.sigma_min_ratio ** (lq_e * (0.7 + 0.3 * ar_e))
             history_pop_sigma.append(float(sigma) * scale_e)
             history_pop.append(pop_x.copy())
-            # --- VSO dynamics recording ---
             history_sigma_global.append(float(sigma))
-            history_n_active.append(int(pop_active.sum()))
+            history_n_active.append(self.n_pop)
             history_n_elite.append(len(elite_global))
             history_no_improve.append(int(no_improve))
-            history_elite_cutoff.append(
-                best_so_far + eqf_eff * max(best_so_far, 1e-8)
-            )
             history_eval_count.append(len(history_f))
 
         result = self._make_result(history_x, history_f, history_pop)
@@ -458,7 +558,6 @@ class VirusOptimizer(BaseOptimizer):
         result.history_n_active = history_n_active
         result.history_n_elite = history_n_elite
         result.history_no_improve = history_no_improve
-        result.history_elite_cutoff = history_elite_cutoff
         result.history_eval_count = history_eval_count
         result.history_sigma_eval = history_sigma_eval
         return result

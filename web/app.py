@@ -115,9 +115,9 @@ def _list_functions(run_dir: Path, dim: str) -> list[str]:
 # Known visualization types for filename parsing (longest-first to avoid prefix clash)
 _ANIM_TYPES = [
     "3dpopulation_failed", "3devals_failed",
-    "population_failed", "evals_failed", "vso_dyn_failed",
+    "population_failed", "evals_failed", "outbreak_dyn_failed",
     "3dpopulation", "3devals",
-    "population", "evals", "vso_dyn", "runs",
+    "population", "evals", "outbreak_dyn", "runs",
 ]
 
 
@@ -142,8 +142,8 @@ def _build_media_index(run_dir: Path, dim: str) -> dict:
         # Per-method files: {func}_{method}_{type}.{ext}
         for ext in ("webp", "gif", "svg"):
             for p in sorted(dim_dir.glob(f"{func}_*.{ext}")):
-                stem = p.stem  # e.g. F01-Sphere_VSO_evals
-                rest = stem[len(func) + 1:]  # e.g. VSO_evals
+                stem = p.stem  # e.g. F01-Sphere_MC-ESO_evals
+                rest = stem[len(func) + 1:]  # e.g. MC-ESO_evals
                 if not rest or rest in ("landscape", "convergence"):
                     continue
                 matched_type = next(

@@ -31,7 +31,7 @@ _METHOD_COLOR: dict[str, str] = {
     "PSO":    "tab:orange",
     "GA":     "tab:green",
     "SaVOA":  "tab:red",
-    "VSO":    "deepskyblue",
+    "MC-ESO": "deepskyblue",
 }
 
 
@@ -617,7 +617,7 @@ def save_method_3dpopulation_anim(
 
 
 # ---------------------------------------------------------------------------
-# Public: per-method VSO dynamics SVG (3-row, 1 column)
+# Public: per-method outbreak dynamics SVG (3-row, 1 column)
 # ---------------------------------------------------------------------------
 
 def save_method_vso_svg(
@@ -735,12 +735,12 @@ def save_method_vso_svg(
     suffix = "" if best else "_failed"
     note   = "best run" if best else "failed (worst) run"
     fig.suptitle(
-        f"{benchmark.name}  — {method_name}  VSO dynamics  ({note})",
+        f"{benchmark.name}  — {method_name}  outbreak dynamics  ({note})",
         fontsize=11,
     )
     fig.tight_layout()
     fig.savefig(
-        output_dir / f"{benchmark.name}_{method_name}_vso_dyn{suffix}.svg",
+        output_dir / f"{benchmark.name}_{method_name}_outbreak_dyn{suffix}.svg",
         format="svg", bbox_inches="tight",
     )
     plt.close(fig)
@@ -787,9 +787,10 @@ def save_stats(
 
     summary_path = output_dir / "summary.csv"
     summary_exists = summary_path.exists()
-    from .runner import _evals_to_target
+    from .runner import _evals_to_target, SR_THRESHOLDS
+    sr_keys = [f"sr_{thr:.0e}".replace("e-0", "e-") for thr in SR_THRESHOLDS]
     fieldnames_s = ["function", "category", "method", "mean_time_s",
-                    "mean_best_f", "sr_1e-2", "sr_1e-4", "ert",
+                    "mean_best_f", *sr_keys, "ert",
                     "mean_optima_found", "mean_optima_rate"]
     with open(summary_path, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames_s)
@@ -804,15 +805,16 @@ def save_stats(
             n_success = int(np.sum(best_fs <= success_threshold))
             evals_list = [_evals_to_target(r, success_threshold) for r in results]
             ert = f"{sum(evals_list) / n_success:.0f}" if n_success > 0 else "inf"
-            writer.writerow({
+            row = {
                 "function": benchmark.name,
                 "category": benchmark.category,
                 "method": method,
                 "mean_time_s": f"{np.mean(times):.3f}",
                 "mean_best_f": f"{np.mean(best_fs):.4e}",
-                "sr_1e-2":     f"{float(np.mean(best_fs <= 1e-2)):.0%}",
-                "sr_1e-4":     f"{float(np.mean(best_fs <= success_threshold)):.0%}",
                 "ert":         ert,
                 "mean_optima_found": f"{mean_optima:.2f}",
                 "mean_optima_rate": f"{mean_optima / n_optima_total:.2f}" if n_optima_total else "N/A",
-            })
+            }
+            for thr, key in zip(SR_THRESHOLDS, sr_keys):
+                row[key] = f"{float(np.mean(best_fs <= thr)):.0%}"
+            writer.writerow(row)

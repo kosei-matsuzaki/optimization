@@ -1,6 +1,8 @@
-# 最適化手法の比較実験: VSO と既存手法
+# 最適化手法の比較実験: MC-ESO と既存手法
 
-ウイルス蔓延を模倣した独自手法 **VSO (Virus Spread Optimizer)** を、標準的な既存最適化手法と比較するベンチマーク実験です。
+感染症の流行（epidemic spread）を着想とした独自手法 **MC-ESO — Multi-Channel Epidemic Spread Optimizer** を、標準的な既存最適化手法と比較するベンチマーク実験です。
+
+**核心の主張**: 既存メタヒューリスティクスはいずれも **単一の再生メカニズム** を持つ（DE = 差分変異, ES = ガウス変異, PSO = 速度ベクトル, GA = 交叉）。一方、現実の感染症は **複数の伝染経路** — 接触感染・飛沫感染・空気感染 — が並行して働く。MC-ESO はこれを忠実に模し、各世代で 3 つの定性的に異なる伝染チャネルを混合する。
 
 ---
 
@@ -8,32 +10,33 @@
 
 | 手法 | 分類 | 本実験での位置づけ |
 |---|---|---|
-| **VSO** (Virus Spread Optimizer) | 群知能・独自提案 | **提案手法** |
+| **MC-ESO** (Multi-Channel Epidemic Spread Optimizer) | 群知能・独自提案 | **提案手法** |
 | CMA-ES | 進化戦略 | ベースライン（強力な標準手法） |
 | PSO | 群知能 | ベースライン |
 | GA | 進化的アルゴリズム | ベースライン |
-| SaVOA | ウイルス模倣・既存 | 直接比較対象（同じウイルス着想） |
+| SaVOA | ウイルス模倣・既存 | 直接比較対象（同じ生物模倣着想だが単一再生メカニズム） |
 
 ---
 
-## VSO が既存手法と異なる点
+## MC-ESO が既存手法と異なる点
 
 ### CMA-ES との比較
 
-| 観点 | CMA-ES | VSO |
+| 観点 | CMA-ES | MC-ESO |
 |---|---|---|
-| 探索形状の学習 | **共分散行列を適応学習**（楕円形探索が可能） | 等方的ガウスノイズ（共分散非学習） |
-| 個体多様性 | 単一分布から生成（多峰に弱い） | ニッチ選択で複数拠点を保持 |
-| 計算コスト/世代 | O(λ·n²)（行列演算あり） | O(pop)（行列演算なし） |
-| 強みの関数タイプ | 連続・単峰・滑らか | 多峰・複数最適解あり |
+| 探索形状の学習 | **共分散行列を適応学習**（楕円形探索が可能） | 飛沫チャネルの差分ベクトルが **暗黙的に集団形状を反映**（共分散行列を学習しない） |
+| 多峰対応 | 単一中心からの楕円分布（マルチスタートで多峰に対応） | **系統共存** — ニッチ分離されたエリート pool が多峰を保持 |
+| 計算コスト/世代 | O(λ·d²)（行列演算あり） | O(pop·d)（行列演算なし） |
+| 強みの関数タイプ | 連続・単峰・高 cond. | 多峰・弱構造を含む全クラスで安定 |
 
 ### PSO / GA との比較
 
-| 観点 | PSO | GA | VSO |
+| 観点 | PSO | GA | MC-ESO |
 |---|---|---|---|
-| 個体の記憶 | 個体最良・群最良 | なし（選択・交叉） | なし（感染確率で代替） |
-| 探索メカニズム | 速度ベクトル更新 | SBX交叉 + 多項式突然変異 | 局所感染（ガウス） + 空気感染（ランダム） |
-| ニッチング | なし | なし | ニッチ半径で複数コロニーを保護 |
+| 再生メカニズム数 | 1（速度ベクトル）| 1（交叉 + 突然変異）| **3 チャネル**（接触・飛沫・空気感染）|
+| 個体の記憶 | 個体最良・群最良 | なし（選択・交叉）| なし（感染確率で代替）|
+| 集団選択 | 連続更新（置換なし） | エリート保護 | **宿主競合** — μ+λ greedy + rollback で単調改善 |
+| 多峰対応 | なし | なし | **系統共存** ＋ **スピルオーバー** restart |
 
 ---
 
@@ -122,90 +125,191 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 
 ---
 
-### VSO — Virus Spread Optimizer（提案手法）
+### MC-ESO — Multi-Channel Epidemic Spread Optimizer（提案手法）
 
-ウイルスの蔓延を「感染者（個体）が空間上に分布し、感染力の高い場所から子孫を生む」過程としてモデル化する。
+感染症の流行を「感染宿主が空間上に分布し、複数の伝染経路から新規宿主を生む」過程としてモデル化する。
 
 #### 基本概念
 
-「**f(x) が低い領域 = 感染者が密集する場所**」とみなす。ウイルスは人の多い場所ほど広まりやすいため、f 値が低い個体ほど高い確率で親に選ばれる（感染力が高い）。
+「**f(x) が低い領域 = 感染宿主が密集する場所**」とみなす。感染症は宿主密度の高い場所ほど広まりやすいため、f 値が低い個体ほど高い確率で次の親（感染源）に選ばれる。
+
+#### 3 チャネル伝染モデル
+
+現実の感染症は単一経路ではなく複数経路で同時に拡散する。MC-ESO はこれを最適化の文脈に転写する:
+
+| チャネル | 疫学アナロジー | 数学的形 | 役割 |
+|---|---|---|---|
+| **接触感染** (Close-contact) | 親密接触による局所感染 | `x_parent + N(0, σ_i I)` | 親近傍の精密探索。σ_i は親の品質と年齢で適応 |
+| **飛沫感染** (Droplet) | 飛沫を介した宿主間感染 | `x_parent + F·(x_strain − x_parent) + F·(x_a − x_b)` | 系統 (niched elite) からの引力 ＋ 集団内差分ベクトル。**暗黙的異方性**の獲得 |
+| **空気感染** (Airborne) | エアロゾルによる広域感染 | `x_random_host + N(0, σ_air I)` | 集団に依存しない遠方探索。局所最適脱出 |
+
+#### 集団レベルの 3 機構
+
+| 機構 | 疫学アナロジー | 役割 |
+|---|---|---|
+| **系統共存** (Strain coexistence) | 空間的に離れた感染拠点の同時存続 | ニッチ半径で離れた最大 6 系統を保護、飛沫チャネルの引力対象 pool |
+| **宿主競合** (Host competition) | 新感染が既存宿主に勝てないと排除される | 毎世代 25% kill、子が親より悪ければ rollback → 集団は単調改善 |
+| **スピルオーバー** (Spillover) | 既存系統の絶滅後、新宿主集団へ感染が飛び火 | 300 評価改善なし AND f_best > 1e-8 で best 周辺に再播種 |
 
 #### 1世代の動作フロー
 
 ```
-1. ニッチ選択でエリートを特定
-   └─ f値が良く かつ互いに niche_radius_dyn 以上離れた個体を最大 n_elite_max 個保護（不死）
-   └─ niche_radius_dyn = max(niche_radius_min, niche_radius × (σ現在 / σ初期))
-      探索初期は広く分散、後期は縮小して近接最適解も個別保護
+1. 系統共存: ニッチエリート抽出（飛沫感染の引力 pool）
+   └─ f 値の良い順に走査し、既存系統から niche_radius (=1.0) 以上離れた個体だけを
+      最大 n_elite_max (=6) 個保護
 
-2. 死亡判定
-   └─ age > lifespan の個体を削除（エリートは不死）
+2. スピルオーバー判定（停滞時の集団再播種）
+   └─ no_improve ≥ restart_no_improve_threshold (=300) かつ
+      f_best > restart_quality_floor (=1e-8) のとき、
+      global best 周辺に σ_init × restart_sigma_ratio (=0.3) で n_pop-1 個を再感染
 
-3. 親の感染確率を計算
-   └─ softmax((f_max − f) / temperature) → f が低いほど高確率（active 個体のみ対象）
+3. 宿主競合: 死亡判定（μ+λ greedy）
+   └─ 集団の f 値降順で下位 kill_fraction (=25%) を排除。最良宿主は自動生存
 
-4. 子個体の生成（死亡スロット数だけ生成）
-   ├─ 局所感染（1 − air_ratio の割合）
-   │   └─ 親の位置 + Gauss(0, σ_i)
-   │       log_quality = clip((log10(f_max) − log10(f_親)) / log10_spread, 0, 1)
-   │       combined    = log_quality × (0.7 + 0.3 × age_ratio)
-   │       σ_i         = σ × sigma_min_ratio ^ combined   ← 指数減衰
-   │       悪い個体(log_quality≈0) → combined≈0 → σ_i=σ（全力探索）
-   │       良くて高齢(log_quality≈1, age_ratio≈1) → σ_i=σ×sigma_min_ratio（精密探索）
-   └─ 空気感染（air_ratio の割合、固定）
-       └─ ランダム親位置 + Normal(0, σ_air)
-           σ_air = max(σ, 0.3 × σ_init) × air_sigma_factor
-           air_sigma_factor = air_sigma_max − (air_sigma_max − air_sigma_min) × diversity_ratio
-           diversity_ratio  = clip(集団の空間的分散 / 0.289, 0, 1)  ← 収束時↑、分散時↓
-       子は反射境界条件（reflective clipping）で探索域内に収める
+4. 親（感染源）の選択（softmax）
+   └─ w_i ∝ exp((f_max − f_i) / temperature)、f が低い個体ほど高い感染力
 
-5. σ 減衰
-   └─ σ_global × sigma_decay（=0.99）で縮小
+5. 子個体の 3 チャネル生成（空きスロット数だけ）
+   ├─ 接触感染 [残り]
+   │   └─ 親 + Gauss(0, σ_i I), σ_i = σ × sigma_min_ratio^(log_quality × (0.7 + 0.3 × age_ratio))
+   ├─ 飛沫感染 [h2h_ratio = 0.4]
+   │   └─ 親 + h2h_F × (x_strain − 親) + h2h_F × (x_a − x_b)
+   │       DE/current-to-best/1 と同型: 差分ベクトルが集団形状を反映、系統引力で進行加速
+   └─ 空気感染 [air_ratio = 0.3]
+       └─ ランダム宿主 + Normal(0, σ_air I), σ_air は集団分散に応じて 1.5×〜5× σ
 
-6. 仮想呼吸（Virtual Breathing）— n_pop_min > 0 のとき有効
-   ├─ 縮小（改善が続く場合: no_improve < pop_shrink_trigger）
-   │   └─ 非エリート active の下位 pop_change_by 個を dormant 化 → 次世代では親候補・子配置対象から除外
-   └─ 拡大（停滞が深い場合: no_improve ≥ pop_grow_trigger）
-       └─ f値が良い dormant を pop_change_by×2 個復活（旧位置をそのまま復元）
-          非エリート active の上位 pop_change_by 個を dormant 化（局所解付近から解放）
-       個体数は n_pop_min〜n_pop の範囲で動的に変化
+6. 宿主競合: Rollback
+   └─ 各空きスロットの子が「元そこにいた親」より悪ければ親を復元 → 集団は単調改善
+
+7. σ 減衰
+   └─ σ × sigma_decay (=0.99)、option で use_sigma_adapt 時は ×1.2/×0.9 適応
 ```
 
-#### ニッチ選択による複数コロニー維持
+#### 系統共存による多峰問題への適応
 
-単純な top-k 選択では、最初に見つかった最適解周辺に個体が集中する。Himmelblau 関数（最適解4箇所）のような多最適解問題では致命的。
+単純な top-k 選択では最初に見つかった最適解周辺に個体が集中する。Himmelblau 関数（最適解4箇所）のような多最適解問題では致命的。
 
-VSO のエリート選択:
+MC-ESO の系統選択:
 1. f 値の良い順に候補を走査
-2. 既保護個体との距離が全て `niche_radius_dyn` を超える場合のみ追加
+2. 既保護系統との距離が全て `niche_radius` を超える場合のみ追加
 3. `n_elite_max` 個に達したら終了
-4. 品質閾値（現集団のf値スプレッドに基づく）を超えた候補は除外
 
-→ 空間的に離れた複数の最適解周辺に独立したコロニーが自然形成される。
+→ 空間的に離れた複数の最適解周辺に独立した感染系統が自然形成され、飛沫感染の引力対象として活用される。
 
 #### パラメータ一覧
 
 | パラメータ | デフォルト | 意味 |
 |---|---|---|
-| `n_pop` | 20 | 個体数（active 上限） |
-| `n_pop_min` | 5 | 仮想呼吸の下限個体数（0 で無効） |
-| `lifespan` | 5 | 個体の寿命（世代数） |
+| `n_pop` | 20 | 集団個体数 |
 | `sigma` | 0.2 | 初期探索半径（探索範囲に対する比率） |
 | `sigma_decay` | 0.99 | 世代ごとの探索半径縮小率 |
-| `air_ratio` | 0.3 | 空気感染の固定割合 |
-| `n_elite_max` | 6 | 保護するコロニー中心の最大数 |
-| `niche_radius` | 1.0 | コロニー間の最小距離（初期値）|
-| `niche_radius_min` | 0.05 | niche_radius の下限 |
-| `temperature` | 1.0 | 感染確率のランダム性（大→均一、小→貪欲） |
-| `stagnation_limit` | 2000 | 改善なし評価回数の上限（早期停止閾値） |
-| `elite_quality_factor` | 1.0 | エリート候補の品質閾値係数 |
-| `sigma_min_ratio` | 0.05 | 局所感染 σ スケールの下限（良い高齢個体の精密探索幅） |
+| `sigma_min_ratio` | 0.05 | 接触感染 σ スケールの下限（適応性の高い高齢宿主の精密探索幅） |
+| `air_ratio` | 0.3 | 空気感染チャネルの割合 |
 | `air_sigma_min` | 1.5 | 集団分散時の空気感染 σ 倍率 |
-| `air_sigma_max` | 5.0 | 集団収束時の空気感染 σ 倍率 |
-| `pop_shrink_trigger` | 20 | 縮小発動閾値（no_improve がこれ未満で縮小） |
-| `pop_grow_trigger` | 200 | 拡大発動閾値（no_improve がこれ以上で拡大） |
-| `pop_change_by` | 2 | 1回の縮小/拡大で変化させる個体数 |
-| `pop_change_cooldown` | 30 | 縮小/拡大後のクールダウン世代数 |
+| `air_sigma_max` | 5.0 | 集団収束時の空気感染 σ 倍率（収束時に大ジャンプ） |
+| `h2h_ratio` | 0.4 | 飛沫感染チャネルの割合 |
+| `h2h_F` | 0.5 | 飛沫感染の差分ベクトルスケール係数 |
+| `kill_fraction` | 0.25 | 宿主競合で毎世代排除する割合 |
+| `restart_no_improve_threshold` | 300 | スピルオーバー発動の no_improve 閾値 |
+| `restart_sigma_ratio` | 0.3 | スピルオーバー後の σ（σ_init に対する比率） |
+| `restart_quality_floor` | 1e-8 | スピルオーバー skip 閾値（既収束 run の精度破壊を防ぐ） |
+| `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象） |
+| `niche_radius` | 1.0 | 系統間の最小距離 |
+| `temperature` | 1.0 | 感染確率のランダム性（大→均一、小→貪欲） |
+| `lifespan` | 5 | 接触感染 σ_i の年齢正規化分母 |
+| `stagnation_limit` | 2000 | 改善なし評価回数の上限（早期停止閾値） |
+| `log_slope_threshold` | 1e-4 | 「意味ある改善」の log10(f) 減少スロープ閾値 |
+
+---
+
+#### 性能（BBOB 12 関数代表サブセット）
+
+5000 evals × 10 seeds の overall SR@1e-4 合計（1200 中）:
+
+| 手法 | SR 合計 | 備考 |
+|---|---:|---|
+| **MC-ESO（提案）** | **1160** | overall best — 全 12 関数で 80% 以上の SR |
+| PSO | 1030 | 多峰関数で強い |
+| SaVOA | 920 | F10 (ill-cond) で SR=20% |
+| CMA-ES | 890 | F08/F09/F10/F12 で 100% だが多峰で弱い |
+| GA | 480 | 全般に弱い |
+
+標的 ill-conditioned / moderate-cond 関数:
+
+| 関数 | MC-ESO (5000 evals) | CMA-ES (5000 evals) |
+|---|---:|---:|
+| F08-Rosenbrock | 100% (mean 0) | 100% |
+| F09-RosenbrockRot | 100% (mean 1.8e-8) | 100% |
+| F10-EllipsoidalRot | 100% (mean 2.0e-9) | 100% |
+| F12-BentCigar | 100% (mean 1.3e-8) | 100% |
+
+明示的共分散行列学習なしに、飛沫感染の差分ベクトル（暗黙的異方性）＋ 宿主競合（最良保持）＋ スピルオーバー（整列失敗の救済）の組合せで CMA-ES クラスの性能を達成。
+
+#### 評価方法論
+
+**多段 SR 報告**: BBOB 標準の ECDF 表示に倣い、各関数で `SR@10^k` (k = -1, -2, -3, -4, -5, -7, -10) を併記。`results/<run>/dim2/summary.csv` の `sr_1e-1, sr_1e-2, ..., sr_1e-10` 列で参照可能。
+
+**Wilcoxon 符号順位検定**: MC-ESO vs 各既存手法を seed-paired で比較。`results/<run>/dim2/wilcoxon.csv` に関数 × 比較対手の p 値を保存。
+- `p_value_two_sided`: 二側 p 値（差があるか）
+- `p_value_ref_better`: 片側 p 値（MC-ESO が比較対手より優れているか）
+
+---
+
+#### 任意フラグ: σ 適応（P1）
+
+唯一残っている optional フラグ。
+
+| フラグ | 説明 |
+|---|---|
+| `use_sigma_adapt` | SaVOA 流の σ 乗法適応: 改善時 `× sigma_up (=1.2)`、停滞時 `× sigma_down (=0.9)`、`[sigma_floor_ratio·span, sigma_ceil_ratio·span]` でクリップ |
+
+**効果**:
+- F01-Sphere の平均が `1.1e-11` → `0` (完全) に到達
+- F08/F09 の precision が `1e-10` → `1e-14` レベルに向上
+- F03/F10/F17 で SR 改善
+
+**欠点**:
+- F20-Schwefel (deceptive multimodal) で SR 30% 劣化（σ 早期収縮で偽の局所最適に commit）
+- F12 で SR 10% 微減
+
+精度重視で deceptive multimodal を扱わない場合のみ ON 推奨。`quick_check.py` の `_MCESO_VARIANTS` 既定では `MC-ESO+sigma-ad` として比較対象になっている。
+
+##### 検証の方法
+
+```python
+_MCESO_VARIANTS = {
+    "MC-ESO":          {},                            # base
+    "MC-ESO+sigma-ad": {"use_sigma_adapt": True},     # optional σ adaptation
+}
+```
+
+`./run.sh quick --funcs F08-Rosenbrock,F09-RosenbrockRot,F10-EllipsoidalRot,F12-BentCigar --max-evals 10000` で target 関数の集中検証が可能（`--funcs` 引数で任意関数の絞り込み）。
+
+##### ベースに統合された案（MC-ESO 開発の中で確立されたコア機構）
+
+以下の案は ablation で overall 改善を実証し、MC-ESO 本体に統合された（フラグ不要、常時 ON）。
+
+| 案 | 元フラグ名 | MC-ESO での位置付け |
+|---|---|---|
+| B | `use_h2h_transmission` | **飛沫感染チャネル**。差分変異が集団形状から異方情報を獲得し、F08/F09/F10/F12 の主因 |
+| H | `use_h2h_current_to_best` | 飛沫チャネルに F·(系統 − 親) 引力項を追加、valley 進行を加速 |
+| P5 | `use_greedy_elitism` | **宿主競合**（μ+λ greedy + rollback）。最良宿主の長期保持で F10/F12 を SR 0%→80/90% へ |
+| P7 | `use_restart_on_stagnation` | **スピルオーバー**（quality-gated）。ill-cond の整列失敗を救済 |
+
+##### 却下されたフラグ（ablation 結果による）
+
+以下の案は実装されたが、ablation で overall 性能向上への寄与が確認できず削除された。後続研究の参考として記録する。
+
+| 案 | フラグ名 | 理由 |
+|---|---|---|
+| A | `use_evolution_path` | 各スロットに進化パス（成功ステップの EMA）を保持し、局所感染ノイズを `α·p_c + √(1-α²)·noise` でブレンド。B との組合せで F21/F03 を救済するが、後続案で同等以上の救済が得られるため機能重複。F08/F12 では微〜大幅劣化。overall に貢献せず削除。|
+| C | `use_pop_covariance` | 各世代頭で集団共分散 `Σ_pop` を Cholesky 分解し局所感染ノイズを異方化。F12/F15 の **平均値** で単独最良を出す関数特化型だが、SR ベースでは劣化。overall でなく単一関数特化のため削除。|
+| D | `use_lifespan_reset` | 局所感染で改善した親の `age` をリセット。B との組合せで F21 を回復するが、他案でも同じ回復が得られ機能重複。F08/F09/F10 では微劣化、独自の貢献が薄いため削除。|
+| E | `use_adaptive_air` | `top5_spread < 0.1` で `air_ratio` を 0.05 まで縮小。B と組合せると **二峰分布の失敗** が発生（F08/F09/F12 で約半数の run が壊滅、平均値を支配）。原因は「B による集団急収束 → air 縮小 → 差分ベクトルも小 → 脱出機構ゼロ」の悪循環。安全装置なしには救えない構造的欠陥のため削除。|
+| G | `use_adaptive_h2h_F` | 1/5-rule で `h2h_F` を成功率に応じて適応。F08/F09 の平均で改善するが、12 関数の **SR 合計が baseline+B より上がらず** overall に寄与せず削除。F12/F20 で劣化のトレードオフ。|
+| I | `use_aggressive_niche` | `unimodal_converged` 判定から `best_so_far < 1e-3` ゲートを外す。F21 で大幅改善（mean 2e-8）するが、F08/F09/F17 で SR が下がり、**12 関数 SR 合計は 610**（最低レベル）。overall 劣化のため削除。|
+| K | `use_h2h_archive` | 過去評価点の上位 K アーカイブから h2h の差分を取得（landscape + stagnation gated 版を試行）。F08/F12/F17 で改善するが、ゲート設計に依存して他関数で劣化、**SR 合計は 660 で B 単独と同等**。固有の overall 寄与なしのため削除。|
+| N | `use_local_pair_h2h` | h2h の差分 `(a, b)` を親の K 最近傍から取る設計で F17/F21 の basin 跨ぎを防ぐ狙い。F17 (30%→70-80%) の単一関数で劇的改善するが、近距離限定により F03/F08/F15 で長距離ジャンプ能力を失い **SR 合計は 570（baseline 630 以下）**。Overall に -60 の劣化のため削除。|
 
 ---
 
@@ -213,8 +317,8 @@ VSO のエリート選択:
 
 | 設定 | 値 |
 |---|---|
-| 試行回数 | 30 run（seed = 0, 100, 200, ..., 2900） |
-| 評価上限 | 15,000 回/run |
+| 試行回数 | 100 run（seed = 0, 100, 200, ..., 9900） |
+| 評価上限 | 5,000 回/run |
 | 成功判定 | best f ≤ 1e-4 |
 | 次元数 | 2次元（BBOB 24関数 + カスタム2関数）、3次元（BBOB 24関数） |
 | sigma0（CMA-ES） | `0.2 × (hi - lo)` |
@@ -251,8 +355,8 @@ dim{N}/
   {Func}_{Method}_3devals_failed.webp
   {Func}_{Method}_3dpopulation.webp
   {Func}_{Method}_3dpopulation_failed.webp
-  {Func}_{Method}_vso_dyn.svg   — VSO 内部動態（VSO 系手法のみ、SVG、ベクター）
-  {Func}_{Method}_vso_dyn_failed.svg
+  {Func}_{Method}_outbreak_dyn.svg   — アウトブレイク内部動態（MC-ESO 系手法のみ、SVG、ベクター）
+  {Func}_{Method}_outbreak_dyn_failed.svg
   stats/{Func}.csv
   summary.csv
 ```
@@ -279,7 +383,7 @@ Web アプリ（`./run.sh web`）で結果を閲覧できる。右上の `[Funct
 | `runs` | 1フレーム=1run の探索軌跡アニメ |
 | `population` / `population_failed` | 集団配置の推移アニメ |
 | `3devals` / `3dpopulation` | 3D 関数用の評価点・集団アニメ |
-| `vso_dyn` / `vso_dyn_failed` | σ 動態・エリート水位・仮想呼吸の3行SVG |
+| `outbreak_dyn` / `outbreak_dyn_failed` | σ 動態・系統水位・no_improve 推移の 3 行 SVG |
 
 ### 画像の読み方
 
