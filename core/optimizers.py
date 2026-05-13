@@ -290,11 +290,60 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
     # ─────────────────────────────────────────────────────────────────────
     @staticmethod
     def _reflect(x: np.ndarray, lo: float, hi: float) -> np.ndarray:
-        """Reflect out-of-bounds values back into [lo, hi] instead of clamping."""
+        """Hybrid boundary handler: reflect on large overshoots (preserves
+        diversity), snap to boundary on small overshoots (within span × 1e-3).
+
+        Without the snap-clause, boundary-optimum landscapes (F05 LinearSlope)
+        can never reach exact zero: σ-step pushes a few epsilons over the
+        boundary, reflection bounces those few epsilons back inside, and the
+        candidate orbits the optimum at radius σ_floor forever.
+        """
         span = hi - lo
+        # Reflected version (existing logic — wraps periodically for large
+        # excursions so the candidate cloud doesn't pile up at the bound).
         x_rel = (x - lo) % (2 * span)
         x_rel = np.where(x_rel > span, 2 * span - x_rel, x_rel)
-        return x_rel + lo
+        reflected = x_rel + lo
+        # Snap to boundary when the overshoot is tiny — lets the algorithm
+        # actually land on the bound (F05). Threshold is much smaller than any
+        # σ that would carry meaningful diversification, so large reflects are
+        # untouched.
+        snap = span * 1e-3
+        result = reflected
+        result = np.where((x < lo) & (lo - x < snap), lo, result)
+        result = np.where((x > hi) & (x - hi < snap), hi, result)
+        return result
+
+    def _axis_sweep(self, x_best: np.ndarray, lo: float, hi: float
+                    ) -> list[np.ndarray]:
+        """Coordinate-axis line search around x_best. Per dimension, probe at
+        a few axis-aligned step sizes both directions plus the two bounds.
+
+        Built for **separable / boundary-optimal** landscapes:
+          • F05 LinearSlope (optimum on a corner): the {lo, hi} probes land
+            on the optimum exactly when the right sign is picked.
+          • F04 BucheRastrigin (separable, ~1.0-wide local basins on a grid):
+            step sizes of span × 0.1, 0.2, 0.4 jump between adjacent local
+            basins, so an axis-aligned probe lands inside the global basin
+            with much higher probability than isotropic Gaussian sampling.
+
+        Total candidates ≈ dim × (6 + 2). For dim=2 this is ~16 evals per
+        sweep, dwarfed by the spillover that follows it.
+        """
+        span = hi - lo
+        cands: list[np.ndarray] = []
+        for i in range(self.dim):
+            for k in (1, 2, 4):
+                step = k * span * 0.1
+                for sign in (-1.0, 1.0):
+                    cand = x_best.copy()
+                    cand[i] = x_best[i] + sign * step
+                    cands.append(self._reflect(cand, lo, hi))
+            for bv in (lo, hi):
+                cand = x_best.copy()
+                cand[i] = bv
+                cands.append(cand)
+        return cands
 
     def _niche_elites(self, pop_x: np.ndarray, pop_f: np.ndarray) -> set:
         """Strain coexistence: pick up to n_elite_max spatially-separated hosts.
@@ -405,6 +454,35 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     basin_switch = False
                     div_ratio = self.restart_diversify_ratio
                     sigma_restart = sigma_init_mean * self.restart_sigma_ratio
+
+                # Step 7: coordinate-axis sweep before escalated spillovers.
+                # Targets separable / boundary-optimal landscapes that the
+                # isotropic uniform re-seed alone fails on (F04 BucheRastrigin,
+                # F05 LinearSlope). Only fires once a normal spillover has
+                # already failed (streak ≥ 1) so the eval cost is paid only
+                # when standard exploration is clearly stuck.
+                if (consecutive_failed_spillovers
+                        >= self.escalate_after_failed_spillovers):
+                    x_best_for_sweep = pop_x[int(np.argmin(pop_f))].copy()
+                    for sweep_cand in self._axis_sweep(x_best_for_sweep, lo, hi):
+                        if len(history_f) >= max_evals:
+                            break
+                        f_sweep = float(self.func(sweep_cand))
+                        history_x.append(sweep_cand.copy())
+                        history_f.append(f_sweep)
+                        history_sigma_eval.append(
+                            float(np.linalg.norm(sweep_cand - x_best_for_sweep)))
+                        if f_sweep < best_so_far:
+                            best_so_far = f_sweep
+                            # Inject the better candidate into the population so
+                            # the upcoming spillover anchors on it (or, on basin
+                            # switch, so it's part of the historical best).
+                            worst_i = int(np.argmax(pop_f))
+                            pop_x[worst_i] = sweep_cand.copy()
+                            pop_f[worst_i] = f_sweep
+                            pop_age[worst_i] = 0
+                    if len(history_f) >= max_evals:
+                        break
 
                 best_pre_spillover = best_so_far
                 if basin_switch:
