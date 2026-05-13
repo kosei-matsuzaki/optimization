@@ -70,7 +70,7 @@ PID_FILE=".quick.pid"
 DIR_FILE=".quick.dir"
 
 cmd_quick() {
-  local n_runs=10 max_evals=2000 label="" use_all=0
+  local n_runs=10 max_evals=2000 label="" use_all=0 dim=2
   local pass_args=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -78,12 +78,14 @@ cmd_quick() {
       --max-evals) max_evals="$2"; pass_args+=("$1" "$2"); shift 2 ;;
       --funcs)     pass_args+=("$1" "$2"); shift 2 ;;
       --all)       use_all=1;      pass_args+=("$1"); shift ;;
+      --dim)       dim="$2";       pass_args+=("$1" "$2"); shift 2 ;;
       --label)     label="$2";     shift 2 ;;
       *)           pass_args+=("$1"); shift ;;
     esac
   done
   local set_name
-  if [[ $use_all -eq 1 ]]; then set_name="all-26"; else set_name="quick-12"; fi
+  if [[ $use_all -eq 1 ]]; then set_name="all"; else set_name="quick"; fi
+  set_name="${set_name}-d${dim}"
   local suffix
   suffix="${label:-$(git rev-parse --short HEAD 2>/dev/null || echo 'nogit')}"
   suffix=$(printf '%s' "$suffix" | tr -cd '[:alnum:]_-' | cut -c1-40)
