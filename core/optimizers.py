@@ -205,6 +205,20 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # basins (F17/F20) — pure local re-seed alone can't, because the same
         # basin recaptures the population.
         restart_diversify_ratio: float = 0.75, # share of re-seed assigned to Uniform(lo, hi)
+        # Step 6: spillover escalation. When consecutive spillovers fail to
+        # improve the best, ratchet up the disruption — first widen to fully
+        # uniform re-seed (best preserved), then break the best entirely and
+        # reset σ. Addresses deceptive double-funnel landscapes (F24) and
+        # rugged separable functions (F04) where the algorithm gets locked
+        # into a wrong basin and pure local spillover only re-explores it.
+        escalate_after_failed_spillovers: int = 1,   # streak → diversify_ratio = 1.0
+        basin_switch_after_failed_spillovers: int = 2,  # streak → wipe best & reset σ
+        basin_switch_quality_floor: float = 1e-2,    # basin switch suppressed when
+                                                     # best_so_far ≤ this — protects
+                                                     # runs that are slowly grinding
+                                                     # toward the optimum (F13 ridge,
+                                                     # C01 deep precision) from being
+                                                     # wiped by a premature switch
         # ── Early termination on full convergence ──────────────────────
         # Disabled by default: for fair method comparison we want the full budget
         # consumed so each run reaches its real precision floor. Opt in only when
@@ -257,6 +271,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.restart_sigma_ratio = restart_sigma_ratio
         self.restart_quality_floor = restart_quality_floor
         self.restart_diversify_ratio = restart_diversify_ratio
+        self.escalate_after_failed_spillovers = escalate_after_failed_spillovers
+        self.basin_switch_after_failed_spillovers = basin_switch_after_failed_spillovers
+        self.basin_switch_quality_floor = basin_switch_quality_floor
         self.early_termination = early_termination
         self.early_term_quality = early_term_quality
         self.early_term_no_improve = early_term_no_improve
@@ -345,6 +362,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         no_improve = 0
         log_best_ref = math.log10(best_so_far + 1e-300)  # log10(f) at last meaningful reset
         evals_since_reset = 0                             # evals elapsed since last meaningful reset
+        # Step 6: track consecutive spillover events that failed to improve
+        # best_so_far. Used to ratchet up disruption from "diversified local"
+        # → "fully uniform" → "basin switch (wipe best & reset σ)".
+        consecutive_failed_spillovers = 0
 
         while len(history_f) < max_evals:
             # Early termination: the outbreak has fully converged on a precise
@@ -365,23 +386,47 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # already-converged runs.
             if (no_improve >= self.restart_no_improve_threshold
                     and best_so_far > self.restart_quality_floor):
-                best_idx_global = int(np.argmin(pop_f))
-                x_best_snap = pop_x[best_idx_global].copy()
-                sigma_restart = sigma_init_mean * self.restart_sigma_ratio
-                # Split the re-seeded population:
-                #   • a fraction `restart_diversify_ratio` lands uniformly across
-                #     the bounded domain — this is essential for escaping basins
-                #     that recapture the population otherwise (F17/F20 stuck cases)
-                #   • the rest is placed in a tight cluster around the global best
-                non_best_idx = [i for i in range(self.n_pop) if i != best_idx_global]
-                n_div = int(round(self.restart_diversify_ratio * len(non_best_idx)))
+                # Step 6: escalation policy based on consecutive_failed_spillovers.
+                #   streak ≥ basin_switch_after: wipe best, fully uniform, σ_init reset
+                #   streak ≥ escalate_after:    fully uniform, best preserved
+                #   streak  = 0:                default mix (75% uniform / 25% local)
+                if (consecutive_failed_spillovers
+                        >= self.basin_switch_after_failed_spillovers
+                        and best_so_far > self.basin_switch_quality_floor):
+                    basin_switch = True
+                    div_ratio = 1.0
+                    sigma_restart = sigma_init_mean   # fresh σ for new basin
+                elif (consecutive_failed_spillovers
+                        >= self.escalate_after_failed_spillovers):
+                    basin_switch = False
+                    div_ratio = 1.0
+                    sigma_restart = sigma_init_mean * self.restart_sigma_ratio
+                else:
+                    basin_switch = False
+                    div_ratio = self.restart_diversify_ratio
+                    sigma_restart = sigma_init_mean * self.restart_sigma_ratio
+
+                best_pre_spillover = best_so_far
+                if basin_switch:
+                    # Wipe everything — including the current best — and re-seed
+                    # all slots uniformly. best_so_far is preserved as a tracker
+                    # of the historical best, but the population starts fresh.
+                    reseed_idx = list(range(self.n_pop))
+                    x_best_snap = None  # unused since div_ratio = 1.0
+                else:
+                    best_idx_global = int(np.argmin(pop_f))
+                    x_best_snap = pop_x[best_idx_global].copy()
+                    reseed_idx = [i for i in range(self.n_pop) if i != best_idx_global]
+
+                n_div = int(round(div_ratio * len(reseed_idx)))
                 # Shuffle so the assignment of "diversified" vs "local" is random
-                rng.shuffle(non_best_idx)
-                diversified = set(non_best_idx[:n_div])
-                for i in non_best_idx:
-                    if i in diversified:
+                rng.shuffle(reseed_idx)
+                diversified = set(reseed_idx[:n_div])
+                for i in reseed_idx:
+                    if i in diversified or x_best_snap is None:
                         new_x = rng.uniform(lo, hi, self.dim)
-                        sig_log = float(np.linalg.norm(new_x - x_best_snap))
+                        sig_log = (float(np.linalg.norm(new_x - x_best_snap))
+                                   if x_best_snap is not None else float(sigma_restart))
                     else:
                         new_x = self._reflect(
                             x_best_snap + sigma_restart * rng.standard_normal(self.dim), lo, hi)
@@ -401,7 +446,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 no_improve = 0
                 log_best_ref = math.log10(best_so_far + 1e-300)
                 evals_since_reset = 0
-                pop_age[best_idx_global] = 0
+                if not basin_switch:
+                    pop_age[best_idx_global] = 0
+
+                # Update streak based on whether this spillover improved best
+                if best_so_far < best_pre_spillover - 1e-12:
+                    consecutive_failed_spillovers = 0
+                else:
+                    consecutive_failed_spillovers += 1
                 if len(history_f) >= max_evals:
                     break
 

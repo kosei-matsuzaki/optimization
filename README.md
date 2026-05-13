@@ -164,14 +164,16 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
    └─ f 値の良い順に走査し、既存系統から niche_radius (=1.0) 以上離れた個体だけを
       最大 n_elite_max (=6) 個保護
 
-2. スピルオーバー判定（停滞時の集団再播種、多様化版）
+2. スピルオーバー判定（停滞時の集団再播種、多様化＋エスカレート版）
    └─ no_improve ≥ restart_no_improve_threshold (=300) かつ
-      f_best > restart_quality_floor (=1e-8) のとき、
-      n_pop−1 個を以下に分配:
-         • restart_diversify_ratio (=0.75) を Uniform(lo, hi) で全探索域に散布
-         • 残りを global best 周辺 N(x_best, σ_init × 0.3) に播種
-      ─ 純局所再播種だけでは欺瞞 basin (F20 等) から脱出できないため、
-        遠方ランダムを併用して新 basin の発見機会を確保する
+      f_best > restart_quality_floor (=1e-8) のとき発動。
+      連続失敗回数 (consecutive_failed_spillovers) でエスカレート:
+         • streak = 0: 75% Uniform(lo, hi) + 25% best 周辺 N(x_best, σ_init×0.3)
+         • streak ≥ 1: 100% Uniform(lo, hi)、best は保持
+         • streak ≥ 2 かつ f_best > 1e-2: **ベイスン乗換え**
+              — best も破棄、全 n_pop を Uniform 再生成、σ を σ_init にリセット
+      ─ 多段エスカレートにより F24 双漏斗 / F04 rugged separable から脱出
+        f_best ≤ 1e-2 のとき乗換え抑制 → F13 ridge / C01 deep precision を保護
 
 3. 宿主競合: 死亡判定（μ+λ greedy）
    └─ 集団の f 値降順で下位 kill_fraction (=25%) を排除。最良宿主は自動生存
@@ -229,6 +231,9 @@ MC-ESO の系統選択:
 | `restart_sigma_ratio` | 0.3 | スピルオーバー後の σ（σ_init に対する比率） |
 | `restart_quality_floor` | 1e-8 | スピルオーバー skip 閾値（既収束 run の精度破壊を防ぐ） |
 | `restart_diversify_ratio` | 0.75 | スピルオーバー時、再播種個体のうち全探索域ランダムに割く割合（残りは best 周辺）|
+| `escalate_after_failed_spillovers` | 1 | この連続失敗回数で diversify_ratio を 1.0 に昇格 |
+| `basin_switch_after_failed_spillovers` | 2 | この連続失敗回数で best 破棄＋σ_init リセットの完全ベイスン乗換え |
+| `basin_switch_quality_floor` | 1e-2 | best がこの値以下のときベイスン乗換えを抑制（grinding 中の run を保護）|
 | `early_termination` | False | 完全収束を検知して run を早期終了。**手法比較目的では OFF 推奨**（一部関数で mean / SR@1e-10 に微小 regression）。production 用途で wall-clock 節約したい場合のみ ON |
 | `early_term_quality` | 1e-8 | 早期終了の品質条件（`best_so_far` がこれ未満）|
 | `early_term_no_improve` | 200 | 早期終了の停滞条件（`no_improve` がこれ以上）|
@@ -269,6 +274,22 @@ MC-ESO の系統選択:
 | F12-BentCigar | 100% (mean 0) | 100% |
 
 **SR@1e-10 (drilling mode 効果)**: 9/12 関数で mean = exact 0 を達成。SR@1e-10 合計 1130/1200。
+
+##### BBOB 全 26 関数結果（F01-F24 + C01-C02、5000 evals × 10 seeds）
+
+| メトリック | 値 |
+|---|---|
+| SR@1e-2 合計 | 248/260 (95%) |
+| **SR@1e-4 合計** | **242/260 (93%)** |
+| SR@1e-7 合計 | 220/260 (85%) |
+| SR@1e-10 合計 | 206/260 (79%) |
+| mean = 0 達成数 | 12/26 関数 |
+
+苦戦する 4 関数（CMA-ES でも完全解決は困難な BBOB の最難関）:
+- **F24-LunacekRastrigin** SR4=30% — double-funnel 多峰（global と深い deceptive funnel）
+- **F23-Katsuura** SR4=40% — フラクタル状（自己相似な無限階層凹凸）
+- **F04-BucheRastrigin** SR4=70% — 1D 方向に rugged な Rastrigin
+- **F18-SchafferF7ill** SR4=90% — ill-conditioned 多峰
 
 明示的共分散行列学習なしに、飛沫感染の差分ベクトル（暗黙的異方性）＋ 宿主競合（最良保持）＋ スピルオーバー（整列失敗の救済）の組合せで CMA-ES クラスの性能を達成。
 
@@ -316,6 +337,36 @@ if best_so_far < drilling_threshold (=1e-6):  # 高精度ベイスン到達後�
 - F17-SchafferF7 等の **deceptive 多峰関数は drilling 圏外（mean 1e-5）のため無影響** — 多峰ロバスト性を保ったまま smooth 関数で限界精度を取得
 
 **設計のポイント**: 「正しいベイスン到達」を `best_so_far` で判定するため、deceptive landscape で誤って drilling が発動するリスクは小さい（誤った局所最適が 1e-6 を切るのは稀）。多峰／単峰の挙動切替を明示パラメータ無しで実現。
+
+#### エスカレート式 spillover（default ON）
+
+連続して spillover が改善に失敗した場合、disruption を段階的に強化する。IPOP-CMA-ES の "restart with larger population" 概念の MC-ESO 版。
+
+```python
+streak = consecutive_failed_spillovers
+if streak >= 2 and best_so_far > 1e-2:
+    # ベイスン乗換え — best を破棄、全 n_pop を Uniform、σ_init にリセット
+    div_ratio = 1.0; preserve_best = False; sigma = σ_init
+elif streak >= 1:
+    # 完全多様化 — 全スロット Uniform、best は保持
+    div_ratio = 1.0; preserve_best = True
+else:
+    # 通常 — 75% Uniform + 25% best 周辺
+    div_ratio = 0.75; preserve_best = True
+```
+
+**効果（5000 evals × 10 seeds, BBOB 全 26 関数）**:
+- F24-LunacekRastrigin: SR4 20% → **30%** (deceptive double-funnel から脱出可能に)
+- F04-BucheRastrigin: SR4 50% → **70%** (rugged separable で重要)
+- F06-AttractiveSector: mean 5.0e-07 → **2.4e-13**
+- F11-Discus: mean 5.4e-08 → **6.0e-12**
+- F19-GriewankRosenbrock: mean 1.0e-06 → **1.7e-08**
+- 12 関数 quick subset: SR@1e-4 = 1200/1200 維持（regression なし）
+
+**設計のポイント**:
+- **多段化**: `streak ≥ 1` で多様化拡大、`streak ≥ 2` で本格的乗換え。早期にすべてを破壊しない
+- **quality gate（1e-2）**: 既に高精度に達した run（F13 ridge, C01 deep precision）でベイスン乗換えが暴発しないよう保護
+- spillover 自体の quality_floor (=1e-8) は維持されるため、収束済みの run に影響なし
 
 ##### 検証の方法
 
