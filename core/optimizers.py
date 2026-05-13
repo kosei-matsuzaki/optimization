@@ -516,20 +516,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 if len(history_f) >= max_evals:
                     break
 
-            active_idx = np.arange(self.n_pop)
             n = self.n_pop
-            pop_x_arr = pop_x[active_idx]
-            pop_f_arr = pop_f[active_idx]
-
             gen_best_before = best_so_far  # snapshot for optional σ adaptation
 
             # Strain coexistence: niched-elite pool for the droplet channel's
             # current-to-best pull. Spatial diversity is also fed to the airborne
             # channel's σ modulator (denser cluster → larger aerosol jumps).
-            pop_diversity = np.mean(np.std(pop_x_arr, axis=0) / span)
+            pop_diversity = np.mean(np.std(pop_x, axis=0) / span)
             diversity_ratio = float(np.clip(pop_diversity / 0.289, 0.0, 1.0))
-            elite_local = self._niche_elites(pop_x_arr, pop_f_arr)
-            elite_global = {active_idx[i] for i in elite_local}
+            elite_global = self._niche_elites(pop_x, pop_f)
             elite_arr = np.fromiter(elite_global, dtype=int) if elite_global else np.empty(0, dtype=int)
 
             # Host competition (μ+λ greedy): each gen, the worst K = kill_fraction · n
@@ -537,8 +532,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # survives by not being in worst-K). Children that fail to outcompete
             # the host they replaced are rolled back after evaluation.
             n_kill = max(1, min(n, int(round(self.kill_fraction * n))))
-            worst_first = active_idx[np.argsort(pop_f[active_idx])[::-1]]
-            dead_global = worst_first[:n_kill]
+            dead_global = np.argsort(pop_f)[::-1][:n_kill]
             n_dead = len(dead_global)
             if n_dead > 0:
                 dead_orig_x = pop_x[dead_global].copy()
@@ -548,16 +542,16 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 dead_orig_f = None
 
             if n_dead == 0:
-                pop_age[active_idx] += 1
+                pop_age += 1
                 # No offspring this gen → no σ signal, so σ is held unchanged.
-                # When all active individuals are elite no births occur and
-                # history_f never grows → still advance no_improve so the
-                # spillover and stagnation_limit eventually fire.
+                # When all individuals are elite no births occur and history_f
+                # never grows → still advance no_improve so the spillover and
+                # stagnation_limit eventually fire.
                 no_improve += 1
                 if no_improve >= self.stagnation_limit:
                     break
             else:
-                weights = self._softmax_weights(pop_f_arr)
+                weights = self._softmax_weights(pop_f)
 
                 # 3-channel split: close-contact (local Gaussian), droplet (h2h
                 # DE/current-to-best), airborne (random spread).
@@ -572,7 +566,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 # Log-scale quality anchored to global best (history-wide).
                 # When population converges to a local optimum, all f_i ≈ f_pop_max
                 # but best_so_far may be far better → lq ≈ 0 → σ_i = σ_global (full exploration).
-                pop_log_f = np.log10(pop_f_arr + 1e-10)
+                pop_log_f = np.log10(pop_f + 1e-10)
                 log_f_max = float(pop_log_f.max())
                 log_f_best = float(np.log10(best_so_far + 1e-10))  # anchored to history best
                 log_f_spread = log_f_max - log_f_best
@@ -585,8 +579,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
                 # Batch generate all children before evaluation loop
                 if n_local > 0:
-                    local_li = rng.choice(n, size=n_local, p=weights)
-                    gi_arr = active_idx[local_li]
+                    gi_arr = rng.choice(n, size=n_local, p=weights)
                     lq = np.clip(
                         (log_f_max - np.log10(pop_f[gi_arr] + 1e-10)) / (log_f_spread + 1e-30),
                         0.0, 1.0)
@@ -596,7 +589,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     noise = rng.standard_normal((n_local, self.dim))
                     new_local = self._reflect(pop_x[gi_arr] + noise * sigma_i[:, None], lo, hi)
                 else:
-                    gi_arr = np.empty(0, dtype=int)
                     sigma_i = np.empty(0)
                     new_local = np.empty((0, self.dim))
 
@@ -606,11 +598,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 # this gives MC-ESO implicit anisotropy without a covariance matrix.
                 # The strain-pull term accelerates descent along narrow valleys.
                 if n_h2h > 0:
-                    h2h_parent_li = rng.choice(n, size=n_h2h, p=weights)
-                    h2h_parents_gi = active_idx[h2h_parent_li]
+                    h2h_parents_gi = rng.choice(n, size=n_h2h, p=weights)
                     h2h_a_li = rng.integers(0, n, size=n_h2h)
                     h2h_b_li = rng.integers(0, n, size=n_h2h)
-                    diff = pop_x[active_idx[h2h_a_li]] - pop_x[active_idx[h2h_b_li]]
+                    diff = pop_x[h2h_a_li] - pop_x[h2h_b_li]
                     if len(elite_arr) > 0:
                         elite_pick = rng.choice(elite_arr, size=n_h2h)
                         best_pull = pop_x[elite_pick] - pop_x[h2h_parents_gi]
@@ -620,17 +611,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     new_h2h = self._reflect(pop_x[h2h_parents_gi] + h2h_step, lo, hi)
                     h2h_step_norms = np.linalg.norm(h2h_step, axis=1)
                 else:
-                    h2h_parents_gi = np.empty(0, dtype=int)
                     new_h2h = np.empty((0, self.dim))
                     h2h_step_norms = np.empty(0)
 
                 if n_air > 0:
-                    air_li = rng.integers(0, n, size=n_air)
-                    air_parents_gi = active_idx[air_li]
+                    air_parents_gi = rng.integers(0, n, size=n_air)
                     noise_air = rng.standard_normal((n_air, self.dim))
                     new_air = self._reflect(pop_x[air_parents_gi] + noise_air * air_sigma_vec, lo, hi)
                 else:
-                    air_parents_gi = np.empty(0, dtype=int)
                     new_air = np.empty((0, self.dim))
 
                 new_xs = np.concatenate([new_local, new_h2h, new_air], axis=0)
@@ -689,7 +677,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 replaced_mask = np.zeros(self.n_pop, dtype=bool)
                 if replaced_slots:
                     replaced_mask[replaced_slots] = True
-                pop_age[active_idx[~replaced_mask[active_idx]]] += 1
+                pop_age[~replaced_mask] += 1
 
                 # σ adaptation only fires while the search is actively improving
                 # (no_improve < gate). Once stuck, fall back to the gentle decay
