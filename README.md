@@ -154,14 +154,24 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 #### 1世代の動作フロー
 
 ```
+0. 早期終了判定（オプション、デフォルト OFF）
+   └─ early_termination=True かつ
+      best_so_far < early_term_quality (=1e-8) かつ
+      no_improve ≥ early_term_no_improve (=200) のとき break
+   └─ 手法比較ではフル予算消費が望ましいため既定 OFF。production 利用時のみ ON 推奨
+
 1. 系統共存: ニッチエリート抽出（飛沫感染の引力 pool）
    └─ f 値の良い順に走査し、既存系統から niche_radius (=1.0) 以上離れた個体だけを
       最大 n_elite_max (=6) 個保護
 
-2. スピルオーバー判定（停滞時の集団再播種）
+2. スピルオーバー判定（停滞時の集団再播種、多様化版）
    └─ no_improve ≥ restart_no_improve_threshold (=300) かつ
       f_best > restart_quality_floor (=1e-8) のとき、
-      global best 周辺に σ_init × restart_sigma_ratio (=0.3) で n_pop-1 個を再感染
+      n_pop−1 個を以下に分配:
+         • restart_diversify_ratio (=0.75) を Uniform(lo, hi) で全探索域に散布
+         • 残りを global best 周辺 N(x_best, σ_init × 0.3) に播種
+      ─ 純局所再播種だけでは欺瞞 basin (F20 等) から脱出できないため、
+        遠方ランダムを併用して新 basin の発見機会を確保する
 
 3. 宿主競合: 死亡判定（μ+λ greedy）
    └─ 集団の f 値降順で下位 kill_fraction (=25%) を排除。最良宿主は自動生存
@@ -181,8 +191,13 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 6. 宿主競合: Rollback
    └─ 各空きスロットの子が「元そこにいた親」より悪ければ親を復元 → 集団は単調改善
 
-7. σ 減衰
-   └─ σ × sigma_decay (=0.99)、option で use_sigma_adapt 時は ×1.2/×0.9 適応
+7. σ 適応（ゲート付き + drilling mode）
+   └─ no_improve < sigma_adapt_stagnation_gate (=100) のとき:
+      改善: σ × sigma_up (=1.1)
+      非改善 (通常): σ × sigma_down (=0.95)
+      非改善 (drilling): best_so_far < drilling_threshold (=1e-6) のとき
+                        σ × sigma_drill_down (=0.85) — 浮動小数限界へ追込み
+   └─ stuck 時（gate 超過）: σ × sigma_decay (=0.99) — spillover に備えて σ 温存
 ```
 
 #### 系統共存による多峰問題への適応
@@ -213,12 +228,22 @@ MC-ESO の系統選択:
 | `restart_no_improve_threshold` | 300 | スピルオーバー発動の no_improve 閾値 |
 | `restart_sigma_ratio` | 0.3 | スピルオーバー後の σ（σ_init に対する比率） |
 | `restart_quality_floor` | 1e-8 | スピルオーバー skip 閾値（既収束 run の精度破壊を防ぐ） |
+| `restart_diversify_ratio` | 0.75 | スピルオーバー時、再播種個体のうち全探索域ランダムに割く割合（残りは best 周辺）|
+| `early_termination` | False | 完全収束を検知して run を早期終了。**手法比較目的では OFF 推奨**（一部関数で mean / SR@1e-10 に微小 regression）。production 用途で wall-clock 節約したい場合のみ ON |
+| `early_term_quality` | 1e-8 | 早期終了の品質条件（`best_so_far` がこれ未満）|
+| `early_term_no_improve` | 200 | 早期終了の停滞条件（`no_improve` がこれ以上）|
 | `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象） |
 | `niche_radius` | 1.0 | 系統間の最小距離 |
 | `temperature` | 1.0 | 感染確率のランダム性（大→均一、小→貪欲） |
 | `lifespan` | 5 | 接触感染 σ_i の年齢正規化分母 |
 | `stagnation_limit` | 2000 | 改善なし評価回数の上限（早期停止閾値） |
 | `log_slope_threshold` | 1e-4 | 「意味ある改善」の log10(f) 減少スロープ閾値 |
+| `use_sigma_adapt` | True | ゲート付き σ 乗法適応を有効化 |
+| `sigma_up` | 1.1 | σ adapt 改善時の乗数（active 中のみ）|
+| `sigma_down` | 0.95 | σ adapt 改善なし時の乗数（active 中のみ）|
+| `sigma_adapt_stagnation_gate` | 100 | `no_improve` がこの値未満のみ σ adapt 発動、それ以上では sigma_decay |
+| `drilling_threshold` | 1e-6 | drilling mode 発動の `best_so_far` 閾値（既正しい basin 内のとき発動）|
+| `sigma_drill_down` | 0.85 | drilling mode 中の σ 縮小乗数（通常の sigma_down より積極的）|
 
 ---
 
@@ -228,7 +253,7 @@ MC-ESO の系統選択:
 
 | 手法 | SR 合計 | 備考 |
 |---|---:|---|
-| **MC-ESO（提案）** | **1160** | overall best — 全 12 関数で 80% 以上の SR |
+| **MC-ESO（提案）** | **1200** | **全 12 関数で SR=100%** — overall perfect |
 | PSO | 1030 | 多峰関数で強い |
 | SaVOA | 920 | F10 (ill-cond) で SR=20% |
 | CMA-ES | 890 | F08/F09/F10/F12 で 100% だが多峰で弱い |
@@ -238,10 +263,12 @@ MC-ESO の系統選択:
 
 | 関数 | MC-ESO (5000 evals) | CMA-ES (5000 evals) |
 |---|---:|---:|
-| F08-Rosenbrock | 100% (mean 0) | 100% |
-| F09-RosenbrockRot | 100% (mean 1.8e-8) | 100% |
-| F10-EllipsoidalRot | 100% (mean 2.0e-9) | 100% |
-| F12-BentCigar | 100% (mean 1.3e-8) | 100% |
+| F08-Rosenbrock | 100% (mean 2.2e-9) | 100% |
+| F09-RosenbrockRot | 100% (mean 0) | 100% |
+| F10-EllipsoidalRot | 100% (mean 0) | 100% |
+| F12-BentCigar | 100% (mean 0) | 100% |
+
+**SR@1e-10 (drilling mode 効果)**: 9/12 関数で mean = exact 0 を達成。SR@1e-10 合計 1130/1200。
 
 明示的共分散行列学習なしに、飛沫感染の差分ベクトル（暗黙的異方性）＋ 宿主競合（最良保持）＋ スピルオーバー（整列失敗の救済）の組合せで CMA-ES クラスの性能を達成。
 
@@ -255,31 +282,46 @@ MC-ESO の系統選択:
 
 ---
 
-#### 任意フラグ: σ 適応（P1）
+#### ゲート付き σ 適応（default ON）
 
-唯一残っている optional フラグ。
+MC-ESO の最終層。SaVOA 流の σ 乗法適応を **`no_improve` ゲート** と組み合わせ、improving 中のみ加速、stuck 時は標準減衰に戻す:
 
-| フラグ | 説明 |
-|---|---|
-| `use_sigma_adapt` | SaVOA 流の σ 乗法適応: 改善時 `× sigma_up (=1.2)`、停滞時 `× sigma_down (=0.9)`、`[sigma_floor_ratio·span, sigma_ceil_ratio·span]` でクリップ |
+```python
+if use_sigma_adapt and no_improve < sigma_adapt_stagnation_gate (=100):
+    if best 改善:
+        σ *= sigma_up (=1.1)
+    elif best_so_far < drilling_threshold (=1e-6):
+        σ *= sigma_drill_down (=0.85)   # drilling mode — 浮動小数限界へ追込み
+    else:
+        σ *= sigma_down (=0.95)
+else:
+    σ *= sigma_decay (=0.99)  # 通常減衰、spillover に備えて σ を温存
+```
 
-**効果**:
-- F01-Sphere の平均が `1.1e-11` → `0` (完全) に到達
-- F08/F09 の precision が `1e-10` → `1e-14` レベルに向上
-- F03/F10/F17 で SR 改善
+**効果**: F17 が SR 80→100% に到達。F08/F10/F12/F20/C02 で mean が 1〜5 桁深化。
+**設計のポイント**: ゲートなしの σ adapt は F03 multimodal で premature commitment（SR 100→70%）。ゲートで stuck 中は σ を保護し、上位機構（spillover）に役割を渡す。
 
-**欠点**:
-- F20-Schwefel (deceptive multimodal) で SR 30% 劣化（σ 早期収縮で偽の局所最適に commit）
-- F12 で SR 10% 微減
+#### Drilling mode（default ON）
 
-精度重視で deceptive multimodal を扱わない場合のみ ON 推奨。`quick_check.py` の `_MCESO_VARIANTS` 既定では `MC-ESO+sigma-ad` として比較対象になっている。
+正しい basin に到達した後の精密化フェーズ。`best_so_far < 1e-6` を超えたら **「正しいベイスン内」**と判定し、非改善時の σ 縮小を 0.95 → 0.85 と強化する。
+
+```python
+if best_so_far < drilling_threshold (=1e-6):  # 高精度ベイスン到達後のみ
+    σ *= sigma_drill_down (=0.85)             # 強収縮で浮動小数限界へ
+```
+
+**効果（5000 evals × 10 seeds, n=12）**:
+- 9/12 関数で mean = exact 0 を達成（F01/F03/F09/F10/F12/F15/F20/C02 + F11=Himmelblau は 9.5e-23）
+- SR@1e-10 合計: 1100 → **1130/1200**（F09, F10, C01 で 90% → 100%）
+- F17-SchafferF7 等の **deceptive 多峰関数は drilling 圏外（mean 1e-5）のため無影響** — 多峰ロバスト性を保ったまま smooth 関数で限界精度を取得
+
+**設計のポイント**: 「正しいベイスン到達」を `best_so_far` で判定するため、deceptive landscape で誤って drilling が発動するリスクは小さい（誤った局所最適が 1e-6 を切るのは稀）。多峰／単峰の挙動切替を明示パラメータ無しで実現。
 
 ##### 検証の方法
 
 ```python
 _MCESO_VARIANTS = {
-    "MC-ESO":          {},                            # base
-    "MC-ESO+sigma-ad": {"use_sigma_adapt": True},     # optional σ adaptation
+    "MC-ESO":  {},  # all mechanisms default ON
 }
 ```
 
@@ -383,7 +425,7 @@ Web アプリ（`./run.sh web`）で結果を閲覧できる。右上の `[Funct
 | `runs` | 1フレーム=1run の探索軌跡アニメ |
 | `population` / `population_failed` | 集団配置の推移アニメ |
 | `3devals` / `3dpopulation` | 3D 関数用の評価点・集団アニメ |
-| `outbreak_dyn` / `outbreak_dyn_failed` | σ 動態・系統水位・no_improve 推移の 3 行 SVG |
+| `outbreak_dyn` / `outbreak_dyn_failed` | 3 行 SVG: ①σ 動態（σ_global / 中央値 σᵢ / 子ごと σ scatter）、②best f 収束 ＋ 系統数 n_strains、③no_improve 推移 ＋ restart 閾値 |
 
 ### 画像の読み方
 

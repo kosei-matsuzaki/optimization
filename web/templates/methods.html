@@ -264,11 +264,21 @@
     line-height: 1.72;
   }
   .h3 {
-    font-size: 15px;
+    font-size: 15.5px;
     font-weight: 800;
     color: var(--text);
-    margin: 26px 0 12px;
+    margin: 32px 0 6px;
     letter-spacing: -.2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .h3::before {
+    content: '';
+    display: inline-block;
+    width: 4px; height: 18px;
+    background: linear-gradient(180deg, var(--accent) 0%, var(--accent-muted) 100%);
+    border-radius: 2px;
   }
 
   /* ── Comparison table ──────────────────────────────────────────────── */
@@ -418,180 +428,386 @@
   .concept-body { font-size: 12.5px; color: var(--text-2); line-height: 1.72; }
   .concept-body strong { color: var(--text); }
 
-  /* ── Flowchart (vertical timeline) ────────────────────────────────── */
+  /* ── Flowchart v2 (vertical timeline) ─────────────────────────────── */
   .fc-timeline {
     position: relative;
-    padding-left: 52px;
+    padding-left: 56px;
   }
-  /* The connecting vertical line */
+  /* Connecting vertical line — accent gradient */
   .fc-timeline::before {
     content: '';
     position: absolute;
-    left: 14px;
-    top: 15px;
-    bottom: 15px;
+    left: 17px;
+    top: 18px;
+    bottom: 18px;
     width: 2px;
-    background: var(--border);
+    background: linear-gradient(180deg, var(--accent-muted) 0%, var(--accent) 50%, var(--accent-muted) 100%);
+    opacity: .55;
     border-radius: 1px;
   }
-  .fc-item {
-    position: relative;
-    margin-bottom: 8px;
-  }
+  .fc-item { position: relative; margin-bottom: 14px; }
+  .fc-item:last-child { margin-bottom: 0; }
   .fc-dot {
     position: absolute;
-    left: -52px;
-    top: 8px;
-    width: 30px;
-    height: 30px;
+    left: -56px;
+    top: 10px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 800;
     color: #fff;
     z-index: 1;
     outline: 4px solid var(--bg);
+    box-shadow: 0 2px 6px rgba(15,23,42,.10);
+    letter-spacing: -.2px;
   }
-  .fc-dot.c-blue   { background: var(--accent); }
-  .fc-dot.c-red    { background: var(--danger); }
-  .fc-dot.c-purple { background: #ae3ec9; }
-  .fc-dot.c-orange { background: var(--warn); }
-  .fc-fork > .fc-dot { top: -2px; }
+  .fc-dot.c-blue   { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%); }
+  .fc-dot.c-red    { background: linear-gradient(135deg, #f87171 0%, var(--danger) 100%); }
+  .fc-dot.c-purple { background: linear-gradient(135deg, #c084fc 0%, #ae3ec9 100%); }
+  .fc-dot.c-orange { background: linear-gradient(135deg, #fbbf24 0%, var(--warn) 100%); }
+  .fc-fork > .fc-dot { top: -4px; }
 
+  /* Card base */
   .fc-card {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 11px 15px;
+    border: 1px solid var(--border-light);
+    border-top: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px 16px;
     position: relative;
-    transition: box-shadow .25s, border-color .25s;
+    transition: box-shadow .25s, transform .14s, border-color .25s;
   }
-  .fc-card strong { font-size: 14px; font-weight: 800; color: var(--text); display: block; margin-bottom: 4px; letter-spacing: -.2px; }
+  .fc-card:hover {
+    box-shadow: 0 4px 14px rgba(15,23,42,.06);
+    transform: translateY(-1px);
+  }
+  /* Color the card top edge to match the step dot */
+  .fc-dot.c-blue   + .fc-card { border-top-color: var(--accent); }
+  .fc-dot.c-red    + .fc-card { border-top-color: var(--danger); }
+  .fc-dot.c-purple + .fc-card { border-top-color: #ae3ec9; }
+  .fc-dot.c-orange + .fc-card { border-top-color: var(--warn); }
+  .fc-card strong {
+    font-size: 14.5px; font-weight: 800; color: var(--text);
+    display: block; margin-bottom: 6px; letter-spacing: -.2px;
+    line-height: 1.4;
+  }
   .fc-card span   { font-size: 12.5px; color: var(--text-2); line-height: 1.72; }
 
-  /* Fork section — no dot, uses the line passing through */
+  /* Fork (Step 5 — 3 channels in parallel) */
   .fc-fork {
     position: relative;
-    margin-bottom: 8px;
+    margin-bottom: 14px;
     padding-left: 0;
   }
   .fc-fork-label {
-    font-size: 12px;
+    font-size: 11.5px;
     color: var(--text-2);
-    font-weight: 600;
-    margin-bottom: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
   .fc-fork-label::before {
     content: '';
     display: inline-block;
-    width: 12px;
-    height: 1px;
-    background: var(--border);
+    width: 18px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--warn) 0%, transparent 100%);
+    border-radius: 1px;
   }
-  .fc-fork-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  .fc-fork-pair { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: stretch; }
   .fc-fork-card {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 11px 15px;
+    border: 1px solid var(--border-light);
+    border-top: 4px solid var(--warn);
+    border-radius: 8px;
+    padding: 14px 18px 16px;
     position: relative;
-    transition: box-shadow .25s, border-color .25s;
+    transition: box-shadow .25s, transform .14s;
+  }
+  .fc-fork-card:hover {
+    box-shadow: 0 4px 14px rgba(15,23,42,.06);
+    transform: translateY(-1px);
   }
   .fc-fork-num {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--text-2);
-    letter-spacing: .35px;
-    margin-bottom: 6px;
+    display: inline-block;
+    font-size: 9.5px;
+    font-weight: 800;
+    color: var(--warn);
+    letter-spacing: .8px;
+    margin-bottom: 8px;
+    padding: 2px 8px;
+    background: rgba(245,158,11,.10);
+    border: 1px solid rgba(245,158,11,.30);
+    border-radius: 999px;
     text-transform: uppercase;
   }
-  .fc-fork-card strong { font-size: 14px; font-weight: 800; color: var(--text); display: block; margin-bottom: 4px; letter-spacing: -.2px; }
+  .fc-fork-card strong { font-size: 14.5px; font-weight: 800; color: var(--text); display: block; margin-bottom: 6px; letter-spacing: -.2px; }
   .fc-fork-card span   { font-size: 12.5px; color: var(--text-2); line-height: 1.72; }
 
-  /* ── Method cards ──────────────────────────────────────────────────── */
-  .method-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-top: 4px; }
+  /* ── Comparison: SR scoreboard ───────────────────────────────────── */
+  .cmp-board {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 16px 20px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+  }
+  .cmp-board-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 96px;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 4px;
+    border-radius: 6px;
+    transition: background .14s;
+  }
+  .cmp-board-row:hover { background: rgba(15,23,42,.025); }
+  .cmp-board-row.proposed {
+    background: linear-gradient(90deg, rgba(79,70,229,.08) 0%, rgba(79,70,229,.02) 70%);
+    padding: 10px 12px;
+    margin: 2px -8px;
+  }
+  .cmp-board-row.proposed:hover { background: linear-gradient(90deg, rgba(79,70,229,.12) 0%, rgba(79,70,229,.04) 70%); }
+  .cmp-name {
+    font-size: 13.5px; font-weight: 800; color: var(--text);
+    letter-spacing: -.1px; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .cmp-bar {
+    height: 10px;
+    background: var(--surface-2);
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+  }
+  .cmp-bar-fill {
+    height: 100%; border-radius: 5px;
+    background: linear-gradient(90deg, var(--bar-color-light, #93c5fd) 0%, var(--bar-color, var(--accent)) 100%);
+  }
+  .row-mceso .cmp-bar-fill { --bar-color: var(--accent-dark); --bar-color-light: #818cf8; }
+  .row-pso   .cmp-bar-fill { --bar-color: #c48a00; --bar-color-light: #fbbf24; }
+  .row-savoa .cmp-bar-fill { --bar-color: #9333ea; --bar-color-light: #c084fc; }
+  .row-cmaes .cmp-bar-fill { --bar-color: var(--accent); --bar-color-light: #93c5fd; }
+  .row-ga    .cmp-bar-fill { --bar-color: #15803d; --bar-color-light: #86efac; }
+  .cmp-score-val {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-size: 14px; font-weight: 800; color: var(--text);
+    font-variant-numeric: tabular-nums; text-align: right;
+  }
+  .cmp-score-val .denom {
+    font-size: 10px; font-weight: 500; color: var(--muted); margin-left: 2px;
+  }
+
+  /* ── Comparison: aspect-by-aspect cards ──────────────────────────── */
+  .cmp-aspects {
+    display: grid; grid-template-columns: 1fr; gap: 12px;
+  }
+  .cmp-aspect {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .cmp-aspect-head {
+    padding: 10px 16px;
+    font-size: 12.5px; font-weight: 800;
+    color: var(--text);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; gap: 9px;
+    letter-spacing: -.1px;
+  }
+  .cmp-aspect-head::before {
+    content: '';
+    width: 3px; height: 14px;
+    background: linear-gradient(180deg, var(--accent) 0%, var(--accent-muted) 100%);
+    border-radius: 2px;
+  }
+  .cmp-aspect-body { display: flex; flex-direction: column; }
+  .cmp-row {
+    display: grid;
+    grid-template-columns: 78px 1fr;
+    align-items: start;
+    gap: 14px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 12.5px;
+    color: var(--text-2);
+    line-height: 1.72;
+  }
+  .cmp-row:last-child { border-bottom: none; }
+  .cmp-row.proposed {
+    background: linear-gradient(90deg, rgba(79,70,229,.06) 0%, transparent 75%);
+    color: var(--text);
+  }
+  .cmp-row .cmp-row-text { min-width: 0; }
+  .cmp-tag {
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800;
+    letter-spacing: -.1px;
+    padding: 3px 8px; border-radius: 999px;
+    border: 1px solid;
+    white-space: nowrap;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    margin-top: 1px;
+  }
+  .cmp-tag.savoa { color: #9333ea; background: rgba(174,62,201,.08); border-color: rgba(174,62,201,.30); }
+  .cmp-tag.cmaes { color: var(--accent); background: rgba(66,99,235,.08); border-color: rgba(66,99,235,.30); }
+  .cmp-tag.mceso {
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    border-color: var(--accent-dark);
+    font-weight: 800;
+  }
+
+  /* ── Method cards v2 ───────────────────────────────────────────────── */
+  .method-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px; margin-top: 8px;
+  }
   .method-card {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border: 1px solid var(--border-light);
+    border-top: 4px solid var(--accent);
+    border-radius: 10px;
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    transition: transform .18s, box-shadow .18s;
+    position: relative;
+    transition: transform .18s, box-shadow .25s, border-color .25s;
   }
-  .method-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
-  .mc-cmaes { border-top: 3px solid var(--accent); }
-  .mc-pso   { border-top: 3px solid #e9b200; }
-  .mc-ga    { border-top: 3px solid var(--success); }
-  .mc-savoa { border-top: 3px solid #ae3ec9; }
-  .method-card-inner { padding: 16px 18px; }
-  .method-card-name { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
-  .method-card-type { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .65px; color: var(--text-2); margin-bottom: 12px; }
-  .method-diagram { margin-bottom: 10px; }
-  .method-card p  { font-size: 12.5px; color: var(--text-2); line-height: 1.72; }
-  .mini-diagram { background: var(--surface-2); border: 1px solid var(--border-light); border-radius: var(--radius-sm); overflow: hidden; }
+  .method-card::before {
+    content: '';
+    position: absolute; inset: 0 0 auto 0; height: 70px;
+    background: linear-gradient(180deg, var(--mc-tint, rgba(66,99,235,.06)) 0%, transparent 100%);
+    pointer-events: none;
+  }
+  .method-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .07);
+  }
+  .mc-cmaes { --mc-color: var(--accent);  --mc-tint: rgba(66,99,235,.08);  --mc-border: rgba(66,99,235,.30);  border-top-color: var(--accent); }
+  .mc-pso   { --mc-color: #c48a00;        --mc-tint: rgba(233,178,0,.10);  --mc-border: rgba(233,178,0,.40);  border-top-color: #e9b200; }
+  .mc-ga    { --mc-color: var(--success); --mc-tint: rgba(47,158,68,.09);  --mc-border: rgba(47,158,68,.30);  border-top-color: var(--success); }
+  .mc-savoa { --mc-color: #ae3ec9;        --mc-tint: rgba(174,62,201,.09); --mc-border: rgba(174,62,201,.30); border-top-color: #ae3ec9; }
 
-  /* ── Expanded step cards (flow + mechanism integrated) ───────────── */
-  .fc-card.fc-card-expanded { padding: 15px 18px 17px; }
+  .method-card-inner { padding: 18px 20px 18px; position: relative; }
+  .method-card-name {
+    font-size: 19px; font-weight: 800; color: var(--text);
+    letter-spacing: -.4px; line-height: 1.1; margin-bottom: 8px;
+  }
+  .method-card-type {
+    display: inline-flex; align-items: center;
+    font-size: 10px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .7px;
+    color: var(--mc-color, var(--accent));
+    background: var(--mc-tint, rgba(66,99,235,.10));
+    border: 1px solid var(--mc-border, rgba(66,99,235,.30));
+    padding: 2px 9px; border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .method-diagram { margin-bottom: 12px; }
+  .method-card p {
+    font-size: 12.5px; color: var(--text-2); line-height: 1.78;
+    margin: 0;
+  }
+  .mini-diagram {
+    background: var(--surface-2);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  /* ── Expanded step cards v2 (flow + mechanism integrated) ────────── */
+  .fc-card.fc-card-expanded { padding: 16px 20px 18px; }
+  .fc-fork-card.fc-card-expanded { padding: 14px 18px 16px; }
   .fc-desc {
     font-size: 12.5px;
     color: var(--text-2);
     line-height: 1.78;
     display: block;
-    margin-bottom: 11px;
+    margin-bottom: 14px;
   }
   .fc-desc code, .fc-note code { font-size: 0.92em; }
   .fc-detail {
-    display: grid;
-    grid-template-columns: minmax(180px, 240px) 1fr;
-    gap: 14px;
-    align-items: start;
-    border-top: 1px dashed var(--border-light);
-    padding-top: 11px;
-    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border-top: 1px solid var(--border-light);
+    padding-top: 14px;
+    margin-top: 6px;
   }
-  .fc-detail-1col { grid-template-columns: 1fr; }
+  .fc-detail > * { min-width: 0; }
+  .fc-detail-1col { /* legacy modifier, same as base now */ }
   .fc-pane-title {
-    font-size: 10.5px;
-    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: .55px;
-    color: var(--text-2);
-    margin-bottom: 8px;
+    letter-spacing: .8px;
+    color: var(--accent-dark);
+    margin-bottom: 10px;
+    padding: 2px 9px 2px 0;
   }
-  .fc-params { display: flex; flex-direction: column; gap: 5px; }
+  .fc-pane-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 11px;
+    background: linear-gradient(180deg, var(--accent) 0%, var(--accent-muted) 100%);
+    border-radius: 2px;
+  }
+  .fc-params { display: flex; flex-direction: column; gap: 6px; }
   .fc-param-chip {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 5px 9px;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    background: linear-gradient(90deg, rgba(79,70,229,.06) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    padding: 6px 11px;
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
     font-size: 11px;
     line-height: 1.5;
     cursor: help;
+    transition: border-color .14s, background .14s;
   }
-  .fc-param-chip .pk { color: var(--accent-dark); font-weight: 700; }
-  .fc-param-chip .pv { color: var(--text); font-weight: 600; }
+  .fc-param-chip:hover {
+    border-color: var(--accent-muted);
+    background: linear-gradient(90deg, rgba(79,70,229,.10) 0%, var(--surface) 100%);
+  }
+  .fc-param-chip .pk {
+    color: var(--accent-dark); font-weight: 700;
+    min-width: 0; flex: 1 1 auto;
+    overflow-wrap: anywhere; word-break: break-word;
+  }
+  .fc-param-chip .pv {
+    color: var(--text); font-weight: 700;
+    padding: 1px 6px; background: var(--surface);
+    border: 1px solid var(--border-light); border-radius: 4px;
+    flex-shrink: 0; white-space: nowrap;
+  }
   .fc-mechanism { min-width: 0; }
 
   /* ── Math (KaTeX) typography ───────────────────────────────────────── */
   .katex { color: var(--text); white-space: nowrap; }
   .katex-display, .katex-display .katex { white-space: normal; }
   .math-display {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(79,70,229,.04) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--border-light);
     border-left: 3px solid var(--accent);
-    border-radius: 5px;
+    border-radius: 6px;
     padding: 14px 18px;
-    margin: 12px 0 0;
+    margin: 10px 0 0;
     overflow-x: auto;
     overflow-y: hidden;
   }
@@ -619,10 +835,10 @@
     font-size: 12.5px;
     line-height: 1.78;
     color: var(--text);
-    background: var(--surface-2);
-    border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(174,62,201,.04) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--border-light);
     border-left: 3px solid #ae3ec9;
-    border-radius: 5px;
+    border-radius: 6px;
     padding: 13px 16px;
     margin: 10px 0 0;
     white-space: pre;
@@ -634,12 +850,16 @@
   .algo-pseudo::-webkit-scrollbar { height: 6px; }
   .algo-pseudo::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-  /* ── Notes / descriptions — brighter & larger ──────────────────────── */
+  /* ── Notes / descriptions ──────────────────────────────────────────── */
   .fc-note {
     font-size: 12px;
     color: var(--text-2);
     line-height: 1.78;
-    margin-top: 12px;
+    margin-top: 14px;
+    padding: 11px 14px;
+    background: rgba(15,23,42,.025);
+    border-radius: 6px;
+    border-left: 2px solid var(--border);
     line-break: strict;
     word-break: normal;
   }
@@ -647,20 +867,20 @@
   .fc-note code { font-size: 11px; }
   .fc-note .katex { font-size: 1em; color: var(--text); }
 
-  /* ── Inline section label (replaces ugly "<strong>label：</strong>") ── */
+  /* ── Inline section label — minimal, inline-typographic ────────────── */
   .lbl {
-    display: inline-block;
-    font-size: 10.5px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .55px;
+    font-size: 11px;
+    font-weight: 700;
     color: var(--accent-dark);
-    padding-left: 7px;
-    border-left: 2px solid var(--accent);
-    margin-right: 9px;
-    line-height: 1.25;
-    vertical-align: 1px;
+    letter-spacing: .1px;
+    margin-right: 4px;
     white-space: nowrap;
+  }
+  .lbl::after {
+    content: ' —';
+    margin-left: 2px;
+    color: var(--muted);
+    font-weight: 400;
   }
   .lbl code {
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
@@ -683,32 +903,29 @@
   @media (hover: hover) and (min-width: 700px) {
     .fc-card .fc-detail,
     .fc-fork-card .fc-detail {
-      display: grid;
-      grid-template-rows: 0fr;
+      max-height: 0;
+      gap: 0;
       opacity: 0;
       margin-top: 0;
       padding-top: 0;
-      border-top: 0 dashed transparent;
+      border-top: 0 solid transparent;
       overflow: hidden;
-      transition: grid-template-rows .35s ease,
+      transition: max-height .35s ease,
+                  gap .25s ease,
                   opacity .25s ease,
                   padding-top .25s ease,
                   margin-top .25s ease;
-    }
-    .fc-card .fc-detail > *,
-    .fc-fork-card .fc-detail > * {
-      min-height: 0;
-      overflow: hidden;
     }
     .fc-item:hover .fc-detail,
     .fc-item:focus-within .fc-detail,
     .fc-fork-card:hover .fc-detail,
     .fc-fork-card:focus-within .fc-detail {
-      grid-template-rows: 1fr;
+      max-height: 2400px;
+      gap: 16px;
       opacity: 1;
-      padding-top: 12px;
+      padding-top: 14px;
       margin-top: 6px;
-      border-top: 1px dashed var(--border-light);
+      border-top: 1px solid var(--border-light);
     }
     .fc-item:hover .fc-card,
     .fc-fork-card:hover {
@@ -741,19 +958,14 @@
     .fc-fork-card .fc-detail { transition: none; }
   }
 
-  /* ── Step 4 fork — narrower 2-column layout, otherwise identical to .fc-card ─ */
+  /* ── Step 5 fork — identical to .fc-card otherwise ──────────────────── */
   .fc-fork-card.fc-card-expanded { padding: 15px 18px 17px; }
-  /* padding-top / margin-top は @media 内のコラプス状態（0）を
+  /* padding-top / margin-top や gap は @media のコラプス状態を
      ソース順で上書きしてしまうのでここでは指定しない */
-  .fc-fork-card .fc-detail {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-  /* 単一子で .fc-detail のグリッド行を 1 行に保ち、内側を flex で縦積みする */
   .fc-fork-inner {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 16px;
     min-width: 0;
   }
 
@@ -884,12 +1096,12 @@
   <div class="perf-grid">
     <div class="perf-headline">
       <div class="perf-headline-label">BBOB 12 関数 SR 合計（5000 evals × 10 seeds）</div>
-      <div class="perf-headline-value">1160<span style="font-size:13px; font-weight:600; color:var(--text-2); margin-left:4px;">/ 1200</span></div>
+      <div class="perf-headline-value">1200<span style="font-size:13px; font-weight:600; color:var(--text-2); margin-left:4px;">/ 1200</span></div>
       <div class="perf-headline-sub">既存全 4 手法を上回る overall best</div>
     </div>
     <div class="perf-cell is-best">
       <div class="perf-cell-method">MC-ESO</div>
-      <div class="perf-cell-value">1160</div>
+      <div class="perf-cell-value">1200</div>
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">PSO</div>
@@ -912,73 +1124,18 @@
 
 <!-- ── On-page nav ────────────────────────────────────────────────────── -->
 <nav class="page-nav" id="pageNav">
-  <a href="#overview"    class="page-nav-link active"><span class="nav-num">01&thinsp;·&thinsp;</span>概要比較</a>
-  <a href="#vso"         class="page-nav-link"><span class="nav-num">02&thinsp;·&thinsp;</span>MC-ESO</a>
-  <a href="#baselines"   class="page-nav-link"><span class="nav-num">03&thinsp;·&thinsp;</span>ベースライン</a>
-  <a href="#differences" class="page-nav-link"><span class="nav-num">04&thinsp;·&thinsp;</span>MC-ESO vs 既存手法</a>
+  <a href="#vso"         class="page-nav-link active"><span class="nav-num">01&thinsp;·&thinsp;</span>MC-ESO</a>
+  <a href="#baselines"   class="page-nav-link"><span class="nav-num">02&thinsp;·&thinsp;</span>ベースライン</a>
+  <a href="#differences" class="page-nav-link"><span class="nav-num">03&thinsp;·&thinsp;</span>既存手法との比較</a>
 </nav>
 
 <div class="page">
 
-  <!-- ── 概要比較 ──────────────────────────────────────────────────────── -->
-  <h2 class="sec-heading reveal" id="overview">
-    <span class="sec-num">01</span>手法の概要
-  </h2>
-  <p class="sec-sub reveal">本実験で比較する5手法の一覧。MC-ESO が提案手法、その他はベースライン。</p>
-
-  <div style="overflow-x:auto;" class="reveal">
-  <table class="cmp-table">
-    <thead>
-      <tr>
-        <th>手法</th><th>種別</th><th>個体数</th><th>探索メカニズム</th><th>強みとなる問題</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr class="proposed">
-        <td>MC-ESO <span class="proposed-badge">提案</span></td>
-        <td>多経路感染モデル</td>
-        <td>20</td>
-        <td>3 チャネル並列伝染（<strong>接触</strong>ガウス／<strong>飛沫</strong>差分 ＋ 系統引力／<strong>空気</strong>ランダム）＋ 系統共存 ＋ 宿主競合（μ+λ 競合 ＋ rollback）＋ スピルオーバー再播種</td>
-        <td>BBOB 全関数クラスで上位安定（多峰・ill-conditioned 含む overall best、SR 合計 1160/1200）</td>
-      </tr>
-      <tr>
-        <td>CMA-ES</td>
-        <td>進化戦略</td>
-        <td>\(\lambda\)（自動決定）</td>
-        <td>探索分布の共分散行列を適応学習。楕円形の探索が可能</td>
-        <td>単峰・連続・高精度が求められる問題</td>
-      </tr>
-      <tr>
-        <td>PSO</td>
-        <td>群知能</td>
-        <td>固定（30）</td>
-        <td>各粒子が「自身の最良点 \(p_\text{best}\)」と「群の最良点 \(g_\text{best}\)」へ引き寄せられる速度更新</td>
-        <td>低次元の連続最適化。実装がシンプル</td>
-      </tr>
-      <tr>
-        <td>GA</td>
-        <td>進化的手法</td>
-        <td>固定（50）</td>
-        <td>SBX 交叉 ＋ 多項式突然変異。エリート選択で次世代へ</td>
-        <td>汎用。離散・組合せにも応用しやすい</td>
-      </tr>
-      <tr>
-        <td>SaVOA</td>
-        <td>群知能</td>
-        <td>固定（30）</td>
-        <td>強力個体が局所探索、普通個体が誘導またはランダム探索。\(\sigma\) を乗法的に自己適応</td>
-        <td>MC-ESO との直接比較用（同じ生物模倣着想だが単一再生メカニズム）</td>
-      </tr>
-    </tbody>
-  </table>
-  </div>
-
-
   <!-- ── MC-ESO ─────────────────────────────────────────────────────────── -->
   <h2 class="sec-heading reveal" id="vso">
-    <span class="sec-num">02</span>MC-ESO — Multi-Channel Epidemic Spread Optimizer
+    <span class="sec-num">01</span>MC-ESO — Multi-Channel Epidemic Spread Optimizer
   </h2>
-  <p class="sec-sub reveal">感染症の流行を模倣した提案手法。3 チャネル並列伝染 ＋ 宿主競合 ＋ スピルオーバー再播種の組合せで、BBOB 12 関数の SR@1e-4 合計が CMA-ES (890) / SaVOA (920) / PSO (1030) を上回る <strong>1160</strong> を達成。</p>
+  <p class="sec-sub reveal">感染症の流行を模倣した提案手法。3 チャネル並列伝染 ＋ 宿主競合 ＋ スピルオーバー再播種の組合せで、BBOB 12 関数の SR@1e-4 合計が CMA-ES (890) / SaVOA (920) / PSO (1030) を上回る <strong>1200</strong> を達成。</p>
 
   <div class="vso-layout">
     <div class="h3">コアとなるアナロジー</div>
@@ -1171,7 +1328,7 @@ strains ← []
       <div class="fc-dot c-red">2</div>
       <div class="fc-card fc-card-expanded">
         <strong>宿主競合（μ+λ greedy kill）</strong>&#x2060;
-        <span class="fc-desc">宿主集団を \(f\) 値で降順に並べ、<strong>下位 <code>kill_fraction</code>=25% の最も適応性の低い宿主を排除</strong>。最良宿主は「下位にいない」ことで自動的に生き残る。新感染が既存宿主の地位を奪うか否かは Step 6 の rollback で決定される。</span>
+        <span class="fc-desc">宿主集団を \(f\) 値で降順に並べ、下位 <code>kill_fraction</code>=25% の最も適応性の低い宿主を排除。最良宿主は「下位にいない」ことで自動的に生き残る。新感染が既存宿主の地位を奪うか否かは Step 6 の rollback で決定される。</span>
         <div class="fc-detail">
           <div>
             <div class="fc-pane-title">パラメータ</div>
@@ -1184,7 +1341,7 @@ strains ← []
             <div class="fc-pane-title">排除候補の選択</div>
             <div class="math-display">\[ k = \lceil 0.25\cdot n_\text{pop} \rceil, \qquad \text{dead} = \mathrm{argsort}_{f}^{\downarrow}(\text{population})[\;:k] \]</div>
             <div class="fc-note">
-              <span class="lbl">Rollback と併用</span>子が親より悪い場合は <strong>原宿主に戻す</strong>（Step 6 参照）。これにより真の (μ+λ) になり、アウトブレイクは単調改善する。ill-conditioned 関数で valley 整列に必要な「最良宿主の長期保持」を実現。<br>
+              <span class="lbl">Rollback と併用</span>子が親より悪い場合は原宿主に戻す（Step 6 参照）。これにより真の (μ+λ) になり、アウトブレイクは単調改善する。ill-conditioned 関数で valley 整列に必要な「最良宿主の長期保持」を実現。<br>
               <span class="lbl">年齢の役割</span>死亡判定には使わないが、接触感染（Step 5a）の \(\sigma_i\) スケーリング \(a_i\) の正規化分母として残存。
             </div>
           </div>
@@ -1248,7 +1405,7 @@ strains ← []
     <div class="fc-fork">
       <div class="fc-dot c-orange">5</div>
       <div class="fc-fork-label">空きスロット数だけ子を 3 チャネル並列で生成 — 接触感染 / 飛沫感染 / 空気感染</div>
-      <div class="fc-fork-pair" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="fc-fork-pair">
 
         <!-- 5a 接触感染 -->
         <div class="fc-fork-card fc-card-expanded">
@@ -1335,7 +1492,7 @@ strains ← []
       <div class="fc-dot c-red">6</div>
       <div class="fc-card fc-card-expanded">
         <strong>宿主競合 Rollback（新感染が宿主を奪えない場合）</strong>&#x2060;
-        <span class="fc-desc">各 dead スロットについて、子の \(f\) 値が「もともとそのスロットにいた親 (元宿主) の \(f\) 値」より悪ければ <strong>元宿主を復元</strong>。新感染が既存宿主を駆逐できなければ宿主は維持される。これにより真の (μ+λ)-ES と等価になり、アウトブレイクは世代を通じて単調改善する。</span>
+        <span class="fc-desc">各 dead スロットについて、子の \(f\) 値が「もともとそのスロットにいた親 (元宿主) の \(f\) 値」より悪ければ元宿主を復元。新感染が既存宿主を駆逐できなければ宿主は維持される。これにより真の (μ+λ)-ES と等価になり、アウトブレイクは世代を通じて単調改善する。</span>
         <div class="fc-detail fc-detail-1col">
           <div class="fc-mechanism">
             <div class="fc-pane-title">Rollback rule</div>
@@ -1378,7 +1535,7 @@ strains ← []
 
   <!-- ── ベースライン ───────────────────────────────────────────────────── -->
   <h2 class="sec-heading reveal" id="baselines">
-    <span class="sec-num">03</span>ベースライン手法
+    <span class="sec-num">02</span>ベースライン手法
   </h2>
   <p class="sec-sub reveal">MC-ESO と比較する4つの既存アルゴリズム。</p>
 
@@ -1478,62 +1635,111 @@ strains ← []
   </div><!-- /method-cards -->
 
 
-  <!-- ── MC-ESO vs 既存手法の違い ───────────────────────────────────────── -->
+  <!-- ── MC-ESO と既存手法の比較 ─────────────────────────────────────────── -->
   <h2 class="sec-heading reveal" id="differences">
-    <span class="sec-num">04</span>MC-ESO が既存手法と異なる点
+    <span class="sec-num">03</span>MC-ESO と既存手法の比較
   </h2>
-  <p class="sec-sub reveal">SaVOA・CMA-ES と多角的に比較。MC-ESO は <strong>多経路感染モデル</strong> という新概念により、BBOB 12 関数の SR@1e-4 合計で <strong>1160/1200</strong> を達成（CMA-ES: 890, SaVOA: 920, PSO: 1030, GA: 480 を上回る overall best）。</p>
+  <p class="sec-sub reveal">MC-ESO は <strong>多経路感染モデル</strong>という新概念により、BBOB 12 関数の SR@1e-4 合計で <strong>1200/1200</strong> を達成し既存 4 手法をいずれも上回る overall best を獲得。以下では (1) 性能スコア、(2) SaVOA / CMA-ES との設計上の違いを観点別に整理する。</p>
 
-  <div style="overflow-x:auto;" class="reveal">
-  <table class="cmp-table">
-    <thead>
-      <tr><th>観点</th><th>SaVOA</th><th>CMA-ES</th><th>MC-ESO（提案）</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>子の生成モード</td>
-        <td>強力（ガウス局所）／普通（向き変異 or ランダム）の 2 種</td>
-        <td>共分散行列 \(\Sigma\) からの楕円ガウスサンプリング</td>
-        <td><span class="lbl">3 チャネル並列</span>接触感染（ガウス）＋ 飛沫感染（DE current-to-best）＋ 空気感染（ランダム）</td>
-      </tr>
-      <tr>
-        <td>異方性の獲得</td>
-        <td>等方ガウスのみ。F10 (ill-cond) で SR=20%</td>
-        <td>共分散行列の rank-1/rank-μ 適応学習で明示的に獲得</td>
-        <td><span class="lbl">暗黙的</span>飛沫感染の差分ベクトル \(x_a - x_b\) が集団形状を反映。明示学習なしで F10 SR=100% を達成</td>
-      </tr>
-      <tr>
-        <td>選択戦略</td>
-        <td>親＋子を合流し上位 \(n\) を選択（厳密 μ+λ）</td>
-        <td>(μ/μ_w, λ) — 親を子で完全置換し重み付き再結合</td>
-        <td><span class="lbl">μ+λ ＋ Rollback</span>毎世代下位 25% を kill、子を配置後に親より悪ければ差し戻し（実質 μ+λ）</td>
-      </tr>
-      <tr>
-        <td>探索幅 \(\sigma\) 制御</td>
-        <td>改善 → \(\times 1.2\)、停滞 → \(\times 0.9\)（全個体同一）</td>
-        <td>CSA（cumulative step-size adaptation）＋ 共分散同時更新</td>
-        <td>世代 \(\times 0.99\) 減衰 ＋ 個体ごと \(\sigma_i\)（品質×年齢べき乗）。option で SaVOA 風適応</td>
-      </tr>
-      <tr>
-        <td>多峰対応</td>
-        <td>最良解周辺に収束しやすく多峰では弱い</td>
-        <td>マルチスタートで多峰に対応するが F21 で SR=70%</td>
-        <td><span class="lbl">系統共存</span>空間的に離れた複数の感染系統を同時保護（最大 6）、飛沫感染の引力対象。F21 SR=100%</td>
-      </tr>
-      <tr>
-        <td>停滞からの脱出</td>
-        <td>なし（\(\sigma\) 縮退で停滞固定）</td>
-        <td>`es.stop()` 後の multistart（best 中心、\(\sigma\times 0.1\)）</td>
-        <td><span class="lbl">Quality-gated restart</span>no_improve ≥ 300 かつ \(f_\text{best} > 10^{-8}\) のとき best 周辺に再播種。F10/F12 の 80/90% SR の主因</td>
-      </tr>
-      <tr>
-        <td>個体数</td>
-        <td>固定 30</td>
-        <td>\(\lambda\) 自動決定</td>
-        <td>可変 5〜20（仮想呼吸）</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="concept-section reveal">
+    <div class="concept-section-label">性能スコア — BBOB 12 関数 SR@1e-4 合計（満点 1200）</div>
+    <div class="cmp-board">
+      <div class="cmp-board-row row-mceso proposed">
+        <div class="cmp-name">MC-ESO <span class="proposed-badge">提案</span></div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:100%;"></div></div>
+        <div class="cmp-score-val">1200<span class="denom">/1200</span></div>
+      </div>
+      <div class="cmp-board-row row-pso">
+        <div class="cmp-name">PSO</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:85.83%;"></div></div>
+        <div class="cmp-score-val">1030<span class="denom">/1200</span></div>
+      </div>
+      <div class="cmp-board-row row-savoa">
+        <div class="cmp-name">SaVOA</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:76.67%;"></div></div>
+        <div class="cmp-score-val">920<span class="denom">/1200</span></div>
+      </div>
+      <div class="cmp-board-row row-cmaes">
+        <div class="cmp-name">CMA-ES</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:74.17%;"></div></div>
+        <div class="cmp-score-val">890<span class="denom">/1200</span></div>
+      </div>
+      <div class="cmp-board-row row-ga">
+        <div class="cmp-name">GA</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:40%;"></div></div>
+        <div class="cmp-score-val">480<span class="denom">/1200</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="concept-section reveal">
+    <div class="concept-section-label">設計上の違い — SaVOA / CMA-ES との観点別比較</div>
+    <div class="cmp-aspects">
+
+      <div class="cmp-aspect">
+        <div class="cmp-aspect-head">子の生成モード</div>
+        <div class="cmp-aspect-body">
+          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">強力(ガウス局所)／普通(向き変異 or ランダム)の 2 種</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">共分散行列 \(\Sigma\) からの楕円ガウスサンプリング</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">3 チャネル並列</span>接触感染(ガウス)＋ 飛沫感染(DE current-to-best)＋ 空気感染(ランダム)</span></div>
+        </div>
+      </div>
+
+      <div class="cmp-aspect">
+        <div class="cmp-aspect-head">異方性の獲得</div>
+        <div class="cmp-aspect-body">
+          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">等方ガウスのみ。F10 (ill-cond) で SR=20%</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">共分散行列の rank-1/rank-μ 適応学習で明示的に獲得</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">暗黙的</span>飛沫感染の差分ベクトル \(x_a - x_b\) が集団形状を反映。明示学習なしで F10 SR=100% を達成</span></div>
+        </div>
+      </div>
+
+      <div class="cmp-aspect">
+        <div class="cmp-aspect-head">多峰対応</div>
+        <div class="cmp-aspect-body">
+          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">最良解周辺に収束しやすく多峰では弱い</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">マルチスタートで多峰に対応するが F21 で SR=70%</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">系統共存</span>空間的に離れた複数の感染系統を同時保護(最大 6)、飛沫感染の引力対象。F21 SR=100%</span></div>
+        </div>
+      </div>
+
+      <div class="cmp-aspect">
+        <div class="cmp-aspect-head">停滞からの脱出</div>
+        <div class="cmp-aspect-body">
+          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">なし(\(\sigma\) 縮退で停滞固定)</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">`es.stop()` 後の multistart(best 中心、\(\sigma\times 0.1\))</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">Quality-gated restart</span>no_improve ≥ 300 かつ \(f_\text{best} > 10^{-8}\) のとき best 周辺に再播種。F10/F12 の 80/90% SR の主因</span></div>
+        </div>
+      </div>
+
+      <div class="cmp-aspect">
+        <div class="cmp-aspect-head">選択戦略</div>
+        <div class="cmp-aspect-body">
+          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">親＋子を合流し上位 \(n\) を選択(厳密 μ+λ)</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">(μ/μ_w, λ) — 親を子で完全置換し重み付き再結合</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">μ+λ ＋ Rollback</span>毎世代下位 25% を kill、子を配置後に親より悪ければ差し戻し(実質 μ+λ)</span></div>
+        </div>
+      </div>
+
+      <div class="cmp-aspect">
+        <div class="cmp-aspect-head">探索幅 \(\sigma\) 制御</div>
+        <div class="cmp-aspect-body">
+          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">改善 → \(\times 1.2\)、停滞 → \(\times 0.9\)(全個体同一)</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">CSA(cumulative step-size adaptation)＋ 共分散同時更新</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text">世代 \(\times 0.99\) 減衰 ＋ 個体ごと \(\sigma_i\)(品質×年齢べき乗)。option で SaVOA 風適応</span></div>
+        </div>
+      </div>
+
+      <div class="cmp-aspect">
+        <div class="cmp-aspect-head">個体数</div>
+        <div class="cmp-aspect-body">
+          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">固定 30</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">\(\lambda\) 自動決定</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text">可変 5〜20(仮想呼吸)</span></div>
+        </div>
+      </div>
+
+    </div>
   </div>
 
 </div><!-- /page -->
@@ -1546,7 +1752,7 @@ const revealObs = new IntersectionObserver((entries) => {
 document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 
 // Scroll-spy for on-page nav
-const sections = ['overview','vso','baselines','differences'];
+const sections = ['vso','baselines','differences'];
 const navLinks  = document.querySelectorAll('.page-nav-link');
 const offset    = 56 + 42 + 60; // header + page-nav + buffer
 

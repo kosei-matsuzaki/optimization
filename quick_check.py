@@ -80,14 +80,11 @@ _DIM_LOOKUP: dict[int, dict[str, object]] = {
     2: BENCHMARKS_BY_NAME,
 }
 
-# MC-ESO (Multi-Channel Epidemic Spread Optimizer) has its core mechanisms
-# (3-channel transmission + host competition + spillover restart) baked into
-# the base implementation. The only remaining optional flag is
-# `use_sigma_adapt` — gives tighter convergence on smooth problems but can
-# hurt deceptive multimodals (F20).
+# MC-ESO (Multi-Channel Epidemic Spread Optimizer): all core mechanisms
+# (3-channel transmission + host competition + diversified spillover +
+# gated σ adapt) are baked into the base implementation.
 _MCESO_VARIANTS: dict[str, dict] = {
-    "MC-ESO":          {},                            # base
-    "MC-ESO+sigma-ad": {"use_sigma_adapt": True},     # optional σ adaptation
+    "MC-ESO":  {},
 }
 
 _OPTIMIZERS = {

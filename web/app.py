@@ -179,6 +179,15 @@ def _read_summary(run_dir: Path, dim: str) -> list[dict]:
         return list(csv.DictReader(f))
 
 
+def _read_wilcoxon(run_dir: Path, dim: str) -> list[dict]:
+    """Read per-function Wilcoxon signed-rank rows (reference vs each method)."""
+    path = run_dir / dim / "wilcoxon.csv"
+    if not path.exists():
+        return []
+    with open(path, newline="") as f:
+        return list(csv.DictReader(f))
+
+
 def _compute_overall_ranking(run_dir: Path, dim: str) -> dict:
     """Compute Friedman-rank-based overall ranking across all functions."""
     import numpy as np
@@ -524,6 +533,7 @@ def result_detail(run_id: str):
         dim: {
             "functions": _list_functions(run_dir, dim),
             "summary":   _read_summary(run_dir, dim),
+            "wilcoxon":  _read_wilcoxon(run_dir, dim),
         }
         for dim in dims
     }
@@ -653,6 +663,7 @@ def api_result_data(run_id: str):
         dim: {
             "functions": _list_functions(run_dir, dim),
             "summary":   _read_summary(run_dir, dim),
+            "wilcoxon":  _read_wilcoxon(run_dir, dim),
         }
         for dim in dims
     }

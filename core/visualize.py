@@ -627,7 +627,7 @@ def save_method_vso_svg(
     output_dir: str | Path = "results",
     best: bool = True,
 ) -> None:
-    """σ dynamics / elite water level / virtual breathing for one method."""
+    """Outbreak dynamics for MC-ESO: σ history, convergence, stagnation."""
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -639,13 +639,18 @@ def save_method_vso_svg(
     color = _method_color(method_name, 0)
 
     fig, axes = plt.subplots(3, 1, figsize=(6, 9.5), squeeze=False)
-    row_titles = ["σ per individual", "Elite water level", "Virtual breathing"]
+    row_titles = ["σ dynamics",
+                  "Best fitness + strains",
+                  "Stagnation (no_improve)"]
     for row, rtitle in enumerate(row_titles):
         axes[row][0].set_ylabel(rtitle, fontsize=9, fontweight="bold", labelpad=8)
 
     evals = np.array(run.history_eval_count) if run.history_eval_count else None
 
     # ── Row 0: σ dynamics ─────────────────────────────────────────────────────
+    # σ_global (dashed), per-host median σᵢ with Q25–Q75 band, and the actual
+    # σ used for each evaluated child (scatter). Restart events appear as
+    # discontinuous up-jumps in σ_global.
     ax = axes[0][0]
     sg = run.history_sigma_global
     ps = run.history_pop_sigma
@@ -668,7 +673,7 @@ def save_method_vso_svg(
     # Scatter: actual sigma used per evaluated offspring (starts after initial pop)
     se = run.history_sigma_eval
     if se:
-        n_init = run.n_evals - len(se)  # eval index where offspring recording begins
+        n_init = run.n_evals - len(se)
         se_arr = np.array(se, dtype=float)
         valid = np.isfinite(se_arr)
         x_sc = np.arange(n_init, n_init + len(se_arr))[valid]
@@ -681,52 +686,44 @@ def save_method_vso_svg(
     ax.legend(fontsize=6, loc="upper right")
     ax.grid(True, which="both", alpha=0.18)
 
-    # ── Row 1: Elite water level + best_f ─────────────────────────────────────
+    # ── Row 1: Best fitness + strain count ────────────────────────────────────
+    # The optimization's primary convergence curve, with the number of niched
+    # strains overlaid (multimodal landscapes typically sustain >1 strain).
     ax = axes[1][0]
-    cutoffs = run.history_elite_cutoff
-    n_el    = run.history_n_elite
-    if cutoffs:
-        xs = evals if evals is not None and len(evals) == len(cutoffs) else np.arange(len(cutoffs))
-        ax.semilogy(xs, cutoffs, color=color, linewidth=1.4, label="elite cutoff")
-        # best_f on the same log-scale left axis
-        hb = run.history_best
-        if hb:
-            hb_arr = np.array(hb)
-            hb_pos = np.where(hb_arr > 0, hb_arr, np.nan)
-            x_bf = np.arange(len(hb_arr))
-            ax.semilogy(x_bf, np.where(np.isfinite(hb_pos), hb_pos, np.nan),
-                        color="steelblue", linewidth=1.2, alpha=0.85, label="best f")
-        if n_el:
-            ax2 = ax.twinx()
-            g2 = xs[:len(n_el)]
-            ax2.step(g2, n_el[:len(g2)], color="goldenrod", linewidth=0.9,
-                     linestyle=":", where="post", label="n_elite")
-            ax2.set_ylabel("n_elite", fontsize=7, color="goldenrod")
-            ax2.tick_params(labelsize=6, colors="goldenrod")
-            ax2.set_ylim(bottom=0)
+    hb = run.history_best
+    n_el = run.history_n_elite
+    if hb:
+        hb_arr = np.array(hb)
+        hb_pos = np.where(hb_arr > 0, hb_arr, np.nan)
+        x_bf = np.arange(len(hb_arr))
+        ax.semilogy(x_bf, np.where(np.isfinite(hb_pos), hb_pos, np.nan),
+                    color=color, linewidth=1.5, label="best f")
+    if n_el:
+        ax2 = ax.twinx()
+        g2 = (evals if evals is not None and len(evals) == len(n_el)
+              else np.arange(len(n_el)))
+        ax2.step(g2, n_el, color="goldenrod", linewidth=0.9,
+                 linestyle=":", where="post", label="n_strains")
+        ax2.set_ylabel("n_strains", fontsize=7, color="goldenrod")
+        ax2.tick_params(labelsize=6, colors="goldenrod")
+        ax2.set_ylim(bottom=0)
     ax.tick_params(labelsize=7)
     ax.legend(fontsize=6, loc="upper right")
     ax.grid(True, which="both", alpha=0.18)
 
-    # ── Row 2: Virtual breathing ───────────────────────────────────────────────
+    # ── Row 2: Stagnation (no_improve) — drives spillover restart ─────────────
+    # no_improve increments per evaluation without meaningful progress and
+    # resets on improvement or on a spillover. Spikes that reach
+    # restart_no_improve_threshold (=300) triggered a restart this run.
     ax = axes[2][0]
-    n_act  = run.history_n_active
     no_imp = run.history_no_improve
-    if n_act:
-        xs = evals if evals is not None and len(evals) == len(n_act) else np.arange(len(n_act))
-        ax.step(xs, n_act, color=color, linewidth=1.4, where="post", label="n_active")
-        if n_el:
-            g2 = xs[:len(n_el)]
-            ax.step(g2, n_el[:len(g2)], color="goldenrod", linewidth=1.0,
-                    linestyle="--", where="post", label="n_elite")
-        if no_imp:
-            ax2 = ax.twinx()
-            g3 = xs[:len(no_imp)]
-            ax2.plot(g3, no_imp[:len(g3)], color="gray", linewidth=0.7,
-                     linestyle=":", alpha=0.6)
-            ax2.set_ylabel("no_improve", fontsize=7, color="gray")
-            ax2.tick_params(labelsize=6, colors="gray")
-            ax2.set_ylim(bottom=0)
+    if no_imp:
+        xs = (evals if evals is not None and len(evals) == len(no_imp)
+              else np.arange(len(no_imp)))
+        ax.plot(xs, no_imp, color=color, linewidth=1.2, label="no_improve")
+        ax.axhline(300, color="crimson", linewidth=0.8, linestyle="--",
+                   alpha=0.65, label="restart threshold (=300)")
+        ax.set_ylim(bottom=0)
     ax.set_xlabel("Evaluations", fontsize=8)
     ax.tick_params(labelsize=7)
     ax.legend(fontsize=6, loc="upper right")
