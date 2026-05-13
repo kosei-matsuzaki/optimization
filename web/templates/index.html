@@ -275,6 +275,14 @@
               <input type="number" id="max-evals" name="max_evals" value="2000" min="100" max="20000" step="100">
             </div>
           </div>
+          <div class="label-input-row" style="margin-bottom:8px;">
+            <span class="label-input-key">関数セット</span>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);cursor:pointer;flex:1;">
+              <input type="checkbox" id="run-use-all" name="use_all" value="true" style="margin:0;cursor:pointer;">
+              <span>BBOB-26 フルセット (F01-F24 + C01-C02)</span>
+              <span style="font-size:11px;color:var(--text-3);margin-left:auto;">未選択時: quick-12 サブセット</span>
+            </label>
+          </div>
           <div class="label-input-row">
             <span class="label-input-key">実験名</span>
             <input type="text" id="run-label" name="label" placeholder="省略可（省略時はコミットハッシュ）" maxlength="40" autocomplete="off">
@@ -452,10 +460,15 @@ function getCardInfo(name) {
   const sub   = rx ? time : `${date} ${time}`.trim();
   // Status: running overrides saved status; result.json present without status → done
   const status = runningSet.has(name) ? 'running' : (m.status || (m.type ? 'done' : ''));
-  // n_runs / max_evals summary
+  // n_runs / max_evals / set summary
+  // For workflow runs and legacy quick runs the `set` field is absent; only
+  // show it when explicitly provided (currently only quick runs since the
+  // --all flag was introduced).
+  const setStr = m.set === "all-26" ? "BBOB-26" : m.set === "quick-12" ? "quick-12" : null;
   const evalsStr = [
     m.n_runs    != null ? `${m.n_runs} runs` : null,
     m.max_evals != null ? `${Number(m.max_evals).toLocaleString()} evals` : null,
+    setStr,
   ].filter(Boolean).join(' · ');
   const metaStr = [sub, evalsStr].filter(Boolean).join('  ·  ');
   return { title, sub, date, time, commit, type, status, evalsStr, metaStr };
@@ -796,7 +809,9 @@ document.getElementById('run-form').addEventListener('submit', async (e) => {
   const nRuns    = document.getElementById('n-runs').value;
   const maxEvals = document.getElementById('max-evals').value;
   const label    = document.getElementById('run-label').value.trim();
-  const info = `n_runs:     ${nRuns}\nmax_evals:  ${maxEvals}` + (label ? `\n実験名:     ${label}` : '');
+  const useAll   = document.getElementById('run-use-all').checked;
+  const setName  = useAll ? 'BBOB-26 (F01-F24 + C01-C02)' : 'quick-12 サブセット';
+  const info = `関数セット: ${setName}\nn_runs:     ${nRuns}\nmax_evals:  ${maxEvals}` + (label ? `\n実験名:     ${label}` : '');
   if (!await dlg.run(info)) return;
   if (pollingInterval) pollingInterval.stop();
   terminal.innerHTML = '';

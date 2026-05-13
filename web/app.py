@@ -331,7 +331,8 @@ def _read_result_meta(run_dir: Path) -> dict:
 
 # ── quick run job ─────────────────────────────────────────────────────────────
 
-def _run_job(job_id: str, n_runs: int, max_evals: int, out_dir: str) -> None:
+def _run_job(job_id: str, n_runs: int, max_evals: int, out_dir: str,
+             use_all: bool = False) -> None:
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
     _write_result_meta(out_path, {
@@ -341,12 +342,16 @@ def _run_job(job_id: str, n_runs: int, max_evals: int, out_dir: str) -> None:
         "commit": _current_commit(),
         "n_runs": n_runs,
         "max_evals": max_evals,
+        "set": "all-26" if use_all else "quick-12",
     })
+    cmd = ["python3", str(QUICK_CHECK),
+           "--n-runs", str(n_runs),
+           "--max-evals", str(max_evals),
+           "--output-dir", out_dir]
+    if use_all:
+        cmd.append("--all")
     proc = subprocess.Popen(
-        ["python3", str(QUICK_CHECK),
-         "--n-runs", str(n_runs),
-         "--max-evals", str(max_evals),
-         "--output-dir", out_dir],
+        cmd,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         text=True, cwd=str(BASE_DIR),
     )
@@ -444,6 +449,9 @@ def api_run():
     n_runs    = max(1,   min(20,    int(request.form.get("n_runs",   3))))
     max_evals = max(100, min(20000, int(request.form.get("max_evals", 2000))))
     label     = re.sub(r'[^\w\-]', '_', request.form.get("label", "").strip())[:40].strip('_')
+    # Checkbox value arrives as the literal string "true" / "on" / "1" when ticked;
+    # treat anything else (including absent) as off.
+    use_all   = request.form.get("use_all", "").lower() in ("true", "on", "1", "yes")
 
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     suffix  = label if label else _current_commit()
@@ -452,7 +460,7 @@ def api_run():
     job_id = uuid.uuid4().hex[:8]
     _jobs[job_id] = {"status": "running", "output": [], "result_dir": Path(out_dir).name}
     threading.Thread(
-        target=_run_job, args=(job_id, n_runs, max_evals, out_dir), daemon=True
+        target=_run_job, args=(job_id, n_runs, max_evals, out_dir, use_all), daemon=True
     ).start()
     return jsonify({"job_id": job_id})
 

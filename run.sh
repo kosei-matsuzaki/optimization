@@ -70,28 +70,30 @@ PID_FILE=".quick.pid"
 DIR_FILE=".quick.dir"
 
 cmd_quick() {
-  local n_runs=10 max_evals=2000 label=""
+  local n_runs=10 max_evals=2000 label="" use_all=0
   local pass_args=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --n-runs)    n_runs="$2";    pass_args+=("$1" "$2"); shift 2 ;;
       --max-evals) max_evals="$2"; pass_args+=("$1" "$2"); shift 2 ;;
       --funcs)     pass_args+=("$1" "$2"); shift 2 ;;
-      --all)       pass_args+=("$1"); shift ;;
+      --all)       use_all=1;      pass_args+=("$1"); shift ;;
       --label)     label="$2";     shift 2 ;;
       *)           pass_args+=("$1"); shift ;;
     esac
   done
+  local set_name
+  if [[ $use_all -eq 1 ]]; then set_name="all-26"; else set_name="quick-12"; fi
   local suffix
   suffix="${label:-$(git rev-parse --short HEAD 2>/dev/null || echo 'nogit')}"
   suffix=$(printf '%s' "$suffix" | tr -cd '[:alnum:]_-' | cut -c1-40)
   local dir="${RESULTS_ROOT}/$(date +%Y%m%d_%H%M%S)_${suffix}_quick"
   echo "Quick check → ${dir}/"
   mkdir -p "$dir"
-  printf '{\n  "type": "quick",\n  "created_at": "%s",\n  "commit": "%s",\n  "n_runs": %s,\n  "max_evals": %s\n}\n' \
+  printf '{\n  "type": "quick",\n  "created_at": "%s",\n  "commit": "%s",\n  "n_runs": %s,\n  "max_evals": %s,\n  "set": "%s"\n}\n' \
     "$(date +%Y-%m-%dT%H:%M:%S)" \
     "$(git rev-parse --short HEAD 2>/dev/null || echo 'nogit')" \
-    "$n_runs" "$max_evals" > "$dir/result.json"
+    "$n_runs" "$max_evals" "$set_name" > "$dir/result.json"
   python3 quick_check.py --output-dir "$dir" "${pass_args[@]+"${pass_args[@]}"}" &
   local pid=$!
   echo "$pid" > "$PID_FILE"
