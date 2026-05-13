@@ -76,6 +76,17 @@ _QUICK_FUNCTIONS: list[tuple[str, int]] = [
     ("C02-SixHumpCamel",     2),   # custom           — 2 global optima
 ]
 
+# Full BBOB-26 set (F01-F24 + C01-C02), used when --all is passed.
+# Built programmatically from the registry so adding new benchmarks doesn't
+# require touching this list.
+_ALL_FUNCTIONS: list[tuple[str, int]] = (
+    [(f"F{i:02d}-{name.split('-', 1)[1]}", 2)
+     for i in range(1, 25)
+     for name in BENCHMARKS_BY_NAME
+     if name.startswith(f"F{i:02d}-")]
+    + [("C01-Himmelblau", 2), ("C02-SixHumpCamel", 2)]
+)
+
 _DIM_LOOKUP: dict[int, dict[str, object]] = {
     2: BENCHMARKS_BY_NAME,
 }
@@ -147,15 +158,18 @@ def main(
     max_evals: int = 2000,
     output_dir: Path = Path("results/quick"),
     funcs: list[str] | None = None,
+    use_all: bool = False,
 ) -> None:
     output_dir = Path(output_dir)
-    print(f"quick_check  n_runs={n_runs}  max_evals={max_evals}  funcs={funcs or 'all'}")
+    func_set = _ALL_FUNCTIONS if use_all else _QUICK_FUNCTIONS
+    print(f"quick_check  n_runs={n_runs}  max_evals={max_evals}  "
+          f"set={'all-26' if use_all else 'quick-12'}  funcs={funcs or 'all'}")
 
     func_filter = set(funcs) if funcs else None
 
     # Group BenchmarkFunction objects by dimension
     benchmarks_by_dim: dict[int, list] = {}
-    for fname, dim in _QUICK_FUNCTIONS:
+    for fname, dim in func_set:
         if func_filter is not None and fname not in func_filter:
             continue
         bench = _DIM_LOOKUP[dim][fname]
@@ -175,7 +189,10 @@ if __name__ == "__main__":
     parser.add_argument("--max-evals",  type=int, default=2000,                 help="Max function evaluations per run")
     parser.add_argument("--output-dir", type=Path, default=Path("results/quick"), help="Output directory")
     parser.add_argument("--funcs",      type=str, default=None,
-                        help="Comma-separated function names to run (default: all in _QUICK_FUNCTIONS)")
+                        help="Comma-separated function names to run (default: all in selected set)")
+    parser.add_argument("--all",        action="store_true",
+                        help="Use the full BBOB-26 set (F01-F24 + C01-C02) instead of the quick-12 subset")
     args = parser.parse_args()
     funcs_list = [s.strip() for s in args.funcs.split(",")] if args.funcs else None
-    main(n_runs=args.n_runs, max_evals=args.max_evals, output_dir=args.output_dir, funcs=funcs_list)
+    main(n_runs=args.n_runs, max_evals=args.max_evals, output_dir=args.output_dir,
+         funcs=funcs_list, use_all=args.all)

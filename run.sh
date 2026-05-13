@@ -77,6 +77,7 @@ cmd_quick() {
       --n-runs)    n_runs="$2";    pass_args+=("$1" "$2"); shift 2 ;;
       --max-evals) max_evals="$2"; pass_args+=("$1" "$2"); shift 2 ;;
       --funcs)     pass_args+=("$1" "$2"); shift 2 ;;
+      --all)       pass_args+=("$1"); shift ;;
       --label)     label="$2";     shift 2 ;;
       *)           pass_args+=("$1"); shift ;;
     esac
