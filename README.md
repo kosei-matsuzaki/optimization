@@ -154,12 +154,6 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 #### 1世代の動作フロー
 
 ```
-0. 早期終了判定（オプション、デフォルト OFF）
-   └─ early_termination=True かつ
-      best_so_far < early_term_quality (=1e-8) かつ
-      no_improve ≥ early_term_no_improve (=200) のとき break
-   └─ 手法比較ではフル予算消費が望ましいため既定 OFF。production 利用時のみ ON 推奨
-
 1. 系統共存: ニッチエリート抽出（飛沫感染の引力 pool）
    └─ f 値の良い順に走査し、既存系統から niche_radius (=1.0) 以上離れた個体だけを
       最大 n_elite_max (=6) 個保護
@@ -183,7 +177,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 
 5. 子個体の 3 チャネル生成（空きスロット数だけ）
    ├─ 接触感染 [残り]
-   │   └─ 親 + Gauss(0, σ_i I), σ_i = σ × sigma_min_ratio^(log_quality × (0.7 + 0.3 × age_ratio))
+   │   └─ 親 + Gauss(0, σ_i I), σ_i = σ × host_sigma_min_scale^(log_quality × (0.7 + 0.3 × age_ratio))
    ├─ 飛沫感染 [h2h_ratio = 0.4]
    │   └─ 親 + h2h_F × (x_strain − 親) + h2h_F × (x_a − x_b)
    │       DE/current-to-best/1 と同型: 差分ベクトルが集団形状を反映、系統引力で進行加速
@@ -219,8 +213,8 @@ MC-ESO の系統選択:
 |---|---|---|
 | `n_pop` | 20 | 集団個体数 |
 | `sigma` | 0.2 | 初期探索半径（探索範囲に対する比率） |
-| `sigma_decay` | 0.99 | 世代ごとの探索半径縮小率 |
-| `sigma_min_ratio` | 0.05 | 接触感染 σ スケールの下限（適応性の高い高齢宿主の精密探索幅） |
+| `sigma_decay` | 0.99 | σ-adapt ゲート超過時の fallback 減衰率 |
+| `host_sigma_min_scale` | 0.05 | 接触感染チャネルにおける per-host σ_i スケーリング下限（高品質・高齢の宿主は σ_i = σ × 0.05 まで縮小して精密探索）|
 | `air_ratio` | 0.3 | 空気感染チャネルの割合 |
 | `air_sigma_min` | 1.5 | 集団分散時の空気感染 σ 倍率 |
 | `air_sigma_max` | 5.0 | 集団収束時の空気感染 σ 倍率（収束時に大ジャンプ） |
@@ -234,18 +228,16 @@ MC-ESO の系統選択:
 | `escalate_after_failed_spillovers` | 1 | この連続失敗回数で diversify_ratio を 1.0 に昇格 |
 | `basin_switch_after_failed_spillovers` | 2 | この連続失敗回数で best 破棄＋σ_init リセットの完全ベイスン乗換え |
 | `basin_switch_quality_floor` | 1e-2 | best がこの値以下のときベイスン乗換えを抑制（grinding 中の run を保護）|
-| `early_termination` | False | 完全収束を検知して run を早期終了。**手法比較目的では OFF 推奨**（一部関数で mean / SR@1e-10 に微小 regression）。production 用途で wall-clock 節約したい場合のみ ON |
-| `early_term_quality` | 1e-8 | 早期終了の品質条件（`best_so_far` がこれ未満）|
-| `early_term_no_improve` | 200 | 早期終了の停滞条件（`no_improve` がこれ以上）|
 | `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象） |
 | `niche_radius` | 1.0 | 系統間の最小距離 |
 | `temperature` | 1.0 | 感染確率のランダム性（大→均一、小→貪欲） |
 | `lifespan` | 5 | 接触感染 σ_i の年齢正規化分母 |
 | `stagnation_limit` | 2000 | 改善なし評価回数の上限（早期停止閾値） |
 | `log_slope_threshold` | 1e-4 | 「意味ある改善」の log10(f) 減少スロープ閾値 |
-| `use_sigma_adapt` | True | ゲート付き σ 乗法適応を有効化 |
-| `sigma_up` | 1.1 | σ adapt 改善時の乗数（active 中のみ）|
-| `sigma_down` | 0.95 | σ adapt 改善なし時の乗数（active 中のみ）|
+| `sigma_up` | 1.1 | σ adapt 改善時の乗数（gate 内のみ）|
+| `sigma_down` | 0.95 | σ adapt 改善なし時の乗数（gate 内のみ）|
+| `sigma_floor_ratio` | 1e-6 | σ_global の絶対下限（× span）|
+| `sigma_ceil_ratio` | 1.0 | σ_global の絶対上限（× span）|
 | `sigma_adapt_stagnation_gate` | 100 | `no_improve` がこの値未満のみ σ adapt 発動、それ以上では sigma_decay |
 | `drilling_threshold` | 1e-6 | drilling mode 発動の `best_so_far` 閾値（既正しい basin 内のとき発動）|
 | `sigma_drill_down` | 0.85 | drilling mode 中の σ 縮小乗数（通常の sigma_down より積極的）|
@@ -308,7 +300,7 @@ MC-ESO の系統選択:
 MC-ESO の最終層。SaVOA 流の σ 乗法適応を **`no_improve` ゲート** と組み合わせ、improving 中のみ加速、stuck 時は標準減衰に戻す:
 
 ```python
-if use_sigma_adapt and no_improve < sigma_adapt_stagnation_gate (=100):
+if no_improve < sigma_adapt_stagnation_gate (=100):
     if best 改善:
         σ *= sigma_up (=1.1)
     elif best_so_far < drilling_threshold (=1e-6):

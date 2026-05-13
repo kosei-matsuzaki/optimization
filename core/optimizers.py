@@ -169,10 +169,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         and the current best is still loose, the population spills over to
         a fresh host pool around the best with σ = σ_init·``restart_sigma_ratio``.
 
-    Optional ``use_sigma_adapt`` enables multiplicative step-size adaptation
-    (× sigma_up on improvement, × sigma_down otherwise) for tighter convergence
-    on smooth landscapes at the cost of premature commitment on deceptive
-    multimodals.
+    Step-size adaptation is always on: σ is multiplied by ``sigma_up`` on
+    improvement and ``sigma_down`` on stagnation, gated by ``no_improve`` so
+    that deceptive multimodals are not destabilised. Once ``best_so_far`` falls
+    below ``drilling_threshold`` the contraction switches to the stronger
+    ``sigma_drill_down`` to drill toward the floating-point optimum.
     """
 
     def __init__(
@@ -183,10 +184,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         n_pop: int = 20,
         n_elite_max: int = 6,
         niche_radius: float = 1.0,             # min mutual distance between elites
-        # ── σ ──────────────────────────────────────────────────────────
-        sigma: float = 0.2,
-        sigma_decay: float = 0.99,
-        sigma_min_ratio: float = 0.05,
+        # ── σ (global) ────────────────────────────────────────────────
+        sigma: float = 0.2,                    # σ_init relative to span
+        sigma_decay: float = 0.99,             # fallback decay when σ-adapt gate is exceeded
+        host_sigma_min_scale: float = 0.05,    # per-host σ_i scaling floor — σ_i is
+                                               # σ_global × host_sigma_min_scale ** (lq · (0.7+0.3·ar))
+                                               # i.e. high-quality / old hosts probe finer
         # ── Infection modes ────────────────────────────────────────────
         air_ratio: float = 0.3,                # share of children = pure-random "air"
         h2h_ratio: float = 0.4,                # share of children = host-to-host (DE-style)
@@ -199,18 +202,18 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         restart_no_improve_threshold: int = 300,  # no_improve count that triggers restart
         restart_sigma_ratio: float = 0.3,      # σ after restart, relative to σ_init
         restart_quality_floor: float = 1e-8,   # skip restart if already below this f
-        # Diversified spillover (Step 2): on each restart, a fraction of the
-        # re-seeded population is placed uniformly across the search domain
-        # rather than around the best. This lets the search escape deceptive
-        # basins (F17/F20) — pure local re-seed alone can't, because the same
-        # basin recaptures the population.
+        # Diversified spillover: on each restart, a fraction of the re-seeded
+        # population is placed uniformly across the search domain rather than
+        # around the best. This lets the search escape deceptive basins
+        # (F17/F20) — pure local re-seed alone can't, because the same basin
+        # recaptures the population.
         restart_diversify_ratio: float = 0.75, # share of re-seed assigned to Uniform(lo, hi)
-        # Step 6: spillover escalation. When consecutive spillovers fail to
-        # improve the best, ratchet up the disruption — first widen to fully
-        # uniform re-seed (best preserved), then break the best entirely and
-        # reset σ. Addresses deceptive double-funnel landscapes (F24) and
-        # rugged separable functions (F04) where the algorithm gets locked
-        # into a wrong basin and pure local spillover only re-explores it.
+        # Spillover escalation. When consecutive spillovers fail to improve
+        # the best, ratchet up the disruption — first widen to fully uniform
+        # re-seed (best preserved), then break the best entirely and reset σ.
+        # Addresses deceptive double-funnel landscapes (F24) and rugged
+        # separable functions (F04) where the algorithm gets locked into a
+        # wrong basin and pure local spillover only re-explores it.
         escalate_after_failed_spillovers: int = 1,   # streak → diversify_ratio = 1.0
         basin_switch_after_failed_spillovers: int = 2,  # streak → wipe best & reset σ
         basin_switch_quality_floor: float = 1e-2,    # basin switch suppressed when
@@ -219,36 +222,22 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                                                      # toward the optimum (F13 ridge,
                                                      # C01 deep precision) from being
                                                      # wiped by a premature switch
-        # ── Early termination on full convergence ──────────────────────
-        # Disabled by default: for fair method comparison we want the full budget
-        # consumed so each run reaches its real precision floor. Opt in only when
-        # wall-clock time matters more than tight precision.
-        early_termination: bool = False,
-        early_term_quality: float = 1e-8,      # best_so_far must be ≤ this AND
-        early_term_no_improve: int = 200,      # no_improve must reach this
-        # ── Misc ───────────────────────────────────────────────────────
-        lifespan: int = 5,                     # age normalizer for local σ_i scaling
-        temperature: float = 1.0,
-        stagnation_limit: int = 2000,
-        log_slope_threshold: float = 1e-4,
-        # ── Optional: σ adaptation (gives tight convergence on smooth
-        #     problems but can hurt deceptive multimodals; off by default) ──
-        use_sigma_adapt: bool = True,          # gated σ adapt — improves F17/F20 means
+        # ── σ adaptation ──────────────────────────────────────────────
+        # Multiplicative step-size adaptation, gated by no_improve so deceptive
+        # multimodals aren't destabilised. Below drilling_threshold the
+        # contraction switches to sigma_drill_down to drill to FP precision.
         sigma_up: float = 1.1,                 # gentle expansion when improving
         sigma_down: float = 0.95,              # gentle contraction when not
-        sigma_floor_ratio: float = 1e-6,
-        sigma_ceil_ratio: float = 1.0,
-        sigma_adapt_stagnation_gate: int = 100,  # apply σ adapt only when no_improve < this; else standard decay
-        # ── Drilling mode (Step 5) ─────────────────────────────────────
-        # Once the best is already at high precision (< drilling_threshold)
-        # we know we are in the correct global basin. Switch to a stronger
-        # σ contraction so the search drills toward the floating-point
-        # optimum instead of plateauing at ~1e-13. Functions that haven't
-        # crossed the threshold (e.g. F17 with mean 1e-5) keep the gentle
-        # σ_down so descent through deceptive landscapes is not destabilised.
-        drilling_threshold: float = 1e-6,
-        sigma_drill_down: float = 0.85,        # aggressive σ contraction when
-                                               # already in high-precision basin
+        sigma_floor_ratio: float = 1e-6,       # σ_global absolute floor (× span)
+        sigma_ceil_ratio: float = 1.0,         # σ_global absolute ceiling (× span)
+        sigma_adapt_stagnation_gate: int = 100,  # σ-adapt only when no_improve < this
+        drilling_threshold: float = 1e-6,      # best_so_far below this → drilling mode
+        sigma_drill_down: float = 0.85,        # σ contraction in drilling mode
+        # ── Misc ───────────────────────────────────────────────────────
+        lifespan: int = 5,                     # age normalizer for local σ_i scaling
+        temperature: float = 1.0,              # softmax temp for parent-selection weighting
+        stagnation_limit: int = 2000,          # absolute kill-switch on stalled runs
+        log_slope_threshold: float = 1e-4,     # min log10(f) slope counted as improvement
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
@@ -260,7 +249,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.temperature = temperature
         self.stagnation_limit = stagnation_limit
         self.niche_radius = niche_radius
-        self.sigma_min_ratio = sigma_min_ratio
+        self.host_sigma_min_scale = host_sigma_min_scale
         self.air_sigma_min = air_sigma_min
         self.air_sigma_max = air_sigma_max
         self.log_slope_threshold = log_slope_threshold
@@ -274,11 +263,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.escalate_after_failed_spillovers = escalate_after_failed_spillovers
         self.basin_switch_after_failed_spillovers = basin_switch_after_failed_spillovers
         self.basin_switch_quality_floor = basin_switch_quality_floor
-        self.early_termination = early_termination
-        self.early_term_quality = early_term_quality
-        self.early_term_no_improve = early_term_no_improve
-        # Optional σ adaptation
-        self.use_sigma_adapt = use_sigma_adapt
         self.sigma_up = sigma_up
         self.sigma_down = sigma_down
         self.sigma_floor_ratio = sigma_floor_ratio
@@ -373,6 +357,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         w = np.exp(scores)
         return w / w.sum()
 
+    def _host_sigma_scale(self, pop_f: np.ndarray, pop_age: np.ndarray) -> np.ndarray:
+        """Per-host σ scaling factor: high-quality / old hosts get a smaller
+        fraction of σ_global so they probe finer. lq ∈ [0, 1] is the relative
+        log-fitness, ar ∈ [0, 1] is age / lifespan, and the factor is
+        ``host_sigma_min_scale ** (lq · (0.7 + 0.3 · ar))``."""
+        lf = np.log10(pop_f + 1e-10)
+        spread = float(lf.max() - lf.min()) + 1e-30
+        lq = np.clip((lf.max() - lf) / spread, 0.0, 1.0)
+        ar = np.minimum(pop_age.astype(float) / max(self.lifespan, 1), 1.0)
+        return self.host_sigma_min_scale ** (lq * (0.7 + 0.3 * ar))
+
     def _meaningful_improvement(self, f: float, log_best_ref: float, evals_since_reset: int) -> bool:
         if evals_since_reset == 0:
             return True
@@ -383,8 +378,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         rng = np.random.default_rng(self.seed)
         lo, hi = self.bounds
         span = hi - lo
-        sigma = self.sigma * span
-        sigma_init_mean = float(np.mean(sigma))
+        sigma = self.sigma * span                # σ_init (scalar; per-dim bounds not supported)
+        sigma_init = float(sigma)
 
         # Pre-allocate numpy arrays — avoids repeated list→array conversions per iteration
         pop_x = rng.uniform(lo, hi, (self.n_pop, self.dim))          # (n_pop, dim)
@@ -396,11 +391,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         history_x: list[np.ndarray] = [row.copy() for row in pop_x]
         history_f: list[float] = pop_f.tolist()
         history_pop: list[np.ndarray] = [pop_x.copy()]
-        _lf0 = np.log10(pop_f + 1e-10)
-        _lq0 = np.clip((_lf0.max() - _lf0) / (float(_lf0.max() - _lf0.min()) + 1e-30), 0.0, 1.0)
-        _a0  = np.minimum(pop_age.astype(float) / max(self.lifespan, 1), 1.0)
-        _s0  = self.sigma_min_ratio ** (_lq0 * (0.7 + 0.3 * _a0))
-        history_pop_sigma: list[np.ndarray] = [float(sigma) * _s0]
+        history_pop_sigma: list[np.ndarray] = [
+            float(sigma) * self._host_sigma_scale(pop_f, pop_age)]
         history_sigma_global: list[float] = []
         history_n_elite: list[int] = []
         history_no_improve: list[int] = []
@@ -417,17 +409,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         consecutive_failed_spillovers = 0
 
         while len(history_f) < max_evals:
-            # Early termination: the outbreak has fully converged on a precise
-            # solution and no further evaluation is productive. Spillover is
-            # already gated out (best ≤ quality_floor blocks restart), so the
-            # run can only churn — stop now to save wall-clock. Two conditions:
-            #   1. best_so_far is already below the quality floor (precision OK)
-            #   2. no_improve has accumulated without progress
-            if (self.early_termination
-                    and best_so_far < self.early_term_quality
-                    and no_improve >= self.early_term_no_improve):
-                break
-
             # Spillover event: when the outbreak stalls, the population spills
             # over to a fresh host pool around the global best, giving the search
             # another chance to align onto a productive direction (essential for
@@ -444,16 +425,16 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                         and best_so_far > self.basin_switch_quality_floor):
                     basin_switch = True
                     div_ratio = 1.0
-                    sigma_restart = sigma_init_mean   # fresh σ for new basin
+                    sigma_restart = sigma_init   # fresh σ for new basin
                 elif (consecutive_failed_spillovers
                         >= self.escalate_after_failed_spillovers):
                     basin_switch = False
                     div_ratio = 1.0
-                    sigma_restart = sigma_init_mean * self.restart_sigma_ratio
+                    sigma_restart = sigma_init * self.restart_sigma_ratio
                 else:
                     basin_switch = False
                     div_ratio = self.restart_diversify_ratio
-                    sigma_restart = sigma_init_mean * self.restart_sigma_ratio
+                    sigma_restart = sigma_init * self.restart_sigma_ratio
 
                 # Step 7: coordinate-axis sweep before escalated spillovers.
                 # Targets separable / boundary-optimal landscapes that the
@@ -568,13 +549,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
             if n_dead == 0:
                 pop_age[active_idx] += 1
-                # No offspring this gen → no σ signal. Keep σ unchanged under P1,
-                # use slow decay under baseline.
-                if not self.use_sigma_adapt:
-                    sigma *= self.sigma_decay
-                # When all active individuals are elite, no births occur and
-                # history_f never grows → stagnation counter must still advance
-                # so the pop_grow_trigger and stagnation_limit eventually fire.
+                # No offspring this gen → no σ signal, so σ is held unchanged.
+                # When all active individuals are elite no births occur and
+                # history_f never grows → still advance no_improve so the
+                # spillover and stagnation_limit eventually fire.
                 no_improve += 1
                 if no_improve >= self.stagnation_limit:
                     break
@@ -602,7 +580,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 # Air sigma: large when converged (need to escape), small when diverse
                 # diversity_ratio already computed above before elite selection
                 air_sigma_factor = self.air_sigma_max - (self.air_sigma_max - self.air_sigma_min) * diversity_ratio
-                air_sigma_base = np.maximum(sigma, sigma_init_mean * 0.3)
+                air_sigma_base = np.maximum(sigma, sigma_init * 0.3)
                 air_sigma_vec = air_sigma_base * air_sigma_factor
 
                 # Batch generate all children before evaluation loop
@@ -614,7 +592,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                         0.0, 1.0)
                     ar = np.minimum(
                         pop_age[gi_arr].astype(float) / max(self.lifespan, 1), 1.0)
-                    sigma_i = sigma * (self.sigma_min_ratio ** (lq * (0.7 + 0.3 * ar)))
+                    sigma_i = sigma * (self.host_sigma_min_scale ** (lq * (0.7 + 0.3 * ar)))
                     noise = rng.standard_normal((n_local, self.dim))
                     new_local = self._reflect(pop_x[gi_arr] + noise * sigma_i[:, None], lo, hi)
                 else:
@@ -716,8 +694,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 # σ adaptation only fires while the search is actively improving
                 # (no_improve < gate). Once stuck, fall back to the gentle decay
                 # so that an upcoming spillover has a meaningful σ to reseed with.
-                if (self.use_sigma_adapt
-                        and no_improve < self.sigma_adapt_stagnation_gate):
+                if no_improve < self.sigma_adapt_stagnation_gate:
                     if best_so_far < gen_best_before:
                         sigma *= self.sigma_up
                     else:
@@ -733,12 +710,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     sigma *= self.sigma_decay
 
             # Per-generation dynamics recording (population always = n_pop)
-            pa_end = pop_age.astype(float)
-            lf_end = np.log10(pop_f + 1e-10)
-            lq_e = np.clip((lf_end.max() - lf_end) / (float(lf_end.max() - lf_end.min()) + 1e-30), 0.0, 1.0)
-            ar_e = np.minimum(pa_end / max(self.lifespan, 1), 1.0)
-            scale_e = self.sigma_min_ratio ** (lq_e * (0.7 + 0.3 * ar_e))
-            history_pop_sigma.append(float(sigma) * scale_e)
+            history_pop_sigma.append(
+                float(sigma) * self._host_sigma_scale(pop_f, pop_age))
             history_pop.append(pop_x.copy())
             history_sigma_global.append(float(sigma))
             history_n_elite.append(len(elite_global))
