@@ -1071,8 +1071,12 @@ document.addEventListener('DOMContentLoaded', () => {
   overlay.addEventListener('click', e => { if (e.target === overlay) closeConfigModal(); });
   document.addEventListener('keydown', e => {
     if (!overlay.classList.contains('open')) return;
-    if (e.key === 'Escape') { e.preventDefault(); closeConfigModal(); }
-    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+    if (e.key === 'Escape') { e.preventDefault(); closeConfigModal(); return; }
+    if (e.key === 'Enter') {
+      // Don't auto-submit while the user is typing in any input/textarea.
+      // Submit only when focus is on the OK button (default <button> behavior).
+      const tag = (e.target.tagName || '').toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       e.preventDefault();
       cmMode === 'quick' ? _runQuickFromModal() : _runWorkflowFromModal();
     }
