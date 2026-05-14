@@ -11,6 +11,7 @@ import tempfile
 import threading
 import uuid
 from pathlib import Path
+from typing import Optional
 
 # Make `core/` importable when running from project root or directly
 _ROOT = Path(__file__).parent.parent
@@ -371,30 +372,141 @@ def _run_job(job_id: str, n_runs: int, max_evals: int, out_dir: str,
 
 # ── download job ──────────────────────────────────────────────────────────────
 
+def _get_artifact_total_size(gh_run_id: str) -> Optional[int]:
+    """Total bytes across all artifacts of a workflow run, via gh REST API."""
+    try:
+        out = subprocess.check_output(
+            ["gh", "api",
+             f"repos/{GH_REPO}/actions/runs/{gh_run_id}/artifacts",
+             "--jq", "[.artifacts[].size_in_bytes] | add"],
+            cwd=str(BASE_DIR), text=True, timeout=15,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        return int(out) if out and out != "null" else None
+    except Exception:
+        return None
+
+
+def _find_gh_artifact_zip(pid: int, work_tmp: Path) -> Optional[Path]:
+    """Find the gh-artifact*.zip the gh subprocess is streaming into."""
+    # Prefer the work-tmp dir we forced via TMPDIR (no cross-process collisions).
+    try:
+        zips = sorted(work_tmp.glob("gh-artifact*.zip"))
+        if zips:
+            return zips[-1]
+        # gh sometimes places the zip in a sub-tempdir; recurse one level.
+        zips = sorted(work_tmp.glob("*/gh-artifact*.zip"))
+        if zips:
+            return zips[-1]
+    except Exception:
+        pass
+    # Fallback: lsof the subprocess and look for the zip in its open fds.
+    try:
+        out = subprocess.check_output(
+            ["lsof", "-Fn", "-p", str(pid)],
+            text=True, stderr=subprocess.DEVNULL, timeout=4,
+        )
+        for line in out.splitlines():
+            if line.startswith("n") and "gh-artifact" in line and line.endswith(".zip"):
+                return Path(line[1:])
+    except Exception:
+        pass
+    return None
+
+
+def _fmt_mb(b: int) -> str:
+    return f"{b / (1024 * 1024):.1f} MB"
+
+
+def _fmt_elapsed(secs: float) -> str:
+    s = int(secs)
+    if s < 60:
+        return f"{s}s"
+    return f"{s // 60}m {s % 60:02d}s"
+
+
 def _download_job(job_id: str, gh_run_id: str, dest_dir: Path) -> None:
     dest_dir.mkdir(parents=True, exist_ok=True)
-    try:
-        with tempfile.TemporaryDirectory() as tmp:
-            dl = subprocess.run(
-                ["gh", "run", "download", gh_run_id, "-D", tmp],
-                capture_output=True, text=True, cwd=str(BASE_DIR),
-            )
-            if dl.returncode != 0:
-                shutil.rmtree(dest_dir, ignore_errors=True)
-                _dl_jobs[job_id].update(
-                    status="failed",
-                    message=dl.stderr.strip() or "Download failed.",
-                )
-                return
+    total_bytes = _get_artifact_total_size(gh_run_id)
+    if total_bytes:
+        _dl_jobs[job_id]["total_bytes"] = total_bytes
+        _dl_jobs[job_id]["message"] = f"Downloading… 0% (0 MB / {_fmt_mb(total_bytes)})"
+    else:
+        _dl_jobs[job_id]["message"] = "Downloading… (size unknown)"
 
-            src = Path(tmp) / "results"
-            if not src.exists():
-                src = Path(tmp)
-            for item in src.iterdir():
-                target = dest_dir / item.name
-                if target.exists():
-                    shutil.rmtree(target) if target.is_dir() else target.unlink()
-                shutil.move(str(item), str(dest_dir))
+    work_tmp = Path(tempfile.mkdtemp(prefix="gh-dl-"))
+    extract_dir = Path(tempfile.mkdtemp(prefix="gh-out-"))
+    started = datetime.datetime.now()
+    _dl_jobs[job_id]["started_at"] = started.isoformat(timespec="seconds")
+    try:
+        env = os.environ.copy()
+        env["TMPDIR"] = str(work_tmp)
+        proc = subprocess.Popen(
+            ["gh", "run", "download", gh_run_id, "-D", str(extract_dir)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            cwd=str(BASE_DIR), env=env,
+        )
+
+        stop_watch = threading.Event()
+
+        def watch():
+            while not stop_watch.is_set():
+                try:
+                    elapsed = (datetime.datetime.now() - started).total_seconds()
+                    _dl_jobs[job_id]["elapsed_s"] = int(elapsed)
+                    zip_path = _find_gh_artifact_zip(proc.pid, work_tmp)
+                    if zip_path and zip_path.exists():
+                        downloaded = zip_path.stat().st_size
+                        _dl_jobs[job_id]["downloaded_bytes"] = downloaded
+                        if total_bytes:
+                            pct = min(100.0, downloaded / total_bytes * 100)
+                            _dl_jobs[job_id]["progress"] = round(pct, 1)
+                            _dl_jobs[job_id]["message"] = (
+                                f"Downloading… {pct:.1f}% "
+                                f"({_fmt_mb(downloaded)} / {_fmt_mb(total_bytes)}) · {_fmt_elapsed(elapsed)}"
+                            )
+                        else:
+                            _dl_jobs[job_id]["message"] = (
+                                f"Downloading… {_fmt_mb(downloaded)} · {_fmt_elapsed(elapsed)}"
+                            )
+                    elif total_bytes:
+                        # Zip not detected yet — still show elapsed so the user knows we're alive.
+                        _dl_jobs[job_id]["message"] = (
+                            f"Connecting… ({_fmt_mb(total_bytes)} total) · {_fmt_elapsed(elapsed)}"
+                        )
+                    else:
+                        _dl_jobs[job_id]["message"] = f"Connecting… · {_fmt_elapsed(elapsed)}"
+                except Exception:
+                    pass
+                if stop_watch.wait(0.8):
+                    return
+
+        watcher = threading.Thread(target=watch, daemon=True)
+        watcher.start()
+
+        stdout, stderr = proc.communicate()
+        stop_watch.set()
+        watcher.join(timeout=1)
+
+        if proc.returncode != 0:
+            shutil.rmtree(dest_dir, ignore_errors=True)
+            _dl_jobs[job_id].update(
+                status="failed",
+                message=(stderr or stdout or "Download failed.").strip(),
+            )
+            return
+
+        _dl_jobs[job_id]["progress"] = 100.0
+        _dl_jobs[job_id]["message"] = "Extracting…"
+
+        src = extract_dir / "results"
+        if not src.exists():
+            src = extract_dir
+        for item in src.iterdir():
+            target = dest_dir / item.name
+            if target.exists():
+                shutil.rmtree(target) if target.is_dir() else target.unlink()
+            shutil.move(str(item), str(dest_dir))
 
         _write_result_meta(dest_dir, {
             "type": "workflow",
@@ -410,6 +522,9 @@ def _download_job(job_id: str, gh_run_id: str, dest_dir: Path) -> None:
         )
     except Exception as e:
         _dl_jobs[job_id].update(status="failed", message=str(e))
+    finally:
+        shutil.rmtree(work_tmp, ignore_errors=True)
+        shutil.rmtree(extract_dir, ignore_errors=True)
 
 
 # ── routes ────────────────────────────────────────────────────────────────────
