@@ -783,68 +783,34 @@ class PSOOptimizer(BaseOptimizer):
         return self._make_result(history_x, history_f, history_pop)
 
 
-class GAOptimizer(BaseOptimizer):
-    """Real-valued Genetic Algorithm with SBX crossover and polynomial mutation."""
+class DEOptimizer(BaseOptimizer):
+    """Differential Evolution / rand/1/bin (Storn & Price, 1997).
+
+    For each target x_i in the current population, three distinct donors
+    a, b, c are picked uniformly at random (all ≠ i) and a mutant is formed
+    as ``v = x_a + F·(x_b - x_c)``. Binomial crossover with x_i (rate CR,
+    plus one guaranteed inherited dimension) yields the trial u, which
+    replaces x_i only if it improves on it. Updates are synchronous: all
+    donors are drawn from the current generation, all replacements applied
+    at gen end.
+
+    DE/rand/1/bin is the canonical single-channel differential baseline
+    against which MC-ESO's droplet channel (DE/current-to-best/1 with
+    niched-elite pull) is contrasted.
+    """
 
     def __init__(
         self,
         benchmark: BenchmarkFunction,
         seed: int = 42,
-        n_pop: int = 50,
-        crossover_rate: float = 0.9,
-        mutation_rate: float = 0.1,
-        eta_c: float = 20.0,   # SBX distribution index
-        eta_m: float = 20.0,   # polynomial mutation distribution index
+        n_pop: int = 30,
+        F: float = 0.5,        # mutation scale
+        CR: float = 0.9,       # binomial crossover rate
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
-        self.crossover_rate = crossover_rate
-        self.mutation_rate = mutation_rate
-        self.eta_c = eta_c
-        self.eta_m = eta_m
-
-    def _sbx(self, rng: np.random.Generator, p1: np.ndarray, p2: np.ndarray,
-             lo: float, hi: float) -> tuple[np.ndarray, np.ndarray]:
-        c1, c2 = p1.copy(), p2.copy()
-        for i in range(self.dim):
-            if rng.random() > 0.5:
-                continue
-            if abs(p1[i] - p2[i]) < 1e-14:
-                continue
-            y1, y2 = min(p1[i], p2[i]), max(p1[i], p2[i])
-            beta_l = 1 + 2 * (y1 - lo) / (y2 - y1)
-            beta_r = 1 + 2 * (hi - y2) / (y2 - y1)
-            alpha_l = 2 - beta_l ** (-(self.eta_c + 1))
-            alpha_r = 2 - beta_r ** (-(self.eta_c + 1))
-            u = rng.random()
-            if u <= 1 / alpha_l:
-                beta_q = (u * alpha_l) ** (1 / (self.eta_c + 1))
-            else:
-                beta_q = (1 / (2 - u * alpha_l)) ** (1 / (self.eta_c + 1))
-            c1[i] = 0.5 * ((p1[i] + p2[i]) - beta_q * (y2 - y1))
-            u = rng.random()
-            if u <= 1 / alpha_r:
-                beta_q = (u * alpha_r) ** (1 / (self.eta_c + 1))
-            else:
-                beta_q = (1 / (2 - u * alpha_r)) ** (1 / (self.eta_c + 1))
-            c2[i] = 0.5 * ((p1[i] + p2[i]) + beta_q * (y2 - y1))
-        return np.clip(c1, lo, hi), np.clip(c2, lo, hi)
-
-    def _poly_mutate(self, rng: np.random.Generator, x: np.ndarray,
-                     lo: float, hi: float) -> np.ndarray:
-        x = x.copy()
-        for i in range(self.dim):
-            if rng.random() > self.mutation_rate:
-                continue
-            delta_l = (x[i] - lo) / (hi - lo)
-            delta_r = (hi - x[i]) / (hi - lo)
-            u = rng.random()
-            if u < 0.5:
-                delta_q = (2 * u + (1 - 2 * u) * (1 - delta_l) ** (self.eta_m + 1)) ** (1 / (self.eta_m + 1)) - 1
-            else:
-                delta_q = 1 - (2 * (1 - u) + 2 * (u - 0.5) * (1 - delta_r) ** (self.eta_m + 1)) ** (1 / (self.eta_m + 1))
-            x[i] = np.clip(x[i] + delta_q * (hi - lo), lo, hi)
-        return x
+        self.F = F
+        self.CR = CR
 
     def optimize(self, max_evals: int = 5000) -> OptimizeResult:
         rng = np.random.default_rng(self.seed)
@@ -858,43 +824,29 @@ class GAOptimizer(BaseOptimizer):
         history_pop: list[np.ndarray] = [pop.copy()]
 
         while len(history_f) < max_evals:
-            # Tournament selection (k=2)
-            def tournament(n: int) -> np.ndarray:
-                a = rng.integers(0, self.n_pop, n)
-                b = rng.integers(0, self.n_pop, n)
-                return np.where(fit[a] <= fit[b], a, b)
-
-            offspring = []
-            parents = tournament(self.n_pop)
-            rng.shuffle(parents)
-
-            for k in range(0, self.n_pop - 1, 2):
-                p1, p2 = pop[parents[k]], pop[parents[k + 1]]
-                if rng.random() < self.crossover_rate:
-                    c1, c2 = self._sbx(rng, p1, p2, lo, hi)
-                else:
-                    c1, c2 = p1.copy(), p2.copy()
-                offspring.append(self._poly_mutate(rng, c1, lo, hi))
-                offspring.append(self._poly_mutate(rng, c2, lo, hi))
-
-            # Evaluate offspring
-            new_fit = []
-            for x in offspring:
+            new_pop = pop.copy()
+            new_fit = fit.copy()
+            for i in range(self.n_pop):
                 if len(history_f) >= max_evals:
                     break
-                f = self.func(x)
-                history_x.append(x.copy())
-                history_f.append(f)
-                new_fit.append(f)
-
-            # Elitist replacement: combine parents + offspring, keep best n_pop
-            if new_fit:
-                combined_x = np.vstack([pop, np.array(offspring[:len(new_fit)])])
-                combined_f = np.concatenate([fit, np.array(new_fit)])
-                best_idx = np.argsort(combined_f)[:self.n_pop]
-                pop = combined_x[best_idx]
-                fit = combined_f[best_idx]
-                history_pop.append(pop.copy())
+                # Three distinct donors ≠ i
+                others = np.array([k for k in range(self.n_pop) if k != i])
+                a, b, c = rng.choice(others, size=3, replace=False)
+                v = pop[a] + self.F * (pop[b] - pop[c])
+                v = np.clip(v, lo, hi)
+                # Binomial crossover; force ≥1 dim inherited from v
+                mask = rng.random(self.dim) < self.CR
+                mask[rng.integers(0, self.dim)] = True
+                u = np.where(mask, v, pop[i])
+                f_u = float(self.func(u))
+                history_x.append(u.copy())
+                history_f.append(f_u)
+                if f_u <= fit[i]:
+                    new_pop[i] = u
+                    new_fit[i] = f_u
+            pop = new_pop
+            fit = new_fit
+            history_pop.append(pop.copy())
 
         return self._make_result(history_x, history_f, history_pop)
 

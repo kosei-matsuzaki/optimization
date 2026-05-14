@@ -16,7 +16,7 @@ from pathlib import Path
 from core.benchmarks import BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME
 from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
-    GAOptimizer, SaVOAOptimizer,
+    DEOptimizer, SaVOAOptimizer,
 )
 from core.runner import run_experiment, summarize, wilcoxon_vs_reference
 from core.visualize import (
@@ -101,7 +101,7 @@ _MCESO_VARIANTS: dict[str, dict] = {
 _OPTIMIZERS = {
     "CMA-ES": (CMAESOptimizer, {}),
     "PSO":    (PSOOptimizer,   {}),
-    "GA":     (GAOptimizer,    {}),
+    "DE":     (DEOptimizer,    {}),
     "SaVOA":  (SaVOAOptimizer, {}),
     **{name: (MultiChannelEpidemicOptimizer, kw) for name, kw in _MCESO_VARIANTS.items()},
 }

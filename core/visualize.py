@@ -29,7 +29,7 @@ _COLORS = ["tab:blue", "tab:orange", "tab:green", "tab:red", "deepskyblue", "tab
 _METHOD_COLOR: dict[str, str] = {
     "CMA-ES": "tab:blue",
     "PSO":    "tab:orange",
-    "GA":     "tab:green",
+    "DE":     "tab:purple",
     "SaVOA":  "tab:red",
     "MC-ESO": "deepskyblue",
 }
