@@ -561,7 +561,7 @@ def methods():
 
 @app.route("/api/run", methods=["POST"])
 def api_run():
-    n_runs    = max(1,   min(20,    int(request.form.get("n_runs",   3))))
+    n_runs    = max(1,   min(100,   int(request.form.get("n_runs",   3))))
     max_evals = max(100, min(20000, int(request.form.get("max_evals", 2000))))
     label     = re.sub(r'[^\w\-]', '_', request.form.get("label", "").strip())[:40].strip('_')
     # Checkbox value arrives as the literal string "true" / "on" / "1" when ticked;
