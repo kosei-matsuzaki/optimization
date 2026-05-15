@@ -136,22 +136,29 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
     each with a characteristic distance scale and directional structure.
     MC-ESO mirrors this by mixing three transmission channels per generation:
 
-      • **Close-contact transmission** (local Gaussian):
-            x_child = x_parent + N(0, σ_i I)
-            Tight neighborhood spread; σ_i adapts to the host's relative
-            fitness and age, so well-adapted hosts probe finer.
+      • **Close-contact transmission** (local Gaussian, rotation-aware):
+            x_child = x_parent + N(0, σ_i² · C_pop)
+            Tight neighborhood spread; the noise is sampled from a Gaussian
+            with the **instantaneous empirical covariance** C_pop of the
+            population (eigenvalues mean-normalized to 1). This gives
+            close-contact rotation- and anisotropy-awareness without any
+            history accumulation (cf. CMA-ES rank-μ updates). σ_i further
+            adapts to the host's relative fitness and age so well-adapted
+            hosts probe finer.
 
       • **Droplet transmission** (host-to-host, DE/current-to-best/1):
             x_child = x_parent + F·(x_elite − x_parent) + F·(x_a − x_b)
             A productive (niched-elite) strain donates its "phenotype" to the
             parent, and a difference between two random hosts injects
-            population-shape-aware drift — this gives MC-ESO **implicit
-            covariance** without learning a covariance matrix.
+            population-shape-aware drift, reinforcing the same anisotropy
+            signal that close-contact picks up via C_pop.
 
       • **Airborne transmission** (population-independent spread):
             x_child = x_random_host + N(0, σ_air I)
             Long-range aerosol spread for escaping local maxima; σ_air
-            inflates as the outbreak clusters.
+            inflates as the outbreak clusters. **Suppressed in drilling
+            mode** (best_so_far < drilling_threshold) so precision grinding
+            isn't disrupted by random long jumps.
 
     These channels are complemented by three population-level mechanisms:
 
@@ -164,10 +171,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         children that fail to outcompete the host they replaced are rolled
         back. The outbreak monotonically improves.
 
-      • **Spillover event** (stagnation-triggered re-seed): when the outbreak
-        stalls (no improvement for ``restart_no_improve_threshold`` evals)
-        and the current best is still loose, the population spills over to
-        a fresh host pool around the best with σ = σ_init·``restart_sigma_ratio``.
+      • **Spillover event with basin-avoidance memory** (stagnation-triggered
+        re-seed): when the outbreak stalls (no improvement for
+        ``restart_no_improve_threshold`` evals) and the current best is still
+        loose, the population spills over to a fresh host pool around the
+        best with σ = σ_init·``restart_sigma_ratio``. Each failed spillover
+        appends its pre-spillover best position to a memory list; the next
+        uniform reseed rejects samples within ``basin_radius_ratio`` × span
+        of any remembered point, preventing re-capture of the same suboptimal
+        basin (essential for F18 SchafferF7-ill).
 
     Step-size adaptation is always on: σ is multiplied by ``sigma_up`` on
     improvement and ``sigma_down`` on stagnation, gated by ``no_improve`` so
@@ -244,6 +256,21 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # preserves coordinate-aligned structure on separable multimodals
         # (F04 Büche-Rastrigin SR 77→100%, F17 Schaffer F7 47→73% at n=30).
         h2h_CR: float = 0.7,                   # h2h binomial crossover rate
+        # ── Rotation-aware close-contact (empirical covariance) ──────
+        # Close-contact noise is drawn from N(0, σ_i²·C_pop) where C_pop is
+        # the *instantaneous* empirical covariance of the population — no
+        # history accumulation (cf. CMA-ES). Mean eigenvalue is normalized
+        # to 1 so total step magnitude is preserved; floor prevents collapsed
+        # axes. Closes the F11/F14 ill-conditioned gap to DE/CMA-ES (F11
+        # mean 5.2e-8 → 0 at n=15, F14 SR_1e-7 80% → 87%).
+        empirical_cov_floor: float = 0.01,     # min normalized eigenvalue
+        # ── Basin-avoidance memory (spillover anti-recapture) ─────────
+        # Each failed spillover records its best-position; subsequent
+        # uniform reseeds reject samples within ``basin_radius_ratio`` ×
+        # span of any remembered point. Targets multimodal recapture
+        # (F18 SchafferF7-ill SR_1e-10 33% → 67% at n=15).
+        basin_radius_ratio: float = 0.05,      # avoidance radius / span
+        basin_memory_size: int = 5,            # max remembered failed basins
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
@@ -277,6 +304,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.drilling_threshold = drilling_threshold
         self.sigma_drill_down = sigma_drill_down
         self.h2h_CR = h2h_CR
+        self.empirical_cov_floor = empirical_cov_floor
+        self.basin_radius_ratio = basin_radius_ratio
+        self.basin_memory_size = basin_memory_size
 
     # ─────────────────────────────────────────────────────────────────────
     @staticmethod
@@ -335,6 +365,20 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 cand[i] = bv
                 cands.append(cand)
         return cands
+
+    @staticmethod
+    def _uniform_avoiding(rng, lo: float, hi: float, dim: int,
+                          memory: list, radius: float) -> np.ndarray:
+        """Rejection-sample a uniform point in [lo, hi]^dim at least ``radius``
+        away from every memory point. Falls back to plain uniform after 20
+        rejections so the search never stalls when memory blankets the box."""
+        for _ in range(20):
+            x = rng.uniform(lo, hi, dim)
+            if not memory:
+                return x
+            if all(np.linalg.norm(x - m) >= radius for m in memory):
+                return x
+        return x
 
     def _niche_elites(self, pop_x: np.ndarray, pop_f: np.ndarray) -> set:
         """Strain coexistence: pick up to n_elite_max spatially-separated hosts.
@@ -416,6 +460,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # best_so_far. Used to ratchet up disruption from "diversified local"
         # → "fully uniform" → "basin switch (wipe best & reset σ)".
         consecutive_failed_spillovers = 0
+        # Basin-avoidance memory — best positions at each failed spillover.
+        # Uniform reseeds reject samples within ``basin_radius_ratio`` × span
+        # of any remembered point, so we don't spend another cycle re-converging
+        # to a known-bad basin (essential for F18 SchafferF7-ill).
+        bad_basin_memory: list[np.ndarray] = []
 
         while len(history_f) < max_evals:
             # Spillover event: when the outbreak stalls, the population spills
@@ -474,6 +523,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                         break
 
                 best_pre_spillover = best_so_far
+                # Snapshot best position now — appended to bad_basin_memory
+                # below if this spillover fails to improve.
+                x_best_pre_spillover = pop_x[int(np.argmin(pop_f))].copy()
                 if basin_switch:
                     # Wipe everything — including the current best — and re-seed
                     # all slots uniformly. best_so_far is preserved as a tracker
@@ -491,7 +543,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 diversified = set(reseed_idx[:n_div])
                 for i in reseed_idx:
                     if i in diversified or x_best_snap is None:
-                        new_x = rng.uniform(lo, hi, self.dim)
+                        if bad_basin_memory:
+                            new_x = self._uniform_avoiding(
+                                rng, lo, hi, self.dim, bad_basin_memory,
+                                span * self.basin_radius_ratio)
+                        else:
+                            new_x = rng.uniform(lo, hi, self.dim)
                         sig_log = (float(np.linalg.norm(new_x - x_best_snap))
                                    if x_best_snap is not None else float(sigma_restart))
                     else:
@@ -521,6 +578,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     consecutive_failed_spillovers = 0
                 else:
                     consecutive_failed_spillovers += 1
+                    # This spillover failed → remember the basin it started
+                    # from so the next uniform reseed avoids it.
+                    bad_basin_memory.append(x_best_pre_spillover)
+                    if len(bad_basin_memory) > self.basin_memory_size:
+                        bad_basin_memory.pop(0)
                 if len(history_f) >= max_evals:
                     break
 
@@ -562,8 +624,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 weights = self._softmax_weights(pop_f)
 
                 # 3-channel split: close-contact (local Gaussian), droplet (h2h
-                # DE/current-to-best), airborne (random spread).
-                n_air = max(0, int(round(self.air_ratio * n_dead)))
+                # DE/current-to-best), airborne (random spread). Airborne is
+                # pure noise — suppressed once drilling mode is entered so
+                # precision grinding isn't disrupted.
+                in_drilling_now = best_so_far < self.drilling_threshold
+                air_ratio_eff = 0.0 if in_drilling_now else self.air_ratio
+                n_air = max(0, int(round(air_ratio_eff * n_dead)))
                 n_h2h = max(0, int(round(self.h2h_ratio * n_dead))) if n >= 3 else 0
                 # If rounding overflows, trim airborne first (preserves the
                 # droplet/close-contact intent).
@@ -597,6 +663,26 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     noise = rng.standard_normal((n_local, self.dim))
                     local_parent_x = pop_x[gi_arr].copy()
                     sigma_i = sigma * host_scale
+                    # Rotation-aware close-contact: sample noise from
+                    # N(0, C_pop) using the *current* empirical covariance —
+                    # full anisotropic + rotated shape without CMA-ES-style
+                    # history accumulation. Eigenvalues are normalized so
+                    # mean=1 (preserves total step magnitude); floor prevents
+                    # collapsed axes.
+                    if self.dim >= 2:
+                        cov = np.cov(pop_x, rowvar=False)
+                        if isinstance(cov, np.ndarray) and cov.shape == (self.dim, self.dim):
+                            eigvals, eigvecs = np.linalg.eigh(cov)
+                            mean_eig = float(eigvals.mean())
+                            if mean_eig > 1e-30:
+                                eigvals = eigvals / mean_eig
+                            else:
+                                eigvals = np.ones(self.dim)
+                            eigvals = np.maximum(eigvals, self.empirical_cov_floor)
+                            eigvals = eigvals / float(eigvals.mean())  # re-normalize
+                            # Transform: noise (n_local, dim) @ (eigvecs · √eigvals)ᵀ
+                            transform = eigvecs * np.sqrt(eigvals)[None, :]
+                            noise = noise @ transform.T
                     new_local = self._reflect(local_parent_x + noise * sigma_i[:, None], lo, hi)
                 else:
                     gi_arr = np.empty(0, dtype=int)

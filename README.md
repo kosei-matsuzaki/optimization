@@ -168,9 +168,9 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 
 | チャネル | 疫学アナロジー | 数学的形 | 役割 |
 |---|---|---|---|
-| **接触感染** (Close-contact) | 親密接触による局所感染 | `x_parent + N(0, σ_i I)` | 親近傍の精密探索。σ_i は親の品質と年齢で適応 |
-| **飛沫感染** (Droplet) | 飛沫を介した宿主間感染 | `x_parent + F·(x_strain − x_parent) + F·(x_a − x_b)` ＋ 親との二項交叉 (CR=0.7) | 系統 (niched elite) からの引力 ＋ 集団内差分ベクトルで **暗黙的異方性** を獲得しつつ、二項交叉で座標方向の親情報を保護 (DE/current-to-best/1/bin) |
-| **空気感染** (Airborne) | エアロゾルによる広域感染 | `x_random_host + N(0, σ_air I)` | 集団に依存しない遠方探索。局所最適脱出 |
+| **接触感染** (Close-contact) | 親密接触による局所感染 | `x_parent + σ_i · L_pop · N(0, I)`（`L_pop L_pop^T = C_pop`、集団経験共分散の固有分解）| 親近傍の精密探索。σ_i は親の品質と年齢で適応、`C_pop` で **瞬間共分散** を獲得（履歴累積なし、CMA-ES と差別化） |
+| **飛沫感染** (Droplet) | 飛沫を介した宿主間感染 | `x_parent + F·(x_strain − x_parent) + F·(x_a − x_b)` ＋ 親との二項交叉 (CR=0.7) | 系統 (niched elite) からの引力 ＋ 集団内差分ベクトルで集団形状を補強しつつ、二項交叉で座標方向の親情報を保護 (DE/current-to-best/1/bin) |
+| **空気感染** (Airborne) | エアロゾルによる広域感染 | `x_random_host + N(0, σ_air I)`（drilling 中は停止）| 集団に依存しない遠方探索。局所最適脱出。`f_best < 1e-6` の drilling mode では雑音化するため停止 |
 
 #### 集団レベルの 3 機構
 
@@ -178,7 +178,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 |---|---|---|
 | **系統共存** (Strain coexistence) | 空間的に離れた感染拠点の同時存続 | ニッチ半径で離れた最大 6 系統を保護、飛沫チャネルの引力対象 pool |
 | **宿主競合** (Host competition) | 新感染が既存宿主に勝てないと排除される | 毎世代 25% kill、子が親より悪ければ rollback → 集団は単調改善 |
-| **スピルオーバー** (Spillover) | 既存系統の絶滅後、新宿主集団へ感染が飛び火 | 300 評価改善なし AND f_best > 1e-8 で best 周辺に再播種 |
+| **スピルオーバー** (Spillover) | 既存系統の絶滅後、新宿主集団へ感染が飛び火 | 300 評価改善なし AND f_best > 1e-8 で best 周辺に再播種。失敗 spillover の best 位置を **basin-avoidance memory** に記録し（最大 5 件）、後続 uniform 再播種は `0.05 × span` 内を回避 — 偽最適への再捕獲を防ぐ |
 
 #### 1世代の動作フロー
 
@@ -187,7 +187,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
    └─ f 値の良い順に走査し、既存系統から niche_radius (=1.0) 以上離れた個体だけを
       最大 n_elite_max (=6) 個保護
 
-2. スピルオーバー判定（停滞時の集団再播種、多様化＋エスカレート版）
+2. スピルオーバー判定（停滞時の集団再播種、多様化＋エスカレート＋basin 回避版）
    └─ no_improve ≥ restart_no_improve_threshold (=300) かつ
       f_best > restart_quality_floor (=1e-8) のとき発動。
       連続失敗回数 (consecutive_failed_spillovers) でエスカレート:
@@ -197,6 +197,9 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
               — best も破棄、全 n_pop を Uniform 再生成、σ を σ_init にリセット
       ─ 多段エスカレートにより F24 双漏斗 / F04 rugged separable から脱出
         f_best ≤ 1e-2 のとき乗換え抑制 → F13 ridge / C01 deep precision を保護
+      ─ 失敗 spillover の事前 best 位置を memory に追加（最大 5 件 FIFO）。
+        後続 uniform 再播種は半径 0.05×span 内を rejection sample で回避
+        → F18 SchafferF7ill の偽最適への再捕獲を防ぐ（SR_1e-10 33% → 67%、n=15）
 
 3. 宿主競合: 死亡判定（μ+λ greedy）
    └─ 集団の f 値降順で下位 kill_fraction (=25%) を排除。最良宿主は自動生存
@@ -206,14 +209,21 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 
 5. 子個体の 3 チャネル生成（空きスロット数だけ）
    ├─ 接触感染 [残り]
-   │   └─ 親 + Gauss(0, σ_i I), σ_i = σ × host_sigma_min_scale^(log_quality × (0.7 + 0.3 × age_ratio))
+   │   ├─ σ_i = σ × host_sigma_min_scale^(log_quality × (0.7 + 0.3 × age_ratio))
+   │   ├─ C_pop = (1/(n-1)) Σ (x_i − x̄)(x_i − x̄)^T  ← 集団経験共分散
+   │   ├─ 固有分解 V Λ V^T = C_pop、Λ を平均 1 に正規化（floor=0.01）
+   │   └─ child = 親 + σ_i × V √Λ × Gauss(0, I)
+   │       → 瞬間共分散による回転・異方性追従。F11/F14 で ill-cond 楕円体に整列
+   │       （F11 mean 5e-8 → 0、F14 SR_1e-7 80% → 87%、n=15）
    ├─ 飛沫感染 [h2h_ratio = 0.4]
    │   └─ trial = 親 + h2h_F × (x_strain − 親) + h2h_F × (x_a − x_b)
    │       child = 各次元で確率 h2h_CR (=0.7) で trial を採用、残りは親をそのまま継承
    │       DE/current-to-best/1/bin と同型: 差分ベクトル ＋ 系統引力で集団形状を反映、
    │       二項交叉が separable 多峰の座標方向情報を保護（F04/F17 SR を大幅改善）
-   └─ 空気感染 [air_ratio = 0.3]
+   └─ 空気感染 [air_ratio_eff = 0.3 if f_best ≥ 1e-6 else 0]
        └─ ランダム宿主 + Normal(0, σ_air I), σ_air は集団分散に応じて 1.5×〜5× σ
+          drilling mode (f_best < 1e-6) では停止 — 雑音による精度妨害を排除
+          （F06 SR_1e-10 93% → 100%、n=15）
 
 6. 宿主競合: Rollback
    └─ 各空きスロットの子が「元そこにいた親」より悪ければ親を復元 → 集団は単調改善
@@ -246,6 +256,7 @@ MC-ESO の系統選択:
 | `sigma` | 0.2 | 初期探索半径（探索範囲に対する比率） |
 | `sigma_decay` | 0.99 | σ-adapt ゲート超過時の fallback 減衰率 |
 | `host_sigma_min_scale` | 0.05 | 接触感染チャネルにおける per-host σ_i スケーリング下限（高品質・高齢の宿主は σ_i = σ × 0.05 まで縮小して精密探索）|
+| `empirical_cov_floor` | 0.01 | 接触感染チャネルの集団経験共分散 `C_pop` の固有値下限（平均 1 正規化後、軸の縮退を防ぐ）|
 | `air_ratio` | 0.3 | 空気感染チャネルの割合 |
 | `air_sigma_min` | 1.5 | 集団分散時の空気感染 σ 倍率 |
 | `air_sigma_max` | 5.0 | 集団収束時の空気感染 σ 倍率（収束時に大ジャンプ） |
@@ -260,6 +271,8 @@ MC-ESO の系統選択:
 | `escalate_after_failed_spillovers` | 1 | この連続失敗回数で diversify_ratio を 1.0 に昇格 |
 | `basin_switch_after_failed_spillovers` | 2 | この連続失敗回数で best 破棄＋σ_init リセットの完全ベイスン乗換え |
 | `basin_switch_quality_floor` | 1e-2 | best がこの値以下のときベイスン乗換えを抑制（grinding 中の run を保護）|
+| `basin_radius_ratio` | 0.05 | basin-avoidance memory の回避半径（span に対する比率）|
+| `basin_memory_size` | 5 | 記憶する失敗 basin の最大数（FIFO）|
 | `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象） |
 | `niche_radius` | 1.0 | 系統間の最小距離 |
 | `temperature` | 1.0 | 感染確率のランダム性（大→均一、小→貪欲） |
@@ -408,6 +421,9 @@ else:
 | **宿主競合**（μ+λ greedy + rollback） | 最良宿主の長期保持で F10/F12 を SR 0%→80/90% へ |
 | **エスカレート式スピルオーバー** | quality-gated restart ＋ 連続失敗時の basin switch。ill-cond の整列失敗と F24 双漏斗を救済 |
 | **Drilling mode**（σ_drill_down=0.85） | best_so_far < 1e-6 で σ 縮小を強化し浮動小数限界まで追込む |
+| **接触感染の経験共分散** (`empirical_cov_floor=0.01`) | 集団経験共分散 `C_pop` の固有分解で接触感染ノイズを瞬間異方化。CMA-ES の rank-μ 学習と異なり履歴累積なし、basin 切替に即応。F11 mean 5e-8 → 0、F14 SR_1e-7 80% → 87%（n=15 quick） |
+| **Drilling 中の空気感染停止** | `f_best < drilling_threshold` で `air_ratio_eff = 0`。drilling 中の広域ランダム雑音を排除し精度劣化を防止。F06 SR_1e-10 93% → 100% |
+| **Basin-avoidance memory**（`basin_radius_ratio=0.05`, `basin_memory_size=5`） | 失敗 spillover の事前 best 位置を memory に記録、後続 uniform 再播種は半径 0.05×span 内を rejection sample で回避。F18 SchafferF7ill SR_1e-10 33% → 67% |
 
 ##### 検証され不採用となった variant（quick ablation, n=30）
 
@@ -415,6 +431,7 @@ else:
 
 | variant | 追加した挙動 | 不採用の理由 |
 |---|---|---|
+| MC-ESO-A1（per-dim σ close-contact） | 接触感染ノイズを集団 per-dim std で軸別スケール（軸整列の異方化） | F08/F17 では改善するが F14-DiffPowers の BBOB 回転と整合せず、SR_1e-10 53%→13% と致命的劣化（a12=0.74 large, n=15）。後継の A2（経験共分散版）に置換 |
 | MC-ESO-ABD | h2h_CR=0.9 ＋ σ-adapt 停滞ゲートを drilling 中バイパス ＋ 初回 spillover で座標軸 sweep | A_mild ベースと比べて CR=0.9 のため F18/F19 で勝つが F04 SR が 100→87% と回帰。Wilcoxon でも B/D 単独の有意寄与なし、結局 CR トレードオフに収束 |
 | MC-ESO-A_mild_BD | 統合済み MC-ESO ＋ 同上の B/D | F09/F11/F18 で +0.04、F04/F14 で −0.04 と相殺し ECDF 0.2234→0.2241 でほぼ同等。B/D の overall 寄与なし |
 | 旧 A〜N（`use_evolution_path` / `use_pop_covariance` / `use_lifespan_reset` / `use_adaptive_air` / `use_adaptive_h2h_F` / `use_aggressive_niche` / `use_h2h_archive` / `use_local_pair_h2h` ほか） | MC-ESO 初期開発で試した 8 案 | 各案とも単一関数の改善はあるものの 12 関数 SR 合計で baseline 以下、あるいは安全装置を要する構造欠陥（E）で overall を毀損し全削除 |

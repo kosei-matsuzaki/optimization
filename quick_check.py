@@ -98,10 +98,11 @@ _DIM_REGISTRIES: dict[int, dict[str, object]] = {
 }
 
 # MC-ESO (Multi-Channel Epidemic Spread Optimizer): all core mechanisms
-# (3-channel transmission with h2h binomial crossover CR=0.7 + host competition
-# + diversified spillover + gated σ adapt) are baked into the base
-# implementation. No verification toggles remain — extend this dict to ablate
-# new ideas against the integrated baseline.
+# — 3-channel transmission with h2h CR=0.7, rotation-aware close-contact
+# (empirical covariance), drilling-mode airborne suppression, basin-avoidance
+# spillover, host competition with rollback, gated σ adapt — are baked into
+# the base implementation. No verification toggles remain; extend this dict
+# to ablate new ideas against the integrated baseline.
 _OPTIMIZERS = {
     "CMA-ES": (CMAESOptimizer,                  {}),
     "PSO":    (PSOOptimizer,                    {}),

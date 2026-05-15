@@ -1170,7 +1170,7 @@
               <div class="concept-title">Close-contact</div>
             </div>
           </div>
-          <div class="concept-body">親密接触による局所伝染。親の近傍に \(\mathcal{N}(0,\sigma_i^2 I)\) で子を生成。対数品質 \(q_i\) と年齢比 \(a_i\) に応じて \(\sigma_i\) を**べき乗スケーリング**し、適応性の低い宿主は広く、適応性の高い高齢宿主は精密に伝染。</div>
+          <div class="concept-body">親密接触による局所伝染。親の近傍に \(\mathcal{N}(0,\sigma_i^2\, C_\text{pop})\) で子を生成。\(C_\text{pop}\) は<strong>その世代の集団経験共分散</strong>（履歴累積なし、CMA-ES のランク-μ 学習と異なる）で、固有値を平均 1 に正規化することで回転・異方性に追従しつつ総ステップ幅を保存。対数品質 \(q_i\) と年齢比 \(a_i\) に応じて \(\sigma_i\) を**べき乗スケーリング**し、適応性の低い宿主は広く、適応性の高い高齢宿主は精密に伝染。</div>
         </div>
 
         <div class="concept-card c-droplet">
@@ -1213,7 +1213,7 @@
               <div class="concept-title">Airborne</div>
             </div>
           </div>
-          <div class="concept-body">エアロゾルによる広域伝染。ランダム宿主から遠方へ大きくジャンプ。集団が収束するほど \(\sigma_\text{air}\) を拡大し、**停滞を防ぐ**。</div>
+          <div class="concept-body">エアロゾルによる広域伝染。ランダム宿主から遠方へ大きくジャンプ。集団が収束するほど \(\sigma_\text{air}\) を拡大し、**停滞を防ぐ**。ただし <strong>drilling mode</strong>（\(f_\text{best} < 10^{-6}\)）に入ったら停止 — 浮動小数限界への精密化を雑音で阻害しない。</div>
         </div>
       </div>
     </div>
@@ -1277,7 +1277,7 @@
               <div class="concept-title">Spillover Event</div>
             </div>
           </div>
-          <div class="concept-body">既存系統の停滞時に集団再播種。改善なし評価 ≥ 300 ＋ \(f_\text{best}>10^{-8}\) で best 周辺に \(\sigma_\text{init}\times 0.3\) で飛び火。**ill-conditioned の整列失敗を救済**。</div>
+          <div class="concept-body">既存系統の停滞時に集団再播種。改善なし評価 ≥ 300 ＋ \(f_\text{best}>10^{-8}\) で best 周辺に \(\sigma_\text{init}\times 0.3\) で飛び火。**ill-conditioned の整列失敗を救済**。さらに <strong>basin-avoidance memory</strong> として失敗した spillover の best 位置を記録し、後続の uniform 再播種は半径 \(0.05 \times \text{span}\) 内を回避 — 同じ偽最適への再捕獲を防ぐ（F18 SchafferF7ill SR_1e-10 33% → 67%）。</div>
         </div>
       </div>
     </div>
@@ -1353,8 +1353,8 @@ strains ← []
     <div class="fc-item">
       <div class="fc-dot c-red">3</div>
       <div class="fc-card fc-card-expanded">
-        <strong>停滞時 Restart（集団再播種）</strong>&#x2060;
-        <span class="fc-desc">改善なし評価が <code>restart_no_improve_threshold</code>(=300) を超え、かつ \(f_\text{best}>\) <code>restart_quality_floor</code>(\(=10^{-8}\)) のとき、global best を残し他個体を best 周辺に \(\sigma_\text{init}\times 0.3\) で再播種。CMA-ES の IPOP と同等の役割を果たし、ill-conditioned 関数 (F10/F12) の初期整列失敗を救済。</span>
+        <strong>停滞時 Restart（集団再播種 ＋ 失敗 basin 回避）</strong>&#x2060;
+        <span class="fc-desc">改善なし評価が <code>restart_no_improve_threshold</code>(=300) を超え、かつ \(f_\text{best}>\) <code>restart_quality_floor</code>(\(=10^{-8}\)) のとき、global best を残し他個体を best 周辺に \(\sigma_\text{init}\times 0.3\) で再播種。CMA-ES の IPOP と同等の役割を果たし、ill-conditioned 関数 (F10/F12) の初期整列失敗を救済。<strong>basin-avoidance memory</strong> で過去の失敗 basin を記憶し、後続の uniform 再播種を回避（F18 SchafferF7ill 偽最適への再捕獲対策）。</span>
         <div class="fc-detail">
           <div>
             <div class="fc-pane-title">パラメータ</div>
@@ -1362,14 +1362,19 @@ strains ← []
               <div class="fc-param-chip" title="restart 発動の no_improve 閾値"><span class="pk">restart_no_improve_threshold</span><span class="pv">= 300</span></div>
               <div class="fc-param-chip" title="restart 後の σ（σ_init に対する比率）"><span class="pk">restart_sigma_ratio</span><span class="pv">= 0.3</span></div>
               <div class="fc-param-chip" title="best がこれ以下なら restart を skip（収束破壊を防ぐ）"><span class="pk">restart_quality_floor</span><span class="pv">= 1e-8</span></div>
+              <div class="fc-param-chip" title="失敗 basin 回避半径（span に対する比率）"><span class="pk">basin_radius_ratio</span><span class="pv">= 0.05</span></div>
+              <div class="fc-param-chip" title="記憶する失敗 basin の最大個数（FIFO）"><span class="pk">basin_memory_size</span><span class="pv">= 5</span></div>
             </div>
           </div>
           <div class="fc-mechanism">
-            <div class="fc-pane-title">Quality-gated restart</div>
+            <div class="fc-pane-title">Quality-gated restart ＋ Basin-avoidance memory</div>
             <div class="math-display">\[ \text{trigger} = (\text{no\_improve} \geq 300) \;\wedge\; (f_\text{best} > 10^{-8}) \]</div>
             <div class="math-display">\[ x_i^{\text{new}} = \mathrm{reflect}\!\left(x_\text{best} + 0.3\,\sigma_\text{init}\cdot \mathcal{N}(0, I)\right), \quad i \neq i_\text{best} \]</div>
+            <div class="math-display">\[ \mathcal{M} \leftarrow \mathcal{M} \cup \{x_\text{best}^\text{pre}\}\;\;(\text{if spillover failed})\]</div>
+            <div class="math-display">\[ x_\text{uniform} \sim \mathcal{U}(\text{lo}, \text{hi})^d\;\;\text{rejecting samples within } 0.05\cdot\text{span}\text{ of any }m\in\mathcal{M} \]</div>
             <div class="fc-note">
               <span class="lbl">Quality gate</span>\(f_\text{best}<10^{-8}\) なら既に高精度収束しているとみなし、restart で σ を膨らませて精度を悪化させない（F01-Sphere で 0 まで到達できる）。<br>
+              <span class="lbl">Basin-avoidance memory</span>各失敗 spillover の事前 best 位置を memory（最大 5 件 FIFO）に追加。後続 uniform 再播種は半径 \(0.05\cdot\text{span}\) 内を rejection sample（最大 20 試行）で回避 — 同じ偽最適への再収束を防ぐ。F18 SchafferF7ill SR_1e-10 を 33% → 67% に倍増（n=15）。<br>
               <span class="lbl">CMA-ES との公平性</span>CMA-ES も `cma` ライブラリ標準で `es.stop()` 後の multistart を有する。両者とも restart 機構あり。
             </div>
           </div>
@@ -1410,21 +1415,25 @@ strains ← []
         <!-- 5a 接触感染 -->
         <div class="fc-fork-card fc-card-expanded">
           <div class="fc-fork-num">5a — 接触感染（残り）</div>
-          <strong>Close-contact: ガウス精密伝染</strong>&#x2060;
-          <span class="fc-desc">親密接触による局所伝染。親近傍に \(\mathcal{N}(0,\sigma_i^2 I)\)。親の <code>log_quality</code> と年齢比でべき乗スケール、適応性の低い宿主は広く、適応性が高く高齢な宿主は精密に。</span>
+          <strong>Close-contact: 経験共分散付きガウス伝染</strong>&#x2060;
+          <span class="fc-desc">親密接触による局所伝染。親近傍に \(\mathcal{N}(0,\sigma_i^2\, C_\text{pop})\) で子を生成。\(C_\text{pop}\) は当世代の集団経験共分散で、回転・異方性に追従。<code>log_quality</code> と年齢比でべき乗スケール、適応性の低い宿主は広く、適応性が高く高齢な宿主は精密に。</span>
           <div class="fc-detail">
             <div class="fc-fork-inner">
               <div>
                 <div class="fc-pane-title">パラメータ</div>
                 <div class="fc-params">
                   <div class="fc-param-chip" title="σ_i / σ_global の下限（精密探索の最小幅）"><span class="pk">sigma_min_ratio</span><span class="pv">= 0.05</span></div>
+                  <div class="fc-param-chip" title="正規化後の最小固有値（軸の縮退を防ぐ）"><span class="pk">empirical_cov_floor</span><span class="pv">= 0.01</span></div>
                 </div>
               </div>
               <div class="fc-mechanism">
-                <div class="fc-pane-title">宿主ごとの拡散範囲 \(\sigma_i\)</div>
+                <div class="fc-pane-title">宿主ごとの拡散範囲 \(\sigma_i\) と経験共分散 \(C_\text{pop}\)</div>
                 <div class="math-display">\[ \sigma_i = \sigma_\text{global} \cdot \rho^{\,q_i\,(0.7 + 0.3\,a_i)} \]</div>
-                <div class="math-display">\[ x_\text{child} = \mathrm{reflect}\!\big(x_\text{parent} + \mathcal{N}(0,\,\sigma_i^2 I)\big) \]</div>
+                <div class="math-display">\[ C_\text{pop} = \frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar x)(x_i - \bar x)^\top \]</div>
+                <div class="math-display">\[ x_\text{child} = \mathrm{reflect}\!\big(x_\text{parent} + \sigma_i \cdot V \sqrt{\Lambda}\, z\big),\quad z \sim \mathcal{N}(0, I) \]</div>
                 <div class="fc-note">
+                  <span class="lbl">瞬間共分散</span>\(V \Lambda V^\top = C_\text{pop}\) を固有分解、\(\Lambda\) の平均固有値を 1 に正規化することで総ステップ幅を保存。CMA-ES のランク-μ 学習と異なり履歴累積なし、basin 切替への即応性で差別化。<br>
+                  <span class="lbl">F11/F14 で核心</span>等方ガウス（\(N(0, \sigma^2 I)\)）では ill-cond 楕円体に揃わず精度が頭打ち。\(C_\text{pop}\) が valley 方向を瞬時に捕捉し F11 mean を 5e-8 → 0, F14 SR_1e-7 を 80% → 87% に。<br>
                   <span class="lbl">log_quality</span>\(q_i\) は履歴ベストにアンカー（0 ＝ 最悪, 1 ＝ 最良）。局所収束時でも \(q_i \approx 0\) となり広域伝染が継続。
                 </div>
               </div>
@@ -1460,24 +1469,26 @@ strains ← []
 
         <!-- 5c 空気感染 -->
         <div class="fc-fork-card fc-card-expanded">
-          <div class="fc-fork-num">5c — 空気感染（割合 air_ratio）</div>
+          <div class="fc-fork-num">5c — 空気感染（割合 air_ratio、drilling 中は停止）</div>
           <strong>Airborne: 広域エアロゾル拡散</strong>&#x2060;
-          <span class="fc-desc">ランダムな宿主位置に大きなノイズで遠方へ跳躍。集団が収束しているときほど \(\sigma_\text{air}\) を拡大し、停滞を防ぐ。</span>
+          <span class="fc-desc">ランダムな宿主位置に大きなノイズで遠方へ跳躍。集団が収束しているときほど \(\sigma_\text{air}\) を拡大し、停滞を防ぐ。<strong>drilling mode</strong>（\(f_\text{best} < 10^{-6}\)）に入ったら一時停止し、子は接触感染・飛沫感染にリダイレクト。</span>
           <div class="fc-detail">
             <div class="fc-fork-inner">
               <div>
                 <div class="fc-pane-title">パラメータ</div>
                 <div class="fc-params">
-                  <div class="fc-param-chip" title="子のうち空気感染で生成する割合"><span class="pk">air_ratio</span><span class="pv">= 0.3</span></div>
+                  <div class="fc-param-chip" title="子のうち空気感染で生成する割合（drilling 中は 0）"><span class="pk">air_ratio</span><span class="pv">= 0.3</span></div>
                   <div class="fc-param-chip" title="集団分散時の σ_air 倍率"><span class="pk">air_sigma_min</span><span class="pv">= 1.5</span></div>
                   <div class="fc-param-chip" title="集団収束時の σ_air 倍率"><span class="pk">air_sigma_max</span><span class="pv">= 5.0</span></div>
                 </div>
               </div>
               <div class="fc-mechanism">
-                <div class="fc-pane-title">エアロゾル拡散範囲</div>
+                <div class="fc-pane-title">エアロゾル拡散範囲（drilling 外）</div>
+                <div class="math-display">\[ \mathrm{air\_ratio\_eff} = \begin{cases} 0 & \text{if } f_\text{best} < 10^{-6}\;(\text{drilling}) \\ \mathrm{air\_ratio} & \text{otherwise} \end{cases} \]</div>
                 <div class="math-display">\[ \sigma_\text{air} = \max(\sigma_\text{global},\; 0.3\,\sigma_\text{init}) \cdot [\sigma_\text{air}^{\max} - (\sigma_\text{air}^{\max} - \sigma_\text{air}^{\min}) d] \]</div>
                 <div class="fc-note">
-                  <span class="lbl">フロア</span>\(\sigma_\text{global}\) が小さくなりすぎても \(0.3\,\sigma_\text{init}\) で底打ち → 終盤も最低限のジャンプ幅を確保。
+                  <span class="lbl">フロア</span>\(\sigma_\text{global}\) が小さくなりすぎても \(0.3\,\sigma_\text{init}\) で底打ち → 終盤も最低限のジャンプ幅を確保。<br>
+                  <span class="lbl">drilling 中の停止</span>正しい basin に入った後の精密化フェーズで広域ランダムノイズは害悪 — F06 SR_1e-10 を 93% → 100% に押し上げる主因。
                 </div>
               </div>
             </div>
@@ -1680,7 +1691,7 @@ strains ← []
         <div class="cmp-aspect-body">
           <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">強力(ガウス局所)／普通(向き変異 or ランダム)の 2 種</span></div>
           <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">共分散行列 \(\Sigma\) からの楕円ガウスサンプリング</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">3 チャネル並列</span>接触感染(ガウス)＋ 飛沫感染(DE current-to-best)＋ 空気感染(ランダム)</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">3 チャネル並列</span>接触感染（\(C_\text{pop}\) で異方化ガウス）＋ 飛沫感染（DE current-to-best）＋ 空気感染（ランダム、drilling 中停止）</span></div>
         </div>
       </div>
 
@@ -1688,8 +1699,8 @@ strains ← []
         <div class="cmp-aspect-head">異方性の獲得</div>
         <div class="cmp-aspect-body">
           <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">等方ガウスのみ。F10 (ill-cond) で SR=20%</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">共分散行列の rank-1/rank-μ 適応学習で明示的に獲得</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">暗黙的</span>飛沫感染の差分ベクトル \(x_a - x_b\) が集団形状を反映。明示学習なしで F10 SR=100% を達成</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">共分散行列の rank-1/rank-μ 適応学習で明示的に獲得（履歴累積）</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">瞬間共分散</span>接触感染が当世代の経験共分散 \(C_\text{pop}\) でサンプリング（履歴なし）＋ 飛沫感染の差分が同方向を補強。CMA-ES より basin 切替に即応、F10 SR=100%・F11 mean=0 を達成</span></div>
         </div>
       </div>
 
