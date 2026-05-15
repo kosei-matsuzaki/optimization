@@ -184,7 +184,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 
 ```
 1. 系統共存: ニッチエリート抽出（飛沫感染の引力 pool）
-   └─ f 値の良い順に走査し、既存系統から niche_radius (=1.0) 以上離れた個体だけを
+   └─ f 値の良い順に走査し、既存系統から niche_radius_ratio × span (=0.1×span) 以上離れた個体だけを
       最大 n_elite_max (=6) 個保護
 
 2. スピルオーバー判定（停滞時の集団再播種、多様化＋エスカレート＋basin 回避版）
@@ -243,7 +243,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 
 MC-ESO の系統選択:
 1. f 値の良い順に候補を走査
-2. 既保護系統との距離が全て `niche_radius` を超える場合のみ追加
+2. 既保護系統との距離が全て `niche_radius_ratio × span` を超える場合のみ追加
 3. `n_elite_max` 個に達したら終了
 
 → 空間的に離れた複数の最適解周辺に独立した感染系統が自然形成され、飛沫感染の引力対象として活用される。
@@ -274,7 +274,7 @@ MC-ESO の系統選択:
 | `basin_radius_ratio` | 0.05 | basin-avoidance memory の回避半径（span に対する比率）|
 | `basin_memory_size` | 5 | 記憶する失敗 basin の最大数（FIFO）|
 | `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象） |
-| `niche_radius` | 1.0 | 系統間の最小距離 |
+| `niche_radius_ratio` | 0.1 | 系統間の最小距離（span に対する比率、スケール不変。BBOB span=10 で実効 1.0、絶対値版と数学的に同一） |
 | `temperature` | 1.0 | 感染確率のランダム性（大→均一、小→貪欲） |
 | `lifespan` | 5 | 接触感染 σ_i の年齢正規化分母 |
 | `stagnation_limit` | 2000 | 改善なし評価回数の上限（早期停止閾値） |

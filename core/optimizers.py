@@ -195,7 +195,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # ── Population / niching ────────────────────────────────────────
         n_pop: int = 20,
         n_elite_max: int = 6,
-        niche_radius: float = 1.0,             # min mutual distance between elites
+        niche_radius_ratio: float = 0.1,       # min mutual elite distance, × span
+                                               # (scale-invariant; on BBOB span=10
+                                               # → 1.0, identical to the previous
+                                               # absolute niche_radius=1.0)
         # ── σ (global) ────────────────────────────────────────────────
         sigma: float = 0.2,                    # σ_init relative to span
         sigma_decay: float = 0.99,             # fallback decay when σ-adapt gate is exceeded
@@ -281,7 +284,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.n_elite_max = n_elite_max
         self.temperature = temperature
         self.stagnation_limit = stagnation_limit
-        self.niche_radius = niche_radius
+        self.niche_radius_ratio = niche_radius_ratio
         self.host_sigma_min_scale = host_sigma_min_scale
         self.air_sigma_min = air_sigma_min
         self.air_sigma_max = air_sigma_max
@@ -380,7 +383,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 return x
         return x
 
-    def _niche_elites(self, pop_x: np.ndarray, pop_f: np.ndarray) -> set:
+    def _niche_elites(self, pop_x: np.ndarray, pop_f: np.ndarray,
+                      niche_radius: float) -> set:
         """Strain coexistence: pick up to n_elite_max spatially-separated hosts.
 
         Walk candidates in f-ascending order, keep one if it is at least
@@ -393,7 +397,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         elite_pos: list[np.ndarray] = []
         for candidate in np.argsort(pop_f):
             if not elite_pos or np.all(
-                np.linalg.norm(pop_x[candidate] - np.array(elite_pos), axis=1) > self.niche_radius
+                np.linalg.norm(pop_x[candidate] - np.array(elite_pos), axis=1) > niche_radius
             ):
                 elite_idx.append(int(candidate))
                 elite_pos.append(pop_x[candidate])
@@ -433,6 +437,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         span = hi - lo
         sigma = self.sigma * span                # σ_init (scalar; per-dim bounds not supported)
         sigma_init = float(sigma)
+        niche_radius = self.niche_radius_ratio * span
 
         # Pre-allocate numpy arrays — avoids repeated list→array conversions per iteration
         pop_x = rng.uniform(lo, hi, (self.n_pop, self.dim))          # (n_pop, dim)
@@ -594,7 +599,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # channel's σ modulator (denser cluster → larger aerosol jumps).
             pop_diversity = np.mean(np.std(pop_x, axis=0) / span)
             diversity_ratio = float(np.clip(pop_diversity / 0.289, 0.0, 1.0))
-            elite_global = self._niche_elites(pop_x, pop_f)
+            elite_global = self._niche_elites(pop_x, pop_f, niche_radius)
             elite_arr = np.fromiter(elite_global, dtype=int) if elite_global else np.empty(0, dtype=int)
 
             # Host competition (μ+λ greedy): each gen, the worst K = kill_fraction · n
