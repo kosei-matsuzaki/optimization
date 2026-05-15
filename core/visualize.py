@@ -304,7 +304,7 @@ def save_method_runs_anim(
         _draw_optima(ax, benchmark)
         ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
         ax.set_xlabel(r"$x_1$"); ax.set_ylabel(r"$x_2$")
-        ax.set_title(f"run {run_idx+1}/{n_runs}  lime=✓  red=✗", fontsize=8)
+        ax.set_title(f"run {run_idx+1}/{n_runs}  lime=success  red=fail", fontsize=8)
         return []
 
     fig.suptitle(f"{benchmark.name}  — {method_name}", fontsize=9)
@@ -667,7 +667,7 @@ def save_method_vso_svg(
             mn  = np.array([np.min(s)              for s in ps_gen])
             mx  = np.array([np.max(s)              for s in ps_gen])
             g = xs[:n_g]
-            ax.semilogy(g, med, color=color, linewidth=1.4, label="median σᵢ", zorder=4)
+            ax.semilogy(g, med, color=color, linewidth=1.4, label="median σ_i", zorder=4)
             ax.fill_between(g, q25, q75, color=color, alpha=0.28, zorder=2, label="Q25–Q75")
             ax.fill_between(g, mn,  mx,  color=color, alpha=0.10, zorder=1)
     # Scatter: actual sigma used per evaluated offspring (starts after initial pop)
@@ -784,10 +784,10 @@ def save_stats(
 
     summary_path = output_dir / "summary.csv"
     summary_exists = summary_path.exists()
-    from .runner import _evals_to_target, SR_THRESHOLDS
+    from .runner import _evals_to_target, ecdf_auc, SR_THRESHOLDS
     sr_keys = [f"sr_{thr:.0e}".replace("e-0", "e-") for thr in SR_THRESHOLDS]
     fieldnames_s = ["function", "category", "method", "mean_time_s",
-                    "mean_best_f", *sr_keys, "ert",
+                    "mean_best_f", "median_best_f", *sr_keys, "ert", "ecdf_auc",
                     "mean_optima_found", "mean_optima_rate"]
     with open(summary_path, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames_s)
@@ -802,13 +802,17 @@ def save_stats(
             n_success = int(np.sum(best_fs <= success_threshold))
             evals_list = [_evals_to_target(r, success_threshold) for r in results]
             ert = f"{sum(evals_list) / n_success:.0f}" if n_success > 0 else "inf"
+            max_budget = max((len(r.history_f) for r in results), default=0)
+            auc = ecdf_auc(results, SR_THRESHOLDS, max_budget) if max_budget else 0.0
             row = {
                 "function": benchmark.name,
                 "category": benchmark.category,
                 "method": method,
                 "mean_time_s": f"{np.mean(times):.3f}",
-                "mean_best_f": f"{np.mean(best_fs):.4e}",
-                "ert":         ert,
+                "mean_best_f":   f"{np.mean(best_fs):.4e}",
+                "median_best_f": f"{np.median(best_fs):.4e}",
+                "ert":           ert,
+                "ecdf_auc":      f"{auc:.4f}",
                 "mean_optima_found": f"{mean_optima:.2f}",
                 "mean_optima_rate": f"{mean_optima / n_optima_total:.2f}" if n_optima_total else "N/A",
             }

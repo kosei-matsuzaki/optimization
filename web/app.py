@@ -31,6 +31,7 @@ GH_REPO = "kosei-matsuzaki/optimization"
 GH_WORKFLOW = "run.yml"
 
 _jobs: dict[str, dict] = {}
+_job_procs: dict[str, subprocess.Popen] = {}
 _dl_jobs: dict[str, dict] = {}
 
 
@@ -190,26 +191,30 @@ def _read_wilcoxon(run_dir: Path, dim: str) -> list[dict]:
 
 
 def _compute_overall_ranking(run_dir: Path, dim: str) -> dict:
-    """Compute Friedman-rank-based overall ranking across all functions."""
+    """Per-indicator Friedman ranking across all functions.
+
+    Ranks methods within each function independently for two indicators:
+      - "bf"  : median_best_f (lower is better; robust to outlier runs)
+      - "ert" : expected runtime to 1e-4 target (lower is better; inf if SR=0)
+    For each indicator we also report Friedman χ²_F, p value, and Nemenyi
+    critical difference at α=0.05 so the user can judge whether mean-rank
+    gaps are statistically meaningful.
+    """
     import numpy as np
+    from scipy.stats import friedmanchisquare, rankdata, studentized_range
 
     rows = _read_summary(run_dir, dim)
     if not rows:
         return {"methods": [], "categories": [], "funcs": [],
-                "leaderboard": [], "func_ranks": {}, "func_categories": {}}
+                "leaderboard": [], "func_ranks": {}, "func_categories": {},
+                "friedman": {}}
 
     def parse_sr(s: str) -> float:
         if not s or s == "N/A":
             return 0.0
         return float(s.strip("%")) / 100.0
 
-    def parse_ert(s: str) -> float:
-        try:
-            return float(s)
-        except (ValueError, TypeError):
-            return float("inf")
-
-    def parse_bf(s: str) -> float:
+    def parse_float(s: str) -> float:
         try:
             return float(s)
         except (ValueError, TypeError):
@@ -222,47 +227,84 @@ def _compute_overall_ranking(run_dir: Path, dim: str) -> dict:
     for row in rows:
         f, m = row["function"], row["method"]
         func_categories[f] = row.get("category", "unknown")
+        # Prefer median_best_f; fall back to mean_best_f for older runs.
+        bf_raw = row.get("median_best_f") or row.get("mean_best_f") or "inf"
+        # ECDF AUC: higher is better; missing → 0 (worst).
+        try:
+            ecdf_v = float(row.get("ecdf_auc", "0") or "0")
+        except (TypeError, ValueError):
+            ecdf_v = 0.0
         data.setdefault(f, {})[m] = {
-            "sr":  parse_sr(row.get("sr_1e-4", "0%")),
-            "ert": parse_ert(row.get("ert", "inf")),
-            "bf":  parse_bf(row.get("mean_best_f", "inf")),
+            "sr":   parse_sr(row.get("sr_1e-4", "0%")),
+            "ert":  parse_float(row.get("ert", "inf")),
+            "bf":   parse_float(bf_raw),
+            "ecdf": ecdf_v,
         }
 
-    # Friedman ranks per function with tie-averaging
-    func_ranks: dict[str, dict[str, float]] = {}
+    # bf / ert: lower-is-better. ecdf: higher-is-better — negated when ranking.
+    INDICATORS = ("bf", "ert", "ecdf")
+    HIGHER_BETTER = {"ecdf"}
+
+    # Per-function, per-indicator ranks via average-tie ranking.
+    # Missing data → worst rank for that block (still flagged via "missing" set).
+    k = len(methods)
+    func_ranks: dict[str, dict[str, dict[str, float]]] = {ind: {} for ind in INDICATORS}
+    rank_matrix: dict[str, list[list[float]]] = {ind: [] for ind in INDICATORS}
+
     for func in funcs:
         md = data.get(func, {})
-
-        def sort_key(m: str, _md: dict = md) -> tuple:
-            d = _md.get(m, {"sr": 0.0, "ert": float("inf"), "bf": float("inf")})
-            return (-d["sr"], d["ert"], d["bf"])
-
-        ordered = sorted(methods, key=sort_key)
-        ranks: dict[str, float] = {}
-        i = 0
-        while i < len(ordered):
-            j = i
-            ki = sort_key(ordered[i])
-            while j < len(ordered) and sort_key(ordered[j]) == ki:
-                j += 1
-            avg = (i + j + 1) / 2  # 1-indexed average rank
-            for m in ordered[i:j]:
-                ranks[m] = avg
-            i = j
-        func_ranks[func] = ranks
+        for ind in INDICATORS:
+            missing = float("-inf") if ind in HIGHER_BETTER else float("inf")
+            vals = np.array([
+                md.get(m, {}).get(ind, missing) for m in methods
+            ], dtype=float)
+            # For higher-is-better metrics, negate so rankdata still treats
+            # smaller-rank-number = better.
+            if ind in HIGHER_BETTER:
+                vals = -vals
+            ranks_arr = rankdata(vals, method="average")
+            ranks_dict = {m: float(r) for m, r in zip(methods, ranks_arr)}
+            func_ranks[ind][func] = ranks_dict
+            rank_matrix[ind].append([ranks_dict[m] for m in methods])
 
     categories = sorted(set(func_categories.values()))
 
+    # Friedman χ²_F + Nemenyi CD per indicator.
+    friedman: dict[str, dict] = {}
+    n_blocks = len(funcs)
+    for ind in INDICATORS:
+        # friedmanchisquare expects one array per method, values across blocks.
+        cols = np.array(rank_matrix[ind])           # shape (n_blocks, k)
+        if n_blocks >= 2 and k >= 3:
+            try:
+                chi2, pval = friedmanchisquare(*[cols[:, j] for j in range(k)])
+                chi2_f, p_f = float(chi2), float(pval)
+            except ValueError:
+                chi2_f, p_f = float("nan"), float("nan")
+        else:
+            chi2_f, p_f = float("nan"), float("nan")
+        # Nemenyi CD at α=0.05: q_α / sqrt(2) * sqrt(k(k+1)/(6N))
+        if k >= 2 and n_blocks >= 1:
+            try:
+                q_alpha = float(studentized_range.ppf(0.95, k, np.inf))
+                cd = q_alpha / np.sqrt(2.0) * np.sqrt(k * (k + 1) / (6.0 * n_blocks))
+                cd_f = float(cd)
+            except Exception:
+                cd_f = float("nan")
+        else:
+            cd_f = float("nan")
+        friedman[ind] = {
+            "chi2":     None if np.isnan(chi2_f) else round(chi2_f, 3),
+            "p":        None if np.isnan(p_f)    else float(f"{p_f:.4g}"),
+            "cd":       None if np.isnan(cd_f)   else round(cd_f, 3),
+            "n_blocks": n_blocks,
+            "k":        k,
+        }
+
     leaderboard = []
     for method in methods:
-        rank_vals = [func_ranks.get(f, {}).get(method, float(len(methods))) for f in funcs]
-        sr_vals   = [data.get(f, {}).get(method, {}).get("sr", 0.0) for f in funcs]
-        mean_rank = float(np.mean(rank_vals))
-        rank_std  = float(np.std(rank_vals))
-        mean_sr   = float(np.mean(sr_vals))
-        n_best  = sum(1 for f in funcs if func_ranks.get(f, {}).get(method, 0) == 1.0)
-        n_worst = sum(1 for f in funcs
-                      if func_ranks.get(f, {}).get(method, 0) == float(len(methods)))
+        sr_vals = [data.get(f, {}).get(method, {}).get("sr", 0.0) for f in funcs]
+        mean_sr = float(np.mean(sr_vals)) if sr_vals else 0.0
         cat_sr: dict[str, float | None] = {}
         for cat in categories:
             cf = [f for f in funcs if func_categories.get(f) == cat]
@@ -270,18 +312,23 @@ def _compute_overall_ranking(run_dir: Path, dim: str) -> dict:
                 float(np.mean([data.get(f, {}).get(method, {}).get("sr", 0.0) for f in cf]))
                 if cf else None
             )
-        leaderboard.append({
+        entry: dict = {
             "method":      method,
-            "mean_rank":   round(mean_rank, 2),
-            "rank_std":    round(rank_std,  2),
-            "mean_sr":     round(mean_sr,   4),
-            "n_best":      n_best,
-            "n_worst":     n_worst,
-            "category_sr": {k: (round(v, 4) if v is not None else None)
-                            for k, v in cat_sr.items()},
-        })
+            "mean_sr":     round(mean_sr, 4),
+            "category_sr": {c: (round(v, 4) if v is not None else None)
+                            for c, v in cat_sr.items()},
+        }
+        for ind in INDICATORS:
+            rvals = [func_ranks[ind].get(f, {}).get(method, float(k)) for f in funcs]
+            arr = np.array(rvals, dtype=float)
+            entry[f"mean_rank_{ind}"] = round(float(np.mean(arr)), 2)
+            entry[f"rank_std_{ind}"]  = round(float(np.std(arr)),  2)
+            entry[f"n_best_{ind}"]    = int(np.sum(arr == 1.0))
+            entry[f"n_worst_{ind}"]   = int(np.sum(arr == float(k)))
+        leaderboard.append(entry)
 
-    leaderboard.sort(key=lambda x: (x["mean_rank"], -x["mean_sr"]))
+    # Primary sort: bf mean rank → ert → ecdf.
+    leaderboard.sort(key=lambda x: (x["mean_rank_bf"], x["mean_rank_ert"], x["mean_rank_ecdf"]))
     return {
         "methods":         methods,
         "categories":      categories,
@@ -289,6 +336,7 @@ def _compute_overall_ranking(run_dir: Path, dim: str) -> dict:
         "func_categories": func_categories,
         "leaderboard":     leaderboard,
         "func_ranks":      func_ranks,
+        "friedman":        friedman,
     }
 
 
@@ -356,7 +404,7 @@ def _run_job(job_id: str, n_runs: int, max_evals: int, out_dir: str,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         text=True, cwd=str(BASE_DIR),
     )
-    _jobs[job_id]["proc"] = proc
+    _job_procs[job_id] = proc
     _write_pid(proc.pid)
     for line in proc.stdout:
         _jobs[job_id]["output"].append(line.rstrip())
@@ -607,7 +655,7 @@ def api_gh_runs():
     result = subprocess.run(
         ["gh", "run", "list", f"--workflow={GH_WORKFLOW}",
          "--limit", "10",
-         "--json", "databaseId,status,conclusion,displayTitle,createdAt"],
+         "--json", "databaseId,status,conclusion,name,headSha,createdAt"],
         capture_output=True, text=True, cwd=str(BASE_DIR),
     )
     if result.returncode != 0:
@@ -726,7 +774,7 @@ def api_stop_job(job_id: str):
     job = _jobs.get(job_id)
     if not job:
         return jsonify({"error": "not found"}), 404
-    proc = job.get("proc")
+    proc = _job_procs.get(job_id)
     if proc and job["status"] == "running":
         job["status"] = "stopped"
         proc.terminate()

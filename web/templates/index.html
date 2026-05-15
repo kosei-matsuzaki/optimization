@@ -1108,7 +1108,7 @@ async function loadGhRuns() {
           <span class="badge ${badgeClass}" style="font-size:10px;">${status}</span>
           <span style="font-size:10.5px;color:var(--muted);">${date}</span>
         </div>
-        <div class="gh-run-title">${run.displayTitle}</div>
+        <div class="gh-run-title">${run.name} <span style="color:var(--muted);font-size:10.5px;">${(run.headSha || '').slice(0,7)}</span></div>
         ${canDownload ? `<button class="btn btn-outline btn-sm" id="dl-btn-${run.databaseId}"
           onclick="startDownload('${run.databaseId}')">⬇ Download</button>` : ''}
         <div id="dl-status-${run.databaseId}" style="font-size:11px;margin-top:4px;"></div>
