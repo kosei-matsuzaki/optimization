@@ -40,6 +40,7 @@ def _append_wilcoxon(dim_dir: Path, bench_name: str,
         writer = csv.DictWriter(f, fieldnames=[
             "function", "reference", "method", "n", "win_count", "tie_count",
             "p_value_two_sided", "p_value_ref_better",
+            "a12", "a12_magnitude",
         ])
         if write_header:
             writer.writeheader()
@@ -58,6 +59,8 @@ def _append_wilcoxon(dim_dir: Path, bench_name: str,
                 "tie_count": stat["tie_count"],
                 "p_value_two_sided": f"{stat['p_value']:.4g}",
                 "p_value_ref_better": f"{stat['p_less']:.4g}",
+                "a12":                f"{stat['a12']:.4f}",
+                "a12_magnitude":      stat["a12_magnitude"],
             })
 
 # Curated 12-function subset — two representatives per BBOB group + custom.
@@ -83,7 +86,10 @@ _BBOB_NAMES: list[str] = sorted(
     {n for n in BENCHMARKS_BY_NAME if n.startswith("F")},
     key=lambda n: int(n[1:3]),
 )
-_CUSTOM_2D_ONLY: list[str] = ["C01-Himmelblau", "C02-SixHumpCamel"]
+_CUSTOM_2D_ONLY: list[str] = sorted(
+    {n for n in BENCHMARKS_BY_NAME if n.startswith("C")},
+    key=lambda n: int(n[1:3]),
+)
 _ALL_FUNCTIONS: list[str] = _BBOB_NAMES + _CUSTOM_2D_ONLY
 
 _DIM_REGISTRIES: dict[int, dict[str, object]] = {
@@ -92,18 +98,16 @@ _DIM_REGISTRIES: dict[int, dict[str, object]] = {
 }
 
 # MC-ESO (Multi-Channel Epidemic Spread Optimizer): all core mechanisms
-# (3-channel transmission + host competition + diversified spillover +
-# gated σ adapt) are baked into the base implementation.
-_MCESO_VARIANTS: dict[str, dict] = {
-    "MC-ESO":  {},
-}
-
+# (3-channel transmission with h2h binomial crossover CR=0.7 + host competition
+# + diversified spillover + gated σ adapt) are baked into the base
+# implementation. No verification toggles remain — extend this dict to ablate
+# new ideas against the integrated baseline.
 _OPTIMIZERS = {
-    "CMA-ES": (CMAESOptimizer, {}),
-    "PSO":    (PSOOptimizer,   {}),
-    "DE":     (DEOptimizer,    {}),
-    "SaVOA":  (SaVOAOptimizer, {}),
-    **{name: (MultiChannelEpidemicOptimizer, kw) for name, kw in _MCESO_VARIANTS.items()},
+    "CMA-ES": (CMAESOptimizer,                  {}),
+    "PSO":    (PSOOptimizer,                    {}),
+    "DE":     (DEOptimizer,                     {}),
+    "SaVOA":  (SaVOAOptimizer,                  {}),
+    "MC-ESO": (MultiChannelEpidemicOptimizer,   {}),
 }
 
 
@@ -203,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument("--funcs",      type=str, default=None,
                         help="Comma-separated function names to run (default: all in selected set)")
     parser.add_argument("--all",        action="store_true",
-                        help="Use the full BBOB set (F01-F24, + C01/C02 for dim=2) instead of the quick subset")
+                        help="Use the full BBOB set (F01-F24, + C01-C11 custom for dim=2) instead of the quick subset")
     parser.add_argument("--dim",        type=int, default=2, choices=sorted(_DIM_REGISTRIES),
                         help="Problem dimension (default 2). C01/C02 are 2D-only and skipped for higher dims.")
     args = parser.parse_args()

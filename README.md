@@ -87,6 +87,26 @@ BBOB は Hansen et al. (2009) が提案した連続最適化の標準ベンチ�
 | F23 | Katsuura | weak-structure | フラクタル的な地形 |
 | F24 | Lunacek bi-Rastrigin | weak-structure | 大域最適解が欺瞞的な位置 |
 
+### Custom 関数 (2-D)
+
+BBOB がカバーしない **多大域最適解**・**deceptive 2-D 多峰** 系の古典的テスト関数を補完。MC-ESO の「ニッチ系統共存」と「広域 spillover」の挙動を BBOB の回転・シフトに依らない素のランドスケープで検証する目的。各関数は `f(x) − f_opt` で正規化し最小値を 0 とする。
+
+| ID | 関数名 | 探索域 | カテゴリ | 主な難しさ |
+|---|---|---|---|---|
+| C01 | Himmelblau | [-5, 5]² | multi-optima | 大域最適解が **4 箇所**（ニッチ性能の直接評価） |
+| C02 | Six-hump Camel | [-2, 2]² | multi-optima | 大域最適解が **2 箇所** |
+| C03 | Shubert | [-10, 10]² | multi-optima | 大域最適解が **18 箇所**（積形式・約760 局所解） |
+| C04 | Five-well Potential | [-20, 20]² | deceptive-2d | 5 つの井戸（うち1つが大域）|
+| C05 | Eggholder | [-512, 512]² | deceptive-2d | 極めて鋭い多峰・大域は境界近傍 |
+| C06 | Michalewicz (m=10) | [0, π]² | deceptive-2d | 平坦域に細い谷、急峻 |
+| C07 | Bukin N.6 | [-15, 15]² | deceptive-2d | y = 0.01x² の極細谷、gradient 不連続 |
+| C08 | Styblinski-Tang | [-5, 5]² | deceptive-2d | 4 局所解、3 つが大域に近い深さ |
+| C09 | Easom | [-100, 100]² | deceptive-2d | 広大な平坦域中の鋭い単一峰（needle-in-haystack）|
+| C10 | Schaffer N.2 | [-100, 100]² | deceptive-2d | 同心円状の多峰、原点中心 |
+| C11 | De Jong F5 (Shekel's foxholes) | [-65.536, 65.536]² | deceptive-2d | 5×5 格子の25局所解 |
+
+出典: BBOB は Hansen et al. (2009)。Custom 関数は Surjanovic & Bingham のテスト関数集および Tomitomi3 (Qiita) の整理を参照。
+
 ---
 
 ## 手法の詳細
@@ -149,7 +169,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 | チャネル | 疫学アナロジー | 数学的形 | 役割 |
 |---|---|---|---|
 | **接触感染** (Close-contact) | 親密接触による局所感染 | `x_parent + N(0, σ_i I)` | 親近傍の精密探索。σ_i は親の品質と年齢で適応 |
-| **飛沫感染** (Droplet) | 飛沫を介した宿主間感染 | `x_parent + F·(x_strain − x_parent) + F·(x_a − x_b)` | 系統 (niched elite) からの引力 ＋ 集団内差分ベクトル。**暗黙的異方性**の獲得 |
+| **飛沫感染** (Droplet) | 飛沫を介した宿主間感染 | `x_parent + F·(x_strain − x_parent) + F·(x_a − x_b)` ＋ 親との二項交叉 (CR=0.7) | 系統 (niched elite) からの引力 ＋ 集団内差分ベクトルで **暗黙的異方性** を獲得しつつ、二項交叉で座標方向の親情報を保護 (DE/current-to-best/1/bin) |
 | **空気感染** (Airborne) | エアロゾルによる広域感染 | `x_random_host + N(0, σ_air I)` | 集団に依存しない遠方探索。局所最適脱出 |
 
 #### 集団レベルの 3 機構
@@ -188,8 +208,10 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
    ├─ 接触感染 [残り]
    │   └─ 親 + Gauss(0, σ_i I), σ_i = σ × host_sigma_min_scale^(log_quality × (0.7 + 0.3 × age_ratio))
    ├─ 飛沫感染 [h2h_ratio = 0.4]
-   │   └─ 親 + h2h_F × (x_strain − 親) + h2h_F × (x_a − x_b)
-   │       DE/current-to-best/1 と同型: 差分ベクトルが集団形状を反映、系統引力で進行加速
+   │   └─ trial = 親 + h2h_F × (x_strain − 親) + h2h_F × (x_a − x_b)
+   │       child = 各次元で確率 h2h_CR (=0.7) で trial を採用、残りは親をそのまま継承
+   │       DE/current-to-best/1/bin と同型: 差分ベクトル ＋ 系統引力で集団形状を反映、
+   │       二項交叉が separable 多峰の座標方向情報を保護（F04/F17 SR を大幅改善）
    └─ 空気感染 [air_ratio = 0.3]
        └─ ランダム宿主 + Normal(0, σ_air I), σ_air は集団分散に応じて 1.5×〜5× σ
 
@@ -229,6 +251,7 @@ MC-ESO の系統選択:
 | `air_sigma_max` | 5.0 | 集団収束時の空気感染 σ 倍率（収束時に大ジャンプ） |
 | `h2h_ratio` | 0.4 | 飛沫感染チャネルの割合 |
 | `h2h_F` | 0.5 | 飛沫感染の差分ベクトルスケール係数 |
+| `h2h_CR` | 0.7 | 飛沫感染後の二項交叉率（DE 流、座標方向の親情報を確率 1-CR で継承）|
 | `kill_fraction` | 0.25 | 宿主競合で毎世代排除する割合 |
 | `restart_no_improve_threshold` | 300 | スピルオーバー発動の no_improve 閾値 |
 | `restart_sigma_ratio` | 0.3 | スピルオーバー後の σ（σ_init に対する比率） |
@@ -370,39 +393,33 @@ else:
 
 ##### 検証の方法
 
-```python
-_MCESO_VARIANTS = {
-    "MC-ESO":  {},  # all mechanisms default ON
-}
-```
+`quick_check.py` は `_OPTIMIZERS` に MC-ESO 本体と既存手法を並べて 26 関数 × n_runs で ablation する。改良案を検証する場合は MC-ESO のサブクラスや別 entry を追加して quick で overall 改善を測り、確認できれば `main.py` の `_BASE_OPTIMIZERS` に統合する流れ。
 
 `./run.sh quick --funcs F08-Rosenbrock,F09-RosenbrockRot,F10-EllipsoidalRot,F12-BentCigar --max-evals 10000` で target 関数の集中検証が可能（`--funcs` 引数で任意関数の絞り込み）。
 
-##### ベースに統合された案（MC-ESO 開発の中で確立されたコア機構）
+##### ベースに統合された案（MC-ESO 本体に直結したコア機構）
 
-以下の案は ablation で overall 改善を実証し、MC-ESO 本体に統合された（フラグ不要、常時 ON）。
+以下はすべて MC-ESO 本体に常時 ON で組込まれ、ablation で overall 改善を実証済み。
 
-| 案 | 元フラグ名 | MC-ESO での位置付け |
+| 機構 | MC-ESO での位置付け |
+|---|---|
+| **飛沫感染チャネル**（h2h, DE/current-to-best/1） | 差分変異が集団形状から異方情報を獲得。F08/F09/F10/F12 の主因 |
+| **h2h binomial crossover** (`h2h_CR=0.7`) | 飛沫の trial vector を親と座標毎に交叉し、separable 多峰の座標方向情報を保護。quick (n=30) で F04 SR 77→100%, F17 47→73%, F08 87→93%。F18/F19 では CR=0.9 より若干劣るトレードオフを受けつつ overall SR@1e-4 平均 92.0%→93.4% |
+| **宿主競合**（μ+λ greedy + rollback） | 最良宿主の長期保持で F10/F12 を SR 0%→80/90% へ |
+| **エスカレート式スピルオーバー** | quality-gated restart ＋ 連続失敗時の basin switch。ill-cond の整列失敗と F24 双漏斗を救済 |
+| **Drilling mode**（σ_drill_down=0.85） | best_so_far < 1e-6 で σ 縮小を強化し浮動小数限界まで追込む |
+
+##### 検証され不採用となった variant（quick ablation, n=30）
+
+以下は `quick_check.py` で MC-ESO 統合候補として走らせたが overall 改善を実証できず、コードからも削除された。
+
+| variant | 追加した挙動 | 不採用の理由 |
 |---|---|---|
-| B | `use_h2h_transmission` | **飛沫感染チャネル**。差分変異が集団形状から異方情報を獲得し、F08/F09/F10/F12 の主因 |
-| H | `use_h2h_current_to_best` | 飛沫チャネルに F·(系統 − 親) 引力項を追加、valley 進行を加速 |
-| P5 | `use_greedy_elitism` | **宿主競合**（μ+λ greedy + rollback）。最良宿主の長期保持で F10/F12 を SR 0%→80/90% へ |
-| P7 | `use_restart_on_stagnation` | **スピルオーバー**（quality-gated）。ill-cond の整列失敗を救済 |
+| MC-ESO-ABD | h2h_CR=0.9 ＋ σ-adapt 停滞ゲートを drilling 中バイパス ＋ 初回 spillover で座標軸 sweep | A_mild ベースと比べて CR=0.9 のため F18/F19 で勝つが F04 SR が 100→87% と回帰。Wilcoxon でも B/D 単独の有意寄与なし、結局 CR トレードオフに収束 |
+| MC-ESO-A_mild_BD | 統合済み MC-ESO ＋ 同上の B/D | F09/F11/F18 で +0.04、F04/F14 で −0.04 と相殺し ECDF 0.2234→0.2241 でほぼ同等。B/D の overall 寄与なし |
+| 旧 A〜N（`use_evolution_path` / `use_pop_covariance` / `use_lifespan_reset` / `use_adaptive_air` / `use_adaptive_h2h_F` / `use_aggressive_niche` / `use_h2h_archive` / `use_local_pair_h2h` ほか） | MC-ESO 初期開発で試した 8 案 | 各案とも単一関数の改善はあるものの 12 関数 SR 合計で baseline 以下、あるいは安全装置を要する構造欠陥（E）で overall を毀損し全削除 |
 
-##### 却下されたフラグ（ablation 結果による）
-
-以下の案は実装されたが、ablation で overall 性能向上への寄与が確認できず削除された。後続研究の参考として記録する。
-
-| 案 | フラグ名 | 理由 |
-|---|---|---|
-| A | `use_evolution_path` | 各スロットに進化パス（成功ステップの EMA）を保持し、局所感染ノイズを `α·p_c + √(1-α²)·noise` でブレンド。B との組合せで F21/F03 を救済するが、後続案で同等以上の救済が得られるため機能重複。F08/F12 では微〜大幅劣化。overall に貢献せず削除。|
-| C | `use_pop_covariance` | 各世代頭で集団共分散 `Σ_pop` を Cholesky 分解し局所感染ノイズを異方化。F12/F15 の **平均値** で単独最良を出す関数特化型だが、SR ベースでは劣化。overall でなく単一関数特化のため削除。|
-| D | `use_lifespan_reset` | 局所感染で改善した親の `age` をリセット。B との組合せで F21 を回復するが、他案でも同じ回復が得られ機能重複。F08/F09/F10 では微劣化、独自の貢献が薄いため削除。|
-| E | `use_adaptive_air` | `top5_spread < 0.1` で `air_ratio` を 0.05 まで縮小。B と組合せると **二峰分布の失敗** が発生（F08/F09/F12 で約半数の run が壊滅、平均値を支配）。原因は「B による集団急収束 → air 縮小 → 差分ベクトルも小 → 脱出機構ゼロ」の悪循環。安全装置なしには救えない構造的欠陥のため削除。|
-| G | `use_adaptive_h2h_F` | 1/5-rule で `h2h_F` を成功率に応じて適応。F08/F09 の平均で改善するが、12 関数の **SR 合計が baseline+B より上がらず** overall に寄与せず削除。F12/F20 で劣化のトレードオフ。|
-| I | `use_aggressive_niche` | `unimodal_converged` 判定から `best_so_far < 1e-3` ゲートを外す。F21 で大幅改善（mean 2e-8）するが、F08/F09/F17 で SR が下がり、**12 関数 SR 合計は 610**（最低レベル）。overall 劣化のため削除。|
-| K | `use_h2h_archive` | 過去評価点の上位 K アーカイブから h2h の差分を取得（landscape + stagnation gated 版を試行）。F08/F12/F17 で改善するが、ゲート設計に依存して他関数で劣化、**SR 合計は 660 で B 単独と同等**。固有の overall 寄与なしのため削除。|
-| N | `use_local_pair_h2h` | h2h の差分 `(a, b)` を親の K 最近傍から取る設計で F17/F21 の basin 跨ぎを防ぐ狙い。F17 (30%→70-80%) の単一関数で劇的改善するが、近距離限定により F03/F08/F15 で長距離ジャンプ能力を失い **SR 合計は 570（baseline 630 以下）**。Overall に -60 の劣化のため削除。|
+検証ログ: `results/20260515_150803_ベースライン_quick/dim2/{summary,wilcoxon}.csv`
 
 ---
 

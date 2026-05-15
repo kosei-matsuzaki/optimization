@@ -595,7 +595,7 @@
   .row-pso   .cmp-bar-fill { --bar-color: #c48a00; --bar-color-light: #fbbf24; }
   .row-savoa .cmp-bar-fill { --bar-color: #9333ea; --bar-color-light: #c084fc; }
   .row-cmaes .cmp-bar-fill { --bar-color: var(--accent); --bar-color-light: #93c5fd; }
-  .row-ga    .cmp-bar-fill { --bar-color: #15803d; --bar-color-light: #86efac; }
+  .row-de    .cmp-bar-fill { --bar-color: #15803d; --bar-color-light: #86efac; }
   .cmp-score-val {
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
     font-size: 14px; font-weight: 800; color: var(--text);
@@ -694,7 +694,7 @@
   }
   .mc-cmaes { --mc-color: var(--accent);  --mc-tint: rgba(66,99,235,.08);  --mc-border: rgba(66,99,235,.30);  border-top-color: var(--accent); }
   .mc-pso   { --mc-color: #c48a00;        --mc-tint: rgba(233,178,0,.10);  --mc-border: rgba(233,178,0,.40);  border-top-color: #e9b200; }
-  .mc-ga    { --mc-color: var(--success); --mc-tint: rgba(47,158,68,.09);  --mc-border: rgba(47,158,68,.30);  border-top-color: var(--success); }
+  .mc-de    { --mc-color: var(--success); --mc-tint: rgba(47,158,68,.09);  --mc-border: rgba(47,158,68,.30);  border-top-color: var(--success); }
   .mc-savoa { --mc-color: #ae3ec9;        --mc-tint: rgba(174,62,201,.09); --mc-border: rgba(174,62,201,.30); border-top-color: #ae3ec9; }
 
   .method-card-inner { padding: 18px 20px 18px; position: relative; }
@@ -1010,7 +1010,7 @@
         新しい多経路感染モデル
       </div>
       <h1 class="hero-title">MC-ESO<em>Multi-Channel Epidemic Spread Optimizer</em></h1>
-      <p class="hero-desc">既存メタヒューリスティクスは <strong>単一の再生メカニズム</strong>を持つ（DE = 差分変異, ES = ガウス変異, PSO = 速度ベクトル, GA = 交叉）。対して MC-ESO は感染症の流行を模し、<strong>3 つの伝染チャネル</strong>（接触・飛沫・空気）を並列に走らせる。宿主競合 ＋ スピルオーバー再播種を組合せ、BBOB 12 関数の overall SR で <strong>CMA-ES / PSO / SaVOA / GA をいずれも上回る</strong>。</p>
+      <p class="hero-desc">既存メタヒューリスティクスは <strong>単一の再生メカニズム</strong>を持つ（DE = 差分変異, ES = ガウス変異, PSO = 速度ベクトル, GA = 交叉）。対して MC-ESO は感染症の流行を模し、<strong>3 つの伝染チャネル</strong>（接触・飛沫・空気）を並列に走らせる。宿主競合 ＋ エスカレート式スピルオーバー再播種を組合せ、BBOB 26 関数 (F01–F24 ＋ C01/C02) の overall SR@1e-4 で <strong>CMA-ES / PSO / SaVOA を大きく上回り、DE と並ぶ最良スコア</strong>を達成。</p>
     </div>
     <div class="hero-schematic">
       <svg viewBox="0 0 460 200" xmlns="http://www.w3.org/2000/svg">
@@ -1095,29 +1095,29 @@
 <div class="perf-banner">
   <div class="perf-grid">
     <div class="perf-headline">
-      <div class="perf-headline-label">BBOB 12 関数 SR 合計（5000 evals × 10 seeds）</div>
-      <div class="perf-headline-value">1200<span style="font-size:13px; font-weight:600; color:var(--text-2); margin-left:4px;">/ 1200</span></div>
-      <div class="perf-headline-sub">既存全 4 手法を上回る overall best</div>
+      <div class="perf-headline-label">BBOB 26 関数 SR@1e-4 平均（5000 evals × n_runs=30, dim=2）</div>
+      <div class="perf-headline-value">93.4<span style="font-size:13px; font-weight:600; color:var(--text-2); margin-left:4px;">%</span></div>
+      <div class="perf-headline-sub">DE と並ぶ最良、PSO / SaVOA / CMA-ES を大きく上回る</div>
     </div>
     <div class="perf-cell is-best">
       <div class="perf-cell-method">MC-ESO</div>
-      <div class="perf-cell-value">1200</div>
+      <div class="perf-cell-value">93.4%</div>
+    </div>
+    <div class="perf-cell">
+      <div class="perf-cell-method">DE</div>
+      <div class="perf-cell-value">91.9%</div>
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">PSO</div>
-      <div class="perf-cell-value">1030</div>
+      <div class="perf-cell-value">75.6%</div>
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">SaVOA</div>
-      <div class="perf-cell-value">920</div>
+      <div class="perf-cell-value">74.6%</div>
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">CMA-ES</div>
-      <div class="perf-cell-value">890</div>
-    </div>
-    <div class="perf-cell">
-      <div class="perf-cell-method">GA</div>
-      <div class="perf-cell-value">480</div>
+      <div class="perf-cell-value">72.5%</div>
     </div>
   </div>
 </div>
@@ -1135,7 +1135,7 @@
   <h2 class="sec-heading reveal" id="vso">
     <span class="sec-num">01</span>MC-ESO — Multi-Channel Epidemic Spread Optimizer
   </h2>
-  <p class="sec-sub reveal">感染症の流行を模倣した提案手法。3 チャネル並列伝染 ＋ 宿主競合 ＋ スピルオーバー再播種の組合せで、BBOB 12 関数の SR@1e-4 合計が CMA-ES (890) / SaVOA (920) / PSO (1030) を上回る <strong>1200</strong> を達成。</p>
+  <p class="sec-sub reveal">感染症の流行を模倣した提案手法。3 チャネル並列伝染 ＋ 宿主競合 ＋ エスカレート式スピルオーバー再播種の組合せで、BBOB 26 関数 (dim=2) の SR@1e-4 平均が CMA-ES (72.5%) / SaVOA (74.6%) / PSO (75.6%) を大きく上回り、DE (91.9%) と並んで最良 <strong>93.4%</strong> を達成。</p>
 
   <div class="vso-layout">
     <div class="h3">コアとなるアナロジー</div>
@@ -1190,7 +1190,7 @@
               <div class="concept-title">Droplet</div>
             </div>
           </div>
-          <div class="concept-body">飛沫を介した宿主間伝染。\(x_\text{p} + F(x_\text{strain}{-}x_\text{p}) + F(x_a{-}x_b)\)。差分ベクトルが集団形状を反映する**暗黙的異方性**、系統への引力で valley 進行を加速。</div>
+          <div class="concept-body">飛沫を介した宿主間伝染。trial = \(x_\text{p} + F(x_\text{strain}{-}x_\text{p}) + F(x_a{-}x_b)\) を作り、親と座標ごとに <strong>確率 \(CR=0.7\) で二項交叉</strong> (DE/current-to-best/1/bin と同型)。差分ベクトルが集団形状を反映する <strong>暗黙的異方性</strong>、系統への引力で valley 進行を加速、二項交叉が separable 多峰の座標方向情報を保護。</div>
         </div>
 
         <div class="concept-card c-airborne">
@@ -1584,30 +1584,29 @@ strains ← []
       </div>
     </div>
 
-    <!-- GA -->
-    <div class="method-card mc-ga">
+    <!-- DE -->
+    <div class="method-card mc-de">
       <div class="method-card-inner">
-        <div class="method-card-name">GA</div>
-        <div class="method-card-type">進化的アルゴリズム — 遺伝的アルゴリズム</div>
+        <div class="method-card-name">DE</div>
+        <div class="method-card-type">進化的アルゴリズム — 差分進化</div>
         <div class="method-diagram mini-diagram" style="height:88px; display:flex; align-items:center; justify-content:center;">
           <svg viewBox="0 0 160 88" width="160" height="88">
-            <rect x="5" y="10" width="60" height="18" rx="3" fill="rgba(66,99,235,.15)" stroke="var(--accent)" stroke-width="1"/>
-            <rect x="5" y="10" width="30" height="18" rx="3" fill="rgba(66,99,235,.35)"/>
-            <text x="35" y="22" font-size="8" fill="var(--text)" text-anchor="middle">Parent 1</text>
-            <rect x="5" y="34" width="60" height="18" rx="3" fill="rgba(47,158,68,.15)" stroke="var(--success)" stroke-width="1"/>
-            <rect x="35" y="34" width="30" height="18" rx="3" fill="rgba(47,158,68,.35)"/>
-            <text x="35" y="46" font-size="8" fill="var(--text)" text-anchor="middle">Parent 2</text>
-            <text x="80" y="30" font-size="18" fill="var(--muted)" text-anchor="middle">✕</text>
-            <rect x="95" y="20" width="60" height="18" rx="3" fill="rgba(174,62,201,.2)" stroke="#ae3ec9" stroke-width="1"/>
-            <rect x="95" y="20" width="30" height="18" rx="3" fill="rgba(66,99,235,.35)"/>
-            <rect x="125" y="20" width="30" height="18" rx="3" fill="rgba(47,158,68,.35)"/>
-            <text x="125" y="32" font-size="8" fill="var(--text)" text-anchor="middle">Child</text>
-            <circle cx="140" cy="19" r="4" fill="var(--warn)" opacity=".8"/>
-            <text x="148" y="16" font-size="7" fill="var(--warn)">突然変異</text>
-            <text x="80" y="80" font-size="7" fill="#8892b0" text-anchor="middle">SBX 交叉 → 多項式突然変異</text>
+            <defs><marker id="a-de" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L5,2.5z" fill="var(--accent)"/></marker></defs>
+            <circle cx="25" cy="60" r="4" fill="var(--accent)"/>
+            <text x="25" y="74" font-size="7" fill="#8892b0" text-anchor="middle">x_a</text>
+            <circle cx="55" cy="35" r="4" fill="var(--accent)"/>
+            <text x="55" y="28" font-size="7" fill="#8892b0" text-anchor="middle">x_b</text>
+            <circle cx="80" cy="70" r="4" fill="var(--accent)"/>
+            <text x="80" y="83" font-size="7" fill="#8892b0" text-anchor="middle">x_c (donor)</text>
+            <path d="M25 60 L55 35" stroke="var(--accent)" stroke-width="1.1" fill="none" stroke-dasharray="2 2"/>
+            <path d="M80 70 L120 35" stroke="var(--accent)" stroke-width="1.4" fill="none" marker-end="url(#a-de)"/>
+            <text x="106" y="50" font-size="7" fill="var(--accent)" text-anchor="middle">+F·(x_b−x_a)</text>
+            <circle cx="120" cy="35" r="5" fill="#ae3ec9"/>
+            <text x="120" y="22" font-size="7" fill="#ae3ec9" text-anchor="middle">trial</text>
+            <text x="80" y="6" font-size="7" fill="#8892b0" text-anchor="middle">差分変異 → 二項交叉 → greedy 1:1 置換</text>
           </svg>
         </div>
-        <p>2つの親から SBX（Simulated Binary Crossover）で子を生成し、多項式突然変異を加える。エリート選択で上位個体を次世代に引き継ぐ。汎用性が高い。</p>
+        <p>DE/rand/1/bin (Storn &amp; Price 1997)。target ごとに 3 つの donor から `v = x_a + F·(x_b − x_c)` を作り、二項交叉率 \(CR=0.9\) で trial を構成、`f(u) ≤ f(target)` のみ置換。MC-ESO の飛沫感染チャネルが借用する差分変異の本家であり、<strong>「単一機構の差分変異がどこまで到達するか」のベースライン</strong>として直接対比する。</p>
       </div>
     </div>
 
@@ -1639,35 +1638,35 @@ strains ← []
   <h2 class="sec-heading reveal" id="differences">
     <span class="sec-num">03</span>MC-ESO と既存手法の比較
   </h2>
-  <p class="sec-sub reveal">MC-ESO は <strong>多経路感染モデル</strong>という新概念により、BBOB 12 関数の SR@1e-4 合計で <strong>1200/1200</strong> を達成し既存 4 手法をいずれも上回る overall best を獲得。以下では (1) 性能スコア、(2) SaVOA / CMA-ES との設計上の違いを観点別に整理する。</p>
+  <p class="sec-sub reveal">MC-ESO は <strong>多経路感染モデル</strong>という新概念により、BBOB 26 関数 (dim=2) の SR@1e-4 平均で <strong>93.4%</strong> を達成し、PSO / SaVOA / CMA-ES を大きく上回り DE と並んで overall best タイ。以下では (1) 性能スコア、(2) DE / SaVOA / CMA-ES との設計上の違いを観点別に整理する。</p>
 
   <div class="concept-section reveal">
-    <div class="concept-section-label">性能スコア — BBOB 12 関数 SR@1e-4 合計（満点 1200）</div>
+    <div class="concept-section-label">性能スコア — BBOB 26 関数 SR@1e-4 平均（dim=2, 5000 evals × 30 seeds）</div>
     <div class="cmp-board">
       <div class="cmp-board-row row-mceso proposed">
         <div class="cmp-name">MC-ESO <span class="proposed-badge">提案</span></div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:100%;"></div></div>
-        <div class="cmp-score-val">1200<span class="denom">/1200</span></div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:93.4%;"></div></div>
+        <div class="cmp-score-val">93.4%</div>
+      </div>
+      <div class="cmp-board-row row-de">
+        <div class="cmp-name">DE</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:91.9%;"></div></div>
+        <div class="cmp-score-val">91.9%</div>
       </div>
       <div class="cmp-board-row row-pso">
         <div class="cmp-name">PSO</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:85.83%;"></div></div>
-        <div class="cmp-score-val">1030<span class="denom">/1200</span></div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:75.6%;"></div></div>
+        <div class="cmp-score-val">75.6%</div>
       </div>
       <div class="cmp-board-row row-savoa">
         <div class="cmp-name">SaVOA</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:76.67%;"></div></div>
-        <div class="cmp-score-val">920<span class="denom">/1200</span></div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:74.6%;"></div></div>
+        <div class="cmp-score-val">74.6%</div>
       </div>
       <div class="cmp-board-row row-cmaes">
         <div class="cmp-name">CMA-ES</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:74.17%;"></div></div>
-        <div class="cmp-score-val">890<span class="denom">/1200</span></div>
-      </div>
-      <div class="cmp-board-row row-ga">
-        <div class="cmp-name">GA</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:40%;"></div></div>
-        <div class="cmp-score-val">480<span class="denom">/1200</span></div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:72.5%;"></div></div>
+        <div class="cmp-score-val">72.5%</div>
       </div>
     </div>
   </div>

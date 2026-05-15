@@ -22,10 +22,10 @@ MAX_EVALS = 5000
 OUTPUT_DIR = Path("results")
 
 _BASE_OPTIMIZERS = {
-    "PSO":      (PSOOptimizer,       {}),
-    "DE":       (DEOptimizer,        {}),
-    "SaVOA":    (SaVOAOptimizer,     {}),
-    "MC-ESO":   (MultiChannelEpidemicOptimizer, {}),
+    "PSO":    (PSOOptimizer,                  {}),
+    "DE":     (DEOptimizer,                   {}),
+    "SaVOA":  (SaVOAOptimizer,                {}),
+    "MC-ESO": (MultiChannelEpidemicOptimizer, {}),
 }
 
 
