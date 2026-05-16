@@ -201,7 +201,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                                                # absolute niche_radius=1.0)
         # ── σ (global) ────────────────────────────────────────────────
         sigma: float = 0.2,                    # σ_init relative to span
-        sigma_decay: float = 0.99,             # fallback decay when σ-adapt gate is exceeded
         host_sigma_min_scale: float = 0.05,    # per-host σ_i scaling floor — σ_i is
                                                # σ_global × host_sigma_min_scale ** (lq · (0.7+0.3·ar))
                                                # i.e. high-quality / old hosts probe finer
@@ -245,7 +244,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         sigma_down: float = 0.95,              # gentle contraction when not
         sigma_floor_ratio: float = 1e-6,       # σ_global absolute floor (× span)
         sigma_ceil_ratio: float = 1.0,         # σ_global absolute ceiling (× span)
-        sigma_adapt_stagnation_gate: int = 100,  # σ-adapt only when no_improve < this
         drilling_threshold: float = 1e-6,      # best_so_far below this → drilling mode
         sigma_drill_down: float = 0.85,        # σ contraction in drilling mode
         # ── Misc ───────────────────────────────────────────────────────
@@ -279,7 +277,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.n_pop = n_pop
         self.lifespan = lifespan
         self.sigma = sigma
-        self.sigma_decay = sigma_decay
         self.air_ratio = air_ratio
         self.n_elite_max = n_elite_max
         self.temperature = temperature
@@ -303,7 +300,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.sigma_down = sigma_down
         self.sigma_floor_ratio = sigma_floor_ratio
         self.sigma_ceil_ratio = sigma_ceil_ratio
-        self.sigma_adapt_stagnation_gate = sigma_adapt_stagnation_gate
         self.drilling_threshold = drilling_threshold
         self.sigma_drill_down = sigma_drill_down
         self.h2h_CR = h2h_CR
@@ -792,24 +788,16 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     replaced_mask[replaced_slots] = True
                 pop_age[~replaced_mask] += 1
 
-                # σ adaptation only fires while the search is actively improving
-                # (no_improve < gate). Once stuck, fall back to the gentle decay
-                # so that an upcoming spillover has a meaningful σ to reseed with.
+                # σ adaptation always on: improved → × sigma_up,
+                # else → × sigma_down (or sigma_drill_down in drilling mode).
                 in_drilling = best_so_far < self.drilling_threshold
                 sigma_floor_eff = span * self.sigma_floor_ratio
-                if no_improve < self.sigma_adapt_stagnation_gate:
-                    if best_so_far < gen_best_before:
-                        sigma *= self.sigma_up
-                    else:
-                        # Drilling mode: in a known-good basin (high precision
-                        # already reached), contract σ more aggressively to push
-                        # toward the floating-point optimum.
-                        sigma *= self.sigma_drill_down if in_drilling else self.sigma_down
-                    sigma = max(sigma_floor_eff,
-                                min(sigma, span * self.sigma_ceil_ratio))
+                if best_so_far < gen_best_before:
+                    sigma *= self.sigma_up
                 else:
-                    sigma *= self.sigma_decay
-                    sigma = max(sigma_floor_eff, sigma)
+                    sigma *= self.sigma_drill_down if in_drilling else self.sigma_down
+                sigma = max(sigma_floor_eff,
+                            min(sigma, span * self.sigma_ceil_ratio))
 
             # Per-generation dynamics recording (population always = n_pop)
             history_pop_sigma.append(

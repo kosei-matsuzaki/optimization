@@ -228,13 +228,11 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 6. 宿主競合: Rollback
    └─ 各空きスロットの子が「元そこにいた親」より悪ければ親を復元 → 集団は単調改善
 
-7. σ 適応（ゲート付き + drilling mode）
-   └─ no_improve < sigma_adapt_stagnation_gate (=100) のとき:
-      改善: σ × sigma_up (=1.1)
-      非改善 (通常): σ × sigma_down (=0.95)
-      非改善 (drilling): best_so_far < drilling_threshold (=1e-6) のとき
-                        σ × sigma_drill_down (=0.85) — 浮動小数限界へ追込み
-   └─ stuck 時（gate 超過）: σ × sigma_decay (=0.99) — spillover に備えて σ 温存
+7. σ 適応（always-on + drilling mode）
+   └─ 改善: σ × sigma_up (=1.1)
+   └─ 非改善 (通常): σ × sigma_down (=0.95)
+   └─ 非改善 (drilling): best_so_far < drilling_threshold (=1e-6) のとき
+                       σ × sigma_drill_down (=0.85) — 浮動小数限界へ追込み
 ```
 
 #### 系統共存による多峰問題への適応
@@ -254,7 +252,6 @@ MC-ESO の系統選択:
 |---|---|---|
 | `n_pop` | 20 | 集団個体数 |
 | `sigma` | 0.2 | 初期探索半径（探索範囲に対する比率） |
-| `sigma_decay` | 0.99 | σ-adapt ゲート超過時の fallback 減衰率 |
 | `host_sigma_min_scale` | 0.05 | 接触感染チャネルにおける per-host σ_i スケーリング下限（高品質・高齢の宿主は σ_i = σ × 0.05 まで縮小して精密探索）|
 | `empirical_cov_floor` | 0.01 | 接触感染チャネルの集団経験共分散 `C_pop` の固有値下限（平均 1 正規化後、軸の縮退を防ぐ）|
 | `air_ratio` | 0.3 | 空気感染チャネルの割合 |
@@ -279,11 +276,10 @@ MC-ESO の系統選択:
 | `lifespan` | 5 | 接触感染 σ_i の年齢正規化分母 |
 | `stagnation_limit` | 2000 | 改善なし評価回数の上限（早期停止閾値） |
 | `log_slope_threshold` | 1e-4 | 「意味ある改善」の log10(f) 減少スロープ閾値 |
-| `sigma_up` | 1.1 | σ adapt 改善時の乗数（gate 内のみ）|
-| `sigma_down` | 0.95 | σ adapt 改善なし時の乗数（gate 内のみ）|
+| `sigma_up` | 1.1 | σ adapt 改善時の乗数 |
+| `sigma_down` | 0.95 | σ adapt 改善なし時の乗数 |
 | `sigma_floor_ratio` | 1e-6 | σ_global の絶対下限（× span）|
 | `sigma_ceil_ratio` | 1.0 | σ_global の絶対上限（× span）|
-| `sigma_adapt_stagnation_gate` | 100 | `no_improve` がこの値未満のみ σ adapt 発動、それ以上では sigma_decay |
 | `drilling_threshold` | 1e-6 | drilling mode 発動の `best_so_far` 閾値（既正しい basin 内のとき発動）|
 | `sigma_drill_down` | 0.85 | drilling mode 中の σ 縮小乗数（通常の sigma_down より積極的）|
 
@@ -339,24 +335,20 @@ MC-ESO の系統選択:
 
 ---
 
-#### ゲート付き σ 適応（default ON）
+#### σ 適応 always-on（default ON）
 
-MC-ESO の最終層。SaVOA 流の σ 乗法適応を **`no_improve` ゲート** と組み合わせ、improving 中のみ加速、stuck 時は標準減衰に戻す:
+SaVOA 流の σ 乗法適応を毎世代適用。改善時は σ を拡大して新しい谷を探り、非改善時は縮小して局所探索を強化:
 
 ```python
-if no_improve < sigma_adapt_stagnation_gate (=100):
-    if best 改善:
-        σ *= sigma_up (=1.1)
-    elif best_so_far < drilling_threshold (=1e-6):
-        σ *= sigma_drill_down (=0.85)   # drilling mode — 浮動小数限界へ追込み
-    else:
-        σ *= sigma_down (=0.95)
+if best 改善:
+    σ *= sigma_up (=1.1)
+elif best_so_far < drilling_threshold (=1e-6):
+    σ *= sigma_drill_down (=0.85)   # drilling mode — 浮動小数限界へ追込み
 else:
-    σ *= sigma_decay (=0.99)  # 通常減衰、spillover に備えて σ を温存
+    σ *= sigma_down (=0.95)
 ```
 
-**効果**: F17 が SR 80→100% に到達。F08/F10/F12/F20/C02 で mean が 1〜5 桁深化。
-**設計のポイント**: ゲートなしの σ adapt は F03 multimodal で premature commitment（SR 100→70%）。ゲートで stuck 中は σ を保護し、上位機構（spillover）に役割を渡す。
+**設計のポイント**: 以前は `no_improve` ゲートで stuck 中は減衰を緩める fallback を持っていたが、ablation で F14 DiffPowers / F23 Katsuura に大幅改善（SR_1e-7 +20〜+44%）、多峰関数で軽度回帰のトレードオフが観測された。HP 削減（`sigma_adapt_stagnation_gate`, `sigma_decay` の 2 つを除去）と引換に採用。
 
 #### Drilling mode（default ON）
 
