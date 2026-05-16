@@ -187,15 +187,14 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
    └─ f 値の良い順に走査し、既存系統から niche_radius_ratio × span (=0.1×span) 以上離れた個体だけを
       最大 n_elite_max (=6) 個保護
 
-2. スピルオーバー判定（停滞時の集団再播種、多様化＋エスカレート＋basin 回避版）
+2. スピルオーバー判定（停滞時の集団再播種、basin 回避版）
    └─ no_improve ≥ restart_no_improve_threshold (=300) かつ
       f_best > restart_quality_floor (=1e-8) のとき発動。
-      連続失敗回数 (consecutive_failed_spillovers) でエスカレート:
-         • streak = 0: 75% Uniform(lo, hi) + 25% best 周辺 N(x_best, σ_init×0.3)
-         • streak ≥ 1: 100% Uniform(lo, hi)、best は保持
+      連続失敗回数 (consecutive_failed_spillovers) で動作切替:
+         • streak < 2: 100% Uniform(lo, hi)（best は保持）+ 軸 sweep + σ ← σ_init×0.3
          • streak ≥ 2 かつ f_best > 1e-2: **ベイスン乗換え**
               — best も破棄、全 n_pop を Uniform 再生成、σ を σ_init にリセット
-      ─ 多段エスカレートにより F24 双漏斗 / F04 rugged separable から脱出
+      ─ ベイスン乗換えで F24 双漏斗 / F04 rugged separable から脱出
         f_best ≤ 1e-2 のとき乗換え抑制 → F13 ridge / C01 deep precision を保護
       ─ 失敗 spillover の事前 best 位置を memory に追加（最大 5 件 FIFO）。
         後続 uniform 再播種は半径 0.05×span 内を rejection sample で回避
@@ -264,8 +263,6 @@ MC-ESO の系統選択:
 | `restart_no_improve_threshold` | 300 | スピルオーバー発動の no_improve 閾値 |
 | `restart_sigma_ratio` | 0.3 | スピルオーバー後の σ（σ_init に対する比率） |
 | `restart_quality_floor` | 1e-8 | スピルオーバー skip 閾値（既収束 run の精度破壊を防ぐ） |
-| `restart_diversify_ratio` | 0.75 | スピルオーバー時、再播種個体のうち全探索域ランダムに割く割合（残りは best 周辺）|
-| `escalate_after_failed_spillovers` | 1 | この連続失敗回数で diversify_ratio を 1.0 に昇格 |
 | `basin_switch_after_failed_spillovers` | 2 | この連続失敗回数で best 破棄＋σ_init リセットの完全ベイスン乗換え |
 | `basin_switch_quality_floor` | 1e-2 | best がこの値以下のときベイスン乗換えを抑制（grinding 中の run を保護）|
 | `basin_radius_ratio` | 0.05 | basin-avoidance memory の回避半径（span に対する比率）|
@@ -366,35 +363,24 @@ if σ < span × precision_sigma_ratio (=1e-3):  # 高精度フェーズ到達後
 
 **設計のポイント**: 「正しいベイスン到達」を `best_so_far` で判定するため、deceptive landscape で誤って drilling が発動するリスクは小さい（誤った局所最適が 1e-6 を切るのは稀）。多峰／単峰の挙動切替を明示パラメータ無しで実現。
 
-#### エスカレート式 spillover（default ON）
+#### Spillover 動作（default ON）
 
-連続して spillover が改善に失敗した場合、disruption を段階的に強化する。IPOP-CMA-ES の "restart with larger population" 概念の MC-ESO 版。
+spillover では毎回 100% uniform 再播種＋軸 sweep を実行する。連続失敗が 2 回到達すると **basin switch**（best 破棄＋σ_init リセット）に切り替わる。IPOP-CMA-ES の "restart with larger population" 概念の MC-ESO 版。
 
 ```python
 streak = consecutive_failed_spillovers
 if streak >= 2 and best_so_far > 1e-2:
     # ベイスン乗換え — best を破棄、全 n_pop を Uniform、σ_init にリセット
-    div_ratio = 1.0; preserve_best = False; sigma = σ_init
-elif streak >= 1:
-    # 完全多様化 — 全スロット Uniform、best は保持
-    div_ratio = 1.0; preserve_best = True
+    preserve_best = False; sigma = σ_init
 else:
-    # 通常 — 75% Uniform + 25% best 周辺
-    div_ratio = 0.75; preserve_best = True
+    # 通常 — 全スロット Uniform、best は保持、σ ← σ_init×0.3
+    preserve_best = True
 ```
 
-**効果（5000 evals × 10 seeds, BBOB 全 26 関数）**:
-- F24-LunacekRastrigin: SR4 20% → **30%** (deceptive double-funnel から脱出可能に)
-- F04-BucheRastrigin: SR4 50% → **70%** (rugged separable で重要)
-- F06-AttractiveSector: mean 5.0e-07 → **2.4e-13**
-- F11-Discus: mean 5.4e-08 → **6.0e-12**
-- F19-GriewankRosenbrock: mean 1.0e-06 → **1.7e-08**
-- 12 関数 quick subset: SR@1e-4 = 1200/1200 維持（regression なし）
-
 **設計のポイント**:
-- **多段化**: `streak ≥ 1` で多様化拡大、`streak ≥ 2` で本格的乗換え。早期にすべてを破壊しない
-- **quality gate（1e-2）**: 既に高精度に達した run（F13 ridge, C01 deep precision）でベイスン乗換えが暴発しないよう保護
-- spillover 自体の quality_floor (=1e-8) は維持されるため、収束済みの run に影響なし
+- **basin switch quality gate（1e-2）**: 既に高精度に達した run（F13 ridge, C01 deep precision）でベイスン乗換えが暴発しないよう保護
+- spillover 自体は σ > span × precision_sigma_ratio でゲートされるため、drilling mode に達した run には影響なし
+- 旧バージョンは streak=0 で 75% uniform + 25% local mix を使う段階的 escalation を持っていたが、ablation で F04/F13/F24 改善 vs C05/F18/F19 軽度悪化のトレードオフが観測され、HP 削減（`escalate_after_failed_spillovers`, `restart_diversify_ratio`）優先で除去
 
 ##### 検証の方法
 
@@ -411,7 +397,7 @@ else:
 | **飛沫感染チャネル**（h2h, DE/current-to-best/1） | 差分変異が集団形状から異方情報を獲得。F08/F09/F10/F12 の主因 |
 | **h2h binomial crossover** (`h2h_CR=0.7`) | 飛沫の trial vector を親と座標毎に交叉し、separable 多峰の座標方向情報を保護。quick (n=30) で F04 SR 77→100%, F17 47→73%, F08 87→93%。F18/F19 では CR=0.9 より若干劣るトレードオフを受けつつ overall SR@1e-4 平均 92.0%→93.4% |
 | **宿主競合**（μ+λ greedy + rollback） | 最良宿主の長期保持で F10/F12 を SR 0%→80/90% へ |
-| **エスカレート式スピルオーバー** | quality-gated restart ＋ 連続失敗時の basin switch。ill-cond の整列失敗と F24 双漏斗を救済 |
+| **スピルオーバー＋basin switch** | quality-gated restart で全 pop を Uniform 再播種、連続失敗 2 回で best 破棄＋σ_init リセット。ill-cond の整列失敗と F24 双漏斗を救済 |
 | **Drilling mode**（σ_drill_down=0.85） | σ < span × 1e-3 で σ 縮小を強化し浮動小数限界まで追込む |
 | **接触感染の経験共分散** (`empirical_cov_floor=0.01`) | 集団経験共分散 `C_pop` の固有分解で接触感染ノイズを瞬間異方化。CMA-ES の rank-μ 学習と異なり履歴累積なし、basin 切替に即応。F11 mean 5e-8 → 0、F14 SR_1e-7 80% → 87%（n=15 quick） |
 | **Drilling 中の空気感染停止** | `σ < span × precision_sigma_ratio` で `air_ratio_eff = 0`。drilling 中の広域ランダム雑音を排除し精度劣化を防止。F06 SR_1e-10 93% → 100% |

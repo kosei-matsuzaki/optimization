@@ -216,19 +216,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         restart_no_improve_threshold: int = 300,  # no_improve count that triggers restart
         restart_sigma_ratio: float = 0.3,      # σ after restart, relative to σ_init
         restart_quality_floor: float = 1e-8,   # skip restart if already below this f
-        # Diversified spillover: on each restart, a fraction of the re-seeded
-        # population is placed uniformly across the search domain rather than
-        # around the best. This lets the search escape deceptive basins
-        # (F17/F20) — pure local re-seed alone can't, because the same basin
-        # recaptures the population.
-        restart_diversify_ratio: float = 0.75, # share of re-seed assigned to Uniform(lo, hi)
-        # Spillover escalation. When consecutive spillovers fail to improve
-        # the best, ratchet up the disruption — first widen to fully uniform
-        # re-seed (best preserved), then break the best entirely and reset σ.
-        # Addresses deceptive double-funnel landscapes (F24) and rugged
-        # separable functions (F04) where the algorithm gets locked into a
-        # wrong basin and pure local spillover only re-explores it.
-        escalate_after_failed_spillovers: int = 1,   # streak → diversify_ratio = 1.0
+        # Spillover: on every restart, all non-best slots are re-seeded uniformly
+        # across the search domain (with basin_memory rejection) and an
+        # axis-aligned sweep is performed. Best is preserved unless the streak
+        # of failed spillovers triggers a full basin switch below. This handles
+        # deceptive landscapes (F17/F20) without per-streak escalation logic.
         basin_switch_after_failed_spillovers: int = 2,  # streak → wipe best & reset σ
         basin_switch_quality_floor: float = 1e-2,    # basin switch suppressed when
                                                      # best_so_far ≤ this — protects
@@ -293,8 +285,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.restart_no_improve_threshold = restart_no_improve_threshold
         self.restart_sigma_ratio = restart_sigma_ratio
         self.restart_quality_floor = restart_quality_floor
-        self.restart_diversify_ratio = restart_diversify_ratio
-        self.escalate_after_failed_spillovers = escalate_after_failed_spillovers
         self.basin_switch_after_failed_spillovers = basin_switch_after_failed_spillovers
         self.basin_switch_quality_floor = basin_switch_quality_floor
         self.sigma_up = sigma_up
@@ -478,51 +468,42 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     and best_so_far > self.restart_quality_floor):
                 # Step 6: escalation policy based on consecutive_failed_spillovers.
                 #   streak ≥ basin_switch_after: wipe best, fully uniform, σ_init reset
-                #   streak ≥ escalate_after:    fully uniform, best preserved
-                #   streak  = 0:                default mix (75% uniform / 25% local)
+                #   else:                       fully uniform, best preserved
                 if (consecutive_failed_spillovers
                         >= self.basin_switch_after_failed_spillovers
                         and best_so_far > self.basin_switch_quality_floor):
                     basin_switch = True
                     div_ratio = 1.0
                     sigma_restart = sigma_init   # fresh σ for new basin
-                elif (consecutive_failed_spillovers
-                        >= self.escalate_after_failed_spillovers):
+                else:
                     basin_switch = False
                     div_ratio = 1.0
                     sigma_restart = sigma_init * self.restart_sigma_ratio
-                else:
-                    basin_switch = False
-                    div_ratio = self.restart_diversify_ratio
-                    sigma_restart = sigma_init * self.restart_sigma_ratio
 
-                # Step 7: coordinate-axis sweep before escalated spillovers.
-                # Targets separable / boundary-optimal landscapes that the
-                # isotropic uniform re-seed alone fails on (F04 BucheRastrigin,
-                # F05 LinearSlope). Only fires once a normal spillover has
-                # already failed (streak ≥ 1) so the eval cost is paid only
-                # when standard exploration is clearly stuck.
-                if consecutive_failed_spillovers >= self.escalate_after_failed_spillovers:
-                    x_best_for_sweep = pop_x[int(np.argmin(pop_f))].copy()
-                    for sweep_cand in self._axis_sweep(x_best_for_sweep, lo, hi):
-                        if len(history_f) >= max_evals:
-                            break
-                        f_sweep = float(self.func(sweep_cand))
-                        history_x.append(sweep_cand.copy())
-                        history_f.append(f_sweep)
-                        history_sigma_eval.append(
-                            float(np.linalg.norm(sweep_cand - x_best_for_sweep)))
-                        if f_sweep < best_so_far:
-                            best_so_far = f_sweep
-                            # Inject the better candidate into the population so
-                            # the upcoming spillover anchors on it (or, on basin
-                            # switch, so it's part of the historical best).
-                            worst_i = int(np.argmax(pop_f))
-                            pop_x[worst_i] = sweep_cand.copy()
-                            pop_f[worst_i] = f_sweep
-                            pop_age[worst_i] = 0
+                # Step 7: coordinate-axis sweep before every spillover. Targets
+                # separable / boundary-optimal landscapes that the isotropic
+                # uniform re-seed alone fails on (F04 BucheRastrigin,
+                # F05 LinearSlope).
+                x_best_for_sweep = pop_x[int(np.argmin(pop_f))].copy()
+                for sweep_cand in self._axis_sweep(x_best_for_sweep, lo, hi):
                     if len(history_f) >= max_evals:
                         break
+                    f_sweep = float(self.func(sweep_cand))
+                    history_x.append(sweep_cand.copy())
+                    history_f.append(f_sweep)
+                    history_sigma_eval.append(
+                        float(np.linalg.norm(sweep_cand - x_best_for_sweep)))
+                    if f_sweep < best_so_far:
+                        best_so_far = f_sweep
+                        # Inject the better candidate into the population so
+                        # the upcoming spillover anchors on it (or, on basin
+                        # switch, so it's part of the historical best).
+                        worst_i = int(np.argmax(pop_f))
+                        pop_x[worst_i] = sweep_cand.copy()
+                        pop_f[worst_i] = f_sweep
+                        pop_age[worst_i] = 0
+                if len(history_f) >= max_evals:
+                    break
 
                 best_pre_spillover = best_so_far
                 # Snapshot best position now — appended to bad_basin_memory
