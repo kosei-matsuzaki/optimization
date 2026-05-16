@@ -170,7 +170,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 |---|---|---|---|
 | **接触感染** (Close-contact) | 親密接触による局所感染 | `x_parent + σ_i · L_pop · N(0, I)`（`L_pop L_pop^T = C_pop`、集団経験共分散の固有分解）| 親近傍の精密探索。σ_i は親の品質と年齢で適応、`C_pop` で **瞬間共分散** を獲得（履歴累積なし、CMA-ES と差別化） |
 | **飛沫感染** (Droplet) | 飛沫を介した宿主間感染 | `x_parent + F·(x_strain − x_parent) + F·(x_a − x_b)` ＋ 親との二項交叉 (CR=0.7) | 系統 (niched elite) からの引力 ＋ 集団内差分ベクトルで集団形状を補強しつつ、二項交叉で座標方向の親情報を保護 (DE/current-to-best/1/bin) |
-| **空気感染** (Airborne) | エアロゾルによる広域感染 | `x_random_host + N(0, σ_air I)`（drilling 中は停止）| 集団に依存しない遠方探索。局所最適脱出。`f_best < 1e-6` の drilling mode では雑音化するため停止 |
+| **空気感染** (Airborne) | エアロゾルによる広域感染 | `x_random_host + N(0, σ_air I)`（drilling 中は停止）| 集団に依存しない遠方探索。局所最適脱出。`σ < span × 1e-3` の drilling mode では雑音化するため停止 |
 
 #### 集団レベルの 3 機構
 
@@ -220,9 +220,9 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
    │       child = 各次元で確率 h2h_CR (=0.7) で trial を採用、残りは親をそのまま継承
    │       DE/current-to-best/1/bin と同型: 差分ベクトル ＋ 系統引力で集団形状を反映、
    │       二項交叉が separable 多峰の座標方向情報を保護（F04/F17 SR を大幅改善）
-   └─ 空気感染 [air_ratio_eff = 0.3 if f_best ≥ 1e-6 else 0]
+   └─ 空気感染 [air_ratio_eff = 0.3 if σ ≥ span × 1e-3 else 0]
        └─ ランダム宿主 + Normal(0, σ_air I), σ_air は集団分散に応じて 1.5×〜5× σ
-          drilling mode (f_best < 1e-6) では停止 — 雑音による精度妨害を排除
+          drilling mode (σ < span × precision_sigma_ratio) では停止 — 雑音による精度妨害を排除
           （F06 SR_1e-10 93% → 100%、n=15）
 
 6. 宿主競合: Rollback
@@ -231,7 +231,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 7. σ 適応（always-on + drilling mode）
    └─ 改善: σ × sigma_up (=1.1)
    └─ 非改善 (通常): σ × sigma_down (=0.95)
-   └─ 非改善 (drilling): best_so_far < drilling_threshold (=1e-6) のとき
+   └─ 非改善 (drilling): σ < span × precision_sigma_ratio (=1e-3) のとき
                        σ × sigma_drill_down (=0.85) — 浮動小数限界へ追込み
 ```
 
@@ -280,7 +280,7 @@ MC-ESO の系統選択:
 | `sigma_down` | 0.95 | σ adapt 改善なし時の乗数 |
 | `sigma_floor_ratio` | 1e-6 | σ_global の絶対下限（× span）|
 | `sigma_ceil_ratio` | 1.0 | σ_global の絶対上限（× span）|
-| `drilling_threshold` | 1e-6 | drilling mode 発動の `best_so_far` 閾値（既正しい basin 内のとき発動）|
+| `precision_sigma_ratio` | 1e-3 | drilling mode 発動の σ 閾値（σ < span × 1e-3 で発動。σ ベースなので問題スケール不変）|
 | `sigma_drill_down` | 0.85 | drilling mode 中の σ 縮小乗数（通常の sigma_down より積極的）|
 
 ---
@@ -342,7 +342,7 @@ SaVOA 流の σ 乗法適応を毎世代適用。改善時は σ を拡大して
 ```python
 if best 改善:
     σ *= sigma_up (=1.1)
-elif best_so_far < drilling_threshold (=1e-6):
+elif σ < span × precision_sigma_ratio (=1e-3):
     σ *= sigma_drill_down (=0.85)   # drilling mode — 浮動小数限界へ追込み
 else:
     σ *= sigma_down (=0.95)
@@ -352,10 +352,10 @@ else:
 
 #### Drilling mode（default ON）
 
-正しい basin に到達した後の精密化フェーズ。`best_so_far < 1e-6` を超えたら **「正しいベイスン内」**と判定し、非改善時の σ 縮小を 0.95 → 0.85 と強化する。
+正しい basin に到達した後の精密化フェーズ。`σ < span × precision_sigma_ratio (=1e-3)` を超えたら **「σ が basin スケールまで収縮済み」**と判定し、非改善時の σ 縮小を 0.95 → 0.85 と強化する。σ ベース閾値は問題スケール不変なので、shift / scaling されたベンチマークでも追加の調整なく機能する。
 
 ```python
-if best_so_far < drilling_threshold (=1e-6):  # 高精度ベイスン到達後のみ
+if σ < span × precision_sigma_ratio (=1e-3):  # 高精度フェーズ到達後のみ
     σ *= sigma_drill_down (=0.85)             # 強収縮で浮動小数限界へ
 ```
 
@@ -412,9 +412,9 @@ else:
 | **h2h binomial crossover** (`h2h_CR=0.7`) | 飛沫の trial vector を親と座標毎に交叉し、separable 多峰の座標方向情報を保護。quick (n=30) で F04 SR 77→100%, F17 47→73%, F08 87→93%。F18/F19 では CR=0.9 より若干劣るトレードオフを受けつつ overall SR@1e-4 平均 92.0%→93.4% |
 | **宿主競合**（μ+λ greedy + rollback） | 最良宿主の長期保持で F10/F12 を SR 0%→80/90% へ |
 | **エスカレート式スピルオーバー** | quality-gated restart ＋ 連続失敗時の basin switch。ill-cond の整列失敗と F24 双漏斗を救済 |
-| **Drilling mode**（σ_drill_down=0.85） | best_so_far < 1e-6 で σ 縮小を強化し浮動小数限界まで追込む |
+| **Drilling mode**（σ_drill_down=0.85） | σ < span × 1e-3 で σ 縮小を強化し浮動小数限界まで追込む |
 | **接触感染の経験共分散** (`empirical_cov_floor=0.01`) | 集団経験共分散 `C_pop` の固有分解で接触感染ノイズを瞬間異方化。CMA-ES の rank-μ 学習と異なり履歴累積なし、basin 切替に即応。F11 mean 5e-8 → 0、F14 SR_1e-7 80% → 87%（n=15 quick） |
-| **Drilling 中の空気感染停止** | `f_best < drilling_threshold` で `air_ratio_eff = 0`。drilling 中の広域ランダム雑音を排除し精度劣化を防止。F06 SR_1e-10 93% → 100% |
+| **Drilling 中の空気感染停止** | `σ < span × precision_sigma_ratio` で `air_ratio_eff = 0`。drilling 中の広域ランダム雑音を排除し精度劣化を防止。F06 SR_1e-10 93% → 100% |
 | **Basin-avoidance memory**（`basin_radius_ratio=0.05`, `basin_memory_size=5`） | 失敗 spillover の事前 best 位置を memory に記録、後続 uniform 再播種は半径 0.05×span 内を rejection sample で回避。F18 SchafferF7ill SR_1e-10 33% → 67% |
 
 ##### 検証され不採用となった variant（quick ablation, n=30）

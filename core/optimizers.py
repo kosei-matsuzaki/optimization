@@ -157,7 +157,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             x_child = x_random_host + N(0, σ_air I)
             Long-range aerosol spread for escaping local maxima; σ_air
             inflates as the outbreak clusters. **Suppressed in drilling
-            mode** (best_so_far < drilling_threshold) so precision grinding
+            mode** (σ < span × precision_sigma_ratio) so precision grinding
             isn't disrupted by random long jumps.
 
     These channels are complemented by three population-level mechanisms:
@@ -182,10 +182,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         basin (essential for F18 SchafferF7-ill).
 
     Step-size adaptation is always on: σ is multiplied by ``sigma_up`` on
-    improvement and ``sigma_down`` on stagnation, gated by ``no_improve`` so
-    that deceptive multimodals are not destabilised. Once ``best_so_far`` falls
-    below ``drilling_threshold`` the contraction switches to the stronger
-    ``sigma_drill_down`` to drill toward the floating-point optimum.
+    improvement and ``sigma_down`` on stagnation. Once σ falls below
+    ``span × precision_sigma_ratio`` (i.e. the search has localised inside a
+    basin) the contraction switches to the stronger ``sigma_drill_down`` to
+    drill toward the floating-point optimum.
     """
 
     def __init__(
@@ -237,14 +237,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                                                      # C01 deep precision) from being
                                                      # wiped by a premature switch
         # ── σ adaptation ──────────────────────────────────────────────
-        # Multiplicative step-size adaptation, gated by no_improve so deceptive
-        # multimodals aren't destabilised. Below drilling_threshold the
-        # contraction switches to sigma_drill_down to drill to FP precision.
+        # Multiplicative step-size adaptation. Once σ < span × precision_sigma_ratio
+        # the contraction switches to sigma_drill_down to drill to FP precision.
         sigma_up: float = 1.1,                 # gentle expansion when improving
         sigma_down: float = 0.95,              # gentle contraction when not
         sigma_floor_ratio: float = 1e-6,       # σ_global absolute floor (× span)
         sigma_ceil_ratio: float = 1.0,         # σ_global absolute ceiling (× span)
-        drilling_threshold: float = 1e-6,      # best_so_far below this → drilling mode
+        precision_sigma_ratio: float = 1e-3,   # σ < span × this → drilling mode
+                                               # (scale-invariant; replaces absolute
+                                               # drilling_threshold)
         sigma_drill_down: float = 0.85,        # σ contraction in drilling mode
         # ── Misc ───────────────────────────────────────────────────────
         lifespan: int = 5,                     # age normalizer for local σ_i scaling
@@ -300,7 +301,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.sigma_down = sigma_down
         self.sigma_floor_ratio = sigma_floor_ratio
         self.sigma_ceil_ratio = sigma_ceil_ratio
-        self.drilling_threshold = drilling_threshold
+        self.precision_sigma_ratio = precision_sigma_ratio
         self.sigma_drill_down = sigma_drill_down
         self.h2h_CR = h2h_CR
         self.empirical_cov_floor = empirical_cov_floor
@@ -628,7 +629,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 # DE/current-to-best), airborne (random spread). Airborne is
                 # pure noise — suppressed once drilling mode is entered so
                 # precision grinding isn't disrupted.
-                in_drilling_now = best_so_far < self.drilling_threshold
+                in_drilling_now = sigma < span * self.precision_sigma_ratio
                 air_ratio_eff = 0.0 if in_drilling_now else self.air_ratio
                 n_air = max(0, int(round(air_ratio_eff * n_dead)))
                 n_h2h = max(0, int(round(self.h2h_ratio * n_dead))) if n >= 3 else 0
@@ -790,7 +791,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
                 # σ adaptation always on: improved → × sigma_up,
                 # else → × sigma_down (or sigma_drill_down in drilling mode).
-                in_drilling = best_so_far < self.drilling_threshold
+                in_drilling = sigma < span * self.precision_sigma_ratio
                 sigma_floor_eff = span * self.sigma_floor_ratio
                 if best_so_far < gen_best_before:
                     sigma *= self.sigma_up
