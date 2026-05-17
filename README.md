@@ -365,7 +365,7 @@ if σ < span × precision_sigma_ratio (=1e-3):  # 高精度フェーズ到達後
 
 #### Spillover 動作（default ON）
 
-spillover では毎回 100% uniform 再播種＋軸 sweep を実行する。連続失敗が 2 回到達すると **basin switch**（best 破棄＋σ_init リセット）に切り替わる。IPOP-CMA-ES の "restart with larger population" 概念の MC-ESO 版。
+spillover では毎回 100% uniform 再播種＋軸 sweep（各次元で `lo`/`hi` を試す境界 probe、dim=2 で 4 評価）を実行する。連続失敗が 2 回到達すると **basin switch**（best 破棄＋σ_init リセット）に切り替わる。IPOP-CMA-ES の "restart with larger population" 概念の MC-ESO 版。
 
 ```python
 streak = consecutive_failed_spillovers

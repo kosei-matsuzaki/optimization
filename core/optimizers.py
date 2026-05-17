@@ -327,29 +327,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
     def _axis_sweep(self, x_best: np.ndarray, lo: float, hi: float
                     ) -> list[np.ndarray]:
-        """Coordinate-axis line search around x_best. Per dimension, probe at
-        a few axis-aligned step sizes both directions plus the two bounds.
+        """Coordinate-axis boundary probes around x_best. Per dimension,
+        probe both bounds.
 
-        Built for **separable / boundary-optimal** landscapes:
+        Built for **boundary-optimal** landscapes:
           • F05 LinearSlope (optimum on a corner): the {lo, hi} probes land
             on the optimum exactly when the right sign is picked.
-          • F04 BucheRastrigin (separable, ~1.0-wide local basins on a grid):
-            step sizes of span × 0.1, 0.2, 0.4 jump between adjacent local
-            basins, so an axis-aligned probe lands inside the global basin
-            with much higher probability than isotropic Gaussian sampling.
 
-        Total candidates ≈ dim × (6 + 2). For dim=2 this is ~16 evals per
-        sweep, dwarfed by the spillover that follows it.
+        Total candidates = dim × 2. For dim=2 this is 4 evals per sweep.
         """
-        span = hi - lo
         cands: list[np.ndarray] = []
         for i in range(self.dim):
-            for k in (1, 2, 4):
-                step = k * span * 0.1
-                for sign in (-1.0, 1.0):
-                    cand = x_best.copy()
-                    cand[i] = x_best[i] + sign * step
-                    cands.append(self._reflect(cand, lo, hi))
             for bv in (lo, hi):
                 cand = x_best.copy()
                 cand[i] = bv
