@@ -490,11 +490,12 @@
   .fc-dot.c-red    + .fc-card { border-top-color: var(--danger); }
   .fc-dot.c-purple + .fc-card { border-top-color: #ae3ec9; }
   .fc-dot.c-orange + .fc-card { border-top-color: var(--warn); }
-  .fc-card strong {
+  .fc-card .fc-card-title {
     font-size: 14.5px; font-weight: 800; color: var(--text);
     display: block; margin-bottom: 6px; letter-spacing: -.2px;
     line-height: 1.4;
   }
+  .fc-card .fc-desc b { font-weight: 700; color: var(--text); }
   .fc-card span   { font-size: 12.5px; color: var(--text-2); line-height: 1.72; }
 
   /* Fork (Step 5 — 3 channels in parallel) */
@@ -1295,7 +1296,7 @@
     <div class="fc-item">
       <div class="fc-dot c-purple">1</div>
       <div class="fc-card fc-card-expanded">
-        <strong>系統共存（ニッチエリート抽出）</strong>&#x2060;
+        <div class="fc-card-title">系統共存（ニッチエリート抽出）</div>&#x2060;
         <span class="fc-desc">\(f\) 値の良い順に候補を走査し、既存系統から <code>niche_radius_ratio × span</code> 以上離れた個体だけを新系統として登録。最大 <code>n_elite_max</code> 個の感染系統が別々の盆地に配置され、飛沫感染チャネルの引力対象 pool として利用される。比率指定でスケール不変。</span>
         <div class="fc-detail">
           <div>
@@ -1327,7 +1328,7 @@ strains ← []
     <div class="fc-item">
       <div class="fc-dot c-red">2</div>
       <div class="fc-card fc-card-expanded">
-        <strong>宿主競合（μ+λ greedy kill）</strong>&#x2060;
+        <div class="fc-card-title">宿主競合（μ+λ greedy kill）</div>&#x2060;
         <span class="fc-desc">宿主集団を \(f\) 値で降順に並べ、下位 <code>kill_fraction</code>=25% の最も適応性の低い宿主を排除。最良宿主は「下位にいない」ことで自動的に生き残る。新感染が既存宿主の地位を奪うか否かは Step 6 の rollback で決定される。</span>
         <div class="fc-detail">
           <div>
@@ -1353,8 +1354,8 @@ strains ← []
     <div class="fc-item">
       <div class="fc-dot c-red">3</div>
       <div class="fc-card fc-card-expanded">
-        <strong>停滞時 Restart（集団再播種 ＋ 失敗 basin 回避）</strong>&#x2060;
-        <span class="fc-desc">改善なし評価が <code>restart_no_improve_threshold</code>(=300) を超え、かつ \(f_\text{best}>\) <code>restart_quality_floor</code>(\(=10^{-8}\)) のとき、global best を残し他個体を best 周辺に \(\sigma_\text{init}\times 0.3\) で再播種。CMA-ES の IPOP と同等の役割を果たし、ill-conditioned 関数 (F10/F12) の初期整列失敗を救済。<strong>basin-avoidance memory</strong> で過去の失敗 basin を記憶し、後続の uniform 再播種を回避（F18 SchafferF7ill 偽最適への再捕獲対策）。</span>
+        <div class="fc-card-title">停滞時 Restart（集団再播種 ＋ 失敗 basin 回避）</div>&#x2060;
+        <span class="fc-desc">改善なし評価が <code>restart_no_improve_threshold</code>(=300) を超え、かつ \(f_\text{best}>\) <code>restart_quality_floor</code>(\(=10^{-8}\)) のとき、global best を残し他個体を best 周辺に \(\sigma_\text{init}\times 0.3\) で再播種。CMA-ES の IPOP と同等の役割を果たし、ill-conditioned 関数 (F10/F12) の初期整列失敗を救済。<b>basin-avoidance memory</b> で過去の失敗 basin を記憶し、後続の uniform 再播種を回避（F18 SchafferF7ill 偽最適への再捕獲対策）。</span>
         <div class="fc-detail">
           <div>
             <div class="fc-pane-title">パラメータ</div>
@@ -1386,7 +1387,7 @@ strains ← []
     <div class="fc-item">
       <div class="fc-dot c-blue">4</div>
       <div class="fc-card fc-card-expanded">
-        <strong>感染確率の計算（softmax 親選択）</strong>&#x2060;
+        <div class="fc-card-title">感染確率の計算（softmax 親選択）</div>&#x2060;
         <span class="fc-desc"><code>active</code> 個体の \(f\) 値を softmax で重みに変換し、各空きスロットの親を確率的に抽選。\(f\) が低い個体ほど高確率で親になるが、悪い個体もわずかに選ばれることで探索性を保つ。</span>
         <div class="fc-detail">
           <div>
@@ -1415,7 +1416,7 @@ strains ← []
         <!-- 5a 接触感染 -->
         <div class="fc-fork-card fc-card-expanded">
           <div class="fc-fork-num">5a — 接触感染（残り）</div>
-          <strong>Close-contact: 経験共分散付きガウス伝染</strong>&#x2060;
+          <div class="fc-card-title">Close-contact: 経験共分散付きガウス伝染</div>&#x2060;
           <span class="fc-desc">親密接触による局所伝染。親近傍に \(\mathcal{N}(0,\sigma_i^2\, C_\text{pop})\) で子を生成。\(C_\text{pop}\) は当世代の集団経験共分散で、回転・異方性に追従。<code>log_quality</code> と年齢比でべき乗スケール、適応性の低い宿主は広く、適応性が高く高齢な宿主は精密に。</span>
           <div class="fc-detail">
             <div class="fc-fork-inner">
@@ -1444,7 +1445,7 @@ strains ← []
         <!-- 5b 飛沫感染 -->
         <div class="fc-fork-card fc-card-expanded">
           <div class="fc-fork-num">5b — 飛沫感染（割合 h2h_ratio）</div>
-          <strong>Droplet: 系統 ＋ 差分</strong>&#x2060;
+          <div class="fc-card-title">Droplet: 系統 ＋ 差分</div>&#x2060;
           <span class="fc-desc">親 + F·(系統 − 親) + F·(x_a − x_b)。差分ベクトルが集団形状を反映し、明示的共分散学習なしに valley 方向を捕捉。系統への引力で進行加速。</span>
           <div class="fc-detail">
             <div class="fc-fork-inner">
@@ -1470,8 +1471,8 @@ strains ← []
         <!-- 5c 空気感染 -->
         <div class="fc-fork-card fc-card-expanded">
           <div class="fc-fork-num">5c — 空気感染（割合 air_ratio、drilling 中は停止）</div>
-          <strong>Airborne: 広域エアロゾル拡散</strong>&#x2060;
-          <span class="fc-desc">ランダムな宿主位置に大きなノイズで遠方へ跳躍。集団が収束しているときほど \(\sigma_\text{air}\) を拡大し、停滞を防ぐ。<strong>drilling mode</strong>（\(\sigma < \text{span}\times 10^{-3}\)）に入ったら一時停止し、子は接触感染・飛沫感染にリダイレクト。</span>
+          <div class="fc-card-title">Airborne: 広域エアロゾル拡散</div>&#x2060;
+          <span class="fc-desc">ランダムな宿主位置に大きなノイズで遠方へ跳躍。集団が収束しているときほど \(\sigma_\text{air}\) を拡大し、停滞を防ぐ。<b>drilling mode</b>（\(\sigma < \text{span}\times 10^{-3}\)）に入ったら一時停止し、子は接触感染・飛沫感染にリダイレクト。</span>
           <div class="fc-detail">
             <div class="fc-fork-inner">
               <div>
@@ -1502,7 +1503,7 @@ strains ← []
     <div class="fc-item">
       <div class="fc-dot c-red">6</div>
       <div class="fc-card fc-card-expanded">
-        <strong>宿主競合 Rollback（新感染が宿主を奪えない場合）</strong>&#x2060;
+        <div class="fc-card-title">宿主競合 Rollback（新感染が宿主を奪えない場合）</div>&#x2060;
         <span class="fc-desc">各 dead スロットについて、子の \(f\) 値が「もともとそのスロットにいた親 (元宿主) の \(f\) 値」より悪ければ元宿主を復元。新感染が既存宿主を駆逐できなければ宿主は維持される。これにより真の (μ+λ)-ES と等価になり、アウトブレイクは世代を通じて単調改善する。</span>
         <div class="fc-detail fc-detail-1col">
           <div class="fc-mechanism">
@@ -1521,7 +1522,7 @@ strains ← []
     <div class="fc-item">
       <div class="fc-dot c-red">7</div>
       <div class="fc-card fc-card-expanded">
-        <strong>\(\sigma\) 適応（always-on + drilling mode）</strong>&#x2060;
+        <div class="fc-card-title">\(\sigma\) 適応（always-on + drilling mode）</div>&#x2060;
         <span class="fc-desc">SaVOA 流の乗法適応を毎世代適用。改善時は \(\sigma\) を拡大して新しい谷を探り、非改善時は縮小して局所探索を強化。\(\sigma\) が span × \(10^{-3}\) を下回ったら drilling mode に入り、より積極的な縮小率（0.85）で浮動小数限界へ追込む。σ ベースの drilling 判定は問題スケール不変。</span>
         <div class="fc-detail">
           <div>
