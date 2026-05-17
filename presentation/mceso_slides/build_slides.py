@@ -441,7 +441,7 @@ def slide_section(prs, num, title, subtitle=None):
 
 # ── BACKGROUND ------------------------------------------------------------
 
-EXP_DIR = Path(__file__).parents[1].parent / "results" / "20260514_222526_7e160d4_quick" / "dim2"
+EXP_DIR = Path(__file__).parents[1].parent / "results" / "20260517_210911_NOP_hp_reduction_bbob_quick" / "dim2"
 
 
 def slide_background_motivation(prs):
@@ -800,11 +800,11 @@ def slide_generation_flow(prs):
                section="3 — Proposed Method")
 
     rows = [
-        ("1", "Spawn",            "Three transmission channels",  "Contact / Droplet / Airborne in parallel", C_ACCENT),
-        ("2", "Evaluate",         "(no new mechanism)",            "Fitness call only",                          C_MUTED),
-        ("3", "Update strain pool", "Strain coexistence",          "Keep up to 6 spatially-separated elites",   C_ACCENT),
-        ("4", "Select population",  "Host competition",            "μ+λ greedy with parent rollback",          C_ACCENT),
-        ("5", "Restart?",         "Spillover + σ adaptation",      "Escalating re-seed when stagnated",        C_ACCENT),
+        ("1", "Spawn",            "Three transmission channels",  "Contact (C_pop-aware) / Droplet (DE/bin) / Airborne", C_ACCENT),
+        ("2", "Evaluate",         "(no new mechanism)",            "Fitness call only",                                    C_MUTED),
+        ("3", "Update strain pool", "Strain coexistence",          "Keep up to 6 spatially-separated elites",             C_ACCENT),
+        ("4", "Select population",  "Host competition",            "μ+λ greedy with parent rollback (monotone)",          C_ACCENT),
+        ("5", "Restart? + σ adapt", "Spillover + drilling mode",   "Re-seed → basin switch; σ × 0.85 in drilling",        C_ACCENT),
     ]
     top = Inches(1.50)
     row_h = Inches(1.00)
@@ -859,15 +859,15 @@ def slide_channels_overview(prs):
     panels = [
         ("Close-contact", C_CONTACT, "channel_contact",
          "Person-to-person touch",
-         "Spawn near the source — exploit the local basin",
+         "Local Gaussian shaped by C_pop — rotation-aware refinement",
          "30 %"),
         ("Droplet", C_DROPLET, "channel_droplet",
          "Coughs / sneezes carry the virus to neighbours",
-         "Pull toward another elite strain — implicit anisotropy",
+         "DE/current-to-best/1/bin — strain pull + diff vector, CR=0.9",
          "40 %"),
         ("Airborne", C_AIR, "channel_air",
          "Aerosols drift far from any source",
-         "Spawn far from the population — escape when stuck",
+         "Wide random spread (off during drilling) — escape when stuck",
          "30 %"),
     ]
     cell_w = Inches(3.6)
@@ -913,10 +913,10 @@ def slide_channel_contact(prs):
         slide, "Close-contact", C_CONTACT, "channel_contact",
         "formula_contact",
         [
-            "Pick a parent x_p from the population",
-            "Sample a Gaussian step with width σᵢ",
-            "σᵢ shrinks with fitness and parent age",
-            "→ Refines the basin the parent sits in",
+            "Pick a parent x_p; σᵢ shrinks with fitness and age",
+            "Sample noise from N(0, σᵢ² · C_pop)  ← empirical covariance",
+            "C_pop eigenvalues mean-normalized; no history (cf. CMA-ES)",
+            "→ Rotation-aware refinement — anisotropy on the fly",
         ],
     )
 
@@ -927,10 +927,10 @@ def slide_channel_droplet(prs):
         slide, "Droplet", C_DROPLET, "channel_droplet",
         "formula_droplet",
         [
-            "Pull the parent toward another elite strain",
-            "Perturb with a population differential vector",
-            "No covariance matrix is learned explicitly",
-            "→ Implicit anisotropy — alignment is automatic",
+            "Pull toward a niched-elite strain (current-to-best/1)",
+            "Add a difference vector x_a − x_b (DE-style)",
+            "Binomial crossover with the parent at rate CR = 0.9",
+            "→ Implicit anisotropy + coordinate-axis protection",
         ],
     )
 
@@ -941,10 +941,10 @@ def slide_channel_air(prs):
         slide, "Airborne", C_AIR, "channel_air",
         "formula_air",
         [
-            "Sample a random location, independent of any parent",
-            "Use a wide step width σ_air (much larger than σᵢ)",
-            "Independent of where the population currently sits",
-            "→ Escape route when the swarm is trapped",
+            "Sample around a random host (population-independent)",
+            "σ_air = (1.5 + 3.5·(1−diversity)) × σ  — wider when converged",
+            "Suppressed in drilling mode  (σ < span × 1e-3)",
+            "→ Escape route when stuck; muted during fine grinding",
         ],
     )
 
@@ -1003,12 +1003,14 @@ def slide_mech_spillover(prs):
     slide = new_slide(prs)
     _mech_detail(
         slide, "Spillover", "mech_spillover",
-        "Full re-seed when improvement stalls; basin switch on persistent failure",
-        "Reset strength grows with the stagnation streak:\n"
-        " • Stage 0–1: replace 100% uniformly + axis-bound probes (best preserved)\n"
-        " • Stage 2: also discard the best, reset σ (basin switch)\n"
-        "Failed-basin memory rejects re-seeds near remembered dead ends.",
-        params="no_improve ≥ 300  AND  f_best > 1e-8"
+        "Full re-seed when stalled; basin switch on persistent failure",
+        "Triggered when no_improve ≥ 300  AND  f_best / |f_init| > 1e-8\n"
+        "(quality floor is RELATIVE — scale-invariant under f rescaling).\n\n"
+        " • streak 0–1: 100% uniform re-seed + axis-bound probes,\n"
+        "                σ ← σ_init × 0.3,  best preserved\n"
+        " • streak ≥ 2 (and f_best/|f_init| > 1e-2): basin switch —\n"
+        "                discard best, σ ← σ_init, all slots uniform",
+        params="restart=300  rel_floor=1e-8  basin_switch_floor=1e-2"
     )
 
 
@@ -1036,8 +1038,8 @@ def slide_sigma(prs):
                                   Inches(6.5), Inches(4.0))
 
     add_textbox(slide, MARGIN_L, Inches(6.55), Inches(12.1), Inches(0.5),
-                "Expand on improvement, shrink on stagnation, drill hard at the end.",
-                font_size=Pt(18), bold=True, color=C_INK,
+                "× 1.1 on improvement;  × 0.95 on stagnation;  × 0.85 in drilling mode (σ < span × 1e-3).",
+                font_size=Pt(16), bold=True, color=C_INK,
                 align=PP_ALIGN.CENTER)
 
 
@@ -1054,9 +1056,9 @@ def slide_exp_setup(prs):
         ("Benchmark",   "BBOB (24 functions) + 2 classical (C01–C02)"),
         ("Dimension",   "d = 2,  search domain [−5, 5]ᵈ"),
         ("Budget",      "5,000 evaluations per run"),
-        ("Repetitions", "50 independent runs per (function, method)"),
-        ("Success",     "Run succeeds if best f ≤ target threshold (1e−1 … 1e−10)"),
-        ("Metric",      "SR@1e-k = success rate at threshold 10⁻ᵏ"),
+        ("Repetitions", "30 independent runs per (function, method)"),
+        ("Baselines",   "CMA-ES,  DE,  PSO,  SaVOA"),
+        ("Metric",      "SR@1e-k = fraction of runs with best f ≤ 10⁻ᵏ"),
     ]
     top = Inches(1.65)
     row_h = Inches(0.85)
@@ -1084,13 +1086,14 @@ def slide_exp_baselines(prs):
                section="4 — Experiments")
 
     rows = [
-        ("MC-ESO",  "Three transmission channels (contact + droplet + airborne) in parallel", True),
+        ("MC-ESO",  "Three channels (contact·C_pop + droplet·DE/bin + airborne) in parallel", True),
         ("CMA-ES",  "Learns a covariance matrix; reshapes sampling to fit the landscape",     False),
+        ("DE",      "Differential Evolution — DE/rand/1/bin, the canonical single-channel DE", False),
         ("PSO",     "Particles move toward their own best and the swarm's best",               False),
         ("SaVOA",   "Virus-inspired (single channel) with self-adaptive step size",            False),
     ]
-    top = Inches(1.65)
-    row_h = Inches(0.95)
+    top = Inches(1.55)
+    row_h = Inches(0.80)
     for i, (name, desc, is_us) in enumerate(rows):
         y = top + row_h * i
         # Accent bar (red for ours, gray for others)

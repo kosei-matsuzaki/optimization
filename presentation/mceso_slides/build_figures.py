@@ -250,11 +250,15 @@ def fig_formulas():
     equivalent of LaTeX \\bm). Multi-letter subscripts use \\mathrm so labels
     like ``strain``/``rand``/``air`` stay upright instead of being italicised
     letter-by-letter."""
+    # Close-contact: rotation-aware Gaussian using the instantaneous empirical
+    # covariance C_pop of the population (eigenvalues mean-normalized to 1).
     render_math("formula_contact",
-                r"\boldsymbol{x}_p + \mathcal{N}(\boldsymbol{0},\, \sigma_i\, \boldsymbol{I})")
+                r"\boldsymbol{x}_p + \mathcal{N}(\boldsymbol{0},\, \sigma_i^{2}\, \boldsymbol{C}_{\mathrm{pop}})")
+    # Droplet: DE/current-to-best/1 followed by binomial crossover with the
+    # parent (rate CR, at least one coordinate forced to inherit the trial).
     render_math("formula_droplet",
                 r"\boldsymbol{x}_p + F\,(\boldsymbol{x}_{\mathrm{strain}}-\boldsymbol{x}_p) "
-                r"+ F\,(\boldsymbol{x}_a-\boldsymbol{x}_b)")
+                r"+ F\,(\boldsymbol{x}_a-\boldsymbol{x}_b)\;\;\xrightarrow{\,\mathrm{bin}(CR)\,}\;\;\boldsymbol{x}_{\mathrm{child}}")
     render_math("formula_air",
                 r"\boldsymbol{x}_{\mathrm{rand}} + \mathcal{N}(\boldsymbol{0},\, \sigma_{\mathrm{air}}\, \boldsymbol{I})")
 
