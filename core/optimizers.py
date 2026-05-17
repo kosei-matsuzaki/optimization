@@ -210,8 +210,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         air_ratio: float = 0.3,                # share of children = pure-random "air"
         h2h_ratio: float = 0.4,                # share of children = host-to-host (DE-style)
         h2h_F: float = 0.5,                    # h2h differential scale
-        air_sigma_min: float = 1.5,
-        air_sigma_max: float = 5.0,
+        # Airborne σ inflates linearly with population convergence:
+        #   factor = 1.5 + air_sigma_amplifier × (1 - diversity_ratio)
+        # i.e. factor = 1.5 at full diversity, 1.5+amplifier at full convergence.
+        # Default 3.5 reproduces the prior min=1.5, max=5.0 behaviour.
+        air_sigma_amplifier: float = 3.5,
         # ── Greedy (μ+λ) replacement ───────────────────────────────────
         kill_fraction: float = 0.25,           # fraction of active killed per gen (by f)
         # ── Restart on stagnation ──────────────────────────────────────
@@ -245,8 +248,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                                                # drilling_threshold)
         sigma_drill_down: float = 0.85,        # σ contraction in drilling mode
         # ── Misc ───────────────────────────────────────────────────────
-        lifespan: int = 5,                     # age normalizer for local σ_i scaling
-        temperature: float = 1.0,              # softmax temp for parent-selection weighting
         log_slope_threshold: float = 1e-4,     # min log10(f) slope counted as improvement
         # ── h2h binomial crossover (always on) ────────────────────────
         # The droplet child is built as DE/current-to-best/1, then a binomial
@@ -265,15 +266,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
-        self.lifespan = lifespan
         self.sigma = sigma
         self.air_ratio = air_ratio
         self.n_elite_max = n_elite_max
-        self.temperature = temperature
         self.niche_radius_ratio = niche_radius_ratio
         self.host_sigma_min_scale = host_sigma_min_scale
-        self.air_sigma_min = air_sigma_min
-        self.air_sigma_max = air_sigma_max
+        self.air_sigma_amplifier = air_sigma_amplifier
         self.log_slope_threshold = log_slope_threshold
         self.h2h_ratio = h2h_ratio
         self.h2h_F = h2h_F
@@ -361,8 +359,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         return set(elite_idx)
 
     def _softmax_weights(self, f_vals: np.ndarray) -> np.ndarray:
-        f_max = f_vals.max()
-        scores = (f_max - f_vals) / (self.temperature + 1e-30)
+        # Softmax over -f with unit temperature (fixed; ablation showed no
+        # benefit from tuning T away from the canonical 1.0).
+        scores = f_vals.max() - f_vals
         scores -= scores.max()
         w = np.exp(scores)
         return w / w.sum()
@@ -370,12 +369,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
     def _host_sigma_scale(self, pop_f: np.ndarray, pop_age: np.ndarray) -> np.ndarray:
         """Per-host σ scaling factor: high-quality / old hosts get a smaller
         fraction of σ_global so they probe finer. lq ∈ [0, 1] is the relative
-        log-fitness, ar ∈ [0, 1] is age / lifespan, and the factor is
-        ``host_sigma_min_scale ** (lq · (0.7 + 0.3 · ar))``."""
+        log-fitness, ar ∈ [0, 1] is age / 5 (5 = canonical lifespan), and the
+        factor is ``host_sigma_min_scale ** (lq · (0.7 + 0.3 · ar))``."""
         lf = np.log10(pop_f + 1e-10)
         spread = float(lf.max() - lf.min()) + 1e-30
         lq = np.clip((lf.max() - lf) / spread, 0.0, 1.0)
-        ar = np.minimum(pop_age.astype(float) / max(self.lifespan, 1), 1.0)
+        # Age normalizer fixed at 5 generations (canonical default).
+        ar = np.minimum(pop_age.astype(float) / 5.0, 1.0)
         return self.host_sigma_min_scale ** (lq * (0.7 + 0.3 * ar))
 
     def _meaningful_improvement(self, f: float, log_best_ref: float, evals_since_reset: int) -> bool:
@@ -397,7 +397,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Pre-allocate numpy arrays — avoids repeated list→array conversions per iteration
         pop_x = rng.uniform(lo, hi, (self.n_pop, self.dim))          # (n_pop, dim)
         pop_f = np.array([self.func(x) for x in pop_x])              # (n_pop,)
-        # pop_age is the σ_i age-ratio normalizer divisor (scaled by self.lifespan).
+        # pop_age is the σ_i age-ratio normalizer (divided by 5, the canonical lifespan).
         # Death is f-based (μ+λ greedy), so age has no effect on survival.
         pop_age = np.zeros(self.n_pop, dtype=int)
 
@@ -581,7 +581,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
                 # Air sigma: large when converged (need to escape), small when diverse
                 # diversity_ratio already computed above before elite selection
-                air_sigma_factor = self.air_sigma_max - (self.air_sigma_max - self.air_sigma_min) * diversity_ratio
+                air_sigma_factor = 1.5 + self.air_sigma_amplifier * (1.0 - diversity_ratio)
                 air_sigma_base = np.maximum(sigma, sigma_init * 0.3)
                 air_sigma_vec = air_sigma_base * air_sigma_factor
 
@@ -591,8 +591,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     lq = np.clip(
                         (log_f_max - np.log10(pop_f[gi_arr] + 1e-10)) / (log_f_spread + 1e-30),
                         0.0, 1.0)
-                    ar = np.minimum(
-                        pop_age[gi_arr].astype(float) / max(self.lifespan, 1), 1.0)
+                    ar = np.minimum(pop_age[gi_arr].astype(float) / 5.0, 1.0)
                     host_scale = self.host_sigma_min_scale ** (lq * (0.7 + 0.3 * ar))
                     noise = rng.standard_normal((n_local, self.dim))
                     local_parent_x = pop_x[gi_arr].copy()

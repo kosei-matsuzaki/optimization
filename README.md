@@ -201,7 +201,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
    └─ 集団の f 値降順で下位 kill_fraction (=25%) を排除。最良宿主は自動生存
 
 4. 親（感染源）の選択（softmax）
-   └─ w_i ∝ exp((f_max − f_i) / temperature)、f が低い個体ほど高い感染力
+   └─ w_i ∝ exp(f_max − f_i)、f が低い個体ほど高い感染力（softmax 温度は 1.0 固定）
 
 5. 子個体の 3 チャネル生成（空きスロット数だけ）
    ├─ 接触感染 [残り]
@@ -251,8 +251,7 @@ MC-ESO の系統選択:
 | `host_sigma_min_scale` | 0.05 | 接触感染チャネルにおける per-host σ_i スケーリング下限（高品質・高齢の宿主は σ_i = σ × 0.05 まで縮小して精密探索）|
 | `empirical_cov_floor` | 0.01 | 接触感染チャネルの集団経験共分散 `C_pop` の固有値下限（平均 1 正規化後、軸の縮退を防ぐ）|
 | `air_ratio` | 0.3 | 空気感染チャネルの割合 |
-| `air_sigma_min` | 1.5 | 集団分散時の空気感染 σ 倍率 |
-| `air_sigma_max` | 5.0 | 集団収束時の空気感染 σ 倍率（収束時に大ジャンプ） |
+| `air_sigma_amplifier` | 3.5 | 空気感染 σ 倍率の振幅（factor = 1.5 + amp × (1 - diversity)、集団分散時 1.5、収束時 1.5+amp） |
 | `h2h_ratio` | 0.4 | 飛沫感染チャネルの割合 |
 | `h2h_F` | 0.5 | 飛沫感染の差分ベクトルスケール係数 |
 | `h2h_CR` | 0.9 | 飛沫感染後の二項交叉率（DE/bin 標準値、座標方向の親情報を確率 1-CR で継承）|
@@ -264,8 +263,6 @@ MC-ESO の系統選択:
 | `basin_switch_quality_rel_floor` | 1e-2 | best_so_far / \|f_init\| ≤ this でベイスン乗換えを抑制（相対 2 桁以上進捗で grinding 中とみなし保護）|
 | `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象） |
 | `niche_radius_ratio` | 0.1 | 系統間の最小距離（span に対する比率、スケール不変。BBOB span=10 で実効 1.0、絶対値版と数学的に同一） |
-| `temperature` | 1.0 | 感染確率のランダム性（大→均一、小→貪欲） |
-| `lifespan` | 5 | 接触感染 σ_i の年齢正規化分母 |
 | `log_slope_threshold` | 1e-4 | 「意味ある改善」の log10(f) 減少スロープ閾値 |
 | `sigma_up` | 1.1 | σ adapt 改善時の乗数 |
 | `sigma_down` | 0.95 | σ adapt 改善なし時の乗数 |

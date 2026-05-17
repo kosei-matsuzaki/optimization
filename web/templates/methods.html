@@ -1476,8 +1476,7 @@ strains ← []
                 <div class="fc-pane-title">パラメータ</div>
                 <div class="fc-params">
                   <div class="fc-param-chip" title="子のうち空気感染で生成する割合（drilling 中は 0）"><span class="pk">air_ratio</span><span class="pv">= 0.3</span></div>
-                  <div class="fc-param-chip" title="集団分散時の σ_air 倍率"><span class="pk">air_sigma_min</span><span class="pv">= 1.5</span></div>
-                  <div class="fc-param-chip" title="集団収束時の σ_air 倍率"><span class="pk">air_sigma_max</span><span class="pv">= 5.0</span></div>
+                  <div class="fc-param-chip" title="σ_air 倍率の振幅 (factor = 1.5 + amp × (1 - diversity))"><span class="pk">air_sigma_amplifier</span><span class="pv">= 3.5</span></div>
                 </div>
               </div>
               <div class="fc-mechanism">
