@@ -266,7 +266,6 @@ MC-ESO の系統選択:
 | `niche_radius_ratio` | 0.1 | 系統間の最小距離（span に対する比率、スケール不変。BBOB span=10 で実効 1.0、絶対値版と数学的に同一） |
 | `temperature` | 1.0 | 感染確率のランダム性（大→均一、小→貪欲） |
 | `lifespan` | 5 | 接触感染 σ_i の年齢正規化分母 |
-| `stagnation_limit` | 2000 | 改善なし評価回数の上限（早期停止閾値） |
 | `log_slope_threshold` | 1e-4 | 「意味ある改善」の log10(f) 減少スロープ閾値 |
 | `sigma_up` | 1.1 | σ adapt 改善時の乗数 |
 | `sigma_down` | 0.95 | σ adapt 改善なし時の乗数 |

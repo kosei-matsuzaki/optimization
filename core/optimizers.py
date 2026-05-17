@@ -247,7 +247,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # ── Misc ───────────────────────────────────────────────────────
         lifespan: int = 5,                     # age normalizer for local σ_i scaling
         temperature: float = 1.0,              # softmax temp for parent-selection weighting
-        stagnation_limit: int = 2000,          # absolute kill-switch on stalled runs
         log_slope_threshold: float = 1e-4,     # min log10(f) slope counted as improvement
         # ── h2h binomial crossover (always on) ────────────────────────
         # The droplet child is built as DE/current-to-best/1, then a binomial
@@ -271,7 +270,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.air_ratio = air_ratio
         self.n_elite_max = n_elite_max
         self.temperature = temperature
-        self.stagnation_limit = stagnation_limit
         self.niche_radius_ratio = niche_radius_ratio
         self.host_sigma_min_scale = host_sigma_min_scale
         self.air_sigma_min = air_sigma_min
@@ -554,11 +552,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 pop_age += 1
                 # No offspring this gen → no σ signal, so σ is held unchanged.
                 # When all individuals are elite no births occur and history_f
-                # never grows → still advance no_improve so the spillover and
-                # stagnation_limit eventually fire.
+                # never grows → still advance no_improve so the spillover fires.
                 no_improve += 1
-                if no_improve >= self.stagnation_limit:
-                    break
             else:
                 weights = self._softmax_weights(pop_f)
 
@@ -706,7 +701,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                             no_improve += 1
                     else:
                         no_improve += 1
-                    if len(history_f) >= max_evals or no_improve >= self.stagnation_limit:
+                    if len(history_f) >= max_evals:
                         break
 
                 # Host-competition rollback: children worse than the host they
@@ -716,9 +711,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                         if dead_orig_f[k] < pop_f[slot]:
                             pop_x[slot] = dead_orig_x[k]
                             pop_f[slot] = dead_orig_f[k]
-
-                if no_improve >= self.stagnation_limit:
-                    break
 
                 # Age active survivors (per-generation)
                 replaced_mask = np.zeros(self.n_pop, dtype=bool)
