@@ -171,15 +171,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         children that fail to outcompete the host they replaced are rolled
         back. The outbreak monotonically improves.
 
-      • **Spillover event with basin-avoidance memory** (stagnation-triggered
-        re-seed): when the outbreak stalls (no improvement for
-        ``restart_no_improve_threshold`` evals) and the current best is still
-        loose, the population spills over to a fresh host pool around the
-        best with σ = σ_init·``restart_sigma_ratio``. Each failed spillover
-        appends its pre-spillover best position to a memory list; the next
-        uniform reseed rejects samples within ``basin_radius_ratio`` × span
-        of any remembered point, preventing re-capture of the same suboptimal
-        basin (essential for F18 SchafferF7-ill).
+      • **Spillover event** (stagnation-triggered re-seed): when the outbreak
+        stalls (no improvement for ``restart_no_improve_threshold`` evals)
+        and ``best_so_far`` still exceeds ``restart_quality_floor``, the
+        population spills over to a fresh host pool around the best with
+        σ = σ_init·``restart_sigma_ratio``. After a streak of failed
+        spillovers the next event escalates to a full basin switch (best
+        discarded, σ reset to σ_init).
 
     Step-size adaptation is always on: σ is multiplied by ``sigma_up`` on
     improvement and ``sigma_down`` on stagnation. Once σ falls below
@@ -217,10 +215,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         restart_sigma_ratio: float = 0.3,      # σ after restart, relative to σ_init
         restart_quality_floor: float = 1e-8,   # skip restart if already below this f
         # Spillover: on every restart, all non-best slots are re-seeded uniformly
-        # across the search domain (with basin_memory rejection) and an
-        # axis-aligned sweep is performed. Best is preserved unless the streak
-        # of failed spillovers triggers a full basin switch below. This handles
-        # deceptive landscapes (F17/F20) without per-streak escalation logic.
+        # across the search domain and an axis-aligned boundary sweep is performed.
+        # Best is preserved unless the streak of failed spillovers triggers a full
+        # basin switch below.
         basin_switch_after_failed_spillovers: int = 2,  # streak → wipe best & reset σ
         basin_switch_quality_floor: float = 1e-2,    # basin switch suppressed when
                                                      # best_so_far ≤ this — protects
@@ -258,13 +255,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # axes. Closes the F11/F14 ill-conditioned gap to DE/CMA-ES (F11
         # mean 5.2e-8 → 0 at n=15, F14 SR_1e-7 80% → 87%).
         empirical_cov_floor: float = 0.01,     # min normalized eigenvalue
-        # ── Basin-avoidance memory (spillover anti-recapture) ─────────
-        # Each failed spillover records its best-position; subsequent
-        # uniform reseeds reject samples within ``basin_radius_ratio`` ×
-        # span of any remembered point. Targets multimodal recapture
-        # (F18 SchafferF7-ill SR_1e-10 33% → 67% at n=15).
-        basin_radius_ratio: float = 0.05,      # avoidance radius / span
-        basin_memory_size: int = 5,            # max remembered failed basins
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
@@ -295,8 +285,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.sigma_drill_down = sigma_drill_down
         self.h2h_CR = h2h_CR
         self.empirical_cov_floor = empirical_cov_floor
-        self.basin_radius_ratio = basin_radius_ratio
-        self.basin_memory_size = basin_memory_size
 
     # ─────────────────────────────────────────────────────────────────────
     @staticmethod
@@ -343,20 +331,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 cand[i] = bv
                 cands.append(cand)
         return cands
-
-    @staticmethod
-    def _uniform_avoiding(rng, lo: float, hi: float, dim: int,
-                          memory: list, radius: float) -> np.ndarray:
-        """Rejection-sample a uniform point in [lo, hi]^dim at least ``radius``
-        away from every memory point. Falls back to plain uniform after 20
-        rejections so the search never stalls when memory blankets the box."""
-        for _ in range(20):
-            x = rng.uniform(lo, hi, dim)
-            if not memory:
-                return x
-            if all(np.linalg.norm(x - m) >= radius for m in memory):
-                return x
-        return x
 
     def _niche_elites(self, pop_x: np.ndarray, pop_f: np.ndarray,
                       niche_radius: float) -> set:
@@ -440,11 +414,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # best_so_far. Used to ratchet up disruption from "diversified local"
         # → "fully uniform" → "basin switch (wipe best & reset σ)".
         consecutive_failed_spillovers = 0
-        # Basin-avoidance memory — best positions at each failed spillover.
-        # Uniform reseeds reject samples within ``basin_radius_ratio`` × span
-        # of any remembered point, so we don't spend another cycle re-converging
-        # to a known-bad basin (essential for F18 SchafferF7-ill).
-        bad_basin_memory: list[np.ndarray] = []
 
         while len(history_f) < max_evals:
             # Spillover event: when the outbreak stalls, the population spills
@@ -494,9 +463,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     break
 
                 best_pre_spillover = best_so_far
-                # Snapshot best position now — appended to bad_basin_memory
-                # below if this spillover fails to improve.
-                x_best_pre_spillover = pop_x[int(np.argmin(pop_f))].copy()
                 if basin_switch:
                     # Wipe everything — including the current best — and re-seed
                     # all slots uniformly. best_so_far is preserved as a tracker
@@ -514,12 +480,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 diversified = set(reseed_idx[:n_div])
                 for i in reseed_idx:
                     if i in diversified or x_best_snap is None:
-                        if bad_basin_memory:
-                            new_x = self._uniform_avoiding(
-                                rng, lo, hi, self.dim, bad_basin_memory,
-                                span * self.basin_radius_ratio)
-                        else:
-                            new_x = rng.uniform(lo, hi, self.dim)
+                        new_x = rng.uniform(lo, hi, self.dim)
                         sig_log = (float(np.linalg.norm(new_x - x_best_snap))
                                    if x_best_snap is not None else float(sigma_restart))
                     else:
@@ -549,11 +510,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     consecutive_failed_spillovers = 0
                 else:
                     consecutive_failed_spillovers += 1
-                    # This spillover failed → remember the basin it started
-                    # from so the next uniform reseed avoids it.
-                    bad_basin_memory.append(x_best_pre_spillover)
-                    if len(bad_basin_memory) > self.basin_memory_size:
-                        bad_basin_memory.pop(0)
                 if len(history_f) >= max_evals:
                     break
 

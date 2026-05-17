@@ -178,7 +178,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 |---|---|---|
 | **系統共存** (Strain coexistence) | 空間的に離れた感染拠点の同時存続 | ニッチ半径で離れた最大 6 系統を保護、飛沫チャネルの引力対象 pool |
 | **宿主競合** (Host competition) | 新感染が既存宿主に勝てないと排除される | 毎世代 25% kill、子が親より悪ければ rollback → 集団は単調改善 |
-| **スピルオーバー** (Spillover) | 既存系統の絶滅後、新宿主集団へ感染が飛び火 | 300 評価改善なし AND f_best > 1e-8 で best 周辺に再播種。失敗 spillover の best 位置を **basin-avoidance memory** に記録し（最大 5 件）、後続 uniform 再播種は `0.05 × span` 内を回避 — 偽最適への再捕獲を防ぐ |
+| **スピルオーバー** (Spillover) | 既存系統の絶滅後、新宿主集団へ感染が飛び火 | 300 評価改善なし AND f_best > 1e-8 で best 周辺に再播種。連続失敗 2 回で basin switch (best 破棄＋σ_init リセット) に escalate |
 
 #### 1世代の動作フロー
 
@@ -196,9 +196,6 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
               — best も破棄、全 n_pop を Uniform 再生成、σ を σ_init にリセット
       ─ ベイスン乗換えで F24 双漏斗 / F04 rugged separable から脱出
         f_best ≤ 1e-2 のとき乗換え抑制 → F13 ridge / C01 deep precision を保護
-      ─ 失敗 spillover の事前 best 位置を memory に追加（最大 5 件 FIFO）。
-        後続 uniform 再播種は半径 0.05×span 内を rejection sample で回避
-        → F18 SchafferF7ill の偽最適への再捕獲を防ぐ（SR_1e-10 33% → 67%、n=15）
 
 3. 宿主競合: 死亡判定（μ+λ greedy）
    └─ 集団の f 値降順で下位 kill_fraction (=25%) を排除。最良宿主は自動生存
@@ -265,8 +262,6 @@ MC-ESO の系統選択:
 | `restart_quality_floor` | 1e-8 | スピルオーバー skip 閾値（既収束 run の精度破壊を防ぐ） |
 | `basin_switch_after_failed_spillovers` | 2 | この連続失敗回数で best 破棄＋σ_init リセットの完全ベイスン乗換え |
 | `basin_switch_quality_floor` | 1e-2 | best がこの値以下のときベイスン乗換えを抑制（grinding 中の run を保護）|
-| `basin_radius_ratio` | 0.05 | basin-avoidance memory の回避半径（span に対する比率）|
-| `basin_memory_size` | 5 | 記憶する失敗 basin の最大数（FIFO）|
 | `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象） |
 | `niche_radius_ratio` | 0.1 | 系統間の最小距離（span に対する比率、スケール不変。BBOB span=10 で実効 1.0、絶対値版と数学的に同一） |
 | `temperature` | 1.0 | 感染確率のランダム性（大→均一、小→貪欲） |
@@ -401,7 +396,6 @@ else:
 | **Drilling mode**（σ_drill_down=0.85） | σ < span × 1e-3 で σ 縮小を強化し浮動小数限界まで追込む |
 | **接触感染の経験共分散** (`empirical_cov_floor=0.01`) | 集団経験共分散 `C_pop` の固有分解で接触感染ノイズを瞬間異方化。CMA-ES の rank-μ 学習と異なり履歴累積なし、basin 切替に即応。F11 mean 5e-8 → 0、F14 SR_1e-7 80% → 87%（n=15 quick） |
 | **Drilling 中の空気感染停止** | `σ < span × precision_sigma_ratio` で `air_ratio_eff = 0`。drilling 中の広域ランダム雑音を排除し精度劣化を防止。F06 SR_1e-10 93% → 100% |
-| **Basin-avoidance memory**（`basin_radius_ratio=0.05`, `basin_memory_size=5`） | 失敗 spillover の事前 best 位置を memory に記録、後続 uniform 再播種は半径 0.05×span 内を rejection sample で回避。F18 SchafferF7ill SR_1e-10 33% → 67% |
 
 ##### 検証され不採用となった variant（quick ablation, n=30）
 

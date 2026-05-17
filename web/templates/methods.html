@@ -1278,7 +1278,7 @@
               <div class="concept-title">Spillover Event</div>
             </div>
           </div>
-          <div class="concept-body">既存系統の停滞時に集団再播種。改善なし評価 ≥ 300 ＋ \(f_\text{best}>10^{-8}\) で best 周辺に \(\sigma_\text{init}\times 0.3\) で飛び火。**ill-conditioned の整列失敗を救済**。さらに <strong>basin-avoidance memory</strong> として失敗した spillover の best 位置を記録し、後続の uniform 再播種は半径 \(0.05 \times \text{span}\) 内を回避 — 同じ偽最適への再捕獲を防ぐ（F18 SchafferF7ill SR_1e-10 33% → 67%）。</div>
+          <div class="concept-body">既存系統の停滞時に集団再播種。改善なし評価 ≥ 300 ＋ \(f_\text{best}>10^{-8}\) で best 周辺に \(\sigma_\text{init}\times 0.3\) で飛び火。**ill-conditioned の整列失敗を救済**。連続失敗 2 回で <b>basin switch</b>（best 破棄＋\(\sigma_\text{init}\) リセット）に escalate し、F24 双漏斗から脱出。</div>
         </div>
       </div>
     </div>
@@ -1354,8 +1354,8 @@ strains ← []
     <div class="fc-item">
       <div class="fc-dot c-red">3</div>
       <div class="fc-card fc-card-expanded">
-        <div class="fc-card-title">停滞時 Restart（集団再播種 ＋ 失敗 basin 回避）</div>&#x2060;
-        <span class="fc-desc">改善なし評価が <code>restart_no_improve_threshold</code>(=300) を超え、かつ \(f_\text{best}>\) <code>restart_quality_floor</code>(\(=10^{-8}\)) のとき、global best を残し他個体を best 周辺に \(\sigma_\text{init}\times 0.3\) で再播種。CMA-ES の IPOP と同等の役割を果たし、ill-conditioned 関数 (F10/F12) の初期整列失敗を救済。<b>basin-avoidance memory</b> で過去の失敗 basin を記憶し、後続の uniform 再播種を回避（F18 SchafferF7ill 偽最適への再捕獲対策）。</span>
+        <div class="fc-card-title">停滞時 Restart（集団再播種）</div>&#x2060;
+        <span class="fc-desc">改善なし評価が <code>restart_no_improve_threshold</code>(=300) を超え、かつ \(f_\text{best}>\) <code>restart_quality_floor</code>(\(=10^{-8}\)) のとき、global best を残し他個体を best 周辺に \(\sigma_\text{init}\times 0.3\) で再播種。CMA-ES の IPOP と同等の役割を果たし、ill-conditioned 関数 (F10/F12) の初期整列失敗を救済。連続失敗 2 回で <b>basin switch</b>（best 破棄＋\(\sigma_\text{init}\) リセット）に escalate。</span>
         <div class="fc-detail">
           <div>
             <div class="fc-pane-title">パラメータ</div>
@@ -1363,19 +1363,16 @@ strains ← []
               <div class="fc-param-chip" title="restart 発動の no_improve 閾値"><span class="pk">restart_no_improve_threshold</span><span class="pv">= 300</span></div>
               <div class="fc-param-chip" title="restart 後の σ（σ_init に対する比率）"><span class="pk">restart_sigma_ratio</span><span class="pv">= 0.3</span></div>
               <div class="fc-param-chip" title="best がこれ以下なら restart を skip（収束破壊を防ぐ）"><span class="pk">restart_quality_floor</span><span class="pv">= 1e-8</span></div>
-              <div class="fc-param-chip" title="失敗 basin 回避半径（span に対する比率）"><span class="pk">basin_radius_ratio</span><span class="pv">= 0.05</span></div>
-              <div class="fc-param-chip" title="記憶する失敗 basin の最大個数（FIFO）"><span class="pk">basin_memory_size</span><span class="pv">= 5</span></div>
+              <div class="fc-param-chip" title="連続失敗回数 → basin switch"><span class="pk">basin_switch_after_failed_spillovers</span><span class="pv">= 2</span></div>
             </div>
           </div>
           <div class="fc-mechanism">
-            <div class="fc-pane-title">Quality-gated restart ＋ Basin-avoidance memory</div>
+            <div class="fc-pane-title">Quality-gated restart</div>
             <div class="math-display">\[ \text{trigger} = (\text{no\_improve} \geq 300) \;\wedge\; (f_\text{best} > 10^{-8}) \]</div>
             <div class="math-display">\[ x_i^{\text{new}} = \mathrm{reflect}\!\left(x_\text{best} + 0.3\,\sigma_\text{init}\cdot \mathcal{N}(0, I)\right), \quad i \neq i_\text{best} \]</div>
-            <div class="math-display">\[ \mathcal{M} \leftarrow \mathcal{M} \cup \{x_\text{best}^\text{pre}\}\;\;(\text{if spillover failed})\]</div>
-            <div class="math-display">\[ x_\text{uniform} \sim \mathcal{U}(\text{lo}, \text{hi})^d\;\;\text{rejecting samples within } 0.05\cdot\text{span}\text{ of any }m\in\mathcal{M} \]</div>
             <div class="fc-note">
               <span class="lbl">Quality gate</span>\(f_\text{best}<10^{-8}\) なら既に高精度収束しているとみなし、restart で σ を膨らませて精度を悪化させない（F01-Sphere で 0 まで到達できる）。<br>
-              <span class="lbl">Basin-avoidance memory</span>各失敗 spillover の事前 best 位置を memory（最大 5 件 FIFO）に追加。後続 uniform 再播種は半径 \(0.05\cdot\text{span}\) 内を rejection sample（最大 20 試行）で回避 — 同じ偽最適への再収束を防ぐ。F18 SchafferF7ill SR_1e-10 を 33% → 67% に倍増（n=15）。<br>
+              <span class="lbl">Basin switch</span>連続失敗 \(\geq\) 2 回かつ \(f_\text{best}>10^{-2}\) で best 破棄＋全 pop Uniform 再生成＋σ を σ_init にリセット。F24 双漏斗から脱出。<br>
               <span class="lbl">CMA-ES との公平性</span>CMA-ES も `cma` ライブラリ標準で `es.stop()` 後の multistart を有する。両者とも restart 機構あり。
             </div>
           </div>
