@@ -246,7 +246,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # crossover with the parent gates each coordinate (rate h2h_CR). This
         # preserves coordinate-aligned structure on separable multimodals
         # (F04 Büche-Rastrigin SR 77→100%, F17 Schaffer F7 47→73% at n=30).
-        h2h_CR: float = 0.7,                   # h2h binomial crossover rate
+        h2h_CR: float = 0.9,                   # h2h binomial crossover rate (DE/bin standard)
         # ── Rotation-aware close-contact (empirical covariance) ──────
         # Close-contact noise is drawn from N(0, σ_i²·C_pop) where C_pop is
         # the *instantaneous* empirical covariance of the population — no

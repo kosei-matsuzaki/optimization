@@ -169,7 +169,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 | チャネル | 疫学アナロジー | 数学的形 | 役割 |
 |---|---|---|---|
 | **接触感染** (Close-contact) | 親密接触による局所感染 | `x_parent + σ_i · L_pop · N(0, I)`（`L_pop L_pop^T = C_pop`、集団経験共分散の固有分解）| 親近傍の精密探索。σ_i は親の品質と年齢で適応、`C_pop` で **瞬間共分散** を獲得（履歴累積なし、CMA-ES と差別化） |
-| **飛沫感染** (Droplet) | 飛沫を介した宿主間感染 | `x_parent + F·(x_strain − x_parent) + F·(x_a − x_b)` ＋ 親との二項交叉 (CR=0.7) | 系統 (niched elite) からの引力 ＋ 集団内差分ベクトルで集団形状を補強しつつ、二項交叉で座標方向の親情報を保護 (DE/current-to-best/1/bin) |
+| **飛沫感染** (Droplet) | 飛沫を介した宿主間感染 | `x_parent + F·(x_strain − x_parent) + F·(x_a − x_b)` ＋ 親との二項交叉 (CR=0.9, DE 標準値) | 系統 (niched elite) からの引力 ＋ 集団内差分ベクトルで集団形状を補強しつつ、二項交叉で座標方向の親情報を保護 (DE/current-to-best/1/bin) |
 | **空気感染** (Airborne) | エアロゾルによる広域感染 | `x_random_host + N(0, σ_air I)`（drilling 中は停止）| 集団に依存しない遠方探索。局所最適脱出。`σ < span × 1e-3` の drilling mode では雑音化するため停止 |
 
 #### 集団レベルの 3 機構
@@ -213,7 +213,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
    │       （F11 mean 5e-8 → 0、F14 SR_1e-7 80% → 87%、n=15）
    ├─ 飛沫感染 [h2h_ratio = 0.4]
    │   └─ trial = 親 + h2h_F × (x_strain − 親) + h2h_F × (x_a − x_b)
-   │       child = 各次元で確率 h2h_CR (=0.7) で trial を採用、残りは親をそのまま継承
+   │       child = 各次元で確率 h2h_CR (=0.9, DE 標準値) で trial を採用、残りは親をそのまま継承
    │       DE/current-to-best/1/bin と同型: 差分ベクトル ＋ 系統引力で集団形状を反映、
    │       二項交叉が separable 多峰の座標方向情報を保護（F04/F17 SR を大幅改善）
    └─ 空気感染 [air_ratio_eff = 0.3 if σ ≥ span × 1e-3 else 0]
@@ -255,7 +255,7 @@ MC-ESO の系統選択:
 | `air_sigma_max` | 5.0 | 集団収束時の空気感染 σ 倍率（収束時に大ジャンプ） |
 | `h2h_ratio` | 0.4 | 飛沫感染チャネルの割合 |
 | `h2h_F` | 0.5 | 飛沫感染の差分ベクトルスケール係数 |
-| `h2h_CR` | 0.7 | 飛沫感染後の二項交叉率（DE 流、座標方向の親情報を確率 1-CR で継承）|
+| `h2h_CR` | 0.9 | 飛沫感染後の二項交叉率（DE/bin 標準値、座標方向の親情報を確率 1-CR で継承）|
 | `kill_fraction` | 0.25 | 宿主競合で毎世代排除する割合 |
 | `restart_no_improve_threshold` | 300 | スピルオーバー発動の no_improve 閾値 |
 | `restart_sigma_ratio` | 0.3 | スピルオーバー後の σ（σ_init に対する比率） |
@@ -390,7 +390,7 @@ else:
 | 機構 | MC-ESO での位置付け |
 |---|---|
 | **飛沫感染チャネル**（h2h, DE/current-to-best/1） | 差分変異が集団形状から異方情報を獲得。F08/F09/F10/F12 の主因 |
-| **h2h binomial crossover** (`h2h_CR=0.7`) | 飛沫の trial vector を親と座標毎に交叉し、separable 多峰の座標方向情報を保護。quick (n=30) で F04 SR 77→100%, F17 47→73%, F08 87→93%。F18/F19 では CR=0.9 より若干劣るトレードオフを受けつつ overall SR@1e-4 平均 92.0%→93.4% |
+| **h2h binomial crossover** (`h2h_CR=0.9`, DE/bin 標準値) | 飛沫の trial vector を親と座標毎に交叉し、separable 多峰の座標方向情報を保護 (DE/current-to-best/1/bin)。初期は F04/F17 用に 0.7 へ調整していたが、後続 ablation 完了後の hold-out 検証で標準値 0.9 のほうが BBOB で net +58 absolute, CEC2022 rank ほぼ不変と判明し復帰 |
 | **宿主競合**（μ+λ greedy + rollback） | 最良宿主の長期保持で F10/F12 を SR 0%→80/90% へ |
 | **スピルオーバー＋basin switch** | quality-gated restart で全 pop を Uniform 再播種、連続失敗 2 回で best 破棄＋σ_init リセット。ill-cond の整列失敗と F24 双漏斗を救済 |
 | **Drilling mode**（σ_drill_down=0.85） | σ < span × 1e-3 で σ 縮小を強化し浮動小数限界まで追込む |
