@@ -13,7 +13,10 @@ import csv
 import numpy as np
 from pathlib import Path
 
-from core.benchmarks import BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME
+from core.benchmarks import (
+    BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME,
+    BENCHMARKS_CEC2022_10D_BY_NAME,
+)
 from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
     DEOptimizer, SaVOAOptimizer,
@@ -92,9 +95,15 @@ _CUSTOM_2D_ONLY: list[str] = sorted(
 )
 _ALL_FUNCTIONS: list[str] = _BBOB_NAMES + _CUSTOM_2D_ONLY
 
+# Held-out CEC2022 suite (dim=10). Independent of BBOB transformations —
+# used to test whether MC-ESO mechanisms generalize beyond the BBOB suite
+# they were tuned against. Selected with --suite cec2022 (forces --dim 10).
+_CEC2022_NAMES: list[str] = sorted(BENCHMARKS_CEC2022_10D_BY_NAME)
+
 _DIM_REGISTRIES: dict[int, dict[str, object]] = {
     2: BENCHMARKS_BY_NAME,
     3: BENCHMARKS_3D_BY_NAME,
+    10: BENCHMARKS_CEC2022_10D_BY_NAME,
 }
 
 # MC-ESO (Multi-Channel Epidemic Spread Optimizer): all core mechanisms
@@ -170,17 +179,26 @@ def main(
     funcs: list[str] | None = None,
     use_all: bool = False,
     dim: int = 2,
+    suite: str = "bbob",
 ) -> None:
     output_dir = Path(output_dir)
-    if dim not in _DIM_REGISTRIES:
-        raise SystemExit(
-            f"--dim {dim} not supported. Available: {sorted(_DIM_REGISTRIES)}")
-    registry = _DIM_REGISTRIES[dim]
-
-    func_set = _ALL_FUNCTIONS if use_all else _QUICK_FUNCTIONS
-    # Custom benchmarks (C01/C02) are 2D-only — drop them silently for higher dims
-    func_set = [n for n in func_set if dim == 2 or n not in _CUSTOM_2D_ONLY]
-    print(f"quick_check  dim={dim}  n_runs={n_runs}  max_evals={max_evals}  "
+    if suite == "cec2022":
+        if dim != 10:
+            print(f"--suite cec2022 forces dim=10 (got {dim})")
+            dim = 10
+        registry = _DIM_REGISTRIES[10]
+        func_set = _CEC2022_NAMES
+    else:
+        if dim not in _DIM_REGISTRIES or dim == 10:
+            raise SystemExit(
+                f"--dim {dim} not supported for BBOB suite. "
+                "Use --suite cec2022 for the CEC2022 dim=10 hold-out set.")
+        registry = _DIM_REGISTRIES[dim]
+        func_set = _ALL_FUNCTIONS if use_all else _QUICK_FUNCTIONS
+        # Custom benchmarks (C01/C02) are 2D-only — drop them silently for higher dims
+        func_set = [n for n in func_set if dim == 2 or n not in _CUSTOM_2D_ONLY]
+    print(f"quick_check  suite={suite}  dim={dim}  n_runs={n_runs}  "
+          f"max_evals={max_evals}  "
           f"set={'all' if use_all else 'quick'}  funcs={funcs or 'all'}")
 
     func_filter = set(funcs) if funcs else None
@@ -211,7 +229,10 @@ if __name__ == "__main__":
                         help="Use the full BBOB set (F01-F24, + C01-C11 custom for dim=2) instead of the quick subset")
     parser.add_argument("--dim",        type=int, default=2, choices=sorted(_DIM_REGISTRIES),
                         help="Problem dimension (default 2). C01/C02 are 2D-only and skipped for higher dims.")
+    parser.add_argument("--suite",      type=str, default="bbob", choices=["bbob", "cec2022"],
+                        help="Benchmark suite. 'bbob' (default) uses BBOB-24 + custom; "
+                             "'cec2022' uses the 12-function CEC2022 hold-out at dim=10.")
     args = parser.parse_args()
     funcs_list = [s.strip() for s in args.funcs.split(",")] if args.funcs else None
     main(n_runs=args.n_runs, max_evals=args.max_evals, output_dir=args.output_dir,
-         funcs=funcs_list, use_all=args.all, dim=args.dim)
+         funcs=funcs_list, use_all=args.all, dim=args.dim, suite=args.suite)

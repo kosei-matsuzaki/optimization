@@ -343,3 +343,58 @@ BENCHMARKS_BY_NAME: dict[str, BenchmarkFunction] = {
 BENCHMARKS_3D_BY_NAME: dict[str, BenchmarkFunction] = {
     b.name: b for b in BENCHMARKS_3D
 }
+
+
+# CEC2022 suite — held-out benchmark independent of BBOB.
+# Used to test whether MC-ESO mechanisms generalize beyond the BBOB
+# transformations they were developed against. HPs MUST NOT be re-tuned
+# for CEC2022 evaluation.
+_CEC2022_SPECS: list[tuple[str, str, str]] = [
+    # (ioh problem name, display name, category)
+    ("CEC2022Zakharov",            "G01-Zakharov",      "unimodal"),
+    ("CEC2022Rosenbrock",          "G02-Rosenbrock",    "basic-multimodal"),
+    ("CEC2022SchafferF7",          "G03-SchafferF7",    "basic-multimodal"),
+    ("CEC2022Rastrigin",           "G04-Rastrigin",     "basic-multimodal"),
+    ("CEC2022Levy",                "G05-Levy",          "basic-multimodal"),
+    ("CEC2022HybridFunction1",     "G06-Hybrid1",       "hybrid"),
+    ("CEC2022HybridFunction2",     "G07-Hybrid2",       "hybrid"),
+    ("CEC2022HybridFunction3",     "G08-Hybrid3",       "hybrid"),
+    ("CEC2022CompositionFunction1", "G09-Composition1", "composition"),
+    ("CEC2022CompositionFunction2", "G10-Composition2", "composition"),
+    ("CEC2022CompositionFunction3", "G11-Composition3", "composition"),
+    ("CEC2022CompositionFunction4", "G12-Composition4", "composition"),
+]
+
+
+def _make_cec2022(ioh_name: str, display_name: str, category: str,
+                  dim: int, instance: int = 1) -> BenchmarkFunction:
+    prob = ioh.get_problem(ioh_name, instance=instance, dimension=dim)
+    lo = float(prob.bounds.lb[0])
+    hi = float(prob.bounds.ub[0])
+    f_opt = float(prob.optimum.y)
+    opt_x = [list(prob.optimum.x)]
+
+    def func(x: np.ndarray) -> float:
+        return float(prob(x.tolist())) - f_opt
+
+    return BenchmarkFunction(
+        name=display_name,
+        func=func,
+        bounds=(lo, hi),
+        optimum=0.0,
+        category=category,
+        dim=dim,
+        optima_pos=opt_x,
+    )
+
+
+def _build_cec2022(dim: int) -> list[BenchmarkFunction]:
+    return [_make_cec2022(ioh_name, name, cat, dim)
+            for ioh_name, name, cat in _CEC2022_SPECS]
+
+
+# CEC2022 standard dim=10 (smallest supported by the full 12-function set)
+BENCHMARKS_CEC2022_10D = _build_cec2022(10)
+BENCHMARKS_CEC2022_10D_BY_NAME: dict[str, BenchmarkFunction] = {
+    b.name: b for b in BENCHMARKS_CEC2022_10D
+}
