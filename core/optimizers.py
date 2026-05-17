@@ -173,11 +173,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
       • **Spillover event** (stagnation-triggered re-seed): when the outbreak
         stalls (no improvement for ``restart_no_improve_threshold`` evals)
-        and ``best_so_far`` still exceeds ``restart_quality_floor``, the
+        and ``best_so_far`` still exceeds
+        ``restart_quality_rel_floor × |f_init|`` (i.e. the run has not yet
+        reduced the initial-population best by ~8 orders of magnitude), the
         population spills over to a fresh host pool around the best with
         σ = σ_init·``restart_sigma_ratio``. After a streak of failed
         spillovers the next event escalates to a full basin switch (best
-        discarded, σ reset to σ_init).
+        discarded, σ reset to σ_init). Quality floors are relative to the
+        initial-population best so they remain meaningful under
+        multiplicative rescaling of f.
 
     Step-size adaptation is always on: σ is multiplied by ``sigma_up`` on
     improvement and ``sigma_down`` on stagnation. Once σ falls below
@@ -213,18 +217,22 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # ── Restart on stagnation ──────────────────────────────────────
         restart_no_improve_threshold: int = 300,  # no_improve count that triggers restart
         restart_sigma_ratio: float = 0.3,      # σ after restart, relative to σ_init
-        restart_quality_floor: float = 1e-8,   # skip restart if already below this f
+        # Quality floors are RELATIVE to the initial-population best
+        # f_init_scale = max(|best_of_initial_population|, ε). On problems
+        # normalised so the optimum is at 0 (BBOB/CEC2022 after our f - f_opt
+        # transform) the relative gate is equivalent to a fixed absolute
+        # threshold when f_init is large; under multiplicative rescaling of f
+        # the gate adapts automatically. Shift invariance (f_opt unknown) is
+        # not achievable from f alone and is documented as a limitation.
+        restart_quality_rel_floor: float = 1e-8,     # skip restart if
+                                                     # best_so_far / |f_init| ≤ this
         # Spillover: on every restart, all non-best slots are re-seeded uniformly
         # across the search domain and an axis-aligned boundary sweep is performed.
         # Best is preserved unless the streak of failed spillovers triggers a full
         # basin switch below.
         basin_switch_after_failed_spillovers: int = 2,  # streak → wipe best & reset σ
-        basin_switch_quality_floor: float = 1e-2,    # basin switch suppressed when
-                                                     # best_so_far ≤ this — protects
-                                                     # runs that are slowly grinding
-                                                     # toward the optimum (F13 ridge,
-                                                     # C01 deep precision) from being
-                                                     # wiped by a premature switch
+        basin_switch_quality_rel_floor: float = 1e-2,   # basin switch suppressed when
+                                                        # best_so_far / |f_init| ≤ this
         # ── σ adaptation ──────────────────────────────────────────────
         # Multiplicative step-size adaptation. Once σ < span × precision_sigma_ratio
         # the contraction switches to sigma_drill_down to drill to FP precision.
@@ -274,9 +282,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.kill_fraction = kill_fraction
         self.restart_no_improve_threshold = restart_no_improve_threshold
         self.restart_sigma_ratio = restart_sigma_ratio
-        self.restart_quality_floor = restart_quality_floor
+        self.restart_quality_rel_floor = restart_quality_rel_floor
         self.basin_switch_after_failed_spillovers = basin_switch_after_failed_spillovers
-        self.basin_switch_quality_floor = basin_switch_quality_floor
+        self.basin_switch_quality_rel_floor = basin_switch_quality_rel_floor
         self.sigma_up = sigma_up
         self.sigma_down = sigma_down
         self.sigma_floor_ratio = sigma_floor_ratio
@@ -407,6 +415,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         history_sigma_eval: list[float] = []
 
         best_so_far = float(pop_f.min())
+        # Reference scale for the relative quality-floor gates below.
+        # Anchored to the initial-population best so the floors adapt to the
+        # problem's natural f range (multiplicatively scale-invariant).
+        f_init_scale = max(abs(best_so_far), 1e-300)
         no_improve = 0
         log_best_ref = math.log10(max(best_so_far, 1e-300))  # log10(f) at last meaningful reset
         evals_since_reset = 0                             # evals elapsed since last meaningful reset
@@ -422,13 +434,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # ill-conditioned landscapes). Quality-gated to avoid disturbing
             # already-converged runs.
             if (no_improve >= self.restart_no_improve_threshold
-                    and best_so_far > self.restart_quality_floor):
+                    and best_so_far > self.restart_quality_rel_floor * f_init_scale):
                 # Step 6: escalation policy based on consecutive_failed_spillovers.
                 #   streak ≥ basin_switch_after: wipe best, fully uniform, σ_init reset
                 #   else:                       fully uniform, best preserved
                 if (consecutive_failed_spillovers
                         >= self.basin_switch_after_failed_spillovers
-                        and best_so_far > self.basin_switch_quality_floor):
+                        and best_so_far > self.basin_switch_quality_rel_floor * f_init_scale):
                     basin_switch = True
                     div_ratio = 1.0
                     sigma_restart = sigma_init   # fresh σ for new basin

@@ -189,7 +189,7 @@ VOAの自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 
 2. スピルオーバー判定（停滞時の集団再播種、basin 回避版）
    └─ no_improve ≥ restart_no_improve_threshold (=300) かつ
-      f_best > restart_quality_floor (=1e-8) のとき発動。
+      f_best / |f_init| > restart_quality_rel_floor (=1e-8) のとき発動（相対 8 桁進捗未満なら spillover、それ以下なら precision とみなし保護）。
       連続失敗回数 (consecutive_failed_spillovers) で動作切替:
          • streak < 2: 100% Uniform(lo, hi)（best は保持）+ 軸 sweep + σ ← σ_init×0.3
          • streak ≥ 2 かつ f_best > 1e-2: **ベイスン乗換え**
@@ -259,9 +259,9 @@ MC-ESO の系統選択:
 | `kill_fraction` | 0.25 | 宿主競合で毎世代排除する割合 |
 | `restart_no_improve_threshold` | 300 | スピルオーバー発動の no_improve 閾値 |
 | `restart_sigma_ratio` | 0.3 | スピルオーバー後の σ（σ_init に対する比率） |
-| `restart_quality_floor` | 1e-8 | スピルオーバー skip 閾値（既収束 run の精度破壊を防ぐ） |
+| `restart_quality_rel_floor` | 1e-8 | スピルオーバー skip 閾値（best_so_far / \|f_init\| ≤ this で skip）。乗法スケール不変 |
 | `basin_switch_after_failed_spillovers` | 2 | この連続失敗回数で best 破棄＋σ_init リセットの完全ベイスン乗換え |
-| `basin_switch_quality_floor` | 1e-2 | best がこの値以下のときベイスン乗換えを抑制（grinding 中の run を保護）|
+| `basin_switch_quality_rel_floor` | 1e-2 | best_so_far / \|f_init\| ≤ this でベイスン乗換えを抑制（相対 2 桁以上進捗で grinding 中とみなし保護）|
 | `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象） |
 | `niche_radius_ratio` | 0.1 | 系統間の最小距離（span に対する比率、スケール不変。BBOB span=10 で実効 1.0、絶対値版と数学的に同一） |
 | `temperature` | 1.0 | 感染確率のランダム性（大→均一、小→貪欲） |

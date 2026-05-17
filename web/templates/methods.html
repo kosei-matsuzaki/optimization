@@ -1355,24 +1355,24 @@ strains ← []
       <div class="fc-dot c-red">3</div>
       <div class="fc-card fc-card-expanded">
         <div class="fc-card-title">停滞時 Restart（集団再播種）</div>&#x2060;
-        <span class="fc-desc">改善なし評価が <code>restart_no_improve_threshold</code>(=300) を超え、かつ \(f_\text{best}>\) <code>restart_quality_floor</code>(\(=10^{-8}\)) のとき、global best を残し他個体を best 周辺に \(\sigma_\text{init}\times 0.3\) で再播種。CMA-ES の IPOP と同等の役割を果たし、ill-conditioned 関数 (F10/F12) の初期整列失敗を救済。連続失敗 2 回で <b>basin switch</b>（best 破棄＋\(\sigma_\text{init}\) リセット）に escalate。</span>
+        <span class="fc-desc">改善なし評価が <code>restart_no_improve_threshold</code>(=300) を超え、かつ \(f_\text{best}/|f_\text{init}|>\) <code>restart_quality_rel_floor</code>(\(=10^{-8}\)) のとき、global best を残し他個体を best 周辺に \(\sigma_\text{init}\times 0.3\) で再播種。CMA-ES の IPOP と同等の役割を果たし、ill-conditioned 関数 (F10/F12) の初期整列失敗を救済。連続失敗 2 回で <b>basin switch</b>（best 破棄＋\(\sigma_\text{init}\) リセット）に escalate。floor は初期 best 比で乗法スケール不変。</span>
         <div class="fc-detail">
           <div>
             <div class="fc-pane-title">パラメータ</div>
             <div class="fc-params">
               <div class="fc-param-chip" title="restart 発動の no_improve 閾値"><span class="pk">restart_no_improve_threshold</span><span class="pv">= 300</span></div>
               <div class="fc-param-chip" title="restart 後の σ（σ_init に対する比率）"><span class="pk">restart_sigma_ratio</span><span class="pv">= 0.3</span></div>
-              <div class="fc-param-chip" title="best がこれ以下なら restart を skip（収束破壊を防ぐ）"><span class="pk">restart_quality_floor</span><span class="pv">= 1e-8</span></div>
+              <div class="fc-param-chip" title="best_so_far / |f_init| ≤ this で restart skip（乗法スケール不変）"><span class="pk">restart_quality_rel_floor</span><span class="pv">= 1e-8</span></div>
               <div class="fc-param-chip" title="連続失敗回数 → basin switch"><span class="pk">basin_switch_after_failed_spillovers</span><span class="pv">= 2</span></div>
             </div>
           </div>
           <div class="fc-mechanism">
-            <div class="fc-pane-title">Quality-gated restart</div>
-            <div class="math-display">\[ \text{trigger} = (\text{no\_improve} \geq 300) \;\wedge\; (f_\text{best} > 10^{-8}) \]</div>
+            <div class="fc-pane-title">Quality-gated restart (相対 floor, 乗法スケール不変)</div>
+            <div class="math-display">\[ \text{trigger} = (\text{no\_improve} \geq 300) \;\wedge\; (f_\text{best}/|f_\text{init}| > 10^{-8}) \]</div>
             <div class="math-display">\[ x_i^{\text{new}} = \mathrm{reflect}\!\left(x_\text{best} + 0.3\,\sigma_\text{init}\cdot \mathcal{N}(0, I)\right), \quad i \neq i_\text{best} \]</div>
             <div class="fc-note">
-              <span class="lbl">Quality gate</span>\(f_\text{best}<10^{-8}\) なら既に高精度収束しているとみなし、restart で σ を膨らませて精度を悪化させない（F01-Sphere で 0 まで到達できる）。<br>
-              <span class="lbl">Basin switch</span>連続失敗 \(\geq\) 2 回かつ \(f_\text{best}>10^{-2}\) で best 破棄＋全 pop Uniform 再生成＋σ を σ_init にリセット。F24 双漏斗から脱出。<br>
+              <span class="lbl">Quality gate</span>初期 best から 8 桁以上削減できた run は precision 領域とみなし、restart で σ を膨らませて精度を悪化させない（F01-Sphere で 0 まで到達できる）。floor は \(|f_\text{init}|\) との比なので乗法スケール不変だが、shift には対応しない（既知の限界）。<br>
+              <span class="lbl">Basin switch</span>連続失敗 \(\geq\) 2 回かつ \(f_\text{best}/|f_\text{init}|>10^{-2}\) で best 破棄＋全 pop Uniform 再生成＋σ を σ_init にリセット。F24 双漏斗から脱出。<br>
               <span class="lbl">CMA-ES との公平性</span>CMA-ES も `cma` ライブラリ標準で `es.stop()` 後の multistart を有する。両者とも restart 機構あり。
             </div>
           </div>
