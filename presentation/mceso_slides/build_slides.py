@@ -983,7 +983,7 @@ def slide_mech_strain(prs):
         "strains that are spaced apart.\n"
         "→ The droplet channel can pull toward any of them, so the search\n"
         "stays diverse on multimodal landscapes.",
-        params="niche_radius = 1.0    n_elite_max = 6"
+        params="niche_radius_ratio = 0.1 (× span)    n_elite_max = 6"
     )
 
 
@@ -1003,11 +1003,11 @@ def slide_mech_spillover(prs):
     slide = new_slide(prs)
     _mech_detail(
         slide, "Spillover", "mech_spillover",
-        "Escalating re-seed when improvement stalls",
+        "Full re-seed when improvement stalls; basin switch on persistent failure",
         "Reset strength grows with the stagnation streak:\n"
-        " • Stage 0: replace 75% of the population uniformly\n"
-        " • Stage 1: replace 100% (best preserved)\n"
-        " • Stage 2: also discard the best, reset σ (basin switch)",
+        " • Stage 0–1: replace 100% uniformly + axis-bound probes (best preserved)\n"
+        " • Stage 2: also discard the best, reset σ (basin switch)\n"
+        "Failed-basin memory rejects re-seeds near remembered dead ends.",
         params="no_improve ≥ 300  AND  f_best > 1e-8"
     )
 

@@ -1213,7 +1213,7 @@
               <div class="concept-title">Airborne</div>
             </div>
           </div>
-          <div class="concept-body">エアロゾルによる広域伝染。ランダム宿主から遠方へ大きくジャンプ。集団が収束するほど \(\sigma_\text{air}\) を拡大し、**停滞を防ぐ**。ただし <strong>drilling mode</strong>（\(f_\text{best} < 10^{-6}\)）に入ったら停止 — 浮動小数限界への精密化を雑音で阻害しない。</div>
+          <div class="concept-body">エアロゾルによる広域伝染。ランダム宿主から遠方へ大きくジャンプ。集団が収束するほど \(\sigma_\text{air}\) を拡大し、**停滞を防ぐ**。ただし <strong>drilling mode</strong>（\(\sigma < \text{span}\times 10^{-3}\)）に入ったら停止 — 浮動小数限界への精密化を雑音で阻害しない。</div>
         </div>
       </div>
     </div>
@@ -1296,12 +1296,12 @@
       <div class="fc-dot c-purple">1</div>
       <div class="fc-card fc-card-expanded">
         <strong>系統共存（ニッチエリート抽出）</strong>&#x2060;
-        <span class="fc-desc">\(f\) 値の良い順に候補を走査し、既存系統から <code>niche_radius</code> 以上離れた個体だけを新系統として登録。最大 <code>n_elite_max</code> 個の感染系統が別々の盆地に配置され、飛沫感染チャネルの引力対象 pool として利用される。</span>
+        <span class="fc-desc">\(f\) 値の良い順に候補を走査し、既存系統から <code>niche_radius_ratio × span</code> 以上離れた個体だけを新系統として登録。最大 <code>n_elite_max</code> 個の感染系統が別々の盆地に配置され、飛沫感染チャネルの引力対象 pool として利用される。比率指定でスケール不変。</span>
         <div class="fc-detail">
           <div>
             <div class="fc-pane-title">パラメータ</div>
             <div class="fc-params">
-              <div class="fc-param-chip" title="系統間の最小距離"><span class="pk">niche_radius</span><span class="pv">= 1.0</span></div>
+              <div class="fc-param-chip" title="系統間の最小距離（span に対する比率、スケール不変）"><span class="pk">niche_radius_ratio</span><span class="pv">= 0.1</span></div>
               <div class="fc-param-chip" title="保護する系統の最大数"><span class="pk">n_elite_max</span><span class="pv">= 6</span></div>
             </div>
           </div>
@@ -1311,7 +1311,7 @@
 <span class="kw">sort</span> population <span class="kw">by</span> f ascending
 strains ← []
 <span class="kw">for</span> candidate <span class="kw">in</span> sorted_pop:
-  <span class="kw">if</span> min ‖candidate − s‖ &gt; niche_radius  <span class="kw">for all</span> s ∈ strains:
+  <span class="kw">if</span> min ‖candidate − s‖ &gt; niche_radius_ratio · span  <span class="kw">for all</span> s ∈ strains:
     strains.append(candidate)
     <span class="kw">if</span> |strains| ≥ n_elite_max: <span class="kw">break</span></pre>
             <div class="fc-note">
@@ -1471,7 +1471,7 @@ strains ← []
         <div class="fc-fork-card fc-card-expanded">
           <div class="fc-fork-num">5c — 空気感染（割合 air_ratio、drilling 中は停止）</div>
           <strong>Airborne: 広域エアロゾル拡散</strong>&#x2060;
-          <span class="fc-desc">ランダムな宿主位置に大きなノイズで遠方へ跳躍。集団が収束しているときほど \(\sigma_\text{air}\) を拡大し、停滞を防ぐ。<strong>drilling mode</strong>（\(f_\text{best} < 10^{-6}\)）に入ったら一時停止し、子は接触感染・飛沫感染にリダイレクト。</span>
+          <span class="fc-desc">ランダムな宿主位置に大きなノイズで遠方へ跳躍。集団が収束しているときほど \(\sigma_\text{air}\) を拡大し、停滞を防ぐ。<strong>drilling mode</strong>（\(\sigma < \text{span}\times 10^{-3}\)）に入ったら一時停止し、子は接触感染・飛沫感染にリダイレクト。</span>
           <div class="fc-detail">
             <div class="fc-fork-inner">
               <div>
@@ -1484,7 +1484,7 @@ strains ← []
               </div>
               <div class="fc-mechanism">
                 <div class="fc-pane-title">エアロゾル拡散範囲（drilling 外）</div>
-                <div class="math-display">\[ \mathrm{air\_ratio\_eff} = \begin{cases} 0 & \text{if } f_\text{best} < 10^{-6}\;(\text{drilling}) \\ \mathrm{air\_ratio} & \text{otherwise} \end{cases} \]</div>
+                <div class="math-display">\[ \mathrm{air\_ratio\_eff} = \begin{cases} 0 & \text{if } \sigma < \text{span}\cdot 10^{-3}\;(\text{drilling}) \\ \mathrm{air\_ratio} & \text{otherwise} \end{cases} \]</div>
                 <div class="math-display">\[ \sigma_\text{air} = \max(\sigma_\text{global},\; 0.3\,\sigma_\text{init}) \cdot [\sigma_\text{air}^{\max} - (\sigma_\text{air}^{\max} - \sigma_\text{air}^{\min}) d] \]</div>
                 <div class="fc-note">
                   <span class="lbl">フロア</span>\(\sigma_\text{global}\) が小さくなりすぎても \(0.3\,\sigma_\text{init}\) で底打ち → 終盤も最低限のジャンプ幅を確保。<br>
@@ -1517,24 +1517,32 @@ strains ← []
       </div>
     </div>
 
-    <!-- ─ Step 7: σ 減衰 ─ -->
+    <!-- ─ Step 7: σ 適応 (always-on + drilling mode) ─ -->
     <div class="fc-item">
       <div class="fc-dot c-red">7</div>
       <div class="fc-card fc-card-expanded">
-        <strong>\(\sigma\) 減衰（探索幅の世代縮小）</strong>&#x2060;
-        <span class="fc-desc">毎世代 \(\sigma_\text{global}\) を一定率で縮小して探索半径を狭める。世代を重ねるほど探索が精密化され、終盤では局所感染がほぼ純粋な精密探索になる。</span>
+        <strong>\(\sigma\) 適応（always-on + drilling mode）</strong>&#x2060;
+        <span class="fc-desc">SaVOA 流の乗法適応を毎世代適用。改善時は \(\sigma\) を拡大して新しい谷を探り、非改善時は縮小して局所探索を強化。\(\sigma\) が span × \(10^{-3}\) を下回ったら drilling mode に入り、より積極的な縮小率（0.85）で浮動小数限界へ追込む。σ ベースの drilling 判定は問題スケール不変。</span>
         <div class="fc-detail">
           <div>
             <div class="fc-pane-title">パラメータ</div>
             <div class="fc-params">
-              <div class="fc-param-chip" title="毎世代の σ_global 縮小率"><span class="pk">sigma_decay</span><span class="pv">= 0.99</span></div>
+              <div class="fc-param-chip" title="σ adapt 改善時の乗数"><span class="pk">sigma_up</span><span class="pv">= 1.1</span></div>
+              <div class="fc-param-chip" title="σ adapt 非改善時の乗数"><span class="pk">sigma_down</span><span class="pv">= 0.95</span></div>
+              <div class="fc-param-chip" title="drilling mode 中の縮小乗数"><span class="pk">sigma_drill_down</span><span class="pv">= 0.85</span></div>
+              <div class="fc-param-chip" title="drilling mode 発動の σ 閾値（σ &lt; span × this で発動）"><span class="pk">precision_sigma_ratio</span><span class="pv">= 1e-3</span></div>
+              <div class="fc-param-chip" title="σ_global の絶対下限（× span）"><span class="pk">sigma_floor_ratio</span><span class="pv">= 1e-6</span></div>
             </div>
           </div>
           <div class="fc-mechanism">
-            <div class="fc-pane-title">減衰の更新則と閉じた形</div>
-            <div class="math-display">\[ \sigma_\text{global}^{(t+1)} \;=\; \sigma_\text{global}^{(t)} \cdot \gamma, \qquad \sigma_\text{global}^{(t)} \;=\; \sigma_\text{init} \cdot \gamma^{\,t} \]</div>
+            <div class="fc-pane-title">更新則</div>
+            <div class="math-display">\[ \sigma^{(t+1)} = \begin{cases} \sigma^{(t)} \cdot \texttt{sigma\_up} & \text{if } f_\text{best}^{(t+1)} < f_\text{best}^{(t)} \\ \sigma^{(t)} \cdot \texttt{sigma\_drill\_down} & \text{elif } \sigma^{(t)} < \text{span}\cdot 10^{-3}\;(\text{drilling}) \\ \sigma^{(t)} \cdot \texttt{sigma\_down} & \text{otherwise} \end{cases} \]</div>
+            <div class="math-display">\[ \sigma^{(t+1)} \leftarrow \mathrm{clip}\!\left(\sigma^{(t+1)},\; \text{span}\cdot 10^{-6},\; \text{span}\right) \]</div>
             <div class="fc-note">
-              \(\gamma = 0.99\) のとき \(t = 100\) で \(\sigma\!\approx\!0.366\,\sigma_\text{init}\)、\(t = 500\) で \(\approx 0.0066\,\sigma_\text{init}\)。\(\sigma_\text{global}\) は局所感染の \(\sigma_i\) と空気感染の \(\sigma_\text{air}\) の両方の基準スケールとして使われる。空気感染は \(\max(\sigma_\text{global},\,0.3\,\sigma_\text{init})\) でフロアが効くため、終盤も最低限のジャンプ幅は維持される（Step 4b 参照）。
+              <span class="lbl">改善時の拡大</span>1.1 倍で局所谷から脱出を試みる（SaVOA 流）。<br>
+              <span class="lbl">通常の非改善</span>0.95 倍でゆるやかに収束。drilling 域到達まで airborne が広域探索を担う。<br>
+              <span class="lbl">drilling 中の強縮小</span>0.85 倍で浮動小数限界へ追込み。同時に airborne は停止し（Step 5c）、ノイズで精度劣化しない。<br>
+              <span class="lbl">スケール不変性</span>drilling 判定が σ ベース（× span）なので、shift/scale されたベンチマークでも追加調整不要。\(\sigma_\text{global}\) は局所感染の \(\sigma_i\) と空気感染の \(\sigma_\text{air}\) の両方の基準スケール。
             </div>
           </div>
         </div>
@@ -1736,7 +1744,7 @@ strains ← []
         <div class="cmp-aspect-body">
           <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">改善 → \(\times 1.2\)、停滞 → \(\times 0.9\)(全個体同一)</span></div>
           <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">CSA(cumulative step-size adaptation)＋ 共分散同時更新</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text">世代 \(\times 0.99\) 減衰 ＋ 個体ごと \(\sigma_i\)(品質×年齢べき乗)。option で SaVOA 風適応</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text">SaVOA 流 always-on 適応(改善 \(\times 1.1\) / 停滞 \(\times 0.95\)) ＋ drilling mode で \(\times 0.85\) 強収縮 ＋ 個体ごと \(\sigma_i\)(品質×年齢べき乗)</span></div>
         </div>
       </div>
 
