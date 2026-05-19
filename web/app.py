@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import csv
 import datetime
 import json
@@ -381,24 +383,41 @@ def _read_result_meta(run_dir: Path) -> dict:
 # ── quick run job ─────────────────────────────────────────────────────────────
 
 def _run_job(job_id: str, n_runs: int, max_evals: int, out_dir: str,
-             use_all: bool = False) -> None:
+             use_all: bool = False, dim: int = 2,
+             methods: str | None = None,
+             funcs: str | None = None) -> None:
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
-    _write_result_meta(out_path, {
+    if funcs:
+        set_label = "custom"
+    else:
+        set_label = "all-26" if use_all else "quick-12"
+    meta: dict = {
         "type": "quick",
         "status": "running",
         "created_at": datetime.datetime.now().isoformat(timespec="seconds"),
         "commit": _current_commit(),
         "n_runs": n_runs,
         "max_evals": max_evals,
-        "set": "all-26" if use_all else "quick-12",
-    })
+        "set": set_label,
+        "dim": dim,
+    }
+    if methods:
+        meta["methods"] = methods
+    if funcs:
+        meta["funcs"] = funcs
+    _write_result_meta(out_path, meta)
     cmd = ["python3", str(QUICK_CHECK),
            "--n-runs", str(n_runs),
            "--max-evals", str(max_evals),
+           "--dim", str(dim),
            "--output-dir", out_dir]
-    if use_all:
+    if funcs:
+        cmd.extend(["--funcs", funcs])
+    elif use_all:
         cmd.append("--all")
+    if methods:
+        cmd.extend(["--methods", methods])
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -607,6 +626,39 @@ def methods():
     return render_template("methods.html")
 
 
+@app.route("/api/methods")
+def api_methods():
+    """Return the list of available optimizer names (for the quick run modal)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("quick_check", QUICK_CHECK)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return jsonify({"methods": list(mod._OPTIMIZERS.keys())})
+
+
+@app.route("/api/functions")
+def api_functions():
+    """Return the benchmark function list grouped by category, plus the
+    canonical 'quick-12' preset names (for the quick run modal)."""
+    import importlib.util
+    qc_spec = importlib.util.spec_from_file_location("quick_check", QUICK_CHECK)
+    qc = importlib.util.module_from_spec(qc_spec)
+    qc_spec.loader.exec_module(qc)
+
+    # Discover the full function set with categories from core.benchmarks
+    sys.path.insert(0, str(BASE_DIR))
+    from core.benchmarks import _BBOB_SPECS, CUSTOM_BENCHMARKS  # noqa: E402
+    groups: dict[str, list[str]] = {}
+    for _fid, name, cat in _BBOB_SPECS:
+        groups.setdefault(cat, []).append(name)
+    for b in CUSTOM_BENCHMARKS:
+        groups.setdefault(b.category, []).append(b.name)
+    return jsonify({
+        "categories": groups,
+        "quick_12":   list(qc._QUICK_FUNCTIONS),
+    })
+
+
 @app.route("/api/run", methods=["POST"])
 def api_run():
     n_runs    = max(1,   min(100,   int(request.form.get("n_runs",   3))))
@@ -615,6 +667,19 @@ def api_run():
     # Checkbox value arrives as the literal string "true" / "on" / "1" when ticked;
     # treat anything else (including absent) as off.
     use_all   = request.form.get("use_all", "").lower() in ("true", "on", "1", "yes")
+    # Dimension — restricted to values supported by quick_check.py
+    try:
+        dim = int(request.form.get("dim", "2"))
+    except ValueError:
+        dim = 2
+    if dim not in (2, 3, 10):
+        dim = 2
+    # Methods — comma-separated, sanitised (alnum / dash / dot / comma / space only)
+    methods_raw = request.form.get("methods", "").strip()
+    methods = re.sub(r'[^\w\-\., ]', '', methods_raw) if methods_raw else None
+    # Funcs — comma-separated function names (sanitised)
+    funcs_raw = request.form.get("funcs", "").strip()
+    funcs = re.sub(r'[^\w\-\., ]', '', funcs_raw) if funcs_raw else None
 
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     suffix  = label if label else _current_commit()
@@ -623,7 +688,9 @@ def api_run():
     job_id = uuid.uuid4().hex[:8]
     _jobs[job_id] = {"status": "running", "output": [], "result_dir": Path(out_dir).name}
     threading.Thread(
-        target=_run_job, args=(job_id, n_runs, max_evals, out_dir, use_all), daemon=True
+        target=_run_job,
+        args=(job_id, n_runs, max_evals, out_dir, use_all, dim, methods, funcs),
+        daemon=True,
     ).start()
     return jsonify({"job_id": job_id})
 

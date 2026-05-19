@@ -21,6 +21,9 @@ from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
     DEOptimizer, SaVOAOptimizer,
 )
+from core.optimizers_modern import (
+    LSHADEOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
+)
 from core.runner import run_experiment, summarize, wilcoxon_vs_reference
 from core.visualize import (
     save_landscape_svg, save_convergence_svg,
@@ -113,26 +116,34 @@ _DIM_REGISTRIES: dict[int, dict[str, object]] = {
 # the base implementation. No verification toggles remain; extend this dict
 # to ablate new ideas against the integrated baseline.
 _OPTIMIZERS = {
-    "CMA-ES": (CMAESOptimizer,                  {}),
-    "PSO":    (PSOOptimizer,                    {}),
-    "DE":     (DEOptimizer,                     {}),
-    "SaVOA":  (SaVOAOptimizer,                  {}),
-    "MC-ESO": (MultiChannelEpidemicOptimizer,   {}),
+    "CMA-ES":       (CMAESOptimizer,                {}),
+    "IPOP-CMA-ES":  (IPOPCMAESOptimizer,            {}),
+    "BIPOP-CMA-ES": (BIPOPCMAESOptimizer,           {}),
+    "PSO":          (PSOOptimizer,                  {}),
+    "DE":           (DEOptimizer,                   {}),
+    "L-SHADE":      (LSHADEOptimizer,               {}),
+    "SaVOA":        (SaVOAOptimizer,                {}),
+    "MC-ESO":       (MultiChannelEpidemicOptimizer, {}),
 }
 
 
-def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int) -> None:
+def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int,
+             optimizers: dict | None = None) -> None:
     """Run all functions in a dimension group and save results to dim_dir."""
     dim_dir.mkdir(parents=True, exist_ok=True)
-    print(f"\n{'Function':<22} {'Method':<10} {'Mean':>12} "
+    if optimizers is None:
+        optimizers = _OPTIMIZERS
+    # Methods that take a per-benchmark `sigma0` initial step.
+    _SIGMA_USERS = (CMAESOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer)
+    print(f"\n{'Function':<22} {'Method':<12} {'Mean':>12} "
           f"{'SR@1e-1':>7} {'SR@1e-2':>7} {'SR@1e-4':>7} {'SR@1e-7':>7} {'SR@1e-10':>8} {'ERT':>9}")
     print("-" * 100)
     for bench in benchmarks:
         sigma0 = 0.2 * (bench.bounds[1] - bench.bounds[0])
         results_per_method: dict = {}
         times_per_method: dict = {}
-        for method, (cls, kwargs) in _OPTIMIZERS.items():
-            kw = {**kwargs, **({"sigma0": sigma0} if cls is CMAESOptimizer else {})}
+        for method, (cls, kwargs) in optimizers.items():
+            kw = {**kwargs, **({"sigma0": sigma0} if cls in _SIGMA_USERS else {})}
             results, times = run_experiment(
                 cls, bench, n_runs=n_runs, max_evals=max_evals, **kw
             )
@@ -180,6 +191,7 @@ def main(
     use_all: bool = False,
     dim: int = 2,
     suite: str = "bbob",
+    methods: list[str] | None = None,
 ) -> None:
     output_dir = Path(output_dir)
     if suite == "cec2022":
@@ -197,9 +209,22 @@ def main(
         func_set = _ALL_FUNCTIONS if use_all else _QUICK_FUNCTIONS
         # Custom benchmarks (C01/C02) are 2D-only — drop them silently for higher dims
         func_set = [n for n in func_set if dim == 2 or n not in _CUSTOM_2D_ONLY]
+    # Filter optimizers by --methods (preserve order from _OPTIMIZERS).
+    if methods:
+        method_filter = {m.strip() for m in methods if m and m.strip()}
+        unknown = method_filter - set(_OPTIMIZERS)
+        if unknown:
+            raise SystemExit(
+                f"Unknown method(s): {sorted(unknown)}.  "
+                f"Available: {list(_OPTIMIZERS)}")
+        optimizers = {k: v for k, v in _OPTIMIZERS.items() if k in method_filter}
+    else:
+        optimizers = _OPTIMIZERS
+
     print(f"quick_check  suite={suite}  dim={dim}  n_runs={n_runs}  "
           f"max_evals={max_evals}  "
-          f"set={'all' if use_all else 'quick'}  funcs={funcs or 'all'}")
+          f"set={'all' if use_all else 'quick'}  funcs={funcs or 'all'}  "
+          f"methods={list(optimizers)}")
 
     func_filter = set(funcs) if funcs else None
     benchmarks: list = []
@@ -215,7 +240,8 @@ def main(
         raise SystemExit(f"No matching functions for filter {funcs} at dim={dim}")
 
     print(f"\n=== dim{dim} ===")
-    _run_dim(benchmarks, output_dir / f"dim{dim}", n_runs, max_evals)
+    _run_dim(benchmarks, output_dir / f"dim{dim}", n_runs, max_evals,
+             optimizers=optimizers)
 
 
 if __name__ == "__main__":
@@ -232,7 +258,13 @@ if __name__ == "__main__":
     parser.add_argument("--suite",      type=str, default="bbob", choices=["bbob", "cec2022"],
                         help="Benchmark suite. 'bbob' (default) uses BBOB-24 + custom; "
                              "'cec2022' uses the 12-function CEC2022 hold-out at dim=10.")
+    parser.add_argument("--methods",    type=str, default=None,
+                        help="Comma-separated optimizer names to run "
+                             "(default: all 8 baselines).  "
+                             "Available: " + ", ".join(_OPTIMIZERS.keys()))
     args = parser.parse_args()
     funcs_list = [s.strip() for s in args.funcs.split(",")] if args.funcs else None
+    methods_list = [s.strip() for s in args.methods.split(",")] if args.methods else None
     main(n_runs=args.n_runs, max_evals=args.max_evals, output_dir=args.output_dir,
-         funcs=funcs_list, use_all=args.all, dim=args.dim, suite=args.suite)
+         funcs=funcs_list, use_all=args.all, dim=args.dim, suite=args.suite,
+         methods=methods_list)

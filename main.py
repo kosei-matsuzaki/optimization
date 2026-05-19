@@ -8,6 +8,9 @@ from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
     DEOptimizer, SaVOAOptimizer,
 )
+from core.optimizers_modern import (
+    LSHADEOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
+)
 from core.runner import run_experiment, summarize
 from core.visualize import (
     save_landscape_svg, save_convergence_svg,
@@ -22,16 +25,19 @@ MAX_EVALS = 5000
 OUTPUT_DIR = Path("results")
 
 _BASE_OPTIMIZERS = {
-    "PSO":    (PSOOptimizer,                  {}),
-    "DE":     (DEOptimizer,                   {}),
-    "SaVOA":  (SaVOAOptimizer,                {}),
-    "MC-ESO": (MultiChannelEpidemicOptimizer, {}),
+    "PSO":     (PSOOptimizer,                  {}),
+    "DE":      (DEOptimizer,                   {}),
+    "SaVOA":   (SaVOAOptimizer,                {}),
+    "L-SHADE": (LSHADEOptimizer,               {}),
+    "MC-ESO":  (MultiChannelEpidemicOptimizer, {}),
 }
 
 
 def _make_optimizers(sigma0: float) -> dict:
     return {
-        "CMA-ES": (CMAESOptimizer, {"sigma0": sigma0}),
+        "CMA-ES":      (CMAESOptimizer,     {"sigma0": sigma0}),
+        "IPOP-CMA-ES": (IPOPCMAESOptimizer, {"sigma0": sigma0}),
+        "BIPOP-CMA-ES": (BIPOPCMAESOptimizer, {"sigma0": sigma0}),
         **_BASE_OPTIMIZERS,
     }
 

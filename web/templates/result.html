@@ -311,6 +311,12 @@
     gap: 10px;
     margin-bottom: 4px;
   }
+  /* Solo cell (single figure — landscape/convergence in Function mode):
+     widen and center so it doesn't sit cramped at the minimum column width. */
+  .media-grid.solo {
+    grid-template-columns: minmax(0, min(720px, 100%));
+    justify-content: center;
+  }
   .grid-cell {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -1226,10 +1232,12 @@ function selectMethod(method) {
 function renderFunctionGrid() {
   const grid = document.getElementById('media-grid');
   grid.innerHTML = '';
+  grid.classList.remove('solo');
   if (!currentFunc || !mediaIndex) return;
 
   // Function-level types (landscape/convergence): single full-width cell
   if (FUNC_LEVEL_TYPES.has(currentType)) {
+    grid.classList.add('solo');
     const url = mediaUrl(currentFunc, null, currentType);
     grid.appendChild(makeGridCell(currentFunc, null, currentType, url, currentFunc));
     return;

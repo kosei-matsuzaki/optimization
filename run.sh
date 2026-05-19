@@ -13,6 +13,13 @@ set -euo pipefail
 WORKFLOW="Run Optimization"
 RESULTS_ROOT="results"
 
+# Prefer project-local .venv (uv) over system python3 for local commands.
+if [[ -x ".venv/bin/python3" ]]; then
+  PY=".venv/bin/python3"
+else
+  PY="python3"
+fi
+
 # ── trigger ──────────────────────────────────────────────────────────────────
 cmd_trigger() {
   local n_runs=100 max_evals=5000
@@ -70,7 +77,7 @@ PID_FILE=".quick.pid"
 DIR_FILE=".quick.dir"
 
 cmd_quick() {
-  local n_runs=10 max_evals=2000 label="" use_all=0 dim=2
+  local n_runs=10 max_evals=2000 label="" use_all=0 dim=2 methods=""
   local pass_args=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -79,6 +86,8 @@ cmd_quick() {
       --funcs)     pass_args+=("$1" "$2"); shift 2 ;;
       --all)       use_all=1;      pass_args+=("$1"); shift ;;
       --dim)       dim="$2";       pass_args+=("$1" "$2"); shift 2 ;;
+      --methods)   methods="$2";   pass_args+=("$1" "$2"); shift 2 ;;
+      --suite)     pass_args+=("$1" "$2"); shift 2 ;;
       --label)     label="$2";     shift 2 ;;
       *)           pass_args+=("$1"); shift ;;
     esac
@@ -92,11 +101,18 @@ cmd_quick() {
   local dir="${RESULTS_ROOT}/$(date +%Y%m%d_%H%M%S)_${suffix}_quick"
   echo "Quick check → ${dir}/"
   mkdir -p "$dir"
-  printf '{\n  "type": "quick",\n  "created_at": "%s",\n  "commit": "%s",\n  "n_runs": %s,\n  "max_evals": %s,\n  "set": "%s"\n}\n' \
-    "$(date +%Y-%m-%dT%H:%M:%S)" \
-    "$(git rev-parse --short HEAD 2>/dev/null || echo 'nogit')" \
-    "$n_runs" "$max_evals" "$set_name" > "$dir/result.json"
-  python3 quick_check.py --output-dir "$dir" "${pass_args[@]+"${pass_args[@]}"}" &
+  if [[ -n "$methods" ]]; then
+    printf '{\n  "type": "quick",\n  "created_at": "%s",\n  "commit": "%s",\n  "n_runs": %s,\n  "max_evals": %s,\n  "set": "%s",\n  "dim": %s,\n  "methods": "%s"\n}\n' \
+      "$(date +%Y-%m-%dT%H:%M:%S)" \
+      "$(git rev-parse --short HEAD 2>/dev/null || echo 'nogit')" \
+      "$n_runs" "$max_evals" "$set_name" "$dim" "$methods" > "$dir/result.json"
+  else
+    printf '{\n  "type": "quick",\n  "created_at": "%s",\n  "commit": "%s",\n  "n_runs": %s,\n  "max_evals": %s,\n  "set": "%s",\n  "dim": %s\n}\n' \
+      "$(date +%Y-%m-%dT%H:%M:%S)" \
+      "$(git rev-parse --short HEAD 2>/dev/null || echo 'nogit')" \
+      "$n_runs" "$max_evals" "$set_name" "$dim" > "$dir/result.json"
+  fi
+  "$PY" quick_check.py --output-dir "$dir" "${pass_args[@]+"${pass_args[@]}"}" &
   local pid=$!
   echo "$pid" > "$PID_FILE"
   echo "$dir" > "$DIR_FILE"
@@ -107,7 +123,7 @@ cmd_quick() {
   rm -f "$PID_FILE" "$DIR_FILE"
   local final_status="done"
   [[ $rc -ne 0 ]] && final_status="failed"
-  python3 - <<PYEOF
+  "$PY" - <<PYEOF
 import json
 path = "$dir/result.json"
 try:
@@ -166,7 +182,7 @@ cmd_status() {
 # ── ui ───────────────────────────────────────────────────────────────────────
 cmd_ui() {
   echo "Starting UI at http://localhost:8080 ..."
-  python3 web/app.py
+  "$PY" web/app.py
 }
 
 # ── dispatch ──────────────────────────────────────────────────────────────────
@@ -191,9 +207,15 @@ Usage: ./run.sh <command> [options]
       --label で保存フォルダ名を指定（省略時はコミットハッシュ）
       保存先: results/YYYYMMDD_HHMMSS_<label|commit>/
 
-  quick [--n-runs N] [--max-evals N] [--label NAME]
+  quick [--n-runs N] [--max-evals N] [--dim {2|3|10}] [--methods LIST]
+        [--funcs LIST] [--suite {bbob|cec2022}] [--all] [--label NAME]
       ローカルで軽量確認を実行
-      デフォルト: --n-runs 10 --max-evals 2000
+      デフォルト: --n-runs 10 --max-evals 2000 --dim 2
+      --methods は比較する手法のコンマ区切り（空欄=全手法）
+        例: --methods "MC-ESO,DE,L-SHADE"
+        利用可能: CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,PSO,DE,L-SHADE,SaVOA,MC-ESO
+      --funcs は対象関数のコンマ区切り（例: F01-Sphere,F03-RastriginSep）
+      --all で BBOB-26 フルセット（未指定時は quick-12 サブセット）
       --label で保存フォルダ名を指定（省略時はコミットハッシュ）
       保存先: results/YYYYMMDD_HHMMSS_<label|commit>_quick/
 

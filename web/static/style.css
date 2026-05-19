@@ -19,6 +19,10 @@
   --text:         #0f172a;
   --text-2:       #475569;
   --muted:        #94a3b8;
+  /* Aliases for templates that reference --rule / --bg-soft / --accent-soft */
+  --rule:         var(--border);
+  --bg-soft:      var(--surface-2);
+  --accent-soft:  var(--accent-light);
   --mono:         "JetBrains Mono", "Fira Code", ui-monospace, monospace;
   --radius:       6px;
   --radius-sm:    3px;
@@ -161,21 +165,101 @@ body {
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 .form-row { display: flex; flex-direction: column; gap: 4px; }
 .form-row label { font-size: 11px; font-weight: 600; color: var(--muted); }
-.form-row input[type="number"] {
+.form-row input[type="number"],
+.form-row input[type="text"],
+.form-row select {
   width: 100%;
   padding: 6px 9px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 12.5px;
-  background: var(--surface-2);
+  /* Use background-color rather than the `background` shorthand so the
+     select's background-image (custom arrow) is preserved through state
+     changes. */
+  background-color: var(--surface-2);
   color: var(--text);
-  transition: border-color .15s, box-shadow .15s;
+  transition: border-color .15s, box-shadow .15s, background-color .15s;
+  font-family: inherit;
 }
-.form-row input[type="number"]:focus {
+.form-row input[type="number"]:hover,
+.form-row input[type="text"]:hover,
+.form-row select:hover {
+  border-color: var(--accent-muted);
+}
+.form-row input[type="number"]:focus,
+.form-row input[type="text"]:focus,
+.form-row select:focus {
   outline: none;
+  background-color: var(--surface);
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(66,99,235,.12);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, .14);
 }
+
+/* Custom-styled native select: hide native arrow, draw our own. */
+.form-row select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 28px;
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-2) 50%),
+    linear-gradient(135deg, var(--text-2) 50%, transparent 50%);
+  background-position:
+    calc(100% - 13px) calc(50% - 1px),
+    calc(100% -  8px) calc(50% - 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.form-row select:focus {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+}
+
+/* ── Custom radio / checkbox primitives ─────────────────────────────────────── */
+/* Use a wrapper .chk that contains a hidden native input + visual swatch. */
+.chk {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12.5px; color: var(--text);
+  cursor: pointer; user-select: none;
+  line-height: 1.4;
+}
+.chk input { position: absolute; opacity: 0; pointer-events: none; }
+.chk-box {
+  flex: 0 0 16px; width: 16px; height: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  position: relative;
+  transition: border-color .12s, background .12s, box-shadow .12s;
+}
+.chk:hover .chk-box { border-color: var(--accent-muted); }
+.chk input:focus-visible + .chk-box {
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, .22);
+}
+.chk input:checked + .chk-box {
+  background: var(--accent); border-color: var(--accent);
+}
+.chk input:checked + .chk-box::after {
+  content: ""; position: absolute;
+  left: 4px; top: 1px;
+  width: 5px; height: 9px;
+  border: solid #fff; border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+/* Radio variant: round + dot fill */
+.chk.is-radio .chk-box { border-radius: 50%; }
+.chk.is-radio input:checked + .chk-box { background: var(--surface); border-color: var(--accent); }
+.chk.is-radio input:checked + .chk-box::after {
+  content: ""; position: absolute;
+  inset: 3px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: none;
+}
+.chk input:disabled + .chk-box { opacity: .4; cursor: not-allowed; }
 .label-input-row {
   display: flex;
   align-items: center;
