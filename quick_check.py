@@ -20,8 +20,6 @@ from core.benchmarks import (
 from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
     DEOptimizer, SaVOAOptimizer,
-)
-from core.optimizers_modern import (
     LSHADEOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
 )
 from core.runner import run_experiment, summarize, wilcoxon_vs_reference

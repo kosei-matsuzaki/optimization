@@ -7,8 +7,6 @@ from core.benchmarks import BENCHMARKS, BENCHMARKS_3D, BENCHMARKS_4D, CUSTOM_BEN
 from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
     DEOptimizer, SaVOAOptimizer,
-)
-from core.optimizers_modern import (
     LSHADEOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
 )
 from core.runner import run_experiment, summarize

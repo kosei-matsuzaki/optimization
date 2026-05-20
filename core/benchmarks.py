@@ -52,8 +52,17 @@ _BBOB_SPECS: list[tuple[int, str, str]] = [
 ]
 
 
-def _make_bbob(fid: int, name: str, category: str, dim: int, instance: int = 1) -> BenchmarkFunction:
-    prob = ioh.get_problem(fid, instance=instance, dimension=dim, problem_class=ioh.ProblemClass.BBOB)
+def _make_ioh_benchmark(problem_id, name: str, category: str, dim: int,
+                        instance: int = 1, problem_class=None) -> BenchmarkFunction:
+    """Wrap an ``ioh`` problem as a BenchmarkFunction shifted so f_opt = 0.
+
+    ``problem_id`` is a BBOB function id (int, with ``problem_class``) or a
+    CEC2022 problem name (str). Shared by both _make_bbob and _make_cec2022.
+    """
+    kwargs: dict = {"instance": instance, "dimension": dim}
+    if problem_class is not None:
+        kwargs["problem_class"] = problem_class
+    prob = ioh.get_problem(problem_id, **kwargs)
     lo = float(prob.bounds.lb[0])
     hi = float(prob.bounds.ub[0])
     f_opt = float(prob.optimum.y)
@@ -71,6 +80,11 @@ def _make_bbob(fid: int, name: str, category: str, dim: int, instance: int = 1) 
         dim=dim,
         optima_pos=opt_x,
     )
+
+
+def _make_bbob(fid: int, name: str, category: str, dim: int, instance: int = 1) -> BenchmarkFunction:
+    return _make_ioh_benchmark(fid, name, category, dim, instance,
+                               problem_class=ioh.ProblemClass.BBOB)
 
 
 def _build(dim: int) -> list[BenchmarkFunction]:
@@ -368,24 +382,7 @@ _CEC2022_SPECS: list[tuple[str, str, str]] = [
 
 def _make_cec2022(ioh_name: str, display_name: str, category: str,
                   dim: int, instance: int = 1) -> BenchmarkFunction:
-    prob = ioh.get_problem(ioh_name, instance=instance, dimension=dim)
-    lo = float(prob.bounds.lb[0])
-    hi = float(prob.bounds.ub[0])
-    f_opt = float(prob.optimum.y)
-    opt_x = [list(prob.optimum.x)]
-
-    def func(x: np.ndarray) -> float:
-        return float(prob(x.tolist())) - f_opt
-
-    return BenchmarkFunction(
-        name=display_name,
-        func=func,
-        bounds=(lo, hi),
-        optimum=0.0,
-        category=category,
-        dim=dim,
-        optima_pos=opt_x,
-    )
+    return _make_ioh_benchmark(ioh_name, display_name, category, dim, instance)
 
 
 def _build_cec2022(dim: int) -> list[BenchmarkFunction]:

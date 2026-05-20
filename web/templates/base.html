@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Optimization Lab{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+{% block header %}
+<header class="header">
+  {% block header_back %}{% endblock %}
+  <h1>{% block header_title %}Dashboard{% endblock %}</h1>
+  <span class="header-spacer"></span>
+  {% block header_nav %}
+  <nav class="header-nav">
+    <a href="/methods" class="nav-link">Methods</a>
+  </nav>
+  {% endblock %}
+</header>
+{% endblock %}
+
+{% block content %}{% endblock %}
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
