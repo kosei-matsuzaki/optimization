@@ -111,8 +111,8 @@ def run_dimension(bench_list: list[BenchmarkFunction], dim_label: str) -> None:
     print(f"  Dimension: {dim_label}")
     print(f"{'='*110}")
     print(f"{'Function':<18} {'Category':<14} {'Method':<12} "
-          f"{'Mean':>12} {'Std':>12} {'SR@1e-2':>8} {'SR@1e-4':>8} {'ERT':>9} {'Time(s)':>9}")
-    print("-" * 110)
+          f"{'Mean':>12} {'Std':>12} {'SR@1e-2':>8} {'SR@1e-4':>8} {'EvalsSucc':>10} {'Time(s)':>9}")
+    print("-" * 111)
 
     n_workers = min(os.cpu_count() or 2, len(bench_list))
     args = [(bench.name, bench.dim, N_RUNS, MAX_EVALS, str(output_dir)) for bench in bench_list]
@@ -122,12 +122,13 @@ def run_dimension(bench_list: list[BenchmarkFunction], dim_label: str) -> None:
 
     for bench, rows in zip(bench_list, all_rows):
         for name, category, method_name, s, avg_time in rows:
-            ert_str = f"{s['ert']:>9.0f}" if s['ert'] < float('inf') else "      ---"
+            ev = s['evals_succ_med']
+            ev_str = f"{ev:>10.0f}" if ev < float('inf') else "       ---"
             print(
                 f"{name:<18} {category:<14} {method_name:<12} "
                 f"{s['mean']:>12.4e} {s['std']:>12.4e} "
                 f"{s['sr_1e-2']:>7.0%} {s['success_rate']:>8.0%}"
-                f"{ert_str} {avg_time:>9.2f}"
+                f"{ev_str} {avg_time:>9.2f}"
             )
 
     print(f"\nResults saved to: {output_dir.resolve()}/")

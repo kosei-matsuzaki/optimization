@@ -152,9 +152,12 @@ def read_stats(run_id: str, dim: str, func_name: str) -> dict:
 def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
     """Per-indicator Friedman ranking across all functions.
 
-    Ranks methods within each function independently for two indicators:
-      - "bf"  : median_best_f (lower is better; robust to outlier runs)
-      - "ert" : expected runtime to 1e-4 target (lower is better; inf if SR=0)
+    Ranks methods within each function independently for three indicators:
+      - "bf"    : median_best_f (lower is better; robust to outlier runs)
+      - "evals" : median evals-to-target across *successful* runs only
+                  (lower is better; inf if no run succeeds). Pair with SR
+                  to spot cases where one lucky run yields a small median.
+      - "ecdf"  : ECDF AUC over BBOB targets (higher is better)
     For each indicator we also report Friedman χ²_F, p value, and Nemenyi
     critical difference at α=0.05 so the user can judge whether mean-rank
     gaps are statistically meaningful.
@@ -193,15 +196,19 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
             ecdf_v = float(row.get("ecdf_auc", "0") or "0")
         except (TypeError, ValueError):
             ecdf_v = 0.0
+        # Prefer success-only median evals; fall back to ERT for older runs.
+        evals_raw = row.get("evals_succ_med")
+        if evals_raw is None or evals_raw == "":
+            evals_raw = row.get("ert", "inf")
         data.setdefault(f, {})[m] = {
-            "sr":   parse_sr(row.get("sr_1e-4", "0%")),
-            "ert":  parse_float(row.get("ert", "inf")),
-            "bf":   parse_float(bf_raw),
-            "ecdf": ecdf_v,
+            "sr":    parse_sr(row.get("sr_1e-4", "0%")),
+            "evals": parse_float(evals_raw),
+            "bf":    parse_float(bf_raw),
+            "ecdf":  ecdf_v,
         }
 
-    # bf / ert: lower-is-better. ecdf: higher-is-better — negated when ranking.
-    INDICATORS = ("bf", "ert", "ecdf")
+    # bf / evals: lower-is-better. ecdf: higher-is-better — negated when ranking.
+    INDICATORS = ("bf", "evals", "ecdf")
     HIGHER_BETTER = {"ecdf"}
 
     # Per-function, per-indicator ranks via average-tie ranking.
@@ -286,8 +293,8 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
             entry[f"n_worst_{ind}"]   = int(np.sum(arr == float(k)))
         leaderboard.append(entry)
 
-    # Primary sort: bf mean rank → ert → ecdf.
-    leaderboard.sort(key=lambda x: (x["mean_rank_bf"], x["mean_rank_ert"], x["mean_rank_ecdf"]))
+    # Primary sort: bf mean rank → evals → ecdf.
+    leaderboard.sort(key=lambda x: (x["mean_rank_bf"], x["mean_rank_evals"], x["mean_rank_ecdf"]))
     return {
         "methods":         methods,
         "categories":      categories,

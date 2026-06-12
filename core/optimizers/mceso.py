@@ -47,6 +47,11 @@ class _MCESOState:
     history_no_improve: list[int] = field(default_factory=list)
     history_eval_count: list[int] = field(default_factory=list)
     history_sigma_eval: list[float] = field(default_factory=list)
+    # Informed-restart state (reservoir re-ignition + basin-memory repulsion).
+    # Persist across the whole run; harvested at each spillover.
+    ir_archive_x: list[np.ndarray] = field(default_factory=list)   # niche-separated reservoir hosts
+    ir_archive_f: list[float] = field(default_factory=list)
+    ir_basin_centroids: list[np.ndarray] = field(default_factory=list)  # abandoned-basin memory
 
     @property
     def budget_left(self) -> bool:
@@ -102,17 +107,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         children that fail to outcompete the host they replaced are rolled
         back. The outbreak monotonically improves.
 
-      • **Spillover event** (stagnation-triggered re-seed): when the outbreak
-        stalls (no improvement for ``restart_no_improve_threshold`` evals)
-        and ``best_so_far`` still exceeds
+      • **Spillover event** (stagnation-triggered *informed* restart): when the
+        outbreak stalls (no improvement for ``restart_no_improve_threshold``
+        evals) and ``best_so_far`` still exceeds
         ``restart_quality_rel_floor × |f_init|`` (i.e. the run has not yet
         reduced the initial-population best by ~8 orders of magnitude), the
-        population spills over to a fresh host pool around the best with
-        σ = σ_init·``restart_sigma_ratio``. After a streak of failed
-        spillovers the next event escalates to a full basin switch (best
-        discarded, σ reset to σ_init). Quality floors are relative to the
-        initial-population best so they remain meaningful under
-        multiplicative rescaling of f.
+        population spills over to a fresh host pool. Unlike a blind uniform
+        restart, the re-seed **reuses the search structure**: the current
+        basin's niched elites are harvested into a persistent strain archive
+        and its centroid is remembered, then a fraction ``ir_archive_frac`` of
+        the new hosts re-ignite as a tight Gaussian around a surviving archived
+        reservoir while the rest are uniform draws repelled away from every
+        remembered basin (herd immunity → explore susceptible regions). After a
+        streak of failed spillovers the next event escalates to a full basin
+        switch (best discarded, σ reset to σ_init). Quality floors are relative
+        to the initial-population best so they remain meaningful under
+        multiplicative rescaling of f. (Closes the "uninformed restart" gap
+        found by the 2026-06 ablation; the genuine differentiation from IPOP's
+        blind restart.)
 
     Step-size adaptation is always on: σ is multiplied by ``sigma_up`` on
     improvement and ``sigma_down`` on stagnation. Once σ falls below
@@ -194,6 +206,23 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # axes. Closes the F11/F14 ill-conditioned gap to DE/CMA-ES (F11
         # mean 5.2e-8 → 0 at n=15, F14 SR_1e-7 80% → 87%).
         empirical_cov_floor: float = 0.01,     # min normalized eigenvalue
+        # ── Informed restart (reservoir re-ignition + herd-immunity repulsion) ─
+        # The spillover re-seed is *informed*, not a blind uniform draw: a
+        # persistent niche-separated strain archive is harvested at every
+        # spillover and a fraction `ir_archive_frac` of the re-seeded slots are
+        # drawn as a tight Gaussian (σ = `ir_reignite_sigma_ratio` × span) around
+        # a surviving reservoir host; the remaining uniform draws are rejection-
+        # sampled (≤ `ir_repel_max_tries` tries) to avoid an `ir_repel_radius_ratio`
+        # × span ball around every abandoned-basin centroid (herd immunity →
+        # explore susceptible regions). The 2026-06 ablation showed the prior
+        # blind uniform restart discarded all search structure except the single
+        # best point; this closes that gap and is the genuine differentiation
+        # from IPOP's blind restart. Verified non-harmful across BBOB dim2/dim3
+        # and the CEC2022 dim10 hold-out (no significant regressions).
+        ir_archive_frac: float = 0.5,
+        ir_reignite_sigma_ratio: float = 0.05,
+        ir_repel_radius_ratio: float = 0.1,
+        ir_repel_max_tries: int = 20,
     ):
         super().__init__(benchmark, seed)
         self.n_pop = n_pop
@@ -220,6 +249,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.sigma_drill_down = sigma_drill_down
         self.h2h_CR = h2h_CR
         self.empirical_cov_floor = empirical_cov_floor
+        self.ir_archive_frac = ir_archive_frac
+        self.ir_reignite_sigma_ratio = ir_reignite_sigma_ratio
+        self.ir_repel_radius_ratio = ir_repel_radius_ratio
+        self.ir_repel_max_tries = ir_repel_max_tries
 
     # ─────────────────────────────────────────────────────────────────────
     @staticmethod
@@ -373,6 +406,66 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         st.history_pop_sigma = [float(sigma) * self._host_sigma_scale(pop_f, pop_age)]
         return st
 
+    # ── informed restart (reservoir re-ignition + herd-immunity repulsion) ──
+    # Called from _maybe_spillover; overridable so the diagnostic ablation can
+    # pin the original blind uniform restart (see mceso_ablations.py).
+    def _on_spillover_start(self, st: _MCESOState, basin_switch: bool) -> None:
+        """Harvest the converging basin into the persistent strain archive and
+        record its centroid for herd-immunity repulsion — before the reseed
+        overwrites the population."""
+        # Remember the basin we are about to abandon (its current best location).
+        best_i = int(np.argmin(st.pop_f))
+        st.ir_basin_centroids.append(st.pop_x[best_i].copy())
+        # Fold the current population's niched elites into the archive, keeping
+        # it niche-separated and capped at n_elite_max (best-f wins ties).
+        elite_idx = self._niche_elites(st.pop_x, st.pop_f, st.niche_radius)
+        cand_x = [st.pop_x[i].copy() for i in elite_idx] + list(st.ir_archive_x)
+        cand_f = [float(st.pop_f[i]) for i in elite_idx] + list(st.ir_archive_f)
+        kept_x: list[np.ndarray] = []
+        kept_f: list[float] = []
+        for j in np.argsort(cand_f):
+            xj = cand_x[j]
+            if not kept_x or np.all(
+                np.linalg.norm(np.array(kept_x) - xj, axis=1) > st.niche_radius
+            ):
+                kept_x.append(xj)
+                kept_f.append(cand_f[j])
+            if len(kept_x) >= self.n_elite_max:
+                break
+        st.ir_archive_x = kept_x
+        st.ir_archive_f = kept_f
+
+    def _diversified_reseed(self, st: _MCESOState, x_best_snap) -> np.ndarray:
+        """Return one informed re-seed candidate: reservoir re-ignition (tight
+        Gaussian around a surviving archived strain) with prob ir_archive_frac,
+        else a basin-repelled uniform draw avoiding remembered basins."""
+        rng, lo, hi, dim = st.rng, st.lo, st.hi, self.dim
+        # Reservoir re-ignition.
+        if st.ir_archive_x and rng.random() < self.ir_archive_frac:
+            k = rng.integers(0, len(st.ir_archive_x))
+            sigma = self.ir_reignite_sigma_ratio * st.span
+            return self._reflect(
+                st.ir_archive_x[k] + sigma * rng.standard_normal(dim), lo, hi)
+        # Herd-immunity repulsion — uniform draw avoiding remembered basins.
+        repel_r = self.ir_repel_radius_ratio * st.span
+        cand = rng.uniform(lo, hi, dim)
+        if st.ir_basin_centroids:
+            centroids = np.array(st.ir_basin_centroids)
+            for _ in range(self.ir_repel_max_tries):
+                if np.all(np.linalg.norm(centroids - cand, axis=1) > repel_r):
+                    break
+                cand = rng.uniform(lo, hi, dim)
+        return cand
+
+    def _droplet_strain_positions(self, st: _MCESOState, elite_arr: np.ndarray,
+                                  n_h2h: int) -> np.ndarray:
+        """Donor ('strain') positions for the droplet channel's current-to-best
+        pull — one (dim,) row per child. Base: sample from the *live* niched-elite
+        indices (original behaviour, RNG-identical). A subclass returns positions
+        from a persistent strain archive so the pull keeps targeting coexisting
+        basins even after the live population has collapsed onto one."""
+        return st.pop_x[st.rng.choice(elite_arr, size=n_h2h)]
+
     # ── spillover (stagnation re-seed) ──────────────────────────────────────
     def _maybe_spillover(self, st: _MCESOState) -> bool:
         """Spillover event: when the outbreak stalls, the population spills over
@@ -437,13 +530,18 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             x_best_snap = st.pop_x[best_idx_global].copy()
             reseed_idx = [i for i in range(self.n_pop) if i != best_idx_global]
 
+        # Informed-restart hook: population still holds the converging basin
+        # here, so a subclass can harvest a persistent archive / record the
+        # abandoned basin centroid before the reseed overwrites it. No-op in base.
+        self._on_spillover_start(st, basin_switch)
+
         n_div = int(round(div_ratio * len(reseed_idx)))
         # Shuffle so the assignment of "diversified" vs "local" is random
         rng.shuffle(reseed_idx)
         diversified = set(reseed_idx[:n_div])
         for i in reseed_idx:
             if i in diversified or x_best_snap is None:
-                new_x = rng.uniform(lo, hi, self.dim)
+                new_x = self._diversified_reseed(st, x_best_snap)
                 sig_log = (float(np.linalg.norm(new_x - x_best_snap))
                            if x_best_snap is not None else float(sigma_restart))
             else:
@@ -535,8 +633,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         h2h_b_li = rng.integers(0, n, size=n_h2h)
         diff = st.pop_x[h2h_a_li] - st.pop_x[h2h_b_li]
         if len(elite_arr) > 0:
-            elite_pick = rng.choice(elite_arr, size=n_h2h)
-            best_pull = st.pop_x[elite_pick] - st.pop_x[h2h_parents_gi]
+            strain_pos = self._droplet_strain_positions(st, elite_arr, n_h2h)
+            best_pull = strain_pos - st.pop_x[h2h_parents_gi]
             h2h_step = self.h2h_F * (best_pull + diff)
         else:
             h2h_step = self.h2h_F * diff

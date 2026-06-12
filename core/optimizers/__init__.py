@@ -18,6 +18,7 @@ from __future__ import annotations
 from .base import OptimizeResult, BaseOptimizer
 from .cmaes import CMAESOptimizer
 from .mceso import MultiChannelEpidemicOptimizer
+from .mceso_ablations import MCESONoSpillover, MCESORandomRestart
 from .pso import PSOOptimizer
 from .de import DEOptimizer
 from .savoa import SaVOAOptimizer
@@ -27,6 +28,7 @@ from .restart_cmaes import IPOPCMAESOptimizer, BIPOPCMAESOptimizer
 __all__ = [
     "OptimizeResult", "BaseOptimizer",
     "CMAESOptimizer", "MultiChannelEpidemicOptimizer",
+    "MCESONoSpillover", "MCESORandomRestart",
     "PSOOptimizer", "DEOptimizer", "SaVOAOptimizer",
     "LSHADEOptimizer", "IPOPCMAESOptimizer", "BIPOPCMAESOptimizer",
 ]

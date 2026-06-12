@@ -21,6 +21,7 @@ from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
     DEOptimizer, SaVOAOptimizer,
     LSHADEOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
+    MCESONoSpillover, MCESORandomRestart,
 )
 from core.runner import run_experiment, summarize, wilcoxon_vs_reference
 from core.visualize import (
@@ -108,10 +109,11 @@ _DIM_REGISTRIES: dict[int, dict[str, object]] = {
 }
 
 # MC-ESO (Multi-Channel Epidemic Spread Optimizer): all core mechanisms
-# — 3-channel transmission with h2h CR=0.7, rotation-aware close-contact
-# (empirical covariance), drilling-mode airborne suppression, basin-avoidance
-# spillover, host competition with rollback, gated σ adapt — are baked into
-# the base implementation. No verification toggles remain; extend this dict
+# — 3-channel transmission with h2h CR=0.9, rotation-aware close-contact
+# (empirical covariance), drilling-mode airborne suppression, informed-restart
+# spillover (reservoir re-ignition + basin-memory repulsion), host competition
+# with rollback, σ adapt — are baked into the base implementation. The two
+# MC-ESO-* entries below are diagnostic ablations; extend this dict
 # to ablate new ideas against the integrated baseline.
 _OPTIMIZERS = {
     "CMA-ES":       (CMAESOptimizer,                {}),
@@ -122,6 +124,11 @@ _OPTIMIZERS = {
     "L-SHADE":      (LSHADEOptimizer,               {}),
     "SaVOA":        (SaVOAOptimizer,                {}),
     "MC-ESO":       (MultiChannelEpidemicOptimizer, {}),
+    # Diagnostic ablations (channels vs restart attribution) — see
+    # core/optimizers/mceso_ablations.py. Informed restart is now baked into the
+    # MC-ESO base; these isolate "no restart" / "blind uniform restart".
+    "MC-ESO-NoSpill":   (MCESONoSpillover,    {}),
+    "MC-ESO-RandRestart": (MCESORandomRestart, {}),
 }
 
 
@@ -134,8 +141,8 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int,
     # Methods that take a per-benchmark `sigma0` initial step.
     _SIGMA_USERS = (CMAESOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer)
     print(f"\n{'Function':<22} {'Method':<12} {'Mean':>12} "
-          f"{'SR@1e-1':>7} {'SR@1e-2':>7} {'SR@1e-4':>7} {'SR@1e-7':>7} {'SR@1e-10':>8} {'ERT':>9}")
-    print("-" * 100)
+          f"{'SR@1e-1':>7} {'SR@1e-2':>7} {'SR@1e-4':>7} {'SR@1e-7':>7} {'SR@1e-10':>8} {'EvalsSucc':>10}")
+    print("-" * 102)
     for bench in benchmarks:
         sigma0 = 0.2 * (bench.bounds[1] - bench.bounds[0])
         results_per_method: dict = {}
@@ -148,12 +155,13 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int,
             results_per_method[method] = results
             times_per_method[method] = times
             s = summarize(results)
-            ert_str = f"{s['ert']:>9.0f}" if s['ert'] < float('inf') else "      ---"
+            ev = s['evals_succ_med']
+            ev_str = f"{ev:>10.0f}" if ev < float('inf') else "       ---"
             print(
                 f"{bench.name:<22} {method:<10} "
                 f"{s['mean']:>12.4e} "
                 f"{s['sr_1e-1']:>6.0%} {s['sr_1e-2']:>6.0%} {s['sr_1e-4']:>6.0%} "
-                f"{s['sr_1e-7']:>6.0%} {s['sr_1e-10']:>7.0%}{ert_str}"
+                f"{s['sr_1e-7']:>6.0%} {s['sr_1e-10']:>7.0%}{ev_str}"
             )
 
         # Per-method visualizations

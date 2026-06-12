@@ -104,27 +104,39 @@ def summarize(
     results: list[OptimizeResult],
     success_threshold: float = 1e-4,
 ) -> dict:
-    """Return statistics including ERT (BBOB standard) and SR over multiple targets.
+    """Return statistics including evals-to-target (success-only) and SR.
 
-    ERT = total evals across all runs (failures counted at max budget) / # successes.
-    Inf when no run succeeds.
+    ``evals_succ_med`` = median of evals-to-target across *successful* runs.
+    Failed runs are excluded (not extrapolated as in ERT). +inf when no run
+    succeeds, so it sorts last in lower-is-better ranking. Read this metric
+    together with ``success_rate`` — a single lucky run can yield a small
+    median while most runs fail.
+
+    ``ert`` is kept for backward compatibility (failures counted at max
+    budget; +inf when no success), but display/ranking now use
+    ``evals_succ_med``.
 
     SR keys ``sr_{threshold}`` (sr_1e-1 .. sr_1e-10) give the BBOB-style ECDF
     profile — what fraction of runs hit each target precision.
     """
     best_fs = np.array([r.best_f for r in results])
-    n_success = int(np.sum(best_fs <= success_threshold))
+    success_mask = best_fs <= success_threshold
+    n_success = int(np.sum(success_mask))
     evals_list = [_evals_to_target(r, success_threshold) for r in results]
     ert = float(sum(evals_list) / n_success) if n_success > 0 else float("inf")
+    succ_evals = [e for e, ok in zip(evals_list, success_mask) if ok]
+    evals_succ_med = float(np.median(succ_evals)) if succ_evals else float("inf")
     out: dict = {
-        "mean":         float(np.mean(best_fs)),
-        "std":          float(np.std(best_fs)),
-        "median":       float(np.median(best_fs)),
-        "min":          float(np.min(best_fs)),
-        "max":          float(np.max(best_fs)),
-        "success_rate": float(np.mean(best_fs <= success_threshold)),
-        "ert":          ert,
-        "n_runs":       len(results),
+        "mean":           float(np.mean(best_fs)),
+        "std":            float(np.std(best_fs)),
+        "median":         float(np.median(best_fs)),
+        "min":            float(np.min(best_fs)),
+        "max":            float(np.max(best_fs)),
+        "success_rate":   float(np.mean(success_mask)),
+        "ert":            ert,
+        "evals_succ_med": evals_succ_med,
+        "n_success":      n_success,
+        "n_runs":         len(results),
     }
     for thr in SR_THRESHOLDS:
         out[f"sr_{thr:.0e}".replace("e-0", "e-")] = float(np.mean(best_fs <= thr))

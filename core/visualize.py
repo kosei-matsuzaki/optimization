@@ -787,7 +787,8 @@ def save_stats(
     from .runner import _evals_to_target, ecdf_auc, SR_THRESHOLDS
     sr_keys = [f"sr_{thr:.0e}".replace("e-0", "e-") for thr in SR_THRESHOLDS]
     fieldnames_s = ["function", "category", "method", "mean_time_s",
-                    "mean_best_f", "median_best_f", *sr_keys, "ert", "ecdf_auc",
+                    "mean_best_f", "median_best_f", *sr_keys,
+                    "evals_succ_med", "ert", "ecdf_auc",
                     "mean_optima_found", "mean_optima_rate"]
     with open(summary_path, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames_s)
@@ -799,9 +800,12 @@ def save_stats(
                              for r in results]
             best_fs = np.array([r.best_f for r in results])
             mean_optima = float(np.mean(optima_counts))
-            n_success = int(np.sum(best_fs <= success_threshold))
+            success_mask = best_fs <= success_threshold
+            n_success = int(np.sum(success_mask))
             evals_list = [_evals_to_target(r, success_threshold) for r in results]
             ert = f"{sum(evals_list) / n_success:.0f}" if n_success > 0 else "inf"
+            succ_evals = [e for e, ok in zip(evals_list, success_mask) if ok]
+            evals_succ_med = f"{np.median(succ_evals):.0f}" if succ_evals else "inf"
             max_budget = max((len(r.history_f) for r in results), default=0)
             auc = ecdf_auc(results, SR_THRESHOLDS, max_budget) if max_budget else 0.0
             row = {
@@ -811,6 +815,7 @@ def save_stats(
                 "mean_time_s": f"{np.mean(times):.3f}",
                 "mean_best_f":   f"{np.mean(best_fs):.4e}",
                 "median_best_f": f"{np.median(best_fs):.4e}",
+                "evals_succ_med": evals_succ_med,
                 "ert":           ert,
                 "ecdf_auc":      f"{auc:.4f}",
                 "mean_optima_found": f"{mean_optima:.2f}",

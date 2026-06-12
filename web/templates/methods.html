@@ -26,7 +26,7 @@
         新しい多経路感染モデル
       </div>
       <h1 class="hero-title">MC-ESO<em>Multi-Channel Epidemic Spread Optimizer</em></h1>
-      <p class="hero-desc">既存メタヒューリスティクスは <strong>単一の再生メカニズム</strong>を持つ（DE = 差分変異, ES = ガウス変異, PSO = 速度ベクトル, GA = 交叉）。対して MC-ESO は感染症の流行を模し、<strong>3 つの伝染チャネル</strong>（接触・飛沫・空気）を並列に走らせる。宿主競合 ＋ エスカレート式スピルオーバー再播種を組合せ、BBOB 26 関数 (F01–F24 ＋ C01/C02) の overall SR@1e-4 で <strong>CMA-ES / PSO / SaVOA を大きく上回り、DE と並ぶ最良スコア</strong>を達成。</p>
+      <p class="hero-desc">既存メタヒューリスティクスは <strong>単一の再生メカニズム</strong>を持つ（DE = 差分変異, ES = ガウス変異, PSO = 速度ベクトル, GA = 交叉）。対して MC-ESO は感染症の流行を模し、<strong>3 つの伝染チャネル</strong>（接触・飛沫・空気）を並列に走らせる。宿主競合 ＋ エスカレート式の<strong>情報化スピルオーバー</strong>（リザーバ再着火＋集団免疫忌避）を組合せ、BBOB 26 関数 (F01–F24 ＋ C01/C02) の overall SR@1e-4 で <strong>CMA-ES / PSO / SaVOA を大きく上回り、DE と並ぶ最良スコア</strong>を達成。</p>
     </div>
     <div class="hero-schematic">
       <svg viewBox="0 0 460 200" xmlns="http://www.w3.org/2000/svg">
@@ -151,7 +151,7 @@
   <h2 class="sec-heading reveal" id="vso">
     <span class="sec-num">01</span>MC-ESO — Multi-Channel Epidemic Spread Optimizer
   </h2>
-  <p class="sec-sub reveal">感染症の流行を模倣した提案手法。3 チャネル並列伝染 ＋ 宿主競合 ＋ エスカレート式スピルオーバー再播種の組合せで、BBOB 26 関数 (dim=2) の SR@1e-4 平均が CMA-ES (72.5%) / SaVOA (74.6%) / PSO (75.6%) を大きく上回り、DE (91.9%) と並んで最良 <strong>93.4%</strong> を達成。</p>
+  <p class="sec-sub reveal">感染症の流行を模倣した提案手法。3 チャネル並列伝染 ＋ 宿主競合 ＋ エスカレート式の情報化スピルオーバー（リザーバ再着火＋集団免疫忌避）の組合せで、BBOB 26 関数 (dim=2) の SR@1e-4 平均が CMA-ES (72.5%) / SaVOA (74.6%) / PSO (75.6%) を大きく上回り、DE (91.9%) と並んで最良 <strong>93.4%</strong> を達成。</p>
 
   <div class="vso-layout">
     <div class="h3">コアとなるアナロジー</div>
@@ -293,7 +293,7 @@
               <div class="concept-title">Spillover Event</div>
             </div>
           </div>
-          <div class="concept-body">既存系統の停滞時に集団再播種。改善なし評価 ≥ 300 ＋ \(f_\text{best}>10^{-8}\) で best 周辺に \(\sigma_\text{init}\times 0.3\) で飛び火。**ill-conditioned の整列失敗を救済**。連続失敗 2 回で <b>basin switch</b>（best 破棄＋\(\sigma_\text{init}\) リセット）に escalate し、F24 双漏斗から脱出。</div>
+          <div class="concept-body">既存系統の停滞時に <b>情報化リスタート</b>。改善なし評価 ≥ 300 ＋ \(f_\text{best}>10^{-8}\) で発動。盲目 Uniform でなく、生存系統の<b>リザーバ再着火</b>＋放棄 basin を斥力で避ける<b>集団免疫</b>で探索結果を再利用（IPOP 盲目 restart との差別化点）。**ill-conditioned の整列失敗を救済**。連続失敗 2 回で <b>basin switch</b>（best 破棄＋\(\sigma_\text{init}\) リセット）に escalate し、F24 双漏斗から脱出。</div>
         </div>
       </div>
     </div>
@@ -369,26 +369,29 @@ strains ← []
     <div class="fc-item">
       <div class="fc-dot c-red">3</div>
       <div class="fc-card fc-card-expanded">
-        <div class="fc-card-title">停滞時 Restart（集団再播種）</div>&#x2060;
-        <span class="fc-desc">改善なし評価が <code>restart_no_improve_threshold</code>(=300) を超え、かつ \(f_\text{best}/|f_\text{init}|>\) <code>restart_quality_rel_floor</code>(\(=10^{-8}\)) のとき、global best を残し他個体を best 周辺に \(\sigma_\text{init}\times 0.3\) で再播種。CMA-ES の IPOP と同等の役割を果たし、ill-conditioned 関数 (F10/F12) の初期整列失敗を救済。連続失敗 2 回で <b>basin switch</b>（best 破棄＋\(\sigma_\text{init}\) リセット）に escalate。floor は初期 best 比で乗法スケール不変。</span>
+        <div class="fc-card-title">停滞時 Restart（情報化リスタート）</div>&#x2060;
+        <span class="fc-desc">改善なし評価が <code>restart_no_improve_threshold</code>(=300) を超え、かつ \(f_\text{best}/|f_\text{init}|>\) <code>restart_quality_rel_floor</code>(\(=10^{-8}\)) のとき global best を残して再播種。ただし<b>盲目 Uniform でなく探索結果を再利用</b>: 発動時に集団の niched elite を永続<b>リザーバ・アーカイブ</b>へ harvest し放棄 basin の重心を記憶、再播種スロットの一部 (<code>ir_archive_frac</code>) を生存系統まわりで<b>再着火</b>、残りは記憶 basin を斥力で避けた Uniform（<b>集団免疫</b>＝未踏域探索）。CMA-ES の IPOP と同役割だが、<b>探索構造を捨てない点で盲目 restart と差別化</b>。ill-conditioned (F10/F12) の整列失敗を救済。連続失敗 2 回で <b>basin switch</b>（best 破棄＋\(\sigma_\text{init}\) リセット）に escalate。</span>
         <div class="fc-detail">
           <div>
             <div class="fc-pane-title">パラメータ</div>
             <div class="fc-params">
               <div class="fc-param-chip" title="restart 発動の no_improve 閾値"><span class="pk">restart_no_improve_threshold</span><span class="pv">= 300</span></div>
-              <div class="fc-param-chip" title="restart 後の σ（σ_init に対する比率）"><span class="pk">restart_sigma_ratio</span><span class="pv">= 0.3</span></div>
+              <div class="fc-param-chip" title="アーカイブ系統から再着火するスロット割合"><span class="pk">ir_archive_frac</span><span class="pv">= 0.5</span></div>
+              <div class="fc-param-chip" title="再着火ガウスの σ（× span）"><span class="pk">ir_reignite_sigma_ratio</span><span class="pv">= 0.05</span></div>
+              <div class="fc-param-chip" title="basin 忌避（集団免疫）の斥力球半径（× span）"><span class="pk">ir_repel_radius_ratio</span><span class="pv">= 0.1</span></div>
               <div class="fc-param-chip" title="best_so_far / |f_init| ≤ this で restart skip（乗法スケール不変）"><span class="pk">restart_quality_rel_floor</span><span class="pv">= 1e-8</span></div>
               <div class="fc-param-chip" title="連続失敗回数 → basin switch"><span class="pk">basin_switch_after_failed_spillovers</span><span class="pv">= 2</span></div>
             </div>
           </div>
           <div class="fc-mechanism">
-            <div class="fc-pane-title">Quality-gated restart (相対 floor, 乗法スケール不変)</div>
+            <div class="fc-pane-title">情報化リスタート (リザーバ再着火 ＋ 集団免疫忌避)</div>
             <div class="math-display">\[ \text{trigger} = (\text{no\_improve} \geq 300) \;\wedge\; (f_\text{best}/|f_\text{init}| > 10^{-8}) \]</div>
-            <div class="math-display">\[ x_i^{\text{new}} = \mathrm{reflect}\!\left(x_\text{best} + 0.3\,\sigma_\text{init}\cdot \mathcal{N}(0, I)\right), \quad i \neq i_\text{best} \]</div>
+            <div class="math-display">\[ x_i^{\text{new}} = \begin{cases} \mathrm{reflect}\!\left(a_k + 0.05\,\text{span}\cdot\mathcal{N}(0,I)\right) & p < \texttt{ir\_archive\_frac}\ \text{(リザーバ再着火)}\\[4pt] \mathcal{U}(lo,hi)\ \text{s.t.}\ \min_c \lVert x - c\rVert > 0.1\,\text{span} & \text{otherwise (集団免疫忌避)} \end{cases} \]</div>
             <div class="fc-note">
-              <span class="lbl">Quality gate</span>初期 best から 8 桁以上削減できた run は precision 領域とみなし、restart で σ を膨らませて精度を悪化させない（F01-Sphere で 0 まで到達できる）。floor は \(|f_\text{init}|\) との比なので乗法スケール不変だが、shift には対応しない（既知の限界）。<br>
-              <span class="lbl">Basin switch</span>連続失敗 \(\geq\) 2 回かつ \(f_\text{best}/|f_\text{init}|>10^{-2}\) で best 破棄＋全 pop Uniform 再生成＋σ を σ_init にリセット。F24 双漏斗から脱出。<br>
-              <span class="lbl">CMA-ES との公平性</span>CMA-ES も `cma` ライブラリ標準で `es.stop()` 後の multistart を有する。両者とも restart 機構あり。
+              <span class="lbl">リザーバ再着火</span>\(a_k\) は永続アーカイブ（spillover 毎に集団の niched elite を harvest, 最大 <code>n_elite_max</code>=6, ニッチ分離）からの生存系統。局所流行が燃え尽きても残るリザーバ宿主から再燃する。<br>
+              <span class="lbl">集団免疫忌避</span>\(c\) は記憶した放棄 basin の重心。感染済み=枯渇領域を避け susceptible（未踏）領域へ広がる。最大 <code>ir_repel_max_tries</code>=20 回 rejection、超えたら plain Uniform。盲目 IPOP restart との本質的差別化点。<br>
+              <span class="lbl">Quality gate</span>初期 best から 8 桁以上削減できた run は precision 領域とみなし restart を抑制（F01-Sphere で 0 到達）。floor は \(|f_\text{init}|\) 比で乗法スケール不変（shift 非対応, 既知の限界）。<br>
+              <span class="lbl">Basin switch</span>連続失敗 \(\geq\) 2 回かつ \(f_\text{best}/|f_\text{init}|>10^{-2}\) で best 破棄＋全 pop 再生成＋σ を σ_init にリセット。F24 双漏斗から脱出。
             </div>
           </div>
         </div>
@@ -738,7 +741,7 @@ strains ← []
         <div class="cmp-aspect-body">
           <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">なし(\(\sigma\) 縮退で停滞固定)</span></div>
           <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">`es.stop()` 後の multistart(best 中心、\(\sigma\times 0.1\))</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">Quality-gated restart</span>no_improve ≥ 300 かつ \(f_\text{best} > 10^{-8}\) のとき best 周辺に再播種。F10/F12 の 80/90% SR の主因</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">情報化リスタート</span>no_improve ≥ 300 かつ \(f_\text{best} > 10^{-8}\) で発動。リザーバ再着火＋basin 忌避で探索結果を再利用（盲目 IPOP restart と差別化）。F10/F12 の 80/90% SR の主因</span></div>
         </div>
       </div>
 

@@ -30,7 +30,7 @@ python3 web/app.py
 | Local Results | `results/` 配下の結果一覧。名前変更・削除・実行中ジョブの停止に対応 |
 | 結果詳細 | 次元タブ・関数タブで切替え。Landscape / Convergence / Evals / Population 等の図を表示 |
 | Summary テーブル | 手法別の成績を色分け表示（best=緑、worst=赤）。ヘッダークリックでソート可能 |
-| Overall ランキング | 全関数横断の Friedman 平均順位（bf / ert / ecdf）＋ Nemenyi 臨界差を表示 |
+| Overall ランキング | 全関数横断の Friedman 平均順位（bf / evals (succ-only median) / ecdf）＋ Nemenyi 臨界差を表示 |
 | Per-run Stats | 各 run の詳細統計（成功 / 失敗を色分け） |
 
 ### ビューモード（結果詳細画面）

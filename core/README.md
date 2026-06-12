@@ -132,7 +132,7 @@ BBOB とは独立した CEC2022 12 関数（`ioh` 経由、dim=10）を hold-out
 |---|---|---|
 | **系統共存** (Strain coexistence) | 空間的に離れた感染拠点の同時存続 | ニッチ半径で離れた最大 6 系統を保護、飛沫チャネルの引力対象 pool |
 | **宿主競合** (Host competition) | 新感染が既存宿主に勝てないと排除される | 毎世代 25% kill、子が親より悪ければ rollback → 集団は単調改善 |
-| **スピルオーバー** (Spillover) | 既存系統の絶滅後、新宿主集団へ感染が飛び火 | 300 評価改善なし AND f_best / \|f_init\| > 1e-8 で best を保持し残りを全域 Uniform 再播種。連続失敗 2 回で basin switch (best 破棄＋σ_init リセット) に escalate |
+| **スピルオーバー** (Spillover, 情報化リスタート) | 既存系統の絶滅後、生存リザーバから未感染域へ飛び火 | 300 評価改善なし AND f_best / \|f_init\| > 1e-8 で発動。**情報化再播種**: 一部 (`ir_archive_frac`) を永続系統アーカイブまわりで再着火、残りは放棄 basin 重心を斥力で避けた Uniform（集団免疫）。連続失敗 2 回で basin switch (best 破棄＋σ_init リセット) に escalate。盲目 Uniform restart（IPOP 流）との差別化点 |
 
 > **なぜ系統共存が多峰問題に効くか**: 単純な top-k 選択では最初に見つかった最適解周辺に個体が集中し、Himmelblau（最適解4箇所）のような多最適解問題で致命的になる。系統選択は (1) f 値の良い順に走査し、(2) 既保護系統との距離が全て `niche_radius_ratio × span` を超える候補のみ追加、(3) `n_elite_max` 個で終了する。これにより空間的に離れた複数の最適解周辺に独立した感染系統が自然形成され、飛沫感染の引力対象となる。
 
@@ -143,15 +143,17 @@ BBOB とは独立した CEC2022 12 関数（`ioh` 経由、dim=10）を hold-out
    └─ f 値の良い順に走査し、既存系統から niche_radius_ratio × span (=0.1×span) 以上離れた個体だけを
       最大 n_elite_max (=6) 個保護
 
-2. スピルオーバー判定（停滞時の集団再播種、basin 回避版）
+2. スピルオーバー判定（停滞時の情報化リスタート、basin 回避版）
    └─ no_improve ≥ restart_no_improve_threshold (=300) かつ
       f_best / |f_init| > restart_quality_rel_floor (=1e-8) のとき発動（相対 8 桁進捗未満なら spillover、それ以下なら precision とみなし保護）。
-      連続失敗回数 (consecutive_failed_spillovers) で動作切替:
-         • streak < 2: 100% Uniform(lo, hi)（best は保持）+ 軸 sweep + σ ← σ_init×0.3
-         • streak ≥ 2 かつ f_best > 1e-2: **ベイスン乗換え**
-              — best も破棄、全 n_pop を Uniform 再生成、σ を σ_init にリセット
-      ─ ベイスン乗換えで F24 双漏斗 / F04 rugged separable から脱出
-        f_best ≤ 1e-2 のとき乗換え抑制 → F13 ridge / C01 deep precision を保護
+      ① 発動時に集団の niched elite を永続アーカイブへ harvest、放棄 basin の重心を記憶（集団免疫メモリ）。
+      ② **情報化再播種**（盲目 Uniform でなく探索結果を活用）:
+         • 確率 ir_archive_frac (=0.5): 生存アーカイブ系統まわりの σ=ir_reignite_sigma_ratio×span (=0.05) ガウスで再着火
+         • 残り: 記憶 basin の ir_repel_radius_ratio×span (=0.1) 内を rejection で避けた Uniform（未感染=未踏域へ）
+      ③ 連続失敗回数 (consecutive_failed_spillovers) で動作切替:
+         • streak < 2: 上記情報化再播種（best は保持）+ 軸 sweep + σ ← σ_init×0.3
+         • streak ≥ 2 かつ f_best > 1e-2: **ベイスン乗換え**（best も破棄、全 n_pop 再播種、σ を σ_init にリセット）
+      ─ ベイスン乗換えで F24 双漏斗 / F04 rugged separable から脱出。f_best ≤ 1e-2 のとき乗換え抑制 → F13 ridge / C01 deep precision を保護
 
 3. 宿主競合: 死亡判定（μ+λ greedy）
    └─ 集団の f 値降順で下位 kill_fraction (=25%) を排除。最良宿主は自動生存
@@ -191,7 +193,7 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 
 - **σ 適応（always-on）** — 改善時 `× sigma_up (1.1)`、非改善時 `× sigma_down (0.95)`（SaVOA 流の乗法適応を毎世代適用）。以前は `no_improve` ゲートで停滞中の減衰を緩める fallback を持っていたが、HP 削減（`sigma_adapt_stagnation_gate`, `sigma_decay`）と引き換えに除去した。
 - **Drilling mode** — `σ < span × precision_sigma_ratio (1e-3)` に入ると「σ が basin スケールまで収縮済み」と判定し、非改善時の縮小を `× sigma_drill_down (0.85)` に強化して浮動小数限界まで追い込む。同時に空気感染チャネルを停止（`air_ratio_eff = 0`）し広域ランダム雑音による精度劣化を防ぐ。σ ベース閾値なので shift / scaling されたベンチマークでも調整不要。「正しい basin 到達」を `best_so_far` で判定するため、deceptive landscape での誤発動リスクは小さい。
-- **Spillover / basin switch** — `no_improve ≥ 300` かつ `f_best / |f_init| > 1e-8` で停滞と判定し、best を保持して残りを全域 Uniform 再播種する（＋境界軸 sweep: 各次元で `lo`/`hi` を試す probe、dim=2 で 4 評価）。連続失敗が `basin_switch_after_failed_spillovers (2)` 回に達し、かつ `f_best / |f_init| > basin_switch_quality_rel_floor (1e-2)` なら **basin switch**（best も破棄し σ を σ_init にリセット）に escalate。quality gate により高精度到達済みの run（F13 ridge, C01 deep precision）での暴発を防ぐ。IPOP-CMA-ES の "restart with larger population" の MC-ESO 版にあたる。
+- **Spillover / basin switch（情報化リスタート）** — `no_improve ≥ 300` かつ `f_best / |f_init| > 1e-8` で停滞と判定し、best を保持して残りを再播種する（＋境界軸 sweep: 各次元で `lo`/`hi` を試す probe、dim=2 で 4 評価）。再播種は**盲目 Uniform でなく情報化**: 発動時に集団の niched elite を永続アーカイブへ harvest し放棄 basin の重心を記憶、再播種スロットの一部 (`ir_archive_frac`) を生存アーカイブまわりで再着火、残りは記憶 basin を斥力で避けた Uniform（集団免疫＝未踏域探索）。連続失敗が `basin_switch_after_failed_spillovers (2)` 回に達し、かつ `f_best / |f_init| > basin_switch_quality_rel_floor (1e-2)` なら **basin switch**（best も破棄し σ を σ_init にリセット）に escalate。quality gate により高精度到達済みの run（F13 ridge, C01 deep precision）での暴発を防ぐ。IPOP-CMA-ES の "restart with larger population" の MC-ESO 版だが、**探索結果（リザーバ・basin メモリ）を再利用する点で盲目 restart と差別化**（2026-06 ablation で盲目 Uniform restart が探索構造を捨てていたことが判明し情報化、BBOB dim2/dim3・CEC2022 dim10 hold-out で有意な regression なしを確認のうえ本体に統合）。
 
 ### パラメータ一覧
 
@@ -212,7 +214,11 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `restart_quality_rel_floor` | 1e-8 | スピルオーバー skip 閾値（best_so_far / \|f_init\| ≤ this で skip）。乗法スケール不変 |
 | `basin_switch_after_failed_spillovers` | 2 | この連続失敗回数で best 破棄＋σ_init リセットの完全ベイスン乗換え |
 | `basin_switch_quality_rel_floor` | 1e-2 | best_so_far / \|f_init\| ≤ this でベイスン乗換えを抑制（相対 2 桁以上進捗で grinding 中とみなし保護）|
-| `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象） |
+| `ir_archive_frac` | 0.5 | 情報化再播種で生存アーカイブから再着火するスロット割合（残りは basin 忌避 Uniform）|
+| `ir_reignite_sigma_ratio` | 0.05 | アーカイブ系統まわり再着火ガウスの σ（× span）|
+| `ir_repel_radius_ratio` | 0.1 | basin 忌避（集団免疫）の斥力球半径（× span、記憶 basin 内の Uniform を rejection）|
+| `ir_repel_max_tries` | 20 | basin 忌避の rejection 上限回数（超えたら plain Uniform にフォールバック）|
+| `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象、情報化再播種のアーカイブ容量も兼ねる） |
 | `niche_radius_ratio` | 0.1 | 系統間の最小距離（span に対する比率、スケール不変。BBOB span=10 で実効 1.0、絶対値版と数学的に同一） |
 | `log_slope_threshold` | 1e-4 | 「意味ある改善」の log10(f) 減少スロープ閾値 |
 | `sigma_up` | 1.1 | σ adapt 改善時の乗数 |
@@ -333,7 +339,8 @@ VOA の自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 | **飛沫感染チャネル**（h2h, DE/current-to-best/1） | 差分変異が集団形状から異方情報を獲得。F08/F09/F10/F12 の主因 |
 | **h2h binomial crossover** (`h2h_CR=0.9`, DE/bin 標準値) | 飛沫の trial vector を親と座標毎に交叉し、separable 多峰の座標方向情報を保護 (DE/current-to-best/1/bin)。初期は F04/F17 用に 0.7 へ調整していたが、後続 ablation 完了後の hold-out 検証で標準値 0.9 のほうが overall で優ると判明し復帰 |
 | **宿主競合**（μ+λ greedy + rollback） | 最良宿主の長期保持で F10/F12 の SR を改善 |
-| **スピルオーバー＋basin switch** | quality-gated restart で全 pop を Uniform 再播種、連続失敗 2 回で best 破棄＋σ_init リセット。ill-cond の整列失敗と F24 双漏斗を救済 |
+| **スピルオーバー＋basin switch** | quality-gated restart、連続失敗 2 回で best 破棄＋σ_init リセット。ill-cond の整列失敗と F24 双漏斗を救済 |
+| **情報化リスタート** (`ir_archive_frac=0.5`, 2026-06 統合) | spillover 再播種を盲目 Uniform から**リザーバ再着火＋basin 忌避**へ。診断 ablation で旧 restart が探索構造を捨てていたと判明し情報化。dim2 +1.7pt、dim3/CEC2022 hold-out で有意 regression なし。IPOP 盲目 restart との差別化点 |
 | **Drilling mode**（σ_drill_down=0.85） | σ < span × 1e-3 で σ 縮小を強化し浮動小数限界まで追込む |
 | **接触感染の経験共分散** (`empirical_cov_floor=0.01`) | 集団経験共分散 `C_pop` の固有分解で接触感染ノイズを瞬間異方化。CMA-ES の rank-μ 学習と異なり履歴累積なし、basin 切替に即応 |
 | **Drilling 中の空気感染停止** | `σ < span × precision_sigma_ratio` で `air_ratio_eff = 0`。drilling 中の広域ランダム雑音を排除し精度劣化を防止 |
@@ -348,5 +355,37 @@ VOA の自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 | MC-ESO-ABD | h2h_CR=0.9 ＋ σ-adapt 停滞ゲートを drilling 中バイパス ＋ 初回 spillover で座標軸 sweep | A_mild ベースと比べて CR=0.9 のため F18/F19 で勝つが F04 で回帰。Wilcoxon でも B/D 単独の有意寄与なし、結局 CR トレードオフに収束 |
 | MC-ESO-A_mild_BD | 統合済み MC-ESO ＋ 同上の B/D | F09/F11/F18 での改善と F04/F14 での悪化が相殺しほぼ同等。B/D の overall 寄与なし |
 | 旧 A〜N（`use_evolution_path` / `use_pop_covariance` / `use_lifespan_reset` / `use_adaptive_air` / `use_adaptive_h2h_F` / `use_aggressive_niche` / `use_h2h_archive` / `use_local_pair_h2h` ほか） | MC-ESO 初期開発で試した 8 案 | 各案とも単一関数の改善はあるものの 12 関数 SR 合計で baseline 以下、あるいは安全装置を要する構造欠陥（E）で overall を毀損し全削除 |
+| **MC-ESO-V2a** (UCB-AOS on 3 channels, 2026-06) | 接触・飛沫・空気の比率を世代毎に UCB ベース AOS で自動調整（credit = 世代内中央値で正規化した Δf）。drilling 中の air 抑制は V1 から踏襲 | BBOB+Custom 35 関数の主指標 SR@1e-10 が V1 24.40 → V2a 22.10（−2.30）。Wilcoxon (n=10, α=0.05) で有意な勝ち 1（F17）に対し有意な負け 3（F06 / F20 / C07）。F23-Katsuura では 0%→70% の劇的改善が出たが overall regression を覆せず削除 |
+| **MC-ESO-V2b** (V2a + 4 新チャネル, 2026-06) | V2a に Lévy 超拡散 / 重心組換 (μ-recombination) / 系統間クロスオーバ / 反対称跳躍 (`2·centroid − x_p`) を追加し、UCB の arms を 3→7 に拡張 | SR@1e-10 が V1 24.40 → V2b 19.80（−4.60）。Wilcoxon で有意な勝ち 0、有意な負け 5（F02 / F11 / F18 / C06 / C11）。Lévy 等の大ジャンプが ill-conditioned 関数の precision grinding を妨害。V2a より明確に劣り削除 |
 
-検証ログ: `results/20260515_150803_ベースライン_quick/dim2/{summary,wilcoxon}.csv`
+検証ログ: `results/20260515_150803_ベースライン_quick/dim2/{summary,wilcoxon}.csv`、V2 系は `results/20260605_190353_v2_compare_all_quick/dim2/{summary,wilcoxon}.csv`
+
+### 診断 ablation（チャネル vs リスタートの寄与分解, 2026-06）
+
+「性能はチャネル/系統共存でなく頻繁なランダムリスタート由来では」という疑義を検証するため、`mceso_ablations.py` に 2 つの**診断用** variant を追加（改善候補ではなく寄与の切り分け用、`quick_check.py` の `_OPTIMIZERS` 常設）。
+
+- **MC-ESO-NoSpill** — チャネル ON / spillover 完全停止（`_maybe_spillover` が常に False）。チャネル単独の到達力を測る。
+- **MC-ESO-RandRestart** — spillover・σ適応・drilling・μ+λ greedy は維持し、3 チャネル＋系統共存を**等方ガウス局所探索 1 本**（`x_parent + σ_global·N(0,I)`）に置換。リスタート＋バニラ局所だけで何処まで行くかを測る。
+
+**結果（BBOB24+Custom11, n=10, max_evals=5000, dim=2、平均 SR@1e-10）**: MC-ESO **83.7%** / NoSpill **68.6%** / RandRestart **48.9%**。
+
+- **主動力はチャネル機構**: RandRestart で 83.7→48.9% に激減（Rosenbrock/ill-cond/F02 は 100→0%）。Wilcoxon で MC-ESO が **26/35 関数で有意に優位（負け 0、全 large）**。「リスタートのくじ運で発見」説は棄却。
+- **spillover は二次的・限定的**: NoSpill でも 68.6% を維持。MC-ESO が NoSpill に有意優位なのは **7/35（F03/F04/F15/F20/F24/C05/C11 ＝ 多峰・deceptive）**。spillover 発火回数も大半の関数で 0〜1 回（F20=5.6, F24=11.2 のみ「頻繁」）。
+- **ただし系統共存は不活性**: 平均 n_elite は大半の関数で ~1.0–1.2（n_elite=1 の世代が 92–99%）。多 basin 保持は F20(1.56)/F24(3.85) でしか発火せず、宣伝機構が 30/35 関数で no-op = **novelty gap**（性能の出所が DE×経験共分散＋IPOP 風 restart で、epidemic 固有の新規性と不一致）。改善は「系統共存の実活性化（永続アーカイブ / crowding）＋ restart の情報化（basin 忌避）」に的を絞る。
+
+検証ログ: `results/20260605_200551_diag_restart_ablation_quick/dim2/{summary,wilcoxon}.csv`
+
+### 情報化リスタートの統合 / 系統共存活性化の不採用（2026-06）
+
+診断 ablation を起点に2方向の改善を検証し、片方を本体統合・片方を不採用とした。検証はすべて `_on_spillover_start` / `_diversified_reseed` / `_droplet_strain_positions` の拡張フック（既定で RNG 順不変）経由でサブクラス化し quick で測定。
+
+**① 情報化リスタート（IR）→ 本体統合（採用）**
+- 動機: 診断で「リスタートは実寄与あるが**無情報**（best 以外を全域 Uniform 再播種）」と判明。**リザーバ再着火**（spillover 時に niched elite を永続アーカイブへ harvest し一部スロットを系統まわりで再生成, `ir_archive_frac`/`ir_reignite_sigma_ratio`）＋**集団免疫忌避**（放棄 basin 重心を記憶し残り Uniform を斥力 rejection, `ir_repel_radius_ratio`/`ir_repel_max_tries`）で情報化。
+- 結果（平均 SR@1e-10）: dim2 83.7→**85.4（+1.7pt）**（改善 C09+40/F23+20/F20+10/C11+10、悪化 F10/F19 各−10）、dim3 flat・有意差0、CEC2022 dim10 hold-out は medf≈同点で composition 系に有意 best_f 改善5・回帰0。**全次元・hold-out で有意 regression なし**を確認し本体に統合（`MultiChannelEpidemicOptimizer` 既定挙動）。診断 `MC-ESO-RandRestart` は旧盲目 Uniform restart を pin して比較基準を維持。
+
+**② 系統共存の実活性化（SC）/ IR+SC 併用（IRSC）→ 不採用**
+- 動機: 診断のもう一つの的「系統共存が不活性（live n_elite≈1）」。永続アーカイブ（品質ゲート `sc_quality_band` で自己調整）から飛沫 donor を抽選し多 basin 引力を常時化。
+- 結果: SC 単独は dim2 net-neutral（−0.3pt、F04/F23/C09 改善と F17/F24/F19 悪化が相殺、低速化）。IRSC は dim2 raw 最良（86.0, +2.3pt; F13/C05/F19 で超加法）だが **F17/F24 有意回帰**を持込み、drilling-mode 抑制でも overall は上がらず（85.7）。決定打は**汎化失敗**: dim3 で有意回帰3（F08 Rosenbrock−30 含）、CEC2022 dim10 で medf 2624 vs 1650 と大崩れ。
+- 含意: **「系統共存（epidemic 固有の宣伝機構）を活性化しても性能に結びつかない」が全次元・hold-out で確定**（novelty gap）。SC/IRSC 関連コード（`mceso_sc.py`/`mceso_combo.py`）は削除。
+
+検証ログ: `results/20260605_200551_diag_restart_ablation_quick/`、`results/20260610_103749_ir_verify_quick/`、`results/20260610_113659_sc_verify_quick/`、`results/20260610_*_irsc_verify_quick/`、`results/20260612_*_{irsc_drill,gen_dim3,gen_cec}_quick/{dim2,dim3,dim10}/{summary,wilcoxon}.csv`。**n=10 は低信号 → IR の本判定は n=100 本実験で行う。**

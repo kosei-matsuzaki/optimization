@@ -51,12 +51,12 @@ const CAT_LABELS = {
   'deceptive-2d':   'Deceptive 2D',
 };
 let overallData = null;
-let overallSortKey = 'bf';   // 'bf' | 'ert' | 'ecdf' — leaderboard sort key
+let overallSortKey = 'bf';   // 'bf' | 'evals' | 'ecdf' — leaderboard sort key
 
 function _sortedLeaderboard() {
   if (!overallData?.leaderboard) return [];
   const key = overallSortKey;
-  const others = ['bf', 'ert', 'ecdf'].filter(k => k !== key);
+  const others = ['bf', 'evals', 'ecdf'].filter(k => k !== key);
   return [...overallData.leaderboard].sort((a, b) =>
     (a[`mean_rank_${key}`]      - b[`mean_rank_${key}`])
     || (a[`mean_rank_${others[0]}`] - b[`mean_rank_${others[0]}`])
@@ -628,7 +628,7 @@ function _renderLeaderboard(lb) {
   let statsHtml = `
     <div class="ov-friedman-stats">
       ${statBlock('bf', 'bf')}
-      ${statBlock('ert', 'ERT')}
+      ${statBlock('evals', 'Evals')}
       ${statBlock('ecdf', 'ECDF')}
       <div class="stat-block">
         <span class="label">N (funcs)</span><span>${nFuncs}</span>
@@ -644,20 +644,20 @@ function _renderLeaderboard(lb) {
   let html = statsHtml + `
     <div class="ov-rank-header">
       <div>#</div><div>Method</div>
-      ${sortHdr('bf', 'bf')}${sortHdr('ert', 'ERT')}${sortHdr('ecdf', 'ECDF')}
-      <div>SR@1e-4</div><div>#Best bf/ERT/ECDF</div><div>#Worst bf/ERT/ECDF</div>
+      ${sortHdr('bf', 'bf')}${sortHdr('evals', 'Evals')}${sortHdr('ecdf', 'ECDF')}
+      <div>SR@1e-4</div><div>#Best bf/Evals/ECDF</div><div>#Worst bf/Evals/ECDF</div>
     </div>
     <div class="ov-ranking">`;
   lb.forEach((row, i) => {
     const medalCls = i < 3 ? `is-${i + 1}` : '';
-    const fillBf   = (fillFor(row.mean_rank_bf)   * 100).toFixed(1);
-    const fillErt  = (fillFor(row.mean_rank_ert)  * 100).toFixed(1);
-    const fillEcdf = (fillFor(row.mean_rank_ecdf) * 100).toFixed(1);
+    const fillBf    = (fillFor(row.mean_rank_bf)    * 100).toFixed(1);
+    const fillEvals = (fillFor(row.mean_rank_evals) * 100).toFixed(1);
+    const fillEcdf  = (fillFor(row.mean_rank_ecdf)  * 100).toFixed(1);
     const sr = (row.mean_sr * 100).toFixed(1) + '%';
-    const bestStr  = `${row.n_best_bf}/${row.n_best_ert}/${row.n_best_ecdf}`;
-    const worstStr = `${row.n_worst_bf}/${row.n_worst_ert}/${row.n_worst_ecdf}`;
-    const anyBest  = row.n_best_bf > 0 || row.n_best_ert > 0 || row.n_best_ecdf > 0;
-    const anyWorst = row.n_worst_bf > 0 || row.n_worst_ert > 0 || row.n_worst_ecdf > 0;
+    const bestStr  = `${row.n_best_bf}/${row.n_best_evals}/${row.n_best_ecdf}`;
+    const worstStr = `${row.n_worst_bf}/${row.n_worst_evals}/${row.n_worst_ecdf}`;
+    const anyBest  = row.n_best_bf > 0 || row.n_best_evals > 0 || row.n_best_ecdf > 0;
+    const anyWorst = row.n_worst_bf > 0 || row.n_worst_evals > 0 || row.n_worst_ecdf > 0;
     const bar = (fill, val, std) => `
       <div class="ov-rank-barwrap">
         <div class="ov-rank-bar"><div class="ov-rank-bar-fill ${medalCls}" style="width:${fill}%"></div></div>
@@ -667,9 +667,9 @@ function _renderLeaderboard(lb) {
       <div class="ov-ranking-row ${medalCls}">
         <div class="ov-rank-num">${i + 1}</div>
         <div class="ov-rank-method" title="${htmlesc(row.method)}">${htmlesc(row.method)}</div>
-        ${bar(fillBf,   row.mean_rank_bf,   row.rank_std_bf)}
-        ${bar(fillErt,  row.mean_rank_ert,  row.rank_std_ert)}
-        ${bar(fillEcdf, row.mean_rank_ecdf, row.rank_std_ecdf)}
+        ${bar(fillBf,    row.mean_rank_bf,    row.rank_std_bf)}
+        ${bar(fillEvals, row.mean_rank_evals, row.rank_std_evals)}
+        ${bar(fillEcdf,  row.mean_rank_ecdf,  row.rank_std_ecdf)}
         <div class="ov-rank-metric">${sr}</div>
         <div class="ov-rank-metric ${anyBest ? '' : 'muted'}">${bestStr}</div>
         <div class="ov-rank-metric ${anyWorst ? 'danger' : 'muted'}">${worstStr}</div>
@@ -729,7 +729,7 @@ function _renderHeatmap(lb) {
 
 function _renderRankProfile(lb) {
   const funcs = overallData.funcs || [];
-  const fr    = overallData.func_ranks || {};   // {bf:{f:{m:r}}, ert:{f:{m:r}}}
+  const fr    = overallData.func_ranks || {};   // {bf:{f:{m:r}}, evals:{f:{m:r}}}
   const nMeth = lb.length;
 
   const shortLabel = f => f.replace(/^[FC]\d+-/, '');
@@ -738,7 +738,7 @@ function _renderRankProfile(lb) {
     const frInd = fr[indKey] || {};
     // Sort by this indicator's mean rank (independent of leaderboard's sort key)
     // so each table's top-3 reflects ITS indicator. Tiebreakers: other two indicators.
-    const others = ['bf', 'ert', 'ecdf'].filter(k => k !== indKey);
+    const others = ['bf', 'evals', 'ecdf'].filter(k => k !== indKey);
     const tblLb = [...lb].sort((a, b) =>
       (a[meanKey] - b[meanKey])
       || (a[`mean_rank_${others[0]}`] - b[`mean_rank_${others[0]}`])
@@ -772,9 +772,9 @@ function _renderRankProfile(lb) {
   };
 
   document.getElementById('overall-rank-table-container').innerHTML =
-    buildTbl('bf',   'bf (median_best_f)', 'mean_rank_bf') +
-    buildTbl('ert',  'ERT',                'mean_rank_ert') +
-    buildTbl('ecdf', 'ECDF AUC',           'mean_rank_ecdf');
+    buildTbl('bf',    'bf (median_best_f)',         'mean_rank_bf') +
+    buildTbl('evals', 'Evals (succ-only median)',   'mean_rank_evals') +
+    buildTbl('ecdf',  'ECDF AUC',                   'mean_rank_ecdf');
 }
 
 // ── Fullscreen overlay ────────────────────────────────────────────────────────
@@ -856,10 +856,11 @@ async function buildUnifiedTable(func) {
   const bfColors  = rankColors(summaryRows.map(r => r.mean_best_f), false);
   const sr2Colors = rankColors(summaryRows.map(r => parseFloat(r['sr_1e-2'])), true);
   const sr4Colors = rankColors(summaryRows.map(r => parseFloat(r['sr_1e-4'] ?? r.success_rate)), true);
-  const ertColors = rankColors(summaryRows.map(r => r.ert === 'inf' || r.ert == null ? 'Infinity' : r.ert), false);
+  const evalsRaw  = summaryRows.map(r => r.evals_succ_med ?? r.ert);
+  const evalsColors = rankColors(evalsRaw.map(v => v === 'inf' || v == null ? 'Infinity' : v), false);
   const orColors  = rankColors(summaryRows.map(r => r.mean_optima_rate), true);
 
-  function fmtERT(val) {
+  function fmtEvals(val) {
     if (val == null || val === '' || val === 'inf') return '—';
     const n = parseFloat(val);
     return isNaN(n) || !isFinite(n) ? '—' : Math.round(n).toLocaleString();
@@ -924,7 +925,7 @@ async function buildUnifiedTable(func) {
     { label: 'Method / Seed', desc: 'Click ▶ to expand per-run details.' },
     { label: 'best_f',        desc: 'Mean of final best f(x) across all runs. Lower is better. BBOB functions: global minimum = 0.' },
     { label: 'ECDF profile',  desc: 'BBOB-style success rate at multiple precision targets, displayed as 7 stacked tiles (1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-7, 1e-10). Hover for exact values. Loose targets on the left, tight on the right.' },
-    { label: 'ERT',           desc: 'Expected Running Time (BBOB standard). ERT = Σ evals_to_target / n_success. Failed runs are penalized with max_evals. — means no successful run.' },
+    { label: 'Evals (succ med)', desc: 'Median number of evaluations to reach the 1e-4 target across successful runs only. Failed runs are excluded (no penalty extrapolation). Read together with SR — a small median with low SR means only a few lucky runs hit the target. — means no successful run.' },
     { label: 'time (s)',      desc: 'Mean wall-clock time per run (seconds).' },
     { label: 'optima rate',   desc: 'Fraction of distinct global optima found per run (capture radius ε = 0.1 × span). N/A for single-optimum functions.' },
     { label: 'evals',         desc: 'Total function evaluations used in this run.' },
@@ -944,7 +945,7 @@ async function buildUnifiedTable(func) {
   <table class="unified-table">
     <thead><tr>
       ${TH('Method / Seed', 'style="text-align:left;min-width:150px;"')}
-      ${TH('best_f')} ${TH('ECDF profile', 'style="min-width:158px;"')} ${TH('ERT')} ${TH('time (s)')} ${TH('optima rate')} ${TH('evals')}
+      ${TH('best_f')} ${TH('ECDF profile', 'style="min-width:158px;"')} ${TH('Evals (succ med)')} ${TH('time (s)')} ${TH('optima rate')} ${TH('evals')}
     </tr></thead>
     <tbody id="unified-tbody">`;
 
@@ -959,7 +960,7 @@ async function buildUnifiedTable(func) {
         </div></td>
         <td class="${bfColors[si]}">${fmtNum(sr.mean_best_f)}</td>
         <td class="ecdf-cell">${fmtECDFProfile(sr)}</td>
-        <td class="${ertColors[si]}">${fmtERT(sr.ert)}</td>
+        <td class="${evalsColors[si]}">${fmtEvals(sr.evals_succ_med ?? sr.ert)}</td>
         <td>${fmtNum(sr.mean_time_s)}</td>
         <td class="${orColors[si]}">${fmtNum(sr.mean_optima_rate)}</td>
         <td style="color:var(--muted);">—</td>
