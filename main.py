@@ -27,6 +27,8 @@ _BASE_OPTIMIZERS = {
     "DE":      (DEOptimizer,                   {}),
     "SaVOA":   (SaVOAOptimizer,                {}),
     "L-SHADE": (LSHADEOptimizer,               {}),
+    # MC-ESO now natively does sequential niching (multi-solution) + adaptive
+    # anisotropy floor — both built into the base class, no separate variant.
     "MC-ESO":  (MultiChannelEpidemicOptimizer, {}),
 }
 

@@ -44,6 +44,77 @@ def _evals_to_target(r: OptimizeResult, threshold: float) -> int:
 # BBOB-style ECDF target thresholds (log-spaced)
 SR_THRESHOLDS: tuple[float, ...] = (1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-7, 1e-10)
 
+# Peak-ratio (multi-modal optimization) tolerance levels — a subset of
+# SR_THRESHOLDS so the multi-solution report stays aligned with the SR hierarchy.
+PEAK_THRESHOLDS: tuple[float, ...] = (1e-2, 1e-4)
+
+
+def optima_found_mask(
+    result: OptimizeResult,
+    optima_pos: list[list[float]],
+    span: float,
+    threshold: float,
+    radius_ratio: float = 0.02,
+) -> np.ndarray:
+    """Which of the *known* global optima a single run discovered.
+
+    A global optimum k is **found** if some evaluated point lies within
+    ``radius`` of it AND has ``f ≤ threshold`` (f is already ``f − f_opt`` so the
+    global value is 0). Each qualifying point is attributed to its **nearest**
+    optimum only, so one excellent point cannot be double-counted across two
+    nearby optima — this matters for Shubert, whose 18 optima sit ~0.88 apart.
+
+    Returns a boolean array of length ``len(optima_pos)``.
+    """
+    K = len(optima_pos)
+    found = np.zeros(K, dtype=bool)
+    if K == 0 or not result.history_x:
+        return found
+    opts = np.asarray(optima_pos, dtype=float)              # (K, dim)
+    radius = max(0.5, radius_ratio * span)
+    X = np.asarray(result.history_x, dtype=float)           # (N, dim)
+    F = np.asarray(result.history_f, dtype=float)           # (N,)
+    qual = X[F <= threshold]                                # points at the global value
+    if qual.shape[0] == 0:
+        return found
+    d = np.linalg.norm(qual[:, None, :] - opts[None, :, :], axis=2)  # (M, K)
+    nearest = np.argmin(d, axis=1)                          # one vote per point
+    within = d[np.arange(qual.shape[0]), nearest] <= radius
+    found[nearest[within]] = True
+    return found
+
+
+def peak_metrics(
+    results: list[OptimizeResult],
+    optima_pos: list[list[float]] | None,
+    span: float,
+    levels: tuple[float, ...] = PEAK_THRESHOLDS,
+    radius_ratio: float = 0.02,
+) -> dict:
+    """Multi-modal optimization metrics aggregated over runs.
+
+    For each tolerance ``thr`` in ``levels``:
+      • ``pr_{thr}``     — mean **peak ratio**: fraction of the K global optima
+        found, averaged over runs (the BBOB-equivalent of "how many distinct
+        optima did MC-ESO locate in parallel").
+      • ``mmo_sr_{thr}`` — **MMO success rate**: fraction of runs that found
+        *all* K optima.
+    ``n_optima`` is K. Returns ``{"n_optima": 0}`` when no optima are known.
+    """
+    K = len(optima_pos) if optima_pos else 0
+    out: dict = {"n_optima": K}
+    if K == 0:
+        return out
+    for thr in levels:
+        counts = np.array([
+            optima_found_mask(r, optima_pos, span, thr, radius_ratio).sum()
+            for r in results
+        ])
+        key = f"{thr:.0e}".replace("e-0", "e-")
+        out[f"pr_{key}"] = float(np.mean(counts) / K)
+        out[f"mmo_sr_{key}"] = float(np.mean(counts == K))
+    return out
+
 
 def ecdf_auc(
     results: list[OptimizeResult],

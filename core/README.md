@@ -202,7 +202,10 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `n_pop` | 20 | 集団個体数 |
 | `sigma` | 0.2 | 初期探索半径（探索範囲に対する比率） |
 | `host_sigma_min_scale` | 0.05 | 接触感染チャネルにおける per-host σ_i スケーリング下限（高品質・高齢の宿主は σ_i = σ × 0.05 まで縮小して精密探索）|
-| `empirical_cov_floor` | 0.01 | 接触感染チャネルの集団経験共分散 `C_pop` の固有値下限（平均 1 正規化後、軸の縮退を防ぐ）|
+| `empirical_cov_floor` | 0.01 | 接触感染チャネルの異方性 floor の**高い側**（rugged/多峰で安全。固有値比を約 14:1 にクランプ）|
+| `cov_floor_low` | 1e-3 | 異方性 floor の**低い側**（悪条件の谷で異方性比 ~1000:1 まで許容）。`cov_floor_low = empirical_cov_floor` で適応を無効化し固定 floor |
+| `cov_ratio_lo` / `cov_ratio_hi` | 1e3 / 3e4 | **適応 floor の切替閾値**。集団共分散の素の固有値比（平滑化）がこの範囲で `empirical_cov_floor`⇄`cov_floor_low` を log 補間。実測中央値が ill-cond ≈1e5–1e7・rugged ≈3–600 と桁違いに分離するのを利用 |
+| `cov_ratio_beta` | 0.1 | 固有値比 EMA の更新率（rugged の瞬間スパイクを除去） |
 | `air_ratio` | 0.3 | 空気感染チャネルの割合 |
 | `air_sigma_amplifier` | 3.5 | 空気感染 σ 倍率の振幅（factor = 1.5 + amp × (1 - diversity)、集団分散時 1.5、収束時 1.5+amp） |
 | `h2h_ratio` | 0.4 | 飛沫感染チャネルの割合 |
@@ -311,6 +314,13 @@ VOA の自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 
 **多段 SR 報告**: BBOB 標準の ECDF 表示に倣い、各関数で `SR@10^k` (k = -1, -2, -3, -4, -5, -7, -10) を併記。`results/<run>/dim2/summary.csv` の `sr_1e-1, sr_1e-2, ..., sr_1e-10` 列で参照可能。
 
+**多解（multi-modal optimization, MMO）報告**: 大域最適解が複数ある関数（C01 Himmelblau=4 / C02 Six-hump=2 / C03 Shubert=18）では、SR（= 1 つでも到達したか）に加え、MC-ESO の「並行的な多解探索」能力を直接計測する。SR は単一目的指標で**いくつ別個の最適解を見つけたか**を見ないため、この強みは SR には現れない。指標は走行後に `history_x`（全評価点）と `benchmark.optima_pos`（既知の全大域最適解座標）から後付け計算され、**最適化器は一切変更しない**（＝ SR は定義上不変）。`core/runner.py:optima_found_mask` / `peak_metrics` が正準実装。
+
+- **Peak Ratio (`pr_1e-2`, `pr_1e-4`)** — 既知 K 個の大域最適解のうち、`f ≤ tol` かつ最近傍割当で半径内に評価点が落ちた解の割合（run 平均）。各評価点は**最近傍の最適解1つ**にのみ帰属させ、近接最適解（Shubert は最小間隔 ~0.88）での二重カウントを防ぐ。
+- **MMO Success Rate (`mmo_sr_1e-2`, `mmo_sr_1e-4`)** — K 個**すべて**を見つけた run の割合。
+- `n_optima` 列に K を記録。`summary.csv` の `mean_optima_found` / `mean_optima_rate` は従来からの `tol=1e-4` 単一値（後方互換）。
+- 注意: 発見は**時間的**（走行中にいずれかの世代で訪れた）で、厳密な「同時保持」ではない。同時並行保持の計測には別途 niching mode が必要（未実装）。
+
 **Wilcoxon 符号順位検定**: MC-ESO vs 各既存手法を seed-paired で比較。`results/<run>/dim2/wilcoxon.csv` に関数 × 比較対手の p 値を保存。
 
 - `p_value_two_sided`: 二側 p 値（差があるか）
@@ -343,6 +353,7 @@ VOA の自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 | **情報化リスタート** (`ir_archive_frac=0.5`, 2026-06 統合) | spillover 再播種を盲目 Uniform から**リザーバ再着火＋basin 忌避**へ。診断 ablation で旧 restart が探索構造を捨てていたと判明し情報化。dim2 +1.7pt、dim3/CEC2022 hold-out で有意 regression なし。IPOP 盲目 restart との差別化点 |
 | **Drilling mode**（σ_drill_down=0.85） | σ < span × 1e-3 で σ 縮小を強化し浮動小数限界まで追込む |
 | **接触感染の経験共分散** (`empirical_cov_floor=0.01`) | 集団経験共分散 `C_pop` の固有分解で接触感染ノイズを瞬間異方化。CMA-ES の rank-μ 学習と異なり履歴累積なし、basin 切替に即応 |
+| **適応異方性 floor** (`cov_floor_low=1e-3`, 2026-06) | 異方性の頭打ち（floor）を**集団共分散の素の固有値比**で自動調整。悪条件の谷（比 1e5–1e7）では floor を下げ異方性を解放、rugged/多峰（比 3–600）では高く保ちノイズの偽異方性をクランプ。スケール・シフト不変（f 値非依存）。全35関数で固定 0.01 比 **+2.6pt（85.4→88.0）・回帰ゼロ**、固定 1e-3（F17/C11/C05 で回帰）をも上回る。F02/F10→100%、F18 60→80% 等 ill-cond を改善しつつ rugged を保護 |
 | **Drilling 中の空気感染停止** | `σ < span × precision_sigma_ratio` で `air_ratio_eff = 0`。drilling 中の広域ランダム雑音を排除し精度劣化を防止 |
 
 ### 検証され不採用となった variant
@@ -389,3 +400,28 @@ VOA の自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代�
 - 含意: **「系統共存（epidemic 固有の宣伝機構）を活性化しても性能に結びつかない」が全次元・hold-out で確定**（novelty gap）。SC/IRSC 関連コード（`mceso_sc.py`/`mceso_combo.py`）は削除。
 
 検証ログ: `results/20260605_200551_diag_restart_ablation_quick/`、`results/20260610_103749_ir_verify_quick/`、`results/20260610_113659_sc_verify_quick/`、`results/20260610_*_irsc_verify_quick/`、`results/20260612_*_{irsc_drill,gen_dim3,gen_cec}_quick/{dim2,dim3,dim10}/{summary,wilcoxon}.csv`。**n=10 は低信号 → IR の本判定は n=100 本実験で行う。**
+
+### MC-ESO-Endemic（多解 niching variant, 2026-06）
+
+「ウイルス模倣で複数最適解を探索する」という当初の主張が peak-ratio 実測で**実体を持っていない**（MC-ESO は SR@1e-10=100% でも PR@1e-4 が Himmelblau 0.28 / Shubert 0.06）と確定したのを受けた逐次 niching。**2026-06、base `MultiChannelEpidemicOptimizer` 本体に統合**（`_basin_exhausted` で「掘り切った」を検知し restart）。`mceso_niching.py:MCESOEndemic` は後方互換エイリアス（base と同一）。**デフォルト MC-ESO 自体が多解探索を行う**ため、本実験では単一手法 `MC-ESO` として評価。`exhausted_no_improve_mult` を巨大値にすれば niching 無効化（純粋単一 basin）も可能。統合後の全35関数 SR@1e-10 ≈ 87.7%（純粋単一 basin 比 F13 −10 のみ）、多解は C01 PR@1e-2 0.60 / C02 MMOsr 90% / C03 0.19。
+
+**設計＝逐次 niching（並行 crowding ではない）＋ 精度ゲート**。当初 crowding／per-host σ を試作したが、**1集団で複数 basin を同時に深精度化できず SR@1e-10 が崩壊**した。SR は本研究の主指標で犠牲不可。そこで BIPOP-CMA-ES が PR と SR を両立する構造、すなわち「**1 basin を掘る→記憶→既発見 basin から斥力で離れて restart→次の basin を掘る**」を採る。各 basin は base MC-ESO の単一σ drilling をそのまま使う。
+
+**SR 死守の鍵＝2レジーム化（`_basin_exhausted` で切替, スケール不変）**。SR を一切落とさないため、**basin を掘り切る前は base と完全に同一挙動**（`_spillover_should_fire` / `_spillover_basin_switch` / `_diversified_reseed` すべて `super()` に委譲）＝掘りかけの best basin を絶対に破壊しない。掘り切った後に**初めて**多解探索を起動：(1) 精度 quality-gate を外し停滞ごとに restart、(2) basin-switch（集団を捨て σ_init で新領域に全コミット）、(3) reseed を reignition OFF＋細斥力（0.02×span）に切替え新領域へ。
+
+**「掘り切った」の検知はスケール・シフト不変**（最適値非依存）。`_basin_exhausted` = **σ がフロア（`σ ≤ exhausted_sigma_tol × span × sigma_floor_ratio`）に到達**（これ以上細かく掘れない、探索域 span 相対の判定で f 値を一切見ない）**かつ** `no_improve ≥ exhausted_no_improve_mult × restart_no_improve_threshold`（フロア到達後の停滞）。この時 basin はアルゴリズムの分解能限界＝base が続けても同じ深さで詰まるので、離脱しても SR を失わない。
+> 初期版は secure 判定に **絶対 floor 1e-11** を使ったが、これは「最適値 0」という BBOB 正規化依存で一般関数に通用しない（指摘により撤回）。σ ベース検知は f_opt も「optimum=0」も仮定しない。停滞許容 `exhausted_no_improve_mult=3` は F14(DiffPowers) 等の平坦 basin で base の遅延 breakthrough を取りこぼさないための粘りマージン（小さすぎると F14 で SR 低下）。
+
+**結果（quick n=10, max_evals=5000, dim2, 全35関数, MC-ESO → MC-ESO-Endemic）**:
+- **SR@1e-10: 35関数すべてで Endemic ≥ base（回帰ゼロ）。平均 85.4% → 86.3%（F02/F11/F19 で +10、exhausted basin からの restart が失敗 run に再挑戦の機会を与える）**。
+- 多解（多大域）関数の改善:
+
+| 関数 | K | SR@1e-10 | PR@1e-2 | PR@1e-4 | MMOsr@1e-4 |
+|---|---|---|---|---|---|
+| C01 Himmelblau | 4 | 100% → **100%** | 0.28 → **0.62** | 0.28 → **0.53** | 0% → 0% |
+| C02 Six-hump | 2 | 100% → **100%** | 0.75 → **1.00** | 0.60 → **0.95** | 20% → **90%** |
+| C03 Shubert | 18 | 100% → **100%** | 0.06 → **0.17** | 0.06 → **0.16** | 0%（18 global が ~760 local に埋もれ hard だが約3倍, BIPOP 0.11 超）|
+
+**SR を全35関数で一切犠牲にせず（むしろ +0.9pt）**、全多大域関数で多解探索を改善（C01 約2倍・C02 ほぼ完璧・Shubert 初改善）。「多解探索」が SR 無犠牲で実体化。
+
+検証ログ: `results/20260616_141021_peakratio_baseline_quick/`（baseline 全手法）、`results/20260624_113046_endemic_sigexh_quick/`（**σ-exhaustion 確定版・全35関数 SR 回帰ゼロ**）。**n=10 は低信号 → 本判定は n=100 本実験で。** 撤回した試作: crowding=`20260616_145202_endemic_v3`、SR を落とした always-restart=`20260623_145326_1ec0bf0`、絶対floor版=`20260624_103753_endemic_secured`。

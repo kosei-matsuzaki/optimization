@@ -60,18 +60,17 @@ def _count_optima_found(
     benchmark: BenchmarkFunction,
     success_threshold: float = 1e-4,
 ) -> int:
+    """How many known global optima this run discovered (nearest-attribution).
+
+    Thin wrapper over the canonical ``runner.optima_found_mask`` so the count
+    here matches the ``pr_*`` / ``mmo_sr_*`` columns written below.
+    """
     if not benchmark.optima_pos:
         return 0
+    from .runner import optima_found_mask
     span = benchmark.bounds[1] - benchmark.bounds[0]
-    radius = max(0.5, 0.02 * span)
-    found = 0
-    for opt_coords in benchmark.optima_pos:
-        opt = np.array(opt_coords)
-        for x, f in zip(result.history_x, result.history_f):
-            if f <= success_threshold and np.linalg.norm(x - opt) <= radius:
-                found += 1
-                break
-    return found
+    return int(optima_found_mask(
+        result, benchmark.optima_pos, span, success_threshold).sum())
 
 
 def _out_dir(output_dir: Path, subdir: str) -> Path:
@@ -784,12 +783,19 @@ def save_stats(
 
     summary_path = output_dir / "summary.csv"
     summary_exists = summary_path.exists()
-    from .runner import _evals_to_target, ecdf_auc, SR_THRESHOLDS
+    from .runner import (_evals_to_target, ecdf_auc, SR_THRESHOLDS,
+                         PEAK_THRESHOLDS, peak_metrics)
     sr_keys = [f"sr_{thr:.0e}".replace("e-0", "e-") for thr in SR_THRESHOLDS]
+    span = benchmark.bounds[1] - benchmark.bounds[0]
+    # Multi-modal columns: peak ratio (pr_*) and MMO success rate (mmo_sr_*) per
+    # tolerance — the share of the K global optima found / runs finding all K.
+    pr_keys = [f"pr_{thr:.0e}".replace("e-0", "e-") for thr in PEAK_THRESHOLDS]
+    mmo_keys = [f"mmo_sr_{thr:.0e}".replace("e-0", "e-") for thr in PEAK_THRESHOLDS]
     fieldnames_s = ["function", "category", "method", "mean_time_s",
                     "mean_best_f", "median_best_f", *sr_keys,
                     "evals_succ_med", "ert", "ecdf_auc",
-                    "mean_optima_found", "mean_optima_rate"]
+                    "mean_optima_found", "mean_optima_rate", "n_optima",
+                    *pr_keys, *mmo_keys]
     with open(summary_path, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames_s)
         if not summary_exists:
@@ -820,7 +826,13 @@ def save_stats(
                 "ecdf_auc":      f"{auc:.4f}",
                 "mean_optima_found": f"{mean_optima:.2f}",
                 "mean_optima_rate": f"{mean_optima / n_optima_total:.2f}" if n_optima_total else "N/A",
+                "n_optima": n_optima_total,
             }
             for thr, key in zip(SR_THRESHOLDS, sr_keys):
                 row[key] = f"{float(np.mean(best_fs <= thr)):.0%}"
+            pm = peak_metrics(results, benchmark.optima_pos, span, PEAK_THRESHOLDS)
+            for thr, pk, mk in zip(PEAK_THRESHOLDS, pr_keys, mmo_keys):
+                k = f"{thr:.0e}".replace("e-0", "e-")
+                row[pk] = f"{pm.get(f'pr_{k}', 0.0):.2f}" if n_optima_total else "N/A"
+                row[mk] = f"{pm.get(f'mmo_sr_{k}', 0.0):.0%}" if n_optima_total else "N/A"
             writer.writerow(row)
