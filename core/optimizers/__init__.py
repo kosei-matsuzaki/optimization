@@ -19,6 +19,7 @@ from .base import OptimizeResult, BaseOptimizer
 from .cmaes import CMAESOptimizer
 from .mceso import MultiChannelEpidemicOptimizer
 from .mceso_ablations import MCESONoSpillover, MCESORandomRestart
+from .mceso_niching import MCESOEndemic
 from .pso import PSOOptimizer
 from .de import DEOptimizer
 from .savoa import SaVOAOptimizer
@@ -28,7 +29,7 @@ from .restart_cmaes import IPOPCMAESOptimizer, BIPOPCMAESOptimizer
 __all__ = [
     "OptimizeResult", "BaseOptimizer",
     "CMAESOptimizer", "MultiChannelEpidemicOptimizer",
-    "MCESONoSpillover", "MCESORandomRestart",
+    "MCESONoSpillover", "MCESORandomRestart", "MCESOEndemic",
     "PSOOptimizer", "DEOptimizer", "SaVOAOptimizer",
     "LSHADEOptimizer", "IPOPCMAESOptimizer", "BIPOPCMAESOptimizer",
 ]

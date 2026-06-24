@@ -23,6 +23,7 @@ from .optimizers import (
 )
 from .runner import (
     run_experiment, summarize, ecdf_auc, SR_THRESHOLDS,
+    PEAK_THRESHOLDS, optima_found_mask, peak_metrics,
     wilcoxon_vs_reference, vargha_delaney_a12,
 )
 
@@ -39,5 +40,6 @@ __all__ = [
     "LSHADEOptimizer", "IPOPCMAESOptimizer", "BIPOPCMAESOptimizer",
     # runner / evaluation
     "run_experiment", "summarize", "ecdf_auc", "SR_THRESHOLDS",
+    "PEAK_THRESHOLDS", "optima_found_mask", "peak_metrics",
     "wilcoxon_vs_reference", "vargha_delaney_a12",
 ]

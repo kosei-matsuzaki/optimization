@@ -23,7 +23,8 @@ from core.optimizers import (
     LSHADEOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
     MCESONoSpillover, MCESORandomRestart,
 )
-from core.runner import run_experiment, summarize, wilcoxon_vs_reference
+from core.runner import (run_experiment, summarize, wilcoxon_vs_reference,
+                         peak_metrics)
 from core.visualize import (
     save_landscape_svg, save_convergence_svg,
     save_method_runs_anim, save_method_evals_anim, save_method_population_anim,
@@ -157,11 +158,21 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int,
             s = summarize(results)
             ev = s['evals_succ_med']
             ev_str = f"{ev:>10.0f}" if ev < float('inf') else "       ---"
+            # Multi-modal report: for functions with >1 known global optimum,
+            # append peak ratio (fraction of optima found) and MMO success rate.
+            span = bench.bounds[1] - bench.bounds[0]
+            pm = peak_metrics(results, bench.optima_pos, span)
+            mmo_str = ""
+            if pm["n_optima"] > 1:
+                mmo_str = (f"  | K={pm['n_optima']:>2} "
+                           f"PR@1e-2={pm['pr_1e-2']:>5.0%} "
+                           f"PR@1e-4={pm['pr_1e-4']:>5.0%} "
+                           f"MMOsr@1e-4={pm['mmo_sr_1e-4']:>4.0%}")
             print(
                 f"{bench.name:<22} {method:<10} "
                 f"{s['mean']:>12.4e} "
                 f"{s['sr_1e-1']:>6.0%} {s['sr_1e-2']:>6.0%} {s['sr_1e-4']:>6.0%} "
-                f"{s['sr_1e-7']:>6.0%} {s['sr_1e-10']:>7.0%}{ev_str}"
+                f"{s['sr_1e-7']:>6.0%} {s['sr_1e-10']:>7.0%}{ev_str}{mmo_str}"
             )
 
         # Per-method visualizations

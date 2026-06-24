@@ -34,6 +34,15 @@ class _MCESOState:
     best_so_far: float
     f_init_scale: float
     no_improve: int = 0
+    # Per-host step size, used only by niching variants (e.g. MC-ESO-Endemic) for
+    # independent per-basin drilling; empty in base MC-ESO (single global σ).
+    pop_sigma: np.ndarray = field(default_factory=lambda: np.empty(0))
+    # Adaptive close-contact anisotropy floor: EMA of log10 of the population
+    # covariance's natural eigenvalue ratio. A *sustained* huge ratio means the
+    # population is genuinely stretched along an ill-conditioned valley (relax the
+    # floor); a small ratio with only transient spikes means rugged/multimodal
+    # structure (keep the floor high so spurious anisotropy is clamped).
+    cc_logratio_ema: "float | None" = None
     log_best_ref: float = 0.0
     evals_since_reset: int = 0
     consecutive_failed_spillovers: int = 0
@@ -179,6 +188,16 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         basin_switch_after_failed_spillovers: int = 2,  # streak → wipe best & reset σ
         basin_switch_quality_rel_floor: float = 1e-2,   # basin switch suppressed when
                                                         # best_so_far / |f_init| ≤ this
+        # ── Multi-solution (sequential niching) ───────────────────────
+        # Once a basin is drilled to the algorithm's resolution limit, restart
+        # repelled away from it to discover further optima (raises peak ratio on
+        # multi-global functions). "Drilled out" is detected scale-/shift-free:
+        # σ has bottomed at its floor AND the run has stagnated — no reference to
+        # the (unknown) optimum value. SR@1e-10 is preserved: a basin is only left
+        # once base could drill no deeper there. Set exhausted_no_improve_mult to
+        # a very large value to disable niching (pure single-basin MC-ESO).
+        exhausted_sigma_tol: float = 1.5,       # σ ≤ this × σ-floor ⇒ bottomed out
+        exhausted_no_improve_mult: float = 3.0, # stagnation (× restart threshold) at the floor
         # ── σ adaptation ──────────────────────────────────────────────
         # Multiplicative step-size adaptation. Once σ < span × precision_sigma_ratio
         # the contraction switches to sigma_drill_down to drill to FP precision.
@@ -205,7 +224,21 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # to 1 so total step magnitude is preserved; floor prevents collapsed
         # axes. Closes the F11/F14 ill-conditioned gap to DE/CMA-ES (F11
         # mean 5.2e-8 → 0 at n=15, F14 SR_1e-7 80% → 87%).
-        empirical_cov_floor: float = 0.01,     # min normalized eigenvalue
+        empirical_cov_floor: float = 0.01,     # min normalized eigenvalue (rugged/explore)
+        # Adaptive anisotropy floor. The effective floor is interpolated (in log
+        # space) between ``empirical_cov_floor`` (high → anisotropy capped ~14:1,
+        # safe on rugged/multimodal) and ``cov_floor_low`` (low → anisotropy up to
+        # ~1000:1, needed for ill-conditioned valleys) by a **smoothed natural
+        # eigenvalue ratio** of the population covariance. Measured medians cleanly
+        # separate the two regimes: ill-conditioned ≈ 1e5–1e7, rugged/multimodal
+        # ≈ 3–600. When the smoothed ratio is ≥ ``cov_ratio_hi`` the floor relaxes
+        # to ``cov_floor_low``; ≤ ``cov_ratio_lo`` it stays at the safe high floor.
+        # The signal (a ratio of eigenvalues) is scale- and shift-invariant — no f
+        # values. Set ``cov_floor_low = empirical_cov_floor`` to disable.
+        cov_floor_low: float = 1e-3,
+        cov_ratio_lo: float = 1e3,             # natural ratio at/below → high floor
+        cov_ratio_hi: float = 3e4,             # natural ratio at/above → low floor
+        cov_ratio_beta: float = 0.1,           # EMA rate (rejects rugged spikes)
         # ── Informed restart (reservoir re-ignition + herd-immunity repulsion) ─
         # The spillover re-seed is *informed*, not a blind uniform draw: a
         # persistent niche-separated strain archive is harvested at every
@@ -241,6 +274,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.restart_quality_rel_floor = restart_quality_rel_floor
         self.basin_switch_after_failed_spillovers = basin_switch_after_failed_spillovers
         self.basin_switch_quality_rel_floor = basin_switch_quality_rel_floor
+        self.exhausted_sigma_tol = exhausted_sigma_tol
+        self.exhausted_no_improve_mult = exhausted_no_improve_mult
         self.sigma_up = sigma_up
         self.sigma_down = sigma_down
         self.sigma_floor_ratio = sigma_floor_ratio
@@ -249,6 +284,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.sigma_drill_down = sigma_drill_down
         self.h2h_CR = h2h_CR
         self.empirical_cov_floor = empirical_cov_floor
+        self.cov_floor_low = cov_floor_low
+        self.cov_ratio_lo = cov_ratio_lo
+        self.cov_ratio_hi = cov_ratio_hi
+        self.cov_ratio_beta = cov_ratio_beta
         self.ir_archive_frac = ir_archive_frac
         self.ir_reignite_sigma_ratio = ir_reignite_sigma_ratio
         self.ir_repel_radius_ratio = ir_repel_radius_ratio
@@ -436,10 +475,25 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         st.ir_archive_f = kept_f
 
     def _diversified_reseed(self, st: _MCESOState, x_best_snap) -> np.ndarray:
-        """Return one informed re-seed candidate: reservoir re-ignition (tight
-        Gaussian around a surviving archived strain) with prob ir_archive_frac,
-        else a basin-repelled uniform draw avoiding remembered basins."""
+        """Return one informed re-seed candidate. When the basin is **exhausted**
+        (sequential-niching restart), commit to a genuinely new region: a pure
+        repelled-uniform draw with a *fine* repel radius and no reservoir
+        re-ignition, so the search is not pulled back to an already-drilled basin
+        and densely packed optima (Shubert ~0.88 apart) are not masked. Otherwise
+        the usual informed restart: reservoir re-ignition (tight Gaussian around a
+        surviving archived strain) with prob ir_archive_frac, else a basin-repelled
+        uniform draw avoiding remembered basins."""
         rng, lo, hi, dim = st.rng, st.lo, st.hi, self.dim
+        if self._basin_exhausted(st):
+            repel_r = 0.02 * st.span
+            cand = rng.uniform(lo, hi, dim)
+            if st.ir_basin_centroids:
+                centroids = np.array(st.ir_basin_centroids)
+                for _ in range(self.ir_repel_max_tries):
+                    if np.all(np.linalg.norm(centroids - cand, axis=1) > repel_r):
+                        break
+                    cand = rng.uniform(lo, hi, dim)
+            return cand
         # Reservoir re-ignition.
         if st.ir_archive_x and rng.random() < self.ir_archive_frac:
             k = rng.integers(0, len(st.ir_archive_x))
@@ -466,7 +520,42 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         basins even after the live population has collapsed onto one."""
         return st.pop_x[st.rng.choice(elite_arr, size=n_h2h)]
 
-    # ── spillover (stagnation re-seed) ──────────────────────────────────────
+    # ── spillover (stagnation re-seed) + sequential niching ─────────────────
+    def _basin_exhausted(self, st: _MCESOState) -> bool:
+        """Scale- and shift-invariant convergence detector: the step size σ has
+        bottomed out at its floor (the search can no longer drill any finer) AND
+        the run has stagnated. No reference to the (unknown, problem-dependent)
+        optimum value — only σ relative to the domain span and the improvement
+        history. When true the basin is at the algorithm's resolution limit, so
+        leaving it for a fresh repelled basin cannot cost SR (base would make no
+        further progress here either) while it can discover additional optima."""
+        sigma_bottomed = st.sigma <= self.exhausted_sigma_tol * st.span * self.sigma_floor_ratio
+        stagnated = st.no_improve >= self.exhausted_no_improve_mult * self.restart_no_improve_threshold
+        return sigma_bottomed and stagnated
+
+    def _spillover_should_fire(self, st: _MCESOState) -> bool:
+        """Whether a spillover triggers this generation. Two regimes:
+
+        • basin **exhausted** (drilled out) → fire on stagnation regardless of the
+          precision gate, so the search leaves the solved basin to hunt others;
+        • otherwise → the precision-gated condition (don't disturb an in-progress
+          drilling), which protects SR@1e-10 on hard single-optimum functions.
+        """
+        if self._basin_exhausted(st):
+            return st.no_improve >= self.restart_no_improve_threshold
+        return (st.no_improve >= self.restart_no_improve_threshold
+                and st.best_so_far > self.restart_quality_rel_floor * st.f_init_scale)
+
+    def _spillover_basin_switch(self, st: _MCESOState) -> bool:
+        """Whether this spillover escalates to a full basin switch (wipe the
+        population, reset σ to σ_init). An exhausted basin always switches so the
+        search fully commits to a fresh repelled region; otherwise base escalates
+        only after a streak of failed spillovers (suppressed near precision)."""
+        if self._basin_exhausted(st):
+            return True
+        return (st.consecutive_failed_spillovers >= self.basin_switch_after_failed_spillovers
+                and st.best_so_far > self.basin_switch_quality_rel_floor * st.f_init_scale)
+
     def _maybe_spillover(self, st: _MCESOState) -> bool:
         """Spillover event: when the outbreak stalls, the population spills over
         to a fresh host pool around the global best, giving the search another
@@ -476,22 +565,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         Returns ``True`` iff the eval budget was exhausted inside the event, in
         which case the caller breaks the generation loop.
         """
-        if not (st.no_improve >= self.restart_no_improve_threshold
-                and st.best_so_far > self.restart_quality_rel_floor * st.f_init_scale):
+        if not self._spillover_should_fire(st):
             return False
 
         rng, lo, hi = st.rng, st.lo, st.hi
 
         # Escalation policy based on consecutive_failed_spillovers:
-        #   streak ≥ basin_switch_after: wipe best, fully uniform, σ_init reset
-        #   else:                       fully uniform, best preserved
-        if (st.consecutive_failed_spillovers >= self.basin_switch_after_failed_spillovers
-                and st.best_so_far > self.basin_switch_quality_rel_floor * st.f_init_scale):
-            basin_switch = True
-            sigma_restart = st.sigma_init   # fresh σ for new basin
-        else:
-            basin_switch = False
-            sigma_restart = st.sigma_init * self.restart_sigma_ratio
+        #   basin switch: wipe best, fully uniform, σ_init reset
+        #   else:         fully uniform, best preserved, smaller σ
+        basin_switch = self._spillover_basin_switch(st)
+        sigma_restart = (st.sigma_init if basin_switch
+                         else st.sigma_init * self.restart_sigma_ratio)
         div_ratio = 1.0
 
         # Coordinate-axis sweep before every spillover. Targets separable /
@@ -575,6 +659,31 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         return not st.budget_left
 
     # ── transmission channels (offspring generators) ────────────────────────
+    def _adaptive_cov_floor(self, st: _MCESOState, eigvals_raw: np.ndarray) -> float:
+        """Effective close-contact anisotropy floor for this generation.
+
+        Uses an EMA of ``log10`` of the population covariance's natural eigenvalue
+        ratio ``λ_max/λ_min``. Measured medians cleanly separate the regimes —
+        ill-conditioned valleys sit at 1e5–1e7, rugged/multimodal at 3–600 — so a
+        *sustained* huge ratio relaxes the floor toward ``cov_floor_low`` while a
+        small ratio (with at most transient spikes, which the EMA rejects) keeps
+        it at the safe ``empirical_cov_floor``. Interpolated geometrically between
+        ``cov_ratio_lo`` and ``cov_ratio_hi``. Ratio-of-eigenvalues is scale- and
+        shift-invariant — never references f values.
+        """
+        hi, lo = self.empirical_cov_floor, self.cov_floor_low
+        if lo >= hi:
+            return hi  # adaptation disabled
+        ev = np.maximum(eigvals_raw, 1e-300)
+        logr = math.log10(float(ev[-1]) / float(ev[0]))
+        st.cc_logratio_ema = (logr if st.cc_logratio_ema is None else
+                              (1.0 - self.cov_ratio_beta) * st.cc_logratio_ema
+                              + self.cov_ratio_beta * logr)
+        lo_l, hi_l = math.log10(self.cov_ratio_lo), math.log10(self.cov_ratio_hi)
+        t = (st.cc_logratio_ema - lo_l) / (hi_l - lo_l)
+        t = min(1.0, max(0.0, t))
+        return float(hi * (lo / hi) ** t)
+
     def _close_contact_children(self, st: _MCESOState, n_local: int,
                                 weights: np.ndarray, log_f_max: float,
                                 log_f_spread: float) -> tuple[np.ndarray, np.ndarray]:
@@ -601,13 +710,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if self.dim >= 2:
             cov = np.cov(st.pop_x, rowvar=False)
             if isinstance(cov, np.ndarray) and cov.shape == (self.dim, self.dim):
-                eigvals, eigvecs = np.linalg.eigh(cov)
+                eigvals, eigvecs = np.linalg.eigh(cov)  # ascending eigenvalues
+                floor_eff = self._adaptive_cov_floor(st, eigvals)
                 mean_eig = float(eigvals.mean())
                 if mean_eig > 1e-30:
                     eigvals = eigvals / mean_eig
                 else:
                     eigvals = np.ones(self.dim)
-                eigvals = np.maximum(eigvals, self.empirical_cov_floor)
+                eigvals = np.maximum(eigvals, floor_eff)
                 eigvals = eigvals / float(eigvals.mean())  # re-normalize
                 # Transform: noise (n_local, dim) @ (eigvecs · √eigvals)ᵀ
                 transform = eigvecs * np.sqrt(eigvals)[None, :]
@@ -747,7 +857,65 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             _sc.append(np.full(n_air, float(air_sigma_vec)))
         _sigma_children = np.concatenate(_sc) if _sc else np.array([])
 
-        # Evaluate and place offspring into dead slots
+        # Evaluate offspring and resolve host competition (placement + rollback +
+        # aging). Factored into a hook so niching variants can swap the *global*
+        # competition rule for a local (crowding) one without touching channels.
+        self._place_and_compete(
+            st, new_xs, _sigma_children, n_dead,
+            dead_global, dead_orig_x, dead_orig_f)
+
+        self._adapt_sigma(st, gen_best_before)
+
+    def _adapt_sigma(self, st: _MCESOState, gen_best_before: float) -> None:
+        """σ_global adaptation (always on): improved → × sigma_up, else
+        × sigma_down (or sigma_drill_down once drilling). Overridable so niching
+        variants can use a monotone-contraction schedule that drills every
+        occupied basin to FP precision instead of letting cross-basin
+        improvements pump σ back up."""
+        span = st.span
+        in_drilling = st.sigma < span * self.precision_sigma_ratio
+        sigma_floor_eff = span * self.sigma_floor_ratio
+        if st.best_so_far < gen_best_before:
+            st.sigma *= self.sigma_up
+        else:
+            st.sigma *= self.sigma_drill_down if in_drilling else self.sigma_down
+        st.sigma = max(sigma_floor_eff, min(st.sigma, span * self.sigma_ceil_ratio))
+
+    # ── host competition (overridable for niching variants) ──────────────────
+    def _record_eval(self, st: _MCESOState, x: np.ndarray, f: float,
+                     sigma_used: float) -> None:
+        """Log one offspring evaluation and update best_so_far / no_improve.
+
+        Shared by every competition policy so the stagnation/spillover signal is
+        identical regardless of how offspring are placed into the population.
+        """
+        st.history_x.append(x.copy())
+        st.history_f.append(f)
+        st.history_sigma_eval.append(sigma_used)
+        st.evals_since_reset += 1
+        if f < st.best_so_far:
+            st.best_so_far = f
+            if self._meaningful_improvement(f, st.log_best_ref, st.evals_since_reset):
+                st.no_improve = 0
+                st.log_best_ref = math.log10(max(f, 1e-300))
+                st.evals_since_reset = 0
+            else:
+                st.no_improve += 1
+        else:
+            st.no_improve += 1
+
+    def _place_and_compete(
+        self, st: _MCESOState, new_xs: np.ndarray, sigma_children: np.ndarray,
+        n_dead: int, dead_global: np.ndarray,
+        dead_orig_x: np.ndarray | None, dead_orig_f: np.ndarray | None,
+    ) -> None:
+        """Global host competition (μ+λ greedy): place each child into its dead
+        slot, then roll back any child that failed to beat the host it replaced
+        so the outbreak monotonically improves toward the single best basin.
+
+        Niching variants override this with a *local* (crowding) rule so
+        spatially separated basins survive simultaneously.
+        """
         replaced_slots: list[int] = []
         for k in range(min(n_dead, len(new_xs))):
             slot = int(dead_global[k])
@@ -757,49 +925,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.pop_f[slot] = f
             st.pop_age[slot] = 0
             replaced_slots.append(slot)
-            st.history_x.append(x.copy())
-            st.history_f.append(f)
-            sigma_used_k = (float(_sigma_children[k])
-                            if k < len(_sigma_children) else float(st.sigma))
-            st.history_sigma_eval.append(sigma_used_k)
-            st.evals_since_reset += 1
-
-            if f < st.best_so_far:
-                st.best_so_far = f
-                if self._meaningful_improvement(f, st.log_best_ref, st.evals_since_reset):
-                    st.no_improve = 0
-                    st.log_best_ref = math.log10(max(f, 1e-300))
-                    st.evals_since_reset = 0
-                else:
-                    st.no_improve += 1
-            else:
-                st.no_improve += 1
+            sigma_used_k = (float(sigma_children[k])
+                            if k < len(sigma_children) else float(st.sigma))
+            self._record_eval(st, x, f, sigma_used_k)
             if not st.budget_left:
                 break
 
-        # Host-competition rollback: children worse than the host they replaced
-        # are reverted, so the outbreak monotonically improves.
+        # Host-competition rollback: children worse than the host they replaced.
         if dead_orig_x is not None:
             for k, slot in enumerate(replaced_slots):
                 if dead_orig_f[k] < st.pop_f[slot]:
                     st.pop_x[slot] = dead_orig_x[k]
                     st.pop_f[slot] = dead_orig_f[k]
 
-        # Age active survivors (per-generation)
+        # Age active survivors (per-generation).
         replaced_mask = np.zeros(self.n_pop, dtype=bool)
         if replaced_slots:
             replaced_mask[replaced_slots] = True
         st.pop_age[~replaced_mask] += 1
-
-        # σ adaptation always on: improved → × sigma_up, else → × sigma_down
-        # (or sigma_drill_down in drilling mode).
-        in_drilling = st.sigma < span * self.precision_sigma_ratio
-        sigma_floor_eff = span * self.sigma_floor_ratio
-        if st.best_so_far < gen_best_before:
-            st.sigma *= self.sigma_up
-        else:
-            st.sigma *= self.sigma_drill_down if in_drilling else self.sigma_down
-        st.sigma = max(sigma_floor_eff, min(st.sigma, span * self.sigma_ceil_ratio))
 
     # ── per-generation dynamics recording ───────────────────────────────────
     def _record_generation(self, st: _MCESOState) -> None:
