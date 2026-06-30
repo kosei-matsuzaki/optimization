@@ -110,3 +110,29 @@ class MCESORandomRestart(MultiChannelEpidemicOptimizer):
 
     def _diversified_reseed(self, st: _MCESOState, x_best_snap) -> np.ndarray:
         return st.rng.uniform(st.lo, st.hi, self.dim)
+
+
+# ── simplification-audit ablations ───────────────────────────────────────────
+# Each isolates a *single* mechanism with no standalone ablation record, to
+# decide whether it pays its way or can be deleted to simplify MC-ESO. The
+# parameter-toggleable ones (airborne channel → air_ratio=0, per-host σ →
+# host_sigma_min_scale=1.0, streak basin-switch →
+# basin_switch_after_failed_spillovers=∞, convergence-adaptive airborne σ →
+# air_sigma_amplifier=0) are expressed as kwargs in quick_check.py; the boundary
+# snap has no parameter, so it needs a subclass.
+class MCESONoBoundarySnap(MultiChannelEpidemicOptimizer):
+    """MC-ESO with the boundary 'snap' clause removed from ``_reflect``.
+
+    Base ``_reflect`` snaps a candidate to the bound when it overshoots by less
+    than span×1e-3 (so boundary-optimum landscapes like F05 LinearSlope can land
+    *exactly* on the corner instead of orbiting it at σ_floor). This variant uses
+    pure reflection on every overshoot, isolating whether the snap actually
+    earns its keep now that the axis sweep (its companion boundary mechanism) is
+    gone."""
+
+    @staticmethod
+    def _reflect(x, lo, hi):
+        span = hi - lo
+        x_rel = (x - lo) % (2 * span)
+        x_rel = np.where(x_rel > span, 2 * span - x_rel, x_rel)
+        return x_rel + lo

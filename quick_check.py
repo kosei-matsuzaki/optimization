@@ -21,7 +21,6 @@ from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
     DEOptimizer, SaVOAOptimizer,
     LSHADEOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
-    MCESONoSpillover, MCESORandomRestart,
 )
 from core.runner import (run_experiment, summarize, wilcoxon_vs_reference,
                          peak_metrics)
@@ -111,11 +110,13 @@ _DIM_REGISTRIES: dict[int, dict[str, object]] = {
 
 # MC-ESO (Multi-Channel Epidemic Spread Optimizer): all core mechanisms
 # — 3-channel transmission with h2h CR=0.9, rotation-aware close-contact
-# (empirical covariance), drilling-mode airborne suppression, informed-restart
-# spillover (reservoir re-ignition + basin-memory repulsion), host competition
-# with rollback, σ adapt — are baked into the base implementation. The two
-# MC-ESO-* entries below are diagnostic ablations; extend this dict
-# to ablate new ideas against the integrated baseline.
+# (empirical covariance + adaptive anisotropy floor), drilling-mode airborne
+# suppression, informed-restart spillover (reservoir re-ignition + basin-memory
+# repulsion), sequential niching (σ-exhaustion), host competition with rollback,
+# σ adapt — are baked into the base implementation. This dict is the standard
+# comparison: MC-ESO vs the 7 baselines. Diagnostic / ablation variants are NOT
+# registered here (they live in core/optimizers/mceso_ablations.py and can be
+# added back temporarily when isolating a mechanism's contribution).
 _OPTIMIZERS = {
     "CMA-ES":       (CMAESOptimizer,                {}),
     "IPOP-CMA-ES":  (IPOPCMAESOptimizer,            {}),
@@ -125,11 +126,6 @@ _OPTIMIZERS = {
     "L-SHADE":      (LSHADEOptimizer,               {}),
     "SaVOA":        (SaVOAOptimizer,                {}),
     "MC-ESO":       (MultiChannelEpidemicOptimizer, {}),
-    # Diagnostic ablations (channels vs restart attribution) — see
-    # core/optimizers/mceso_ablations.py. Informed restart is now baked into the
-    # MC-ESO base; these isolate "no restart" / "blind uniform restart".
-    "MC-ESO-NoSpill":   (MCESONoSpillover,    {}),
-    "MC-ESO-RandRestart": (MCESORandomRestart, {}),
 }
 
 
@@ -156,7 +152,7 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int,
             results_per_method[method] = results
             times_per_method[method] = times
             s = summarize(results)
-            ev = s['evals_succ_med']
+            ev = s['evals_succ_mean']
             ev_str = f"{ev:>10.0f}" if ev < float('inf') else "       ---"
             # Multi-modal report: for functions with >1 known global optimum,
             # append peak ratio (fraction of optima found) and MMO success rate.
@@ -201,8 +197,8 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int,
 
 
 def main(
-    n_runs: int = 10,
-    max_evals: int = 2000,
+    n_runs: int = 20,
+    max_evals: int = 5000,
     output_dir: Path = Path("results/quick"),
     funcs: list[str] | None = None,
     use_all: bool = False,
@@ -263,8 +259,8 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n-runs",     type=int, default=10,                   help="Number of runs per method")
-    parser.add_argument("--max-evals",  type=int, default=2000,                 help="Max function evaluations per run")
+    parser.add_argument("--n-runs",     type=int, default=20,                   help="Number of runs per method")
+    parser.add_argument("--max-evals",  type=int, default=5000,                 help="Max function evaluations per run")
     parser.add_argument("--output-dir", type=Path, default=Path("results/quick"), help="Output directory")
     parser.add_argument("--funcs",      type=str, default=None,
                         help="Comma-separated function names to run (default: all in selected set)")

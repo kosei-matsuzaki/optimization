@@ -1,20 +1,22 @@
 # CLAUDE.md
 
 MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマークで比較する研究プロジェクト。
-本ファイルは作業時に遵守するルールをまとめる。コード・構成の詳細は領域別 README を参照。
+本ファイルは作業時に遵守するルールをまとめる。コード・構成の詳細は領域別ドキュメント（`docs/`）を参照。
 
-## ドキュメント（領域別 README）
+## ドキュメント（領域別 docs/）
 
-作業対象の領域に入る**前に該当 README を参照**し、変更後は**該当 README を更新**すること。
-記述とコードが常に一致した状態を保つ。
+詳細は `docs/` 配下に領域別で分割している（`README.md` はリンクのみ）。作業対象の領域に入る**前に該当ドキュメントを参照**し、変更後は**該当ドキュメントを更新**すること。記述とコードが常に一致した状態を保つ。
 
-| README | 範囲 |
+| ドキュメント | 範囲 |
 |---|---|
-| [README.md](README.md) | プロジェクト全体（概要・実験フロー・結果の見方・コマンド一覧） |
-| [core/README.md](core/README.md) | 最適化手法（`core/optimizers/`）とベンチマーク関数（`core/benchmarks.py`） |
-| [web/README.md](web/README.md) | Results UI（Flask アプリの構成・アーキテクチャ・ルート/API） |
+| [README.md](README.md) | プロジェクト概要 ＋ 各 docs へのリンクのみ |
+| [docs/mceso.md](docs/mceso.md) | 提案手法 MC-ESO（`core/optimizers/mceso.py`）のコンセプト・アーキテクチャ・パラメータ・新規性 |
+| [docs/baselines.md](docs/baselines.md) | 比較対象の既存手法（`core/optimizers/` の CMA-ES / IPOP・BIPOP / PSO / DE / L-SHADE / SaVOA） |
+| [docs/experiments.md](docs/experiments.md) | ディレクトリ構造・実行方法（run.sh）・実験条件・ベンチマーク関数（`core/benchmarks.py`）・評価基準・結果の見方 |
+| [docs/history.md](docs/history.md) | 試した工夫・フラグ・ablation 記録（採用 / 不採用とその理由） |
+| [docs/web.md](docs/web.md) | Results UI（Flask アプリの構成・アーキテクチャ・ルート/API） |
 
-- 更新対象の振り分け: web 配下の変更 → `web/README.md`、core 配下の変更 → `core/README.md`、横断的・全体に関わる変更 → ルート `README.md`。
+- 更新対象の振り分け: 提案手法 MC-ESO の変更 → `docs/mceso.md`、ベースライン手法の変更 → `docs/baselines.md`、ベンチマーク関数・実行・条件・評価基準の変更 → `docs/experiments.md`、試行錯誤・フラグの追加削除 → `docs/history.md`、web 配下の変更 → `docs/web.md`、プロジェクト概要・docs リンク構成の変更 → ルート `README.md`。
 
 ## 実行ルール
 
@@ -31,6 +33,7 @@ MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマー�
 - `./run.sh quick` を使うこと。`python3 quick_check.py` を直接呼ばない。
 - 実験管理は `run.sh` で行う（trigger / download / quick / list / status / ui）。
 - 結果はすべて `results/YYYYMMDD_HHMMSS_<commit>/` にバージョン管理される。
+- **手法の検証・比較・分析の実験は、原則 `experimenter` サブエージェント（`.claude/agents/experimenter.md`）に委譲する。** 「比較手法設定 → `./run.sh quick` 実行 → monitor → `scripts/analyze_quick.py` で 3 指標分析 → 判定」の一連を独立コンテキストで回し、本会話には判定サマリのみ返すため、手法ブラッシュアップ中も会話が汚れない。比較手法は `--methods` で必要分だけに絞る（不要なベースラインを回さない。MC-ESO 単独 + 旧 run を `--baseline`、または改変版/元版の 2 手法のみ等）。詳細は [docs/experiments.md の評価の分析・自動化](docs/experiments.md#評価の分析自動化) を参照。
 
 ## Git
 
@@ -48,28 +51,21 @@ MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマー�
   - 対象問題における理論的・実用的な意義
   - 関連研究との位置づけ
 - 意義が不明確な場合は実装前にユーザーに確認する。
+- MC-ESO の既存手法との差別化・新規性の現状整理は [docs/mceso.md](docs/mceso.md)、過去に試した工夫の採否は [docs/history.md](docs/history.md) を参照（同じ検証の再実施を避ける）。
 
-### 手法比較・評価の基準（必ずこの3点で評価する）
+### 手法比較・評価の基準（遵守ルール）
 
-手法を比較・評価する際は、必ず以下の **3 指標** を揃えて報告する。単一指標（SR のみ等）での判定は不可。
+指標の定義・読み方の詳細は [docs/experiments.md の評価方法論](docs/experiments.md#評価方法論) を参照。作業時に必ず守るルールは以下:
 
-1. **SR（Success Rate）**
-   - BBOB は `f - f_opt` 正規化により最適値が 0。**最高精度 (SR@1e-10) を主指標**として、0 への到達率で評価する。
-   - 補助的に SR@1e-2 / SR@1e-4 / SR@1e-7 も併記し、精度階層全体での挙動を確認する。
-   - 全関数で集計し、関数別の改善・悪化を必ず列挙する（regression の見落としを防ぐ）。
+- 手法を比較・評価する際は、必ず **3 指標**（SR / 平均評価回数 `evals_succ_mean` / Wilcoxon 検定）を揃えて報告する。単一指標（SR のみ等）での判定は不可。
+- **主指標は SR@1e-10**（最高精度）。補助的に SR@1e-2/1e-4/1e-7 も併記する。
+- **SR@1e-10 を下げる構成は採用しない**（多解探索の改善でも例外なし。最低 1 解は深精度到達を保証）。
+- 全関数で集計し、**関数別の改善・悪化を必ず列挙**する（regression の見落としを防ぐ）。
+- Wilcoxon は `MC-ESO` を reference とし α=0.05、A12 効果量も併記。
 
-2. **平均評価回数（Evals to target）**
-   - 成功 run のみでの中央値 / 平均評価回数 (`evals_succ_med`)。
-   - SR が同等なら少ない評価回数の方が優位。SR と速さのトレードオフを明示する。
+### 評価範囲・実行コマンドの基準（判定は quick n=20 / eval=5000 で統一）
 
-3. **統計的優位性（Wilcoxon signed-rank test）**
-   - V1 (`MC-ESO`) を reference とし、各 variant の `p_value_ref_better` / `p_value_two_sided` を確認。
-   - 有意水準 α=0.05。p < 0.05 で「有意差あり」と判定し、A12 で効果量（negligible/small/medium/large）も併記。
-   - **n=10 (quick) は signal-to-noise が低い** ことを明記し、本実験 (n=100) との差を考慮する。
-
-### 評価範囲・実行コマンドの基準
-
-- 手法評価は**必ず全ベンチマーク関数で実施**する（quick-12 サブセットでの判定は不可）。
-  - ローカル quick: `./run.sh quick --all`（BBOB 24 + Custom 11）
-  - 本実験: `./run.sh trigger`（n=100, BBOB 24 + Custom + CEC2022 hold-out）
-- 結果は `results/YYYYMMDD_HHMMSS_<label>_quick/dim{N}/{summary,wilcoxon}.csv` から上記 3 指標を集計して報告する。
+- **手法の検証・評価はすべて `./run.sh quick --all --n-runs 20 --max-evals 5000` で行う**（quick のデフォルトが n_runs=20 / max_evals=5000 なので `--all` だけで可）。BBOB 24 + Custom 11 の全関数で実施し、quick-12 サブセットでの判定は不可。
+- **GitHub Actions の `./run.sh trigger`（n=100）は裏で補助的に回す実験であり、手法の検証・評価では参照しない。** 評価の根拠は常に上記 quick n=20 の結果とする。
+- 結果は `results/YYYYMMDD_HHMMSS_<label>_quick/dim{N}/{summary,wilcoxon}.csv` から 3 指標を集計して報告する。
+- ベンチマーク関数・指標カラムの詳細は [docs/experiments.md](docs/experiments.md) を参照。

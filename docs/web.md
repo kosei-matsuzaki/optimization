@@ -1,8 +1,8 @@
 # Results UI（Flask）
 
-実験の起動・結果閲覧・可視化をブラウザから行う Flask アプリ。`results/` 配下に保存された実験結果を読み取り、Quick Run / GitHub Actions のトリガー・ダウンロードまでを一画面で管理する。プロジェクト全体の概要は [../README.md](../README.md)、最適化手法・ベンチマークは [../core/README.md](../core/README.md) を参照。
+実験の起動・結果閲覧・可視化をブラウザから行う Flask アプリ。`results/` 配下に保存された実験結果を読み取り、Quick Run / GitHub Actions のトリガー・ダウンロードまでを一画面で管理する。プロジェクト全体の概要は [../README.md](../README.md)、最適化手法は [mceso.md](mceso.md) / [baselines.md](baselines.md)、ベンチマーク・実行は [experiments.md](experiments.md) を参照。
 
-**読む順序**: [起動](#起動) → [主な機能](#主な機能) → [ディレクトリ構成](#ディレクトリ構成) → [アーキテクチャ](#アーキテクチャ) → [ルート / API 一覧](#ルート--api-一覧) → [開発メモ](#開発メモ)。
+実装は `web/`（`app.py` + `app_lib/` + `static/` + `templates/`）。
 
 ---
 
@@ -26,11 +26,12 @@ python3 web/app.py
 |---|---|
 | Quick Run | `quick_check.py` をバックグラウンド実行。手法・関数セット・次元をモーダルで指定し、ライブターミナル出力を表示 |
 | GitHub Actions Trigger | `gh` CLI 経由でワークフローをトリガー |
-| Remote Runs | 最新10件のワークフロー実行を一覧表示。完了済みは進捗バー付きでダウンロード可能 |
+| Remote Runs | 最新 10 件のワークフロー実行を一覧表示。完了済みは進捗バー付きでダウンロード可能 |
 | Local Results | `results/` 配下の結果一覧。名前変更・削除・実行中ジョブの停止に対応 |
 | 結果詳細 | 次元タブ・関数タブで切替え。Landscape / Convergence / Evals / Population 等の図を表示 |
 | Summary テーブル | 手法別の成績を色分け表示（best=緑、worst=赤）。ヘッダークリックでソート可能 |
-| Overall ランキング | 全関数横断の Friedman 平均順位（bf / evals (succ-only median) / ecdf）＋ Nemenyi 臨界差を表示 |
+| Overall ランキング | 全関数横断の Friedman 平均順位を **best_f（全 run 平均 mean_best_f）/ Evals（succ-only mean）** の 2 列で表示（並べ替えは Evals→SR）＋ Nemenyi 臨界差。SR は **SR@1e-10（主指標）/ SR@1e-4（補助）/ PR@1e-4（多解の最適点発見率）** の 3 列を併記（ECDF ランクは成績詳細ビューに残置せず非表示） |
+| 成績詳細（統合ビュー） | カテゴリ別と関数別の内訳を 1 つに統合し、**指標セレクタ**で表示を切替。指標は SR@1e-10 / SR@1e-4 / PR@1e-4（score 型＝% ヒートマップ）と best_f（全 run 平均 mean_best_f）/ Evals（rank 型＝順位チップ）。手法は選択指標の平均で並べ替え |
 | Per-run Stats | 各 run の詳細統計（成功 / 失敗を色分け） |
 
 ### ビューモード（結果詳細画面）
@@ -141,3 +142,4 @@ web/
 - `results.py` は副作用の無い読み取り中心に保ち、ジョブ実行・ファイル移動などの副作用は `jobs.py` に閉じ込める。
 - 新しいページを追加するときは `base.html` を継承し、CSS / JS を `static/<page>.css`・`static/<page>.js` に分け、テンプレートにインラインで書かない。
 - フロントへ渡すサーバデータは `#page-data` 経由で受け渡す（テンプレート内に Jinja 式を含む `<script>` を増やさない）。
+- 結果詳細画面の選択状態は URL ハッシュ `#dim<N>/<func>` で永続化する。全体評価ビューは `<func>` に `__overall__` を割り当てており（`selectOverall()` で `_updateHash()` を呼ぶ）、15 秒ごとの auto-sync ポーリングやリロードでも関数別ビューへ勝手に遷移しない。

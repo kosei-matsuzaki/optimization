@@ -51,17 +51,41 @@ const CAT_LABELS = {
   'deceptive-2d':   'Deceptive 2D',
 };
 let overallData = null;
-let overallSortKey = 'bf';   // 'bf' | 'evals' | 'ecdf' — leaderboard sort key
+let overallDetailKey = 'sr_deep';   // selected indicator for the unified detail view
+let overallSortKey = 'evals';       // leaderboard sort column
+
+// Sortable leaderboard columns. dir = natural "best first" direction:
+//   rank columns ascending (rank 1 = best), score columns descending (higher = best).
+const OV_SORT_KEYS = {
+  bf:      { field: 'mean_rank_bf',    dir: 'asc'  },
+  evals:   { field: 'mean_rank_evals', dir: 'asc'  },
+  sr_deep: { field: 'mean_sr_deep',    dir: 'desc' },
+  sr:      { field: 'mean_sr',         dir: 'desc' },
+  pr:      { field: 'mean_pr',         dir: 'desc' },
+};
+
+// Indicators for the unified detail view (カテゴリ別 + 関数別).
+//   type 'score' → 0..1 value, higher better, shown as % heatmap.
+//   type 'rank'  → Friedman rank (1..k), lower better, shown as rank chips.
+const OV_DETAIL_INDICATORS = [
+  { key: 'sr_deep', label: 'SR@1e-10', type: 'score', desc: '各関数の最高精度の成功率（主指標）· 赤=低・緑=高' },
+  { key: 'sr',      label: 'SR@1e-4',  type: 'score', desc: '各関数の成功率（補助）· 赤=低・緑=高' },
+  { key: 'pr',      label: 'PR@1e-4',  type: 'score', desc: '各関数の多解の最適点発見率 · 赤=低・緑=高' },
+  { key: 'bf',      label: 'best_f',   type: 'rank',  desc: 'best_f（全 run 平均 mean_best_f）の Friedman ランク · 緑=1位・赤=最下位 · 同着は平均ランク' },
+  { key: 'evals',   label: 'Evals',    type: 'rank',  desc: '成功 run のみの平均評価数の Friedman ランク · 緑=1位・赤=最下位' },
+];
 
 function _sortedLeaderboard() {
   if (!overallData?.leaderboard) return [];
-  const key = overallSortKey;
-  const others = ['bf', 'evals', 'ecdf'].filter(k => k !== key);
-  return [...overallData.leaderboard].sort((a, b) =>
-    (a[`mean_rank_${key}`]      - b[`mean_rank_${key}`])
-    || (a[`mean_rank_${others[0]}`] - b[`mean_rank_${others[0]}`])
-    || (a[`mean_rank_${others[1]}`] - b[`mean_rank_${others[1]}`])
-  );
+  const spec = OV_SORT_KEYS[overallSortKey] || OV_SORT_KEYS.evals;
+  const sign = spec.dir === 'asc' ? 1 : -1;
+  // Sort by the chosen column (best first); tiebreak by Evals rank then SR@1e-10.
+  return [...overallData.leaderboard].sort((a, b) => {
+    const pa = a[spec.field] ?? 0, pb = b[spec.field] ?? 0;
+    if (pa !== pb) return sign * (pa - pb);
+    if (a.mean_rank_evals !== b.mean_rank_evals) return a.mean_rank_evals - b.mean_rank_evals;
+    return b.mean_sr_deep - a.mean_sr_deep;
+  });
 }
 
 // ── URL hash persistence: #dim2/F01-Sphere ──
@@ -571,6 +595,7 @@ function setOverallMode(on) {
 
 async function selectOverall() {
   currentFunc = '__overall__';
+  _updateHash();   // persist #dim/__overall__ so a reload stays on the overall view
   document.querySelectorAll('#func-list a').forEach(a => a.classList.remove('active'));
   document.getElementById('overall-entry')?.classList.add('active');
   document.querySelectorAll('.card-func-badge').forEach(el => el.textContent = '');
@@ -594,8 +619,7 @@ function renderOverall() {
   }
   const lb = _sortedLeaderboard();
   _renderLeaderboard(lb);
-  _renderHeatmap(lb);
-  _renderRankProfile(lb);
+  _renderDetail(lb);
   renderOverallWilcoxon();
 }
 
@@ -627,37 +651,41 @@ function _renderLeaderboard(lb) {
   };
   let statsHtml = `
     <div class="ov-friedman-stats">
-      ${statBlock('bf', 'bf')}
+      ${statBlock('bf', 'best_f')}
       ${statBlock('evals', 'Evals')}
-      ${statBlock('ecdf', 'ECDF')}
       <div class="stat-block">
         <span class="label">N (funcs)</span><span>${nFuncs}</span>
         <span class="label">k (methods)</span><span>${nMethods}</span>
       </div>
     </div>`;
 
-  const sortHdr = (key, label) => {
+  const sortHdr = (key, label, title) => {
     const isActive = overallSortKey === key;
-    const arrow = isActive ? '▼' : '↕';
-    return `<div><span class="ov-rank-sort ${isActive ? 'active' : ''}" data-sort-key="${key}" title="${label}でソート">Mean Rank (${label})<span class="sort-arrow">${arrow}</span></span></div>`;
+    const arrow = isActive ? (OV_SORT_KEYS[key].dir === 'asc' ? '▲' : '▼') : '↕';
+    return `<div><span class="ov-rank-sort ${isActive ? 'active' : ''}" data-sort-key="${key}" title="${title} · クリックでソート">${label}<span class="sort-arrow">${arrow}</span></span></div>`;
   };
   let html = statsHtml + `
     <div class="ov-rank-header">
       <div>#</div><div>Method</div>
-      ${sortHdr('bf', 'bf')}${sortHdr('evals', 'Evals')}${sortHdr('ecdf', 'ECDF')}
-      <div>SR@1e-4</div><div>#Best bf/Evals/ECDF</div><div>#Worst bf/Evals/ECDF</div>
+      ${sortHdr('bf', 'Mean Rank (best_f)', 'best_f（全 run 平均 mean_best_f）の Friedman 平均ランク（低い＝優）')}
+      ${sortHdr('evals', 'Mean Rank (Evals)', '成功 run のみの平均評価数の Friedman 平均ランク（低い＝優）')}
+      ${sortHdr('sr_deep', 'SR@1e-10', 'SR@1e-10（最高精度・主指標）')}
+      ${sortHdr('sr', 'SR@1e-4', 'SR@1e-4（補助）')}
+      ${sortHdr('pr', 'PR@1e-4', 'PR@1e-4（多解の最適点発見率）')}
+      <div>#Best (bf/Evals)</div><div>#Worst (bf/Evals)</div>
     </div>
     <div class="ov-ranking">`;
   lb.forEach((row, i) => {
     const medalCls = i < 3 ? `is-${i + 1}` : '';
     const fillBf    = (fillFor(row.mean_rank_bf)    * 100).toFixed(1);
     const fillEvals = (fillFor(row.mean_rank_evals) * 100).toFixed(1);
-    const fillEcdf  = (fillFor(row.mean_rank_ecdf)  * 100).toFixed(1);
-    const sr = (row.mean_sr * 100).toFixed(1) + '%';
-    const bestStr  = `${row.n_best_bf}/${row.n_best_evals}/${row.n_best_ecdf}`;
-    const worstStr = `${row.n_worst_bf}/${row.n_worst_evals}/${row.n_worst_ecdf}`;
-    const anyBest  = row.n_best_bf > 0 || row.n_best_evals > 0 || row.n_best_ecdf > 0;
-    const anyWorst = row.n_worst_bf > 0 || row.n_worst_evals > 0 || row.n_worst_ecdf > 0;
+    const srDeep = (row.mean_sr_deep * 100).toFixed(1) + '%';
+    const sr     = (row.mean_sr * 100).toFixed(1) + '%';
+    const pr     = ((row.mean_pr ?? 0) * 100).toFixed(1) + '%';
+    const bestStr  = `${row.n_best_bf}/${row.n_best_evals}`;
+    const worstStr = `${row.n_worst_bf}/${row.n_worst_evals}`;
+    const anyBest  = row.n_best_bf > 0 || row.n_best_evals > 0;
+    const anyWorst = row.n_worst_bf > 0 || row.n_worst_evals > 0;
     const bar = (fill, val, std) => `
       <div class="ov-rank-barwrap">
         <div class="ov-rank-bar"><div class="ov-rank-bar-fill ${medalCls}" style="width:${fill}%"></div></div>
@@ -669,8 +697,9 @@ function _renderLeaderboard(lb) {
         <div class="ov-rank-method" title="${htmlesc(row.method)}">${htmlesc(row.method)}</div>
         ${bar(fillBf,    row.mean_rank_bf,    row.rank_std_bf)}
         ${bar(fillEvals, row.mean_rank_evals, row.rank_std_evals)}
-        ${bar(fillEcdf,  row.mean_rank_ecdf,  row.rank_std_ecdf)}
-        <div class="ov-rank-metric">${sr}</div>
+        <div class="ov-rank-metric primary" title="SR@1e-10">${srDeep}</div>
+        <div class="ov-rank-metric" title="SR@1e-4">${sr}</div>
+        <div class="ov-rank-metric ${row.mean_pr ? '' : 'muted'}" title="PR@1e-4">${pr}</div>
         <div class="ov-rank-metric ${anyBest ? '' : 'muted'}">${bestStr}</div>
         <div class="ov-rank-metric ${anyWorst ? 'danger' : 'muted'}">${worstStr}</div>
       </div>`;
@@ -701,80 +730,99 @@ function _medalCls(i) {
   return i === 0 ? 'is-1' : i === 1 ? 'is-2' : i === 2 ? 'is-3' : '';
 }
 
-function _renderHeatmap(lb) {
-  const cats = overallData.categories || [];
-
-  let html = '<div class="ov-tbl-wrap"><table class="ov-tbl"><thead><tr>';
-  html += '<th>Method</th>';
-  cats.forEach(c => { html += `<th>${htmlesc(CAT_LABELS[c] || c)}</th>`; });
-  html += '</tr></thead><tbody>';
-
-  lb.forEach((row, i) => {
-    html += `<tr class="${_medalCls(i)}">`;
-    html += `<td>${htmlesc(row.method)}</td>`;
-    cats.forEach(c => {
-      const v = row.category_sr?.[c];
-      if (v == null) {
-        html += `<td><span class="ov-heatmap-pill null">—</span></td>`;
-      } else {
-        const bg = _heatmapBg(v);
-        html += `<td><span class="ov-heatmap-pill" style="background:${bg};">${(v * 100).toFixed(0)}%</span></td>`;
-      }
+// ── Unified detail view (category + per-function, switchable by indicator) ────
+function _renderDetailSelector() {
+  const el = document.getElementById('overall-detail-selector');
+  el.innerHTML = OV_DETAIL_INDICATORS.map(ind =>
+    `<button class="ov-detail-btn ${ind.key === overallDetailKey ? 'active' : ''}" `
+    + `data-detail-key="${ind.key}" data-type="${ind.type}" title="${htmlesc(ind.desc)}">`
+    + `${ind.label}</button>`
+  ).join('');
+  if (!el.dataset.bound) {
+    el.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-detail-key]');
+      if (!btn) return;
+      const key = btn.dataset.detailKey;
+      if (!key || key === overallDetailKey) return;
+      overallDetailKey = key;
+      renderOverall();
     });
-    html += '</tr>';
-  });
-  html += '</tbody></table></div>';
-  document.getElementById('overall-heatmap-container').innerHTML = html;
+    el.dataset.bound = '1';
+  }
 }
 
-function _renderRankProfile(lb) {
-  const funcs = overallData.funcs || [];
-  const fr    = overallData.func_ranks || {};   // {bf:{f:{m:r}}, evals:{f:{m:r}}}
-  const nMeth = lb.length;
+function _renderDetail(lb) {
+  const ind = OV_DETAIL_INDICATORS.find(x => x.key === overallDetailKey) || OV_DETAIL_INDICATORS[0];
+  _renderDetailSelector();
+  document.getElementById('overall-detail-subtitle').textContent =
+    `${ind.label} · ${ind.desc} · 手法は${ind.type === 'rank' ? '平均ランク（低い＝優）' : '平均値（高い＝優）'}順`;
 
+  const funcs = overallData.funcs || [];
+  const cats  = overallData.categories || [];
+  const fcat  = overallData.func_categories || {};
+  const nMeth = lb.length;
   const shortLabel = f => f.replace(/^[FC]\d+-/, '');
 
-  const buildTbl = (indKey, indLabel, meanKey) => {
-    const frInd = fr[indKey] || {};
-    // Sort by this indicator's mean rank (independent of leaderboard's sort key)
-    // so each table's top-3 reflects ITS indicator. Tiebreakers: other two indicators.
-    const others = ['bf', 'evals', 'ecdf'].filter(k => k !== indKey);
-    const tblLb = [...lb].sort((a, b) =>
-      (a[meanKey] - b[meanKey])
-      || (a[`mean_rank_${others[0]}`] - b[`mean_rank_${others[0]}`])
-      || (a[`mean_rank_${others[1]}`] - b[`mean_rank_${others[1]}`])
-    );
-    let h = `<div class="rank-profile-label" style="font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:8px 0 4px;">${indLabel}</div>`;
-    h += '<div class="ov-tbl-wrap"><table class="ov-tbl sticky-col"><thead><tr>';
-    h += '<th>Method</th>';
-    funcs.forEach(f => { h += `<th title="${htmlesc(f)}">${htmlesc(shortLabel(f))}</th>`; });
-    h += '<th class="ov-mean-col">Mean</th>';
-    h += '</tr></thead><tbody>';
-    tblLb.forEach((row, ri) => {
-      h += `<tr class="${_medalCls(ri)}">`;
-      h += `<td>${htmlesc(row.method)}</td>`;
-      funcs.forEach(f => {
-        const rank = frInd[f]?.[row.method];
-        let chipCls = 'null', txt = '—';
-        if (rank != null) {
-          txt = rank % 1 === 0 ? String(rank) : rank.toFixed(1);
-          if (rank === 1)         chipCls = 'best';
-          else if (rank >= nMeth) chipCls = 'worst';
-          else                    chipCls = '';
-        }
-        h += `<td><span class="ov-rank-chip ${chipCls}">${txt}</span></td>`;
-      });
-      h += `<td class="ov-mean-col">${row[meanKey].toFixed(2)}</td>`;
-      h += '</tr>';
-    });
-    h += '</tbody></table></div>';
-    return h;
+  // Per-(func, method) value for the selected indicator (rank vs raw score).
+  const valOf = ind.type === 'rank'
+    ? (f, m) => overallData.func_ranks?.[ind.key]?.[f]?.[m]
+    : (f, m) => overallData.func_scores?.[ind.key]?.[f]?.[m];
+
+  const meanOver = (m, fs) => {
+    const vals = fs.map(f => valOf(f, m)).filter(v => v != null);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  };
+  const meanAll = m => {
+    const v = meanOver(m, funcs);
+    return v == null ? (ind.type === 'rank' ? Infinity : -Infinity) : v;
   };
 
-  document.getElementById('overall-rank-table-container').innerHTML =
-    buildTbl('bf',    'bf (median_best_f)',         'mean_rank_bf') +
-    buildTbl('evals', 'Evals (succ-only median)',   'mean_rank_evals') +
-    buildTbl('ecdf',  'ECDF AUC',                   'mean_rank_ecdf');
+  // Method order: rank → ascending mean rank; score → descending mean score.
+  const ordered = [...lb].sort((a, b) =>
+    ind.type === 'rank' ? meanAll(a.method) - meanAll(b.method)
+                        : meanAll(b.method) - meanAll(a.method));
+
+  const scoreCell = v => v == null
+    ? '<span class="ov-heatmap-pill null">—</span>'
+    : `<span class="ov-heatmap-pill" style="background:${_heatmapBg(v)};">${(v * 100).toFixed(0)}%</span>`;
+  const rankCell = v => {
+    let chipCls = 'null', txt = '—';
+    if (v != null) {
+      txt = v % 1 === 0 ? String(v) : v.toFixed(1);
+      chipCls = v === 1 ? 'best' : (v >= nMeth ? 'worst' : '');
+    }
+    return `<span class="ov-rank-chip ${chipCls}">${txt}</span>`;
+  };
+  const cell    = ind.type === 'rank' ? rankCell : scoreCell;
+  const fmtMean = v => (v == null || !isFinite(v)) ? '—'
+    : (ind.type === 'rank' ? v.toFixed(2) : (v * 100).toFixed(0) + '%');
+
+  // ── カテゴリ別 ──
+  let ch = '<div class="ov-tbl-wrap"><table class="ov-tbl"><thead><tr><th>Method</th>';
+  cats.forEach(c => { ch += `<th>${htmlesc(CAT_LABELS[c] || c)}</th>`; });
+  ch += '<th class="ov-mean-col">All</th></tr></thead><tbody>';
+  ordered.forEach((row, i) => {
+    ch += `<tr class="${_medalCls(i)}"><td>${htmlesc(row.method)}</td>`;
+    cats.forEach(c => {
+      const fs = funcs.filter(f => fcat[f] === c);
+      ch += `<td>${cell(meanOver(row.method, fs))}</td>`;
+    });
+    ch += `<td class="ov-mean-col">${fmtMean(meanOver(row.method, funcs))}</td></tr>`;
+  });
+  ch += '</tbody></table></div>';
+  document.getElementById('overall-detail-category').innerHTML = ch;
+
+  // ── 関数別 ──
+  let fh = '<div class="ov-tbl-wrap"><table class="ov-tbl sticky-col"><thead><tr><th>Method</th>';
+  funcs.forEach(f => { fh += `<th title="${htmlesc(f)}">${htmlesc(shortLabel(f))}</th>`; });
+  fh += '<th class="ov-mean-col">Mean</th></tr></thead><tbody>';
+  ordered.forEach((row, i) => {
+    fh += `<tr class="${_medalCls(i)}"><td>${htmlesc(row.method)}</td>`;
+    funcs.forEach(f => { fh += `<td>${cell(valOf(f, row.method))}</td>`; });
+    fh += `<td class="ov-mean-col">${fmtMean(meanOver(row.method, funcs))}</td></tr>`;
+  });
+  fh += '</tbody></table></div>';
+  document.getElementById('overall-detail-function').innerHTML = fh;
 }
 
 // ── Fullscreen overlay ────────────────────────────────────────────────────────
@@ -856,7 +904,7 @@ async function buildUnifiedTable(func) {
   const bfColors  = rankColors(summaryRows.map(r => r.mean_best_f), false);
   const sr2Colors = rankColors(summaryRows.map(r => parseFloat(r['sr_1e-2'])), true);
   const sr4Colors = rankColors(summaryRows.map(r => parseFloat(r['sr_1e-4'] ?? r.success_rate)), true);
-  const evalsRaw  = summaryRows.map(r => r.evals_succ_med ?? r.ert);
+  const evalsRaw  = summaryRows.map(r => r.evals_succ_mean ?? r.evals_succ_med ?? r.ert);
   const evalsColors = rankColors(evalsRaw.map(v => v === 'inf' || v == null ? 'Infinity' : v), false);
   const orColors  = rankColors(summaryRows.map(r => r.mean_optima_rate), true);
 
@@ -925,7 +973,7 @@ async function buildUnifiedTable(func) {
     { label: 'Method / Seed', desc: 'Click ▶ to expand per-run details.' },
     { label: 'best_f',        desc: 'Mean of final best f(x) across all runs. Lower is better. BBOB functions: global minimum = 0.' },
     { label: 'ECDF profile',  desc: 'BBOB-style success rate at multiple precision targets, displayed as 7 stacked tiles (1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-7, 1e-10). Hover for exact values. Loose targets on the left, tight on the right.' },
-    { label: 'Evals (succ med)', desc: 'Median number of evaluations to reach the 1e-4 target across successful runs only. Failed runs are excluded (no penalty extrapolation). Read together with SR — a small median with low SR means only a few lucky runs hit the target. — means no successful run.' },
+    { label: 'Evals (succ mean)', desc: 'Mean number of evaluations to reach the 1e-4 target across successful runs only. Failed runs are excluded (no penalty extrapolation). Taken over successful runs (small spread, outliers unlikely), so the mean is used rather than the median. Read together with SR. — means no successful run.' },
     { label: 'time (s)',      desc: 'Mean wall-clock time per run (seconds).' },
     { label: 'optima rate',   desc: 'Fraction of distinct global optima found per run (capture radius ε = 0.1 × span). N/A for single-optimum functions.' },
     { label: 'evals',         desc: 'Total function evaluations used in this run.' },
@@ -945,7 +993,7 @@ async function buildUnifiedTable(func) {
   <table class="unified-table">
     <thead><tr>
       ${TH('Method / Seed', 'style="text-align:left;min-width:150px;"')}
-      ${TH('best_f')} ${TH('ECDF profile', 'style="min-width:158px;"')} ${TH('Evals (succ med)')} ${TH('time (s)')} ${TH('optima rate')} ${TH('evals')}
+      ${TH('best_f')} ${TH('ECDF profile', 'style="min-width:158px;"')} ${TH('Evals (succ mean)')} ${TH('time (s)')} ${TH('optima rate')} ${TH('evals')}
     </tr></thead>
     <tbody id="unified-tbody">`;
 
@@ -960,7 +1008,7 @@ async function buildUnifiedTable(func) {
         </div></td>
         <td class="${bfColors[si]}">${fmtNum(sr.mean_best_f)}</td>
         <td class="ecdf-cell">${fmtECDFProfile(sr)}</td>
-        <td class="${evalsColors[si]}">${fmtEvals(sr.evals_succ_med ?? sr.ert)}</td>
+        <td class="${evalsColors[si]}">${fmtEvals(sr.evals_succ_mean ?? sr.evals_succ_med ?? sr.ert)}</td>
         <td>${fmtNum(sr.mean_time_s)}</td>
         <td class="${orColors[si]}">${fmtNum(sr.mean_optima_rate)}</td>
         <td style="color:var(--muted);">—</td>
@@ -1189,6 +1237,7 @@ async function pollResultData() {
     if (funcKey !== _lastFuncKey) {
       _lastFuncKey = funcKey;
       DIMS_DATA = data.dims_data;
+      overallData = null;   // invalidate so the overall view refreshes in place
       await loadMediaIndex();
       buildTypeSelector();
       buildFuncList();

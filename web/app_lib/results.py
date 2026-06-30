@@ -153,10 +153,11 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
     """Per-indicator Friedman ranking across all functions.
 
     Ranks methods within each function independently for three indicators:
-      - "bf"    : median_best_f (lower is better; robust to outlier runs)
-      - "evals" : median evals-to-target across *successful* runs only
-                  (lower is better; inf if no run succeeds). Pair with SR
-                  to spot cases where one lucky run yields a small median.
+      - "bf"    : mean_best_f across runs (lower is better)
+      - "evals" : mean evals-to-target across *successful* runs only
+                  (lower is better; inf if no run succeeds). Taken over
+                  successful runs, where the spread is small and outliers are
+                  unlikely, so the mean is used rather than the median.
       - "ecdf"  : ECDF AUC over BBOB targets (higher is better)
     For each indicator we also report Friedman χ²_F, p value, and Nemenyi
     critical difference at α=0.05 so the user can judge whether mean-rank
@@ -168,8 +169,8 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
     rows = read_summary(run_dir, dim)
     if not rows:
         return {"methods": [], "categories": [], "funcs": [],
-                "leaderboard": [], "func_ranks": {}, "func_categories": {},
-                "friedman": {}}
+                "leaderboard": [], "func_ranks": {}, "func_scores": {},
+                "func_categories": {}, "friedman": {}}
 
     def parse_sr(s: str) -> float:
         if not s or s == "N/A":
@@ -182,6 +183,13 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
         except (ValueError, TypeError):
             return float("inf")
 
+    def parse_frac(s: str) -> float:
+        # pr_* columns are stored as bare fractions (e.g. "0.28"), not "%".
+        try:
+            return float(s)
+        except (ValueError, TypeError):
+            return 0.0
+
     funcs   = sorted(set(r["function"] for r in rows))
     methods = sorted(set(r["method"]   for r in rows))
     func_categories: dict[str, str] = {}
@@ -189,22 +197,28 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
     for row in rows:
         f, m = row["function"], row["method"]
         func_categories[f] = row.get("category", "unknown")
-        # Prefer median_best_f; fall back to mean_best_f for older runs.
-        bf_raw = row.get("median_best_f") or row.get("mean_best_f") or "inf"
+        # Rank bf by the across-run MEAN best_f; fall back to median for runs
+        # that lack mean_best_f.
+        bf_raw = row.get("mean_best_f") or row.get("median_best_f") or "inf"
         # ECDF AUC: higher is better; missing → 0 (worst).
         try:
             ecdf_v = float(row.get("ecdf_auc", "0") or "0")
         except (TypeError, ValueError):
             ecdf_v = 0.0
-        # Prefer success-only median evals; fall back to ERT for older runs.
-        evals_raw = row.get("evals_succ_med")
+        # Prefer success-only MEAN evals; fall back to the median, then ERT,
+        # for older runs that predate the evals_succ_mean column.
+        evals_raw = row.get("evals_succ_mean")
+        if evals_raw is None or evals_raw == "":
+            evals_raw = row.get("evals_succ_med")
         if evals_raw is None or evals_raw == "":
             evals_raw = row.get("ert", "inf")
         data.setdefault(f, {})[m] = {
-            "sr":    parse_sr(row.get("sr_1e-4", "0%")),
-            "evals": parse_float(evals_raw),
-            "bf":    parse_float(bf_raw),
-            "ecdf":  ecdf_v,
+            "sr":      parse_sr(row.get("sr_1e-4", "0%")),
+            "sr_deep": parse_sr(row.get("sr_1e-10", "0%")),  # primary indicator (deepest)
+            "pr":      parse_frac(row.get("pr_1e-4", "0")),   # multi-optima discovery rate
+            "evals":   parse_float(evals_raw),
+            "bf":      parse_float(bf_raw),
+            "ecdf":    ecdf_v,
         }
 
     # bf / evals: lower-is-better. ecdf: higher-is-better — negated when ranking.
@@ -269,8 +283,12 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
 
     leaderboard = []
     for method in methods:
-        sr_vals = [data.get(f, {}).get(method, {}).get("sr", 0.0) for f in funcs]
-        mean_sr = float(np.mean(sr_vals)) if sr_vals else 0.0
+        sr_vals      = [data.get(f, {}).get(method, {}).get("sr", 0.0)      for f in funcs]
+        sr_deep_vals = [data.get(f, {}).get(method, {}).get("sr_deep", 0.0) for f in funcs]
+        pr_vals      = [data.get(f, {}).get(method, {}).get("pr", 0.0)      for f in funcs]
+        mean_sr      = float(np.mean(sr_vals))      if sr_vals      else 0.0
+        mean_sr_deep = float(np.mean(sr_deep_vals)) if sr_deep_vals else 0.0
+        mean_pr      = float(np.mean(pr_vals))      if pr_vals      else 0.0
         cat_sr: dict[str, float | None] = {}
         for cat in categories:
             cf = [f for f in funcs if func_categories.get(f) == cat]
@@ -279,10 +297,12 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
                 if cf else None
             )
         entry: dict = {
-            "method":      method,
-            "mean_sr":     round(mean_sr, 4),
-            "category_sr": {c: (round(v, 4) if v is not None else None)
-                            for c, v in cat_sr.items()},
+            "method":       method,
+            "mean_sr":      round(mean_sr, 4),       # SR@1e-4 (auxiliary)
+            "mean_sr_deep": round(mean_sr_deep, 4),  # SR@1e-10 (primary)
+            "mean_pr":      round(mean_pr, 4),       # PR@1e-4 (multi-optima discovery rate)
+            "category_sr":  {c: (round(v, 4) if v is not None else None)
+                             for c, v in cat_sr.items()},
         }
         for ind in INDICATORS:
             rvals = [func_ranks[ind].get(f, {}).get(method, float(k)) for f in funcs]
@@ -293,8 +313,22 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
             entry[f"n_worst_{ind}"]   = int(np.sum(arr == float(k)))
         leaderboard.append(entry)
 
-    # Primary sort: bf mean rank → evals → ecdf.
-    leaderboard.sort(key=lambda x: (x["mean_rank_bf"], x["mean_rank_evals"], x["mean_rank_ecdf"]))
+    # Primary sort: evals mean rank → SR@1e-10 → SR@1e-4 (bf/ecdf ranks are
+    # only used in the detail view, not the leaderboard).
+    leaderboard.sort(key=lambda x: (x["mean_rank_evals"], -x["mean_sr_deep"], -x["mean_sr"]))
+
+    # Raw per-function score values (higher-is-better, 0..1) for the unified
+    # detail view. Ranks live in func_ranks; these are the SR/PR scores so the
+    # frontend can show category + per-function breakdowns per selected metric.
+    func_scores: dict[str, dict[str, dict[str, float]]] = {
+        "sr_deep": {}, "sr": {}, "pr": {},
+    }
+    for f in funcs:
+        for skey in func_scores:
+            func_scores[skey][f] = {
+                m: float(data.get(f, {}).get(m, {}).get(skey, 0.0)) for m in methods
+            }
+
     return {
         "methods":         methods,
         "categories":      categories,
@@ -302,6 +336,7 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
         "func_categories": func_categories,
         "leaderboard":     leaderboard,
         "func_ranks":      func_ranks,
+        "func_scores":     func_scores,
         "friedman":        friedman,
     }
 

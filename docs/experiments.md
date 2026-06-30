@@ -1,0 +1,248 @@
+# 実験ガイド — ディレクトリ構造・実行・条件・評価基準
+
+ディレクトリ構成、実行コマンド、実験条件、ベンチマーク関数、評価方法論、結果の見方をまとめる。提案手法は [mceso.md](mceso.md)、比較手法は [baselines.md](baselines.md)、工夫・フラグの履歴は [history.md](history.md)、Results UI は [web.md](web.md) を参照。
+
+---
+
+## ディレクトリ構成
+
+```
+optimization/
+├── core/                       # 研究コア（ベンチマーク・最適化手法・実験・可視化）
+│   ├── __init__.py             # 主要クラス/関数の公開API再エクスポート（visualize除く）
+│   ├── benchmarks.py           # BBOB 24関数 + カスタム + CEC2022（ioh 経由、2D/3D/4D/10D）
+│   ├── optimizers/             # 手法ごと1ファイル（__init__.py で全クラス再エクスポート）
+│   │   ├── base.py             # OptimizeResult, BaseOptimizer
+│   │   ├── cmaes.py            # CMA-ES（best-anchored restart）
+│   │   ├── mceso.py            # MC-ESO（提案手法）+ _MCESOState
+│   │   ├── pso.py / de.py / savoa.py  # PSO・DE・SaVOA baseline
+│   │   ├── lshade.py           # L-SHADE（mealpy wrapper）
+│   │   └── restart_cmaes.py    # IPOP/BIPOP-CMA-ES（pycma wrapper）
+│   ├── runner.py               # 複数run の実験実行・統計サマリー
+│   └── visualize.py            # 関数地形図・収束曲線・各種 GIF の生成
+├── web/                        # Results UI（Flask）→ docs/web.md
+├── main.py                     # 本番実験エントリーポイント（GitHub Actions 経由）
+├── quick_check.py              # ローカル軽量確認スクリプト
+├── run.sh                      # 実験管理 CLI
+├── docs/                       # ドキュメント（本ディレクトリ）
+└── results/
+    └── YYYYMMDD_HHMMSS_<commit>/
+        ├── dim2/
+        │   ├── {Func}_landscape.svg   # 関数地形（2D等高線 + 3D表面）
+        │   ├── {Func}_convergence.svg # 全手法の収束曲線比較
+        │   ├── {Func}_{Method}_*.webp # 探索軌跡・評価点蓄積・集団推移アニメ
+        │   ├── summary.csv            # 関数・手法別の統計量
+        │   ├── wilcoxon.csv           # MC-ESO vs 各手法の検定結果
+        │   └── stats/{Func}.csv       # per-run 詳細統計
+        └── dim3/                      # 3D 版（3D scatter / 3D アニメ）
+```
+
+結果はすべて `results/YYYYMMDD_HHMMSS_<commit>/` に自動バージョン管理される。
+
+### 新しい手法を追加する
+
+`core/optimizers/` に新しいファイル（例 `myopt.py`）を作り `BaseOptimizer` を継承したクラスを定義し、`core/optimizers/__init__.py` で再エクスポートしたうえで `main.py` の `_BASE_OPTIMIZERS` に追記すれば比較実験に組み込まれる。
+
+---
+
+## 依存ライブラリ
+
+```
+numpy
+matplotlib
+cma        # pycma（CMA-ES / IPOP / BIPOP）
+mealpy     # L-SHADE
+ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
+```
+
+---
+
+## コマンド一覧（run.sh）
+
+実験の実行・管理はすべて `run.sh` 経由で行う。**手法の検証・評価は quick（n_runs=20 / max_evals=5000 / `--all`）で統一する**。`trigger`（GitHub Actions, n=100）は裏で補助的に回す実験で、手法評価の根拠には使わない。
+
+| コマンド | 説明 |
+|---|---|
+| `./run.sh quick --all` | **手法評価の標準コマンド**。BBOB 24 + Custom 11 の全関数を n_runs=20 / max_evals=5000 で評価 |
+| `./run.sh quick --funcs F08-Rosenbrock,F10-EllipsoidalRot` | 任意関数に絞り込んだ集中検証（デバッグ用） |
+| `./run.sh quick --n-runs 5 --max-evals 3000` | パラメータを上書きしてローカル確認 |
+| `./run.sh ui` | Results UI を起動 → http://localhost:8080 |
+| `./run.sh trigger` | GitHub Actions ワークフローをトリガー（**補助実験**, n=100。評価には使わない） |
+| `./run.sh download` / `./run.sh download <RUN_ID>` | 完了済みワークフロー結果をダウンロード |
+| `./run.sh status` / `./run.sh status <RUN_ID>` | ワークフロー実行の状態を表示 |
+| `./run.sh list` | ローカル結果一覧 + リモート実行履歴（最新5件） |
+
+```bash
+# 手法の検証・評価（標準）
+./run.sh quick --all      # n_runs=20 / max_evals=5000 / 全関数
+./run.sh ui               # 結果を Results UI で確認
+
+# 補助実験（裏で回す。評価には参照しない）
+./run.sh trigger          # n=100 ワークフローを投入
+./run.sh download         # 完了後にダウンロード
+```
+
+> **実行ルール**: `quick_check.py` はローカル専用スクリプトで、`python3 quick_check.py` を直接呼ばず `./run.sh quick` を使う。手法評価は**必ず全関数（`--all`）・n_runs=20・max_evals=5000** で実施し、quick-12 サブセットでの判定は行わない。`main.py`（補助実験）はローカルでは実行せず GitHub Actions 経由のみ。
+
+### 評価の分析・自動化
+
+| ツール | 用途 |
+|---|---|
+| `scripts/analyze_quick.py <run_dir> [--baseline <dir>] [--baseline-method <name>] [--dim N]` | quick 結果（`summary.csv`/`wilcoxon.csv`）を規定の **3 指標**（SR / `evals_succ_mean` / Wilcoxon）に集計し、SR@1e-10 主指標・関数別の改善/悪化・SR@1e-10 非回帰チェック・判定を出力。SR@1e-10 非回帰チェックは2モード: `--baseline <旧run_dir>`（cross-run, 同名 MC-ESO を run 間で差分） / `--baseline-method <名前>`（within-run, 同一 run 内の元版と差分。**改変 MC-ESO と元 MC-ESO の 2 手法のみ**を `--methods "MC-ESO,<元名>"` で回したとき用）。CSV を手で読む代わりにこれで報告する |
+| サブエージェント `experimenter`（`.claude/agents/`） | 「比較手法設定 → `./run.sh quick` 実行 → monitor → `analyze_quick.py` で分析 → 判定を返す」一連を独立コンテキストで完結。手法ブラッシュアップ中に本会話を汚さず評価を回すためのもの（評価専任・コードは変更しない） |
+
+---
+
+## 実験条件（評価の標準）
+
+手法の検証・評価は以下の条件（quick デフォルト）で統一する。
+
+| 設定 | 値 |
+|---|---|
+| 試行回数 | **20 run**（seed = 0, 100, 200, ..., 1900） |
+| 評価上限 | **5,000 回/run** |
+| 成功判定 | best f ≤ 1e-4 |
+| 次元数 | 2次元（BBOB 24関数 + カスタム関数）、3次元（BBOB 24関数）、CEC2022 hold-out（dim10） |
+| sigma0（CMA-ES 系） | `0.2 × (hi - lo)` |
+
+> 補助的に GitHub Actions で n=100 の実験（`./run.sh trigger`）も回しているが、手法の検証・評価では参照しない。評価の根拠は常に上記 quick n=20 の結果とする。
+
+---
+
+## ベンチマーク関数
+
+### BBOB 24 関数（主スイート）
+
+**BBOB（Black-Box Optimization Benchmarking）ノイズなし版全 24 関数**を使用する。BBOB は Hansen et al. (2009) が提案した連続最適化の標準ベンチマークスイートであり、GECCO の COCO ワークショップで毎年使用されている。関数は `ioh` ライブラリ（instance=1）経由で取得し、`f(x) − f_opt` に正規化することでグローバル最小値を常に 0 とする。探索範囲はすべての関数で **[-5, 5]^d**。
+
+> **なぜ BBOB か**
+> - 手作りの個別関数ではなく、査読済みスイートによる客観的な比較が可能
+> - 5 つの難易度グループが問題の特性を体系的にカバー（分離可能・条件数・多峰性・弱構造）
+> - インスタンス変換（シフト・回転）が適用されており、座標軸や原点への過適合を防ぐ
+> - 既発表の CMA-ES, PSO, GA 等の結果と直接比較できる
+
+| FID | 関数名 | グループ | 主な難しさ |
+|---|---|---|---|
+| F01 | Sphere | separable | 最も単純。アルゴリズムの健全性確認 |
+| F02 | Ellipsoidal (sep.) | separable | 軸方向に強い条件数 |
+| F03 | Rastrigin (sep.) | separable | 分離可能な多峰性 |
+| F04 | Büche-Rastrigin | separable | 非対称な多峰性 |
+| F05 | Linear Slope | separable | 最適解が境界上 |
+| F06 | Attractive Sector | moderate-cond | 非対称な単峰性 |
+| F07 | Step Ellipsoidal | moderate-cond | 段差状の不連続性 |
+| F08 | Rosenbrock | moderate-cond | バナナ型の曲がった谷 |
+| F09 | Rosenbrock (rot.) | moderate-cond | Rosenbrock に回転を適用 |
+| F10 | Ellipsoidal (rot.) | ill-cond | 高条件数、軸非整合 |
+| F11 | Discus | ill-cond | 1次元のみ強く伸びた形状 |
+| F12 | Bent Cigar | ill-cond | 曲がった葉巻型 |
+| F13 | Sharp Ridge | ill-cond | 鋭い稜線 |
+| F14 | Different Powers | ill-cond | 次元ごとに異なるべき乗 |
+| F15 | Rastrigin (rot.) | multimodal | 局所解が密、回転あり |
+| F16 | Weierstrass | multimodal | 高度に多峰・不規則 |
+| F17 | Schaffer F7 | multimodal | 中程度の多峰性 |
+| F18 | Schaffer F7 (ill) | multimodal | F17 に高条件数を追加 |
+| F19 | Griewank-Rosenbrock | multimodal | 複合的な地形 |
+| F20 | Schwefel | weak-structure | 大域構造が弱い多峰性 |
+| F21 | Gallagher 101 peaks | weak-structure | 101 個のガウス峰が散在 |
+| F22 | Gallagher 21 peaks | weak-structure | F21 より峰が少なく深い |
+| F23 | Katsuura | weak-structure | フラクタル的な地形 |
+| F24 | Lunacek bi-Rastrigin | weak-structure | 大域最適解が欺瞞的な位置 |
+
+### Custom 関数（2-D）
+
+BBOB がカバーしない **多大域最適解**・**deceptive 2-D 多峰** 系の古典的テスト関数を補完。MC-ESO の「ニッチ系統共存」と「広域 spillover」の挙動を BBOB の回転・シフトに依らない素のランドスケープで検証する目的。各関数は `f(x) − f_opt` で正規化し最小値を 0 とする。
+
+| ID | 関数名 | 探索域 | カテゴリ | 主な難しさ |
+|---|---|---|---|---|
+| C01 | Himmelblau | [-5, 5]² | multi-optima | 大域最適解が **4 箇所**（ニッチ性能の直接評価） |
+| C02 | Six-hump Camel | [-2, 2]² | multi-optima | 大域最適解が **2 箇所** |
+| C03 | Shubert | [-10, 10]² | multi-optima | 大域最適解が **18 箇所**（積形式・約760 局所解） |
+| C04 | Five-well Potential | [-20, 20]² | deceptive-2d | 5 つの井戸（うち1つが大域）|
+| C05 | Eggholder | [-512, 512]² | deceptive-2d | 極めて鋭い多峰・大域は境界近傍 |
+| C06 | Michalewicz (m=10) | [0, π]² | deceptive-2d | 平坦域に細い谷、急峻 |
+| C07 | Bukin N.6 | [-15, 15]² | deceptive-2d | y = 0.01x² の極細谷、gradient 不連続 |
+| C08 | Styblinski-Tang | [-5, 5]² | deceptive-2d | 4 局所解、3 つが大域に近い深さ |
+| C09 | Easom | [-100, 100]² | deceptive-2d | 広大な平坦域中の鋭い単一峰（needle-in-haystack）|
+| C10 | Schaffer N.2 | [-100, 100]² | deceptive-2d | 同心円状の多峰、原点中心 |
+| C11 | De Jong F5 (Shekel's foxholes) | [-65.536, 65.536]² | deceptive-2d | 5×5 格子の25局所解 |
+
+### CEC2022（hold-out）
+
+BBOB とは独立した CEC2022 12 関数（`ioh` 経由、dim=10）を hold-out スイートとして用意。BBOB の変換に対して開発された MC-ESO の機構が汎化するかの検証に使い、**CEC2022 用にハイパーパラメータを再調整しない**。
+
+出典: BBOB は Hansen et al. (2009)。Custom 関数は Surjanovic & Bingham のテスト関数集および Tomitomi3 (Qiita) の整理を参照。
+
+---
+
+## 評価方法論
+
+> **評価の鉄則**: 手法を比較・評価する際は必ず以下の **3 指標**（SR / 評価回数 / 統計検定）を揃えて報告する。単一指標（SR のみ等）での判定は不可。評価は必ず全関数で実施し、関数別の改善・悪化を列挙して regression を見落とさない。
+
+### 1. SR（Success Rate, 多段報告）
+
+BBOB は `f − f_opt` 正規化により最適値が 0。**最高精度 SR@1e-10 を主指標**として 0 への到達率で評価し、補助的に SR@1e-2 / 1e-4 / 1e-7 も併記して精度階層全体の挙動を確認する。BBOB 標準の ECDF 表示に倣い、各関数で `SR@10^k` (k = -1, -2, -3, -4, -5, -7, -10) を `summary.csv` の `sr_1e-1, ..., sr_1e-10` 列で参照可能。
+
+### 2. 平均評価回数（Evals to target）
+
+成功 run のみを対象とした目標到達評価回数の**平均** `evals_succ_mean`（失敗 run は集計から除外、ERT のような max_evals ペナルティ補正は行わない。全 run 失敗時は `---`）。成功 run のみを対象とするため評価回数のばらつきは小さく外れ値は生じにくいので、中央値ではなく**平均で評価する**（ランキングもこの平均値で算出）。SR が同等なら少ない評価回数が優位。**必ず SR と併せて読む**: 成功率が低い手法では少数の成功 run だけで平均が決まる点に注意。`summary.csv` には参考用に中央値 `evals_succ_med` と、旧来の `ert`（失敗 run を max_evals でペナルティ計上した BBOB 標準値）も併記。
+
+### 3. 統計的優位性（Wilcoxon 符号順位検定）
+
+MC-ESO（V1）を reference とし、各手法を seed-paired で比較。`wilcoxon.csv` に関数 × 比較対手の p 値を保存。
+
+- `p_value_two_sided`: 二側 p 値（差があるか）
+- `p_value_ref_better`: 片側 p 値（MC-ESO が比較対手より優れているか）
+- 有意水準 α=0.05。p < 0.05 で「有意差あり」と判定し、A12 で効果量（negligible/small/medium/large）も併記。
+- 判定は **quick n=20** で行う。n=20 は標本数が限られ signal-to-noise が高くないため、僅差・単一関数の有意差は効果量（A12）と関数別の方向性も併せて慎重に解釈する。
+
+### 多解（MMO）報告
+
+大域最適解が複数ある関数（C01 Himmelblau=4 / C02 Six-hump=2 / C03 Shubert=18）では、SR（= 1 つでも到達したか）に加え、MC-ESO の「並行的な多解探索」能力を直接計測する。指標は走行後に `history_x`（全評価点）と `benchmark.optima_pos`（既知の全大域最適解座標）から後付け計算され、**最適化器は一切変更しない**（＝ SR は定義上不変）。`core/runner.py:optima_found_mask` / `peak_metrics` が正準実装。
+
+- **Peak Ratio (`pr_1e-2`, `pr_1e-4`)** — 既知 K 個の大域最適解のうち、`f ≤ tol` かつ最近傍割当で半径内に評価点が落ちた解の割合（run 平均）。各評価点は最近傍の最適解 1 つにのみ帰属させ、近接最適解（Shubert は最小間隔 ~0.88）での二重カウントを防ぐ。
+- **MMO Success Rate (`mmo_sr_1e-2`, `mmo_sr_1e-4`)** — K 個**すべて**を見つけた run の割合。
+- `n_optima` 列に K を記録。`summary.csv` の `mean_optima_found` / `mean_optima_rate` は従来からの `tol=1e-4` 単一値（後方互換）。
+- 注意: 発見は**時間的**（走行中にいずれかの世代で訪れた）で、厳密な「同時保持」ではない。
+
+> **SR@1e-10 は絶対死守**: 多解探索の改善でも SR@1e-10 を下げる構成は採用しない。最低 1 解は深精度到達を保証する。
+
+---
+
+## 結果の見方（可視化）
+
+実行後、`results/YYYYMMDD_<commit>/dim{N}/` 以下に**関数 × 手法ごとの個別ファイル**として保存される。静的図は SVG（ベクター）、アニメーションは WebP（GIF より 30〜50% 小容量、非対応環境では GIF フォールバック）。
+
+### ファイル命名規則
+
+```
+dim{N}/
+  {Func}_landscape.svg          — 2D 等高線 + 3D サーフェス（関数依存のみ、2D 関数のみ）
+  {Func}_convergence.svg        — 全手法の収束曲線比較
+  {Func}_{Method}_evals.webp    — 評価点蓄積アニメ（単一手法、2D のみ）／ _evals_failed.webp
+  {Func}_{Method}_runs.webp     — 探索軌跡アニメ（単一手法、2D のみ）
+  {Func}_{Method}_population.webp / _population_failed.webp
+  {Func}_{Method}_3devals.webp  — 3D 評価点蓄積（3D 関数のみ）／ _3dpopulation.webp
+  {Func}_{Method}_outbreak_dyn.svg  — アウトブレイク内部動態（MC-ESO 系手法のみ）／ _outbreak_dyn_failed.svg
+  stats/{Func}.csv
+  summary.csv
+  wilcoxon.csv
+```
+
+### 可視化タイプ一覧
+
+| タイプ | 説明 |
+|---|---|
+| `landscape` | 2D 等高線 + 3D サーフェス（関数形状のみ） |
+| `convergence` | 全手法の収束曲線を 1 枚に比較 |
+| `evals` / `evals_failed` | 評価点の蓄積アニメ（ベスト/ワースト run） |
+| `runs` | 1 フレーム=1run の探索軌跡アニメ |
+| `population` / `population_failed` | 集団配置の推移アニメ |
+| `3devals` / `3dpopulation` | 3D 関数用の評価点・集団アニメ |
+| `outbreak_dyn` / `outbreak_dyn_failed` | 3 行 SVG: ①σ 動態（σ_global / 中央値 σᵢ / 子ごと σ scatter）、②best f 収束 ＋ 系統数 n_strains、③no_improve 推移 ＋ restart 閾値 |
+
+### 画像の読み方
+
+- **`landscape.svg`** — 左: 2D 等高線（暗い = f が低い = 最適解に近い）+ 黄丸 = 真の最適解。右: 3D サーフェスプロット。
+- **`convergence.svg`** — x 軸: 評価回数、y 軸: best f（対数スケール）、線: 全 run 平均、影: ±1σ。
+- **アニメーション（runs）** — 薄い点（ラスタライズ）: 評価点（最大 2000 点にサブサンプリング）、折れ線: best-x の更新軌跡、石灰色の点: 成功した最終 best-x（f ≤ 1e-4）、赤い点: 失敗した最終 best-x、黄丸: 真の最適解の位置。
+- **3D アニメーション** — 評価点の色は `viridis_r` カラーマップ（**明るい黄色ほど f が低く最適解に近い**）。集団の色は最適解からのユークリッド距離（**明るいほど最適解に近い**）。カメラが 30°→210° 回転。

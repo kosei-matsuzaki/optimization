@@ -173,22 +173,17 @@
         <div id="overall-leaderboard-container"></div>
       </div>
 
-      <!-- Category heatmap -->
+      <!-- Unified detail: category + per-function, switchable by indicator -->
       <div class="card">
         <div class="card-header-row">
-          <span class="card-title-label">カテゴリ別 SR@1e-4</span>
-          <span class="card-subtitle">各カテゴリの平均成功率（赤=低・緑=高）· 手法は総合ランキング順</span>
+          <span class="card-title-label">成績詳細（カテゴリ別・関数別）</span>
+          <span class="card-subtitle" id="overall-detail-subtitle">指標を選択してカテゴリ別／関数別の内訳を切り替え</span>
         </div>
-        <div id="overall-heatmap-container"></div>
-      </div>
-
-      <!-- Function-level rank profile -->
-      <div class="card">
-        <div class="card-header-row">
-          <span class="card-title-label">関数別ランク詳細</span>
-          <span class="card-subtitle">各関数での Friedman ランク · bf / Evals (成功 run のみ評価数中央値) / ECDF を分けて表示 · 緑=1位 · 赤=最下位 · 同着は平均ランク</span>
-        </div>
-        <div id="overall-rank-table-container"></div>
+        <div id="overall-detail-selector" class="ov-detail-selector"></div>
+        <div class="ov-detail-section-label">カテゴリ別</div>
+        <div id="overall-detail-category"></div>
+        <div class="ov-detail-section-label">関数別</div>
+        <div id="overall-detail-function"></div>
       </div>
 
       <!-- Wilcoxon -->

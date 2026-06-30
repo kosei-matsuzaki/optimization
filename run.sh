@@ -77,7 +77,7 @@ PID_FILE=".quick.pid"
 DIR_FILE=".quick.dir"
 
 cmd_quick() {
-  local n_runs=10 max_evals=2000 label="" use_all=0 dim=2 methods=""
+  local n_runs=20 max_evals=5000 label="" use_all=0 dim=2 methods=""
   local pass_args=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -199,7 +199,7 @@ case "${1:-help}" in
 Usage: ./run.sh <command> [options]
 
   trigger [--n-runs N] [--max-evals N]
-      GitHub Actions ワークフローをトリガー
+      GitHub Actions ワークフローをトリガー（裏で動かす補助実験。手法評価には quick を使う）
       デフォルト: --n-runs 100 --max-evals 5000
 
   download [RUN_ID] [--label NAME]
@@ -209,8 +209,8 @@ Usage: ./run.sh <command> [options]
 
   quick [--n-runs N] [--max-evals N] [--dim {2|3|10}] [--methods LIST]
         [--funcs LIST] [--suite {bbob|cec2022}] [--all] [--label NAME]
-      ローカルで軽量確認を実行
-      デフォルト: --n-runs 10 --max-evals 2000 --dim 2
+      ローカルで手法を検証・評価する（評価の標準: n_runs=20, max_evals=5000, --all）
+      デフォルト: --n-runs 20 --max-evals 5000 --dim 2
       --methods は比較する手法のコンマ区切り（空欄=全手法）
         例: --methods "MC-ESO,DE,L-SHADE"
         利用可能: CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,PSO,DE,L-SHADE,SaVOA,MC-ESO

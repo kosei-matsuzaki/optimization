@@ -26,19 +26,19 @@
         新しい多経路感染モデル
       </div>
       <h1 class="hero-title">MC-ESO<em>Multi-Channel Epidemic Spread Optimizer</em></h1>
-      <p class="hero-desc">既存メタヒューリスティクスは <strong>単一の再生メカニズム</strong>を持つ（DE = 差分変異, ES = ガウス変異, PSO = 速度ベクトル, GA = 交叉）。対して MC-ESO は感染症の流行を模し、<strong>3 つの伝染チャネル</strong>（接触・飛沫・空気）を並列に走らせる。宿主競合 ＋ エスカレート式の<strong>情報化スピルオーバー</strong>（リザーバ再着火＋集団免疫忌避）を組合せ、BBOB 26 関数 (F01–F24 ＋ C01/C02) の overall SR@1e-4 で <strong>CMA-ES / PSO / SaVOA を大きく上回り、DE と並ぶ最良スコア</strong>を達成。</p>
+      <p class="hero-desc">既存メタヒューリスティクスは <strong>単一の再生メカニズム</strong>を持つ（DE = 差分変異, ES = ガウス変異, PSO = 速度ベクトル, GA = 交叉）。対して MC-ESO は感染症の流行を模し、<strong>3 つの伝染チャネル</strong>（接触・飛沫・空気）を並列に走らせる。さらに経験共分散＋適応異方性 floor・宿主競合・情報化スピルオーバー・逐次 niching を組合せ、<strong>全 35 関数（BBOB 24 ＋ Custom 11, dim=2）</strong>の最高精度 <strong>SR@1e-10 平均 87.9%</strong> で <strong>比較 8 手法中の最高値</strong>を達成（DE 85.7% を上回り、CMA-ES / PSO / SaVOA を大きく引き離す）。</p>
     </div>
     <div class="hero-schematic">
       <svg viewBox="0 0 460 200" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="ar-contact" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-            <path d="M0,1 L8,5 L0,9 z" fill="#2563eb"/>
+            <path d="M0,1 L8,5 L0,9 z" fill="#4f7cac"/>
           </marker>
           <marker id="ar-droplet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-            <path d="M0,1 L8,5 L0,9 z" fill="#f97316"/>
+            <path d="M0,1 L8,5 L0,9 z" fill="#c0894e"/>
           </marker>
           <marker id="ar-airborne" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-            <path d="M0,1 L8,5 L0,9 z" fill="#14b8a6"/>
+            <path d="M0,1 L8,5 L0,9 z" fill="#5f9ea0"/>
           </marker>
         </defs>
 
@@ -46,19 +46,19 @@
         <g transform="translate(20,30)">
           <rect x="0" y="0" width="120" height="140" fill="rgba(37,99,235,.05)" rx="8"/>
           <!-- dense cluster of hosts near a parent -->
-          <circle cx="60" cy="70" r="6" fill="#2563eb"/>
-          <circle cx="50" cy="58" r="3.5" fill="#93c5fd"/>
-          <circle cx="70" cy="58" r="3.5" fill="#93c5fd"/>
-          <circle cx="48" cy="82" r="3.5" fill="#93c5fd"/>
-          <circle cx="72" cy="82" r="3.5" fill="#93c5fd"/>
-          <circle cx="60" cy="50" r="3.5" fill="#93c5fd"/>
-          <circle cx="60" cy="90" r="3.5" fill="#93c5fd"/>
+          <circle cx="60" cy="70" r="6" fill="#4f7cac"/>
+          <circle cx="50" cy="58" r="3.5" fill="#9bb6cf"/>
+          <circle cx="70" cy="58" r="3.5" fill="#9bb6cf"/>
+          <circle cx="48" cy="82" r="3.5" fill="#9bb6cf"/>
+          <circle cx="72" cy="82" r="3.5" fill="#9bb6cf"/>
+          <circle cx="60" cy="50" r="3.5" fill="#9bb6cf"/>
+          <circle cx="60" cy="90" r="3.5" fill="#9bb6cf"/>
           <!-- short transmission arrows -->
-          <path d="M60 70 L52 60" stroke="#2563eb" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
-          <path d="M60 70 L68 60" stroke="#2563eb" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
-          <path d="M60 70 L52 82" stroke="#2563eb" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
-          <path d="M60 70 L68 82" stroke="#2563eb" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
-          <text x="60" y="124" text-anchor="middle" font-size="9.5" font-weight="700" fill="#2563eb">close-contact</text>
+          <path d="M60 70 L52 60" stroke="#4f7cac" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
+          <path d="M60 70 L68 60" stroke="#4f7cac" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
+          <path d="M60 70 L52 82" stroke="#4f7cac" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
+          <path d="M60 70 L68 82" stroke="#4f7cac" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
+          <text x="60" y="124" text-anchor="middle" font-size="9.5" font-weight="700" fill="#4f7cac">close-contact</text>
           <text x="60" y="135" text-anchor="middle" font-size="8" fill="#64748b">短距離 / 等方</text>
         </g>
 
@@ -66,16 +66,16 @@
         <g transform="translate(160,30)">
           <rect x="0" y="0" width="120" height="140" fill="rgba(249,115,22,.05)" rx="8"/>
           <!-- elite strain (left top) -->
-          <circle cx="32" cy="40" r="6" fill="#f97316"/>
+          <circle cx="32" cy="40" r="6" fill="#c0894e"/>
           <!-- ambient hosts a, b -->
-          <circle cx="92" cy="35" r="4" fill="#fdba74"/>
-          <circle cx="50" cy="100" r="4" fill="#fdba74"/>
+          <circle cx="92" cy="35" r="4" fill="#d9b58a"/>
+          <circle cx="50" cy="100" r="4" fill="#d9b58a"/>
           <!-- parent host -->
-          <circle cx="65" cy="78" r="5" fill="#ea580c"/>
+          <circle cx="65" cy="78" r="5" fill="#a8702f"/>
           <!-- transmission with directional combination -->
-          <path d="M65 78 Q 45 60 33 42" stroke="#f97316" stroke-width="1.6" fill="none" marker-end="url(#ar-droplet)" stroke-dasharray="4 2"/>
-          <path d="M92 35 Q 70 60 50 100" stroke="#fdba74" stroke-width="1" fill="none" stroke-dasharray="2 2"/>
-          <text x="60" y="124" text-anchor="middle" font-size="9.5" font-weight="700" fill="#ea580c">droplet</text>
+          <path d="M65 78 Q 45 60 33 42" stroke="#c0894e" stroke-width="1.6" fill="none" marker-end="url(#ar-droplet)" stroke-dasharray="4 2"/>
+          <path d="M92 35 Q 70 60 50 100" stroke="#d9b58a" stroke-width="1" fill="none" stroke-dasharray="2 2"/>
+          <text x="60" y="124" text-anchor="middle" font-size="9.5" font-weight="700" fill="#a8702f">droplet</text>
           <text x="60" y="135" text-anchor="middle" font-size="8" fill="#64748b">系統引力 ＋ 差分</text>
         </g>
 
@@ -83,20 +83,20 @@
         <g transform="translate(300,30)">
           <rect x="0" y="0" width="120" height="140" fill="rgba(20,184,166,.05)" rx="8"/>
           <!-- random source -->
-          <circle cx="60" cy="70" r="5" fill="#14b8a6"/>
+          <circle cx="60" cy="70" r="5" fill="#5f9ea0"/>
           <!-- aerosol scattered far -->
-          <circle cx="18" cy="30" r="3" fill="#5eead4"/>
-          <circle cx="100" cy="28" r="3" fill="#5eead4"/>
-          <circle cx="22" cy="108" r="3" fill="#5eead4"/>
-          <circle cx="104" cy="110" r="3" fill="#5eead4"/>
-          <circle cx="35" cy="55" r="2.5" fill="#5eead4" opacity=".6"/>
-          <circle cx="90" cy="90" r="2.5" fill="#5eead4" opacity=".6"/>
+          <circle cx="18" cy="30" r="3" fill="#a7cccd"/>
+          <circle cx="100" cy="28" r="3" fill="#a7cccd"/>
+          <circle cx="22" cy="108" r="3" fill="#a7cccd"/>
+          <circle cx="104" cy="110" r="3" fill="#a7cccd"/>
+          <circle cx="35" cy="55" r="2.5" fill="#a7cccd" opacity=".6"/>
+          <circle cx="90" cy="90" r="2.5" fill="#a7cccd" opacity=".6"/>
           <!-- long arrows to corners -->
-          <path d="M60 70 L25 35" stroke="#14b8a6" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
-          <path d="M60 70 L95 35" stroke="#14b8a6" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
-          <path d="M60 70 L28 102" stroke="#14b8a6" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
-          <path d="M60 70 L98 105" stroke="#14b8a6" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
-          <text x="60" y="124" text-anchor="middle" font-size="9.5" font-weight="700" fill="#14b8a6">airborne</text>
+          <path d="M60 70 L25 35" stroke="#5f9ea0" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
+          <path d="M60 70 L95 35" stroke="#5f9ea0" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
+          <path d="M60 70 L28 102" stroke="#5f9ea0" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
+          <path d="M60 70 L98 105" stroke="#5f9ea0" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
+          <text x="60" y="124" text-anchor="middle" font-size="9.5" font-weight="700" fill="#5f9ea0">airborne</text>
           <text x="60" y="135" text-anchor="middle" font-size="8" fill="#64748b">遠方 / 等方</text>
         </g>
 
@@ -111,36 +111,44 @@
 <div class="perf-banner">
   <div class="perf-grid">
     <div class="perf-headline">
-      <div class="perf-headline-label">BBOB 26 関数 SR@1e-4 平均（5000 evals × n_runs=30, dim=2）</div>
-      <div class="perf-headline-value">93.4<span style="font-size:13px; font-weight:600; color:var(--text-2); margin-left:4px;">%</span></div>
-      <div class="perf-headline-sub">DE と並ぶ最良、PSO / SaVOA / CMA-ES を大きく上回る</div>
+      <div class="perf-headline-label">全 35 関数 SR@1e-10 平均（主指標, n=20 × 5000 evals, dim=2）</div>
+      <div class="perf-headline-value">87.9<span style="font-size:13px; font-weight:600; color:var(--text-2); margin-left:4px;">%</span></div>
+      <div class="perf-headline-sub">MC-ESO ＝ 比較 8 手法中で最高。21/35 関数で SR@1e-10 = 100%</div>
     </div>
     <div class="perf-cell is-best">
       <div class="perf-cell-method">MC-ESO</div>
-      <div class="perf-cell-value">93.4%</div>
+      <div class="perf-cell-value">87.9%</div>
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">DE</div>
-      <div class="perf-cell-value">91.9%</div>
+      <div class="perf-cell-value">85.7%</div>
     </div>
     <div class="perf-cell">
-      <div class="perf-cell-method">PSO</div>
-      <div class="perf-cell-value">75.6%</div>
+      <div class="perf-cell-method">IPOP</div>
+      <div class="perf-cell-value">76.4%</div>
+    </div>
+    <div class="perf-cell">
+      <div class="perf-cell-method">L-SHADE</div>
+      <div class="perf-cell-value">73.3%</div>
+    </div>
+    <div class="perf-cell">
+      <div class="perf-cell-method">BIPOP</div>
+      <div class="perf-cell-value">73.0%</div>
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">SaVOA</div>
-      <div class="perf-cell-value">74.6%</div>
+      <div class="perf-cell-value">67.9%</div>
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">CMA-ES</div>
-      <div class="perf-cell-value">72.5%</div>
+      <div class="perf-cell-value">60.0%</div>
     </div>
   </div>
 </div>
 
 <!-- ── On-page nav ────────────────────────────────────────────────────── -->
 <nav class="page-nav" id="pageNav">
-  <a href="#vso"         class="page-nav-link active"><span class="nav-num">01&thinsp;·&thinsp;</span>MC-ESO</a>
+  <a href="#vso"         class="page-nav-link"><span class="nav-num">01&thinsp;·&thinsp;</span>MC-ESO</a>
   <a href="#baselines"   class="page-nav-link"><span class="nav-num">02&thinsp;·&thinsp;</span>ベースライン</a>
   <a href="#differences" class="page-nav-link"><span class="nav-num">03&thinsp;·&thinsp;</span>既存手法との比較</a>
 </nav>
@@ -151,7 +159,7 @@
   <h2 class="sec-heading reveal" id="vso">
     <span class="sec-num">01</span>MC-ESO — Multi-Channel Epidemic Spread Optimizer
   </h2>
-  <p class="sec-sub reveal">感染症の流行を模倣した提案手法。3 チャネル並列伝染 ＋ 宿主競合 ＋ エスカレート式の情報化スピルオーバー（リザーバ再着火＋集団免疫忌避）の組合せで、BBOB 26 関数 (dim=2) の SR@1e-4 平均が CMA-ES (72.5%) / SaVOA (74.6%) / PSO (75.6%) を大きく上回り、DE (91.9%) と並んで最良 <strong>93.4%</strong> を達成。</p>
+  <p class="sec-sub reveal">感染症の流行を模倣した提案手法。3 チャネル並列伝染 ＋ 経験共分散（適応異方性 floor）＋ 宿主競合 ＋ 情報化スピルオーバー ＋ 逐次 niching の組合せで、全 35 関数 (dim=2) の最高精度 <strong>SR@1e-10 平均 87.9%</strong> を達成し、比較 8 手法中で最高（DE 85.7% / IPOP-CMA-ES 76.4% / CMA-ES 60.0%）。成功 run の評価回数中央値も 562 と集団系手法で最速。</p>
 
   <div class="vso-layout">
     <div class="h3">コアとなるアナロジー</div>
@@ -170,15 +178,15 @@
           <div class="concept-header">
             <div class="concept-icon">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="3.5" fill="#2563eb"/>
-                <circle cx="6" cy="6" r="1.8" fill="#93c5fd"/>
-                <circle cx="18" cy="6" r="1.8" fill="#93c5fd"/>
-                <circle cx="6" cy="18" r="1.8" fill="#93c5fd"/>
-                <circle cx="18" cy="18" r="1.8" fill="#93c5fd"/>
-                <path d="M12 12 L7.5 7.5" stroke="#2563eb" stroke-width="1.2"/>
-                <path d="M12 12 L16.5 7.5" stroke="#2563eb" stroke-width="1.2"/>
-                <path d="M12 12 L7.5 16.5" stroke="#2563eb" stroke-width="1.2"/>
-                <path d="M12 12 L16.5 16.5" stroke="#2563eb" stroke-width="1.2"/>
+                <circle cx="12" cy="12" r="3.5" fill="#4f7cac"/>
+                <circle cx="6" cy="6" r="1.8" fill="#9bb6cf"/>
+                <circle cx="18" cy="6" r="1.8" fill="#9bb6cf"/>
+                <circle cx="6" cy="18" r="1.8" fill="#9bb6cf"/>
+                <circle cx="18" cy="18" r="1.8" fill="#9bb6cf"/>
+                <path d="M12 12 L7.5 7.5" stroke="#4f7cac" stroke-width="1.2"/>
+                <path d="M12 12 L16.5 7.5" stroke="#4f7cac" stroke-width="1.2"/>
+                <path d="M12 12 L7.5 16.5" stroke="#4f7cac" stroke-width="1.2"/>
+                <path d="M12 12 L16.5 16.5" stroke="#4f7cac" stroke-width="1.2"/>
               </svg>
             </div>
             <div class="concept-titles">
@@ -186,19 +194,19 @@
               <div class="concept-title">Close-contact</div>
             </div>
           </div>
-          <div class="concept-body">親密接触による局所伝染。親の近傍に \(\mathcal{N}(0,\sigma_i^2\, C_\text{pop})\) で子を生成。\(C_\text{pop}\) は<strong>その世代の集団経験共分散</strong>（履歴累積なし、CMA-ES のランク-μ 学習と異なる）で、固有値を平均 1 に正規化することで回転・異方性に追従しつつ総ステップ幅を保存。対数品質 \(q_i\) と年齢比 \(a_i\) に応じて \(\sigma_i\) を**べき乗スケーリング**し、適応性の低い宿主は広く、適応性の高い高齢宿主は精密に伝染。</div>
+          <div class="concept-body">親密接触による局所伝染。親の近傍に \(\mathcal{N}(0,\sigma_i^2\, C_\text{pop})\) で子を生成。\(C_\text{pop}\) は<strong>その世代の集団経験共分散</strong>（履歴累積なし、CMA-ES のランク-μ 学習と異なる）で、固有値を平均 1 に正規化することで回転・異方性に追従しつつ総ステップ幅を保存。異方性の頭打ち（floor）は<strong>集団共分散の素の固有値比で自動調整</strong>（悪条件の谷では緩め、rugged/多峰では締める）。対数品質 \(q_i\) と年齢比 \(a_i\) に応じて \(\sigma_i\) を**べき乗スケーリング**し、適応性の低い宿主は広く、適応性の高い高齢宿主は精密に伝染。</div>
         </div>
 
         <div class="concept-card c-droplet">
           <div class="concept-header">
             <div class="concept-icon">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="5" cy="6" r="2.5" fill="#f97316"/>
-                <circle cx="19" cy="12" r="2" fill="#fdba74"/>
-                <circle cx="14" cy="19" r="2" fill="#fdba74"/>
-                <circle cx="11" cy="13" r="2.5" fill="#ea580c"/>
-                <path d="M11 13 Q 7 9 5 6" stroke="#f97316" stroke-width="1.4" fill="none"/>
-                <path d="M19 12 L14 19" stroke="#fdba74" stroke-width="1" stroke-dasharray="1.5 1.5"/>
+                <circle cx="5" cy="6" r="2.5" fill="#c0894e"/>
+                <circle cx="19" cy="12" r="2" fill="#d9b58a"/>
+                <circle cx="14" cy="19" r="2" fill="#d9b58a"/>
+                <circle cx="11" cy="13" r="2.5" fill="#a8702f"/>
+                <path d="M11 13 Q 7 9 5 6" stroke="#c0894e" stroke-width="1.4" fill="none"/>
+                <path d="M19 12 L14 19" stroke="#d9b58a" stroke-width="1" stroke-dasharray="1.5 1.5"/>
               </svg>
             </div>
             <div class="concept-titles">
@@ -213,15 +221,15 @@
           <div class="concept-header">
             <div class="concept-icon">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="2.5" fill="#14b8a6"/>
-                <circle cx="4" cy="4" r="1.4" fill="#5eead4"/>
-                <circle cx="20" cy="4" r="1.4" fill="#5eead4"/>
-                <circle cx="4" cy="20" r="1.4" fill="#5eead4"/>
-                <circle cx="20" cy="20" r="1.4" fill="#5eead4"/>
-                <path d="M12 12 L5.5 5.5" stroke="#14b8a6" stroke-width="1" stroke-dasharray="1.5 1.5"/>
-                <path d="M12 12 L18.5 5.5" stroke="#14b8a6" stroke-width="1" stroke-dasharray="1.5 1.5"/>
-                <path d="M12 12 L5.5 18.5" stroke="#14b8a6" stroke-width="1" stroke-dasharray="1.5 1.5"/>
-                <path d="M12 12 L18.5 18.5" stroke="#14b8a6" stroke-width="1" stroke-dasharray="1.5 1.5"/>
+                <circle cx="12" cy="12" r="2.5" fill="#5f9ea0"/>
+                <circle cx="4" cy="4" r="1.4" fill="#a7cccd"/>
+                <circle cx="20" cy="4" r="1.4" fill="#a7cccd"/>
+                <circle cx="4" cy="20" r="1.4" fill="#a7cccd"/>
+                <circle cx="20" cy="20" r="1.4" fill="#a7cccd"/>
+                <path d="M12 12 L5.5 5.5" stroke="#5f9ea0" stroke-width="1" stroke-dasharray="1.5 1.5"/>
+                <path d="M12 12 L18.5 5.5" stroke="#5f9ea0" stroke-width="1" stroke-dasharray="1.5 1.5"/>
+                <path d="M12 12 L5.5 18.5" stroke="#5f9ea0" stroke-width="1" stroke-dasharray="1.5 1.5"/>
+                <path d="M12 12 L18.5 18.5" stroke="#5f9ea0" stroke-width="1" stroke-dasharray="1.5 1.5"/>
               </svg>
             </div>
             <div class="concept-titles">
@@ -241,12 +249,12 @@
           <div class="concept-header">
             <div class="concept-icon">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="6" cy="7" r="2.5" fill="#a855f7"/>
-                <circle cx="18" cy="7" r="2.5" fill="#a855f7"/>
-                <circle cx="12" cy="17" r="2.5" fill="#a855f7"/>
-                <circle cx="6" cy="7" r="6" fill="none" stroke="#a855f7" stroke-width=".8" stroke-dasharray="2 1.5" opacity=".5"/>
-                <circle cx="18" cy="7" r="6" fill="none" stroke="#a855f7" stroke-width=".8" stroke-dasharray="2 1.5" opacity=".5"/>
-                <circle cx="12" cy="17" r="6" fill="none" stroke="#a855f7" stroke-width=".8" stroke-dasharray="2 1.5" opacity=".5"/>
+                <circle cx="6" cy="7" r="2.5" fill="#8f7bb3"/>
+                <circle cx="18" cy="7" r="2.5" fill="#8f7bb3"/>
+                <circle cx="12" cy="17" r="2.5" fill="#8f7bb3"/>
+                <circle cx="6" cy="7" r="6" fill="none" stroke="#8f7bb3" stroke-width=".8" stroke-dasharray="2 1.5" opacity=".5"/>
+                <circle cx="18" cy="7" r="6" fill="none" stroke="#8f7bb3" stroke-width=".8" stroke-dasharray="2 1.5" opacity=".5"/>
+                <circle cx="12" cy="17" r="6" fill="none" stroke="#8f7bb3" stroke-width=".8" stroke-dasharray="2 1.5" opacity=".5"/>
               </svg>
             </div>
             <div class="concept-titles">
@@ -261,11 +269,11 @@
           <div class="concept-header">
             <div class="concept-icon">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="6" width="6" height="4" rx="1.5" fill="#dc2626"/>
-                <rect x="3" y="14" width="6" height="4" rx="1.5" fill="#fca5a5" opacity=".5"/>
-                <rect x="15" y="6" width="6" height="4" rx="1.5" fill="#dc2626"/>
-                <rect x="15" y="14" width="6" height="4" rx="1.5" fill="#fca5a5" opacity=".5"/>
-                <path d="M11 9 L13 9 M11 12 L13 12 M11 15 L13 15" stroke="#dc2626" stroke-width="1.3" stroke-linecap="round"/>
+                <rect x="3" y="6" width="6" height="4" rx="1.5" fill="#b06a6a"/>
+                <rect x="3" y="14" width="6" height="4" rx="1.5" fill="#cf9a9a" opacity=".5"/>
+                <rect x="15" y="6" width="6" height="4" rx="1.5" fill="#b06a6a"/>
+                <rect x="15" y="14" width="6" height="4" rx="1.5" fill="#cf9a9a" opacity=".5"/>
+                <path d="M11 9 L13 9 M11 12 L13 12 M11 15 L13 15" stroke="#b06a6a" stroke-width="1.3" stroke-linecap="round"/>
               </svg>
             </div>
             <div class="concept-titles">
@@ -280,12 +288,12 @@
           <div class="concept-header">
             <div class="concept-icon">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="7" cy="14" r="2.5" fill="#eab308"/>
-                <circle cx="17" cy="10" r="2" fill="#fde047"/>
-                <circle cx="15" cy="6" r="1.6" fill="#fde047"/>
-                <circle cx="20" cy="14" r="1.6" fill="#fde047"/>
-                <path d="M7 14 Q 12 6 17 10" stroke="#eab308" stroke-width="1.4" fill="none" stroke-dasharray="2 1.5"/>
-                <path d="M17 10 L15 6 M17 10 L20 14" stroke="#eab308" stroke-width="1" fill="none" opacity=".6"/>
+                <circle cx="7" cy="14" r="2.5" fill="#b3923f"/>
+                <circle cx="17" cy="10" r="2" fill="#dcc77e"/>
+                <circle cx="15" cy="6" r="1.6" fill="#dcc77e"/>
+                <circle cx="20" cy="14" r="1.6" fill="#dcc77e"/>
+                <path d="M7 14 Q 12 6 17 10" stroke="#b3923f" stroke-width="1.4" fill="none" stroke-dasharray="2 1.5"/>
+                <path d="M17 10 L15 6 M17 10 L20 14" stroke="#b3923f" stroke-width="1" fill="none" opacity=".6"/>
               </svg>
             </div>
             <div class="concept-titles">
@@ -294,6 +302,26 @@
             </div>
           </div>
           <div class="concept-body">既存系統の停滞時に <b>情報化リスタート</b>。改善なし評価 ≥ 300 ＋ \(f_\text{best}>10^{-8}\) で発動。盲目 Uniform でなく、生存系統の<b>リザーバ再着火</b>＋放棄 basin を斥力で避ける<b>集団免疫</b>で探索結果を再利用（IPOP 盲目 restart との差別化点）。**ill-conditioned の整列失敗を救済**。連続失敗 2 回で <b>basin switch</b>（best 破棄＋\(\sigma_\text{init}\) リセット）に escalate し、F24 双漏斗から脱出。</div>
+        </div>
+
+        <div class="concept-card c-strain">
+          <div class="concept-header">
+            <div class="concept-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <circle cx="6" cy="12" r="2.6" fill="#8f7bb3"/>
+                <circle cx="13" cy="8" r="2.2" fill="#b3a3d0"/>
+                <circle cx="18" cy="15" r="2.2" fill="#b3a3d0"/>
+                <path d="M6 12 Q 10 9 13 8" stroke="#8f7bb3" stroke-width="1.3" fill="none" stroke-dasharray="2 1.5"/>
+                <path d="M13 8 Q 17 11 18 15" stroke="#8f7bb3" stroke-width="1.3" fill="none" stroke-dasharray="2 1.5"/>
+                <path d="M6 18 L6 20 M13 18 L13 20 M18 18 L18 20" stroke="#b3a3d0" stroke-width="1.1" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="concept-titles">
+              <div class="concept-eyebrow">多解 · Niching</div>
+              <div class="concept-title">Sequential Niching</div>
+            </div>
+          </div>
+          <div class="concept-body"><b>逐次 niching</b> で多大域最適解を順番に発見。1 つの basin を掘り切ったことを <strong>σ-exhaustion</strong>（σ がフロア到達＋停滞、span 相対で <em>f 値非依存・スケール不変</em>）で検知し、既発見 basin から斥力で離れて次の basin へ restart。<strong>SR を一切落とさず</strong>（掘り切る前は base と完全同一挙動）多解探索を実体化 — C02 Six-hump で PR@1e-2 = 1.00 / 全解発見率 95%。</div>
         </div>
       </div>
     </div>
@@ -403,7 +431,7 @@ strains ← []
       <div class="fc-dot c-blue">4</div>
       <div class="fc-card fc-card-expanded">
         <div class="fc-card-title">感染確率の計算（softmax 親選択）</div>&#x2060;
-        <span class="fc-desc"><code>active</code> 個体の \(f\) 値を softmax で重みに変換し、各空きスロットの親を確率的に抽選。\(f\) が低い個体ほど高確率で親になるが、悪い個体もわずかに選ばれることで探索性を保つ。</span>
+        <span class="fc-desc">集団個体の \(f\) 値を softmax で重みに変換し、各空きスロットの親を確率的に抽選。\(f\) が低い個体ほど高確率で親になるが、悪い個体もわずかに選ばれることで探索性を保つ。</span>
         <div class="fc-detail">
           <div>
             <div class="fc-pane-title">パラメータ</div>
@@ -415,7 +443,7 @@ strains ← []
             <div class="fc-pane-title">親選択の確率分布</div>
             <div class="math-display">\[ w_i = \frac{e^{(f_{\max} - f_i)\,/\,T}}{\displaystyle\sum_{j \in \mathrm{active}} e^{(f_{\max} - f_j)\,/\,T}}, \qquad \sum_i w_i = 1 \]</div>
             <div class="fc-note">
-              \(T\uparrow\) で確率が均一化（探索性↑）、\(T\downarrow\) で最良個体に集中（貪欲性↑）。子の親は <code>active</code> 個体のみが対象（<code>dormant</code> は除外）。基準 \(f_{\max}\) を引くことで softmax の数値安定性を確保。
+              \(T\uparrow\) で確率が均一化（探索性↑）、\(T\downarrow\) で最良個体に集中（貪欲性↑）。基準 \(f_{\max}\) を引くことで softmax の数値安定性を確保。集団サイズは <code>n_pop = max(20, 4·dim)</code>（次元適応、dim≤5 で 20）。
             </div>
           </div>
         </div>
@@ -438,8 +466,10 @@ strains ← []
               <div>
                 <div class="fc-pane-title">パラメータ</div>
                 <div class="fc-params">
-                  <div class="fc-param-chip" title="σ_i / σ_global の下限（精密探索の最小幅）"><span class="pk">sigma_min_ratio</span><span class="pv">= 0.05</span></div>
-                  <div class="fc-param-chip" title="正規化後の最小固有値（軸の縮退を防ぐ）"><span class="pk">empirical_cov_floor</span><span class="pv">= 0.01</span></div>
+                  <div class="fc-param-chip" title="per-host σ_i スケーリングの下限（高品質・高齢の宿主は σ×0.05 まで縮小）"><span class="pk">host_sigma_min_scale</span><span class="pv">= 0.05</span></div>
+                  <div class="fc-param-chip" title="異方性 floor の高い側（rugged/多峰で安全、固有値比を約 14:1 にクランプ）"><span class="pk">empirical_cov_floor</span><span class="pv">= 0.01</span></div>
+                  <div class="fc-param-chip" title="異方性 floor の低い側（悪条件の谷で異方性比 ~1000:1 まで許容）"><span class="pk">cov_floor_low</span><span class="pv">= 1e-3</span></div>
+                  <div class="fc-param-chip" title="適応 floor の切替閾値（集団共分散の素の固有値比で log 補間）"><span class="pk">cov_ratio_lo / hi</span><span class="pv">= 1e3 / 3e4</span></div>
                 </div>
               </div>
               <div class="fc-mechanism">
@@ -449,7 +479,7 @@ strains ← []
                 <div class="math-display">\[ x_\text{child} = \mathrm{reflect}\!\big(x_\text{parent} + \sigma_i \cdot V \sqrt{\Lambda}\, z\big),\quad z \sim \mathcal{N}(0, I) \]</div>
                 <div class="fc-note">
                   <span class="lbl">瞬間共分散</span>\(V \Lambda V^\top = C_\text{pop}\) を固有分解、\(\Lambda\) の平均固有値を 1 に正規化することで総ステップ幅を保存。CMA-ES のランク-μ 学習と異なり履歴累積なし、basin 切替への即応性で差別化。<br>
-                  <span class="lbl">F11/F14 で核心</span>等方ガウス（\(N(0, \sigma^2 I)\)）では ill-cond 楕円体に揃わず精度が頭打ち。\(C_\text{pop}\) が valley 方向を瞬時に捕捉し F11 mean を 5e-8 → 0, F14 SR_1e-7 を 80% → 87% に。<br>
+                  <span class="lbl">適応異方性 floor</span>等方ガウス（\(N(0, \sigma^2 I)\)）では ill-cond 楕円体に揃わず精度が頭打ち。\(C_\text{pop}\) で valley 方向を瞬時に捕捉し、floor を<b>集団共分散の素の固有値比で自動調整</b>（悪条件の谷 ≈1e5–1e7 では緩め、rugged/多峰 ≈3–600 では締める）。F02 / F06 / F08 / F10 を SR@1e-10 = 100% に。<br>
                   <span class="lbl">log_quality</span>\(q_i\) は履歴ベストにアンカー（0 ＝ 最悪, 1 ＝ 最良）。局所収束時でも \(q_i \approx 0\) となり広域伝染が継続。
                 </div>
               </div>
@@ -564,6 +594,33 @@ strains ← []
       </div>
     </div>
 
+    <!-- ─ Step 8: 逐次 niching（多解探索） ─ -->
+    <div class="fc-item">
+      <div class="fc-dot c-purple">8</div>
+      <div class="fc-card fc-card-expanded">
+        <div class="fc-card-title">逐次 niching（多解探索, σ-exhaustion 検知）</div>&#x2060;
+        <span class="fc-desc">多大域最適解を持つ関数で、1 つの basin を掘り切ったら次の basin へ移って順番に発見する。鍵は <b>SR を一切犠牲にしない 2 レジーム化</b>: basin を掘り切るまでは base と完全に同一挙動（掘りかけの best を絶対に壊さない）、掘り切った後に<b>初めて</b>多解探索（精度ゲート解除＋斥力 reseed）を起動する。「掘り切った」の検知は <code>σ</code> がフロアに到達＋停滞で、<b>探索域 span 相対・f 値非依存（スケール／シフト不変）</b>。</span>
+        <div class="fc-detail">
+          <div>
+            <div class="fc-pane-title">パラメータ</div>
+            <div class="fc-params">
+              <div class="fc-param-chip" title="σ-exhaustion 判定の σ フロア許容（× span × sigma_floor_ratio）"><span class="pk">exhausted_sigma_tol</span><span class="pv">= 1.5</span></div>
+              <div class="fc-param-chip" title="フロア到達後の停滞許容（× restart_no_improve_threshold）。巨大値で niching 無効化＝純粋単一 basin"><span class="pk">exhausted_no_improve_mult</span><span class="pv">= 3</span></div>
+            </div>
+          </div>
+          <div class="fc-mechanism">
+            <div class="fc-pane-title">basin 掘り切り検知（スケール・f 値非依存）</div>
+            <div class="math-display">\[ \text{exhausted} = \big(\sigma \le \texttt{exhausted\_sigma\_tol}\cdot\text{span}\cdot\texttt{sigma\_floor\_ratio}\big) \;\wedge\; \big(\text{no\_improve} \ge \texttt{mult}\cdot 300\big) \]</div>
+            <div class="fc-note">
+              <span class="lbl">SR 死守</span>掘り切る前は <code>_spillover_*</code> / <code>_diversified_reseed</code> をすべて base に委譲＝挙動不変。掘り切った basin はアルゴリズムの分解能限界で、base が続けても同じ深さで詰まるため離脱しても SR を失わない。<br>
+              <span class="lbl">多解の実体化</span>C01 Himmelblau PR@1e-2 = 0.59、C02 Six-hump PR = 1.00 / MMOsr = 95%、C03 Shubert PR = 0.16（深精度勢で最高）。いずれも SR@1e-10 = 100% を維持。<br>
+              <span class="lbl">設計の根拠</span>1 集団で複数 basin を同時に深精度化すると SR@1e-10 が崩壊するため、crowding でなく BIPOP 流の逐次方式（掘る→記憶→斥力 restart）を採用。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /fc-timeline -->
 
 
@@ -571,7 +628,7 @@ strains ← []
   <h2 class="sec-heading reveal" id="baselines">
     <span class="sec-num">02</span>ベースライン手法
   </h2>
-  <p class="sec-sub reveal">MC-ESO と比較する4つの既存アルゴリズム。</p>
+  <p class="sec-sub reveal">MC-ESO と比較する 7 つの既存アルゴリズム。標準的な進化戦略・群知能・差分進化に加え、近代的な restart 付き CMA-ES（IPOP / BIPOP）と適応 DE（L-SHADE）も外部ライブラリ経由で同条件で評価する。</p>
 
   <div class="method-cards reveal">
 
@@ -603,7 +660,7 @@ strains ← []
         <div class="method-diagram mini-diagram" style="height:88px; display:flex; align-items:center; justify-content:center;">
           <svg viewBox="0 0 160 88" width="160" height="88">
             <defs><marker id="a2" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L5,2.5z" fill="var(--accent)"/></marker></defs>
-            <text x="120" y="24" font-size="13" fill="#f9c74f" text-anchor="middle">★</text>
+            <text x="120" y="24" font-size="13" fill="#cdab63" text-anchor="middle">★</text>
             <text x="120" y="34" font-size="7" fill="#8892b0" text-anchor="middle">gbest</text>
             <circle cx="30" cy="65" r="5" fill="var(--accent-muted)"/>
             <path d="M30 65 L60 42" stroke="var(--accent)" stroke-width="1.2" fill="none" marker-end="url(#a2)"/>
@@ -635,8 +692,8 @@ strains ← []
             <path d="M25 60 L55 35" stroke="var(--accent)" stroke-width="1.1" fill="none" stroke-dasharray="2 2"/>
             <path d="M80 70 L120 35" stroke="var(--accent)" stroke-width="1.4" fill="none" marker-end="url(#a-de)"/>
             <text x="106" y="50" font-size="7" fill="var(--accent)" text-anchor="middle">+F·(x_b−x_a)</text>
-            <circle cx="120" cy="35" r="5" fill="#ae3ec9"/>
-            <text x="120" y="22" font-size="7" fill="#ae3ec9" text-anchor="middle">trial</text>
+            <circle cx="120" cy="35" r="5" fill="#8f7bb3"/>
+            <text x="120" y="22" font-size="7" fill="#8f7bb3" text-anchor="middle">trial</text>
             <text x="80" y="6" font-size="7" fill="#8892b0" text-anchor="middle">差分変異 → 二項交叉 → greedy 1:1 置換</text>
           </svg>
         </div>
@@ -661,7 +718,34 @@ strains ← []
             </div>
           </div>
         </div>
-        <p>ウイルス模倣アルゴリズム（Liang &amp; Juarez 2016 準拠）。個体を上位 20%「強力」と残り「普通」に二分して役割を割り当てる。MC-ESO と同じ生物模倣着想だが、単一の再生メカニズム（強力の局所探索 ＋ 普通の中間補間）のみで、3 チャネル並列化・系統共存・スピルオーバーは持たない。個体数は固定 30。</p>
+        <p>ウイルス模倣アルゴリズム（Liang &amp; Juarez 2020 準拠）。個体を上位 20%「強力」と残り「普通」に二分して役割を割り当てる。MC-ESO と同じ生物模倣着想だが、単一の再生メカニズム（強力の局所探索 ＋ 普通の中間補間）のみで、3 チャネル並列化・系統共存・スピルオーバーは持たない。個体数は固定 30。SR@1e-10 平均 67.9%。</p>
+      </div>
+    </div>
+
+    <!-- IPOP-CMA-ES -->
+    <div class="method-card mc-ipop">
+      <div class="method-card-inner">
+        <div class="method-card-name">IPOP-CMA-ES</div>
+        <div class="method-card-type">進化戦略 ＋ 集団倍化 restart</div>
+        <p>CMA-ES に <strong>IPOP restart</strong>（Auger &amp; Hansen 2005）を加えた近代手法。収束を検出するごとに集団サイズ \(\lambda\) を倍化して再起動し、多峰・大域構造の弱い問題への頑健性を高める。pycma 実装をラップ。多解（Himmelblau）では盲目 restart が複数 basin を拾い PR が高い一方、SR@1e-10 平均は 76.4% と MC-ESO に及ばない。</p>
+      </div>
+    </div>
+
+    <!-- BIPOP-CMA-ES -->
+    <div class="method-card mc-bipop">
+      <div class="method-card-inner">
+        <div class="method-card-name">BIPOP-CMA-ES</div>
+        <div class="method-card-type">進化戦略 ＋ 2 regime restart</div>
+        <p>大規模・小規模 2 つの \(\lambda\) regime を予算が釣り合うよう交互に再起動する CMA-ES 変種（Hansen 2009）。pycma 実装をラップ。盲目 restart で多解を拾う構造のため Himmelblau の PR は全手法中最高（0.76）だが、深精度の SR@1e-10 平均は 73.0% に留まる。</p>
+      </div>
+    </div>
+
+    <!-- L-SHADE -->
+    <div class="method-card mc-lshade">
+      <div class="method-card-inner">
+        <div class="method-card-name">L-SHADE</div>
+        <div class="method-card-type">適応的差分進化</div>
+        <p>SHADE に線形集団縮小（Linear population size reduction）を加えた適応 DE（Tanabe &amp; Fukunaga 2014、CEC2014 優勝）。成功履歴から \(F\) / \(CR\) を自己適応する。mealpy 実装をラップ、初期集団 \(N_\text{init}=18d\)。SR@1e-4 は 86.4% と高いが、最高精度 SR@1e-10 平均は 73.3%（深精度への詰めで MC-ESO に劣る）。</p>
       </div>
     </div>
 
@@ -672,35 +756,69 @@ strains ← []
   <h2 class="sec-heading reveal" id="differences">
     <span class="sec-num">03</span>MC-ESO と既存手法の比較
   </h2>
-  <p class="sec-sub reveal">MC-ESO は <strong>多経路感染モデル</strong>という新概念により、BBOB 26 関数 (dim=2) の SR@1e-4 平均で <strong>93.4%</strong> を達成し、PSO / SaVOA / CMA-ES を大きく上回り DE と並んで overall best タイ。以下では (1) 性能スコア、(2) DE / SaVOA / CMA-ES との設計上の違いを観点別に整理する。</p>
+  <p class="sec-sub reveal">MC-ESO は <strong>多経路感染モデル</strong>という新概念により、全 35 関数 (dim=2) の最高精度 <strong>SR@1e-10 平均 87.9%</strong> で比較 8 手法中の最高値を達成。最大の競合である DE (85.7%) も上回り、CMA-ES / PSO / SaVOA を大きく引き離す。以下では (1) 性能スコア、(2) 統計的優位性、(3) 設計上の違いを整理する。</p>
 
   <div class="concept-section reveal">
-    <div class="concept-section-label">性能スコア — BBOB 26 関数 SR@1e-4 平均（dim=2, 5000 evals × 30 seeds）</div>
+    <div class="concept-section-label">性能スコア — 全 35 関数 SR@1e-10 平均（主指標, dim=2, n=20 × 5000 evals）</div>
     <div class="cmp-board">
       <div class="cmp-board-row row-mceso proposed">
         <div class="cmp-name">MC-ESO <span class="proposed-badge">提案</span></div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:93.4%;"></div></div>
-        <div class="cmp-score-val">93.4%</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:87.9%;"></div></div>
+        <div class="cmp-score-val">87.9%</div>
       </div>
       <div class="cmp-board-row row-de">
         <div class="cmp-name">DE</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:91.9%;"></div></div>
-        <div class="cmp-score-val">91.9%</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:85.7%;"></div></div>
+        <div class="cmp-score-val">85.7%</div>
       </div>
-      <div class="cmp-board-row row-pso">
-        <div class="cmp-name">PSO</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:75.6%;"></div></div>
-        <div class="cmp-score-val">75.6%</div>
+      <div class="cmp-board-row row-ipop">
+        <div class="cmp-name">IPOP-CMA-ES</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:76.4%;"></div></div>
+        <div class="cmp-score-val">76.4%</div>
+      </div>
+      <div class="cmp-board-row row-lshade">
+        <div class="cmp-name">L-SHADE</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:73.3%;"></div></div>
+        <div class="cmp-score-val">73.3%</div>
+      </div>
+      <div class="cmp-board-row row-bipop">
+        <div class="cmp-name">BIPOP-CMA-ES</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:73.0%;"></div></div>
+        <div class="cmp-score-val">73.0%</div>
       </div>
       <div class="cmp-board-row row-savoa">
         <div class="cmp-name">SaVOA</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:74.6%;"></div></div>
-        <div class="cmp-score-val">74.6%</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:67.9%;"></div></div>
+        <div class="cmp-score-val">67.9%</div>
       </div>
       <div class="cmp-board-row row-cmaes">
         <div class="cmp-name">CMA-ES</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:72.5%;"></div></div>
-        <div class="cmp-score-val">72.5%</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:60.0%;"></div></div>
+        <div class="cmp-score-val">60.0%</div>
+      </div>
+      <div class="cmp-board-row row-pso">
+        <div class="cmp-name">PSO</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:57.0%;"></div></div>
+        <div class="cmp-score-val">57.0%</div>
+      </div>
+    </div>
+    <p style="font-size:11.5px; color:var(--text-2); line-height:1.6; margin:10px 2px 0;">補助指標: SR@1e-4 でも MC-ESO 92.4% が最高（DE 88.9% / L-SHADE 86.4%）。成功 run の評価回数中央値は MC-ESO 562 で、集団系手法（DE 1223 / L-SHADE 1744 / PSO 1568）より高速。CMA-ES 系（386〜457）はより速いが SR は大きく劣る。</p>
+  </div>
+
+  <div class="concept-section reveal">
+    <div class="concept-section-label">統計的優位性 — Wilcoxon 符号順位検定（MC-ESO 基準, α=0.05, 全 35 関数）</div>
+    <div class="cmp-aspects">
+      <div class="cmp-aspect">
+        <div class="cmp-aspect-head">関数別の有意な 勝ち / 負け（MC-ESO 視点）</div>
+        <div class="cmp-aspect-body">
+          <div class="cmp-row"><span class="cmp-tag" style="color:var(--text-2);border-color:var(--border)">PSO</span><span class="cmp-row-text">31 勝 0 敗 — 全面的に優位</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">19 勝 3 敗</span></div>
+          <div class="cmp-row"><span class="cmp-tag" style="color:var(--ch-airborne);border-color:rgba(95,158,160,.30)">BIPOP</span><span class="cmp-row-text">16 勝 3 敗</span></div>
+          <div class="cmp-row"><span class="cmp-tag" style="color:var(--success);border-color:rgba(47,158,68,.30)">L-SHADE</span><span class="cmp-row-text">14 勝 6 敗</span></div>
+          <div class="cmp-row"><span class="cmp-tag" style="color:var(--ch-contact);border-color:rgba(79,124,172,.30)">IPOP</span><span class="cmp-row-text">13 勝 3 敗</span></div>
+          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">13 勝 4 敗</span></div>
+          <div class="cmp-row"><span class="cmp-tag" style="color:var(--success);border-color:rgba(47,158,68,.30)">DE</span><span class="cmp-row-text">3 勝 6 敗 — 最大の競合。overall SR@1e-10 は MC-ESO が上回るが、関数別ペア比較では DE が優位な関数が多い（separable 多峰系）。両者の使い分けが今後の論点</span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -721,18 +839,18 @@ strains ← []
       <div class="cmp-aspect">
         <div class="cmp-aspect-head">異方性の獲得</div>
         <div class="cmp-aspect-body">
-          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">等方ガウスのみ。F10 (ill-cond) で SR=20%</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">共分散行列の rank-1/rank-μ 適応学習で明示的に獲得（履歴累積）</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">瞬間共分散</span>接触感染が当世代の経験共分散 \(C_\text{pop}\) でサンプリング（履歴なし）＋ 飛沫感染の差分が同方向を補強。CMA-ES より basin 切替に即応、F10 SR=100%・F11 mean=0 を達成</span></div>
+          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">等方ガウスのみ。ill-cond で崩れる（F10 / F11 とも SR@1e-10 = 0%）</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">共分散行列の rank-1/rank-μ 適応学習で明示的に獲得（履歴累積）。ill-cond は強い（F10 / F11 / F12 = 100%）</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">瞬間共分散 ＋ 適応 floor</span>接触感染が当世代の経験共分散 \(C_\text{pop}\) でサンプリング（履歴なし）、異方性 floor を固有値比で自動調整。明示的共分散学習なしに F10 = 100%、F11 / F12 = 95% と CMA-ES に肉薄</span></div>
         </div>
       </div>
 
       <div class="cmp-aspect">
         <div class="cmp-aspect-head">多峰対応</div>
         <div class="cmp-aspect-body">
-          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">最良解周辺に収束しやすく多峰では弱い</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">マルチスタートで多峰に対応するが F21 で SR=70%</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">系統共存</span>空間的に離れた複数の感染系統を同時保護(最大 6)、飛沫感染の引力対象。F21 SR=100%</span></div>
+          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">最良解周辺に収束しやすく多峰では弱い（F03=75% / F15=40% / F20=55%）</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">単一中心の楕円分布で多峰は苦手 — F03=25% / F15=40% / F20=30% / F21=65% と大きく崩れる（overall 60% の主因）</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">系統共存 ＋ 逐次 niching</span>空間的に離れた複数の感染系統を同時保護(最大 6)＋掘り切り後の basin 移動。F03 / F15 / F20 / F21 すべて SR@1e-10 = 100%。多解 PR も C02 で 1.00（全手法中最高）</span></div>
         </div>
       </div>
 
@@ -741,7 +859,7 @@ strains ← []
         <div class="cmp-aspect-body">
           <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">なし(\(\sigma\) 縮退で停滞固定)</span></div>
           <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">`es.stop()` 後の multistart(best 中心、\(\sigma\times 0.1\))</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">情報化リスタート</span>no_improve ≥ 300 かつ \(f_\text{best} > 10^{-8}\) で発動。リザーバ再着火＋basin 忌避で探索結果を再利用（盲目 IPOP restart と差別化）。F10/F12 の 80/90% SR の主因</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">情報化リスタート</span>no_improve ≥ 300 かつ \(f_\text{best} > 10^{-8}\) で発動。リザーバ再着火＋basin 忌避で探索結果を再利用（盲目 IPOP restart と差別化）。ill-cond の整列失敗を救済（F10 = 100%, F12 = 95%）</span></div>
         </div>
       </div>
 
@@ -768,7 +886,7 @@ strains ← []
         <div class="cmp-aspect-body">
           <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">固定 30</span></div>
           <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">\(\lambda\) 自動決定</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text">可変 5〜20(仮想呼吸)</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">次元適応</span>\(n_\text{pop} = \max(20,\, 4d)\)（dim≤5 で 20、高次元でスケール）</span></div>
         </div>
       </div>
 

@@ -52,16 +52,8 @@ def _process_bench(args: tuple) -> list[tuple]:
     bench_name, bench_dim, n_runs, max_evals, output_dir_str = args
     output_dir = Path(output_dir_str)
 
-    from core.benchmarks import _make_bbob, _himmelblau, _six_hump_camel, _BBOB_SPECS
-    if bench_name == "C01-Himmelblau":
-        bench = _himmelblau()
-    elif bench_name == "C02-SixHumpCamel":
-        bench = _six_hump_camel()
-    else:
-        spec = next((s for s in _BBOB_SPECS if s[1] == bench_name), None)
-        if spec is None:
-            raise ValueError(f"Unknown benchmark: {bench_name}")
-        bench = _make_bbob(spec[0], spec[1], spec[2], bench_dim)
+    from core.benchmarks import make_benchmark_by_name
+    bench = make_benchmark_by_name(bench_name, bench_dim)
 
     sigma0 = 0.2 * (bench.bounds[1] - bench.bounds[0])
     optimizers = _make_optimizers(sigma0)
@@ -124,7 +116,7 @@ def run_dimension(bench_list: list[BenchmarkFunction], dim_label: str) -> None:
 
     for bench, rows in zip(bench_list, all_rows):
         for name, category, method_name, s, avg_time in rows:
-            ev = s['evals_succ_med']
+            ev = s['evals_succ_mean']
             ev_str = f"{ev:>10.0f}" if ev < float('inf') else "       ---"
             print(
                 f"{name:<18} {category:<14} {method_name:<12} "

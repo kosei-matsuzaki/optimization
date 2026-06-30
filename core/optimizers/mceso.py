@@ -147,7 +147,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         benchmark: BenchmarkFunction,
         seed: int = 42,
         # ── Population / niching ────────────────────────────────────────
-        n_pop: int = 20,
+        # None → dimension-aware default max(20, 4·dim): 20 up to dim 5, then
+        # scales up (e.g. 40 at dim 10). A fixed 20 underfills the population in
+        # higher dimensions — at dim 10 it let niching restarts wander badly on
+        # CEC2022 G06-Hybrid1 (best_f 2140 → 40 once n_pop reached 40). Low-dim
+        # (BBOB dim 2/3) is unchanged. Pass an int to override.
+        n_pop: "int | None" = None,
         n_elite_max: int = 6,
         niche_radius_ratio: float = 0.1,       # min mutual elite distance, × span
                                                # (scale-invariant; on BBOB span=10
@@ -182,9 +187,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         restart_quality_rel_floor: float = 1e-8,     # skip restart if
                                                      # best_so_far / |f_init| ≤ this
         # Spillover: on every restart, all non-best slots are re-seeded uniformly
-        # across the search domain and an axis-aligned boundary sweep is performed.
-        # Best is preserved unless the streak of failed spillovers triggers a full
-        # basin switch below.
+        # across the search domain. Best is preserved unless the streak of failed
+        # spillovers triggers a full basin switch below.
         basin_switch_after_failed_spillovers: int = 2,  # streak → wipe best & reset σ
         basin_switch_quality_rel_floor: float = 1e-2,   # basin switch suppressed when
                                                         # best_so_far / |f_init| ≤ this
@@ -258,7 +262,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         ir_repel_max_tries: int = 20,
     ):
         super().__init__(benchmark, seed)
-        self.n_pop = n_pop
+        # Dimension-aware population: fixed 20 underfills high-dim search.
+        self.n_pop = n_pop if n_pop is not None else max(20, 4 * self.dim)
         self.sigma = sigma
         self.air_ratio = air_ratio
         self.n_elite_max = n_elite_max
@@ -319,25 +324,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         result = np.where((x < lo) & (lo - x < snap), lo, result)
         result = np.where((x > hi) & (x - hi < snap), hi, result)
         return result
-
-    def _axis_sweep(self, x_best: np.ndarray, lo: float, hi: float
-                    ) -> list[np.ndarray]:
-        """Coordinate-axis boundary probes around x_best. Per dimension,
-        probe both bounds.
-
-        Built for **boundary-optimal** landscapes:
-          • F05 LinearSlope (optimum on a corner): the {lo, hi} probes land
-            on the optimum exactly when the right sign is picked.
-
-        Total candidates = dim × 2. For dim=2 this is 4 evals per sweep.
-        """
-        cands: list[np.ndarray] = []
-        for i in range(self.dim):
-            for bv in (lo, hi):
-                cand = x_best.copy()
-                cand[i] = bv
-                cands.append(cand)
-        return cands
 
     def _niche_elites(self, pop_x: np.ndarray, pop_f: np.ndarray,
                       niche_radius: float) -> set:
@@ -577,30 +563,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         sigma_restart = (st.sigma_init if basin_switch
                          else st.sigma_init * self.restart_sigma_ratio)
         div_ratio = 1.0
-
-        # Coordinate-axis sweep before every spillover. Targets separable /
-        # boundary-optimal landscapes that the isotropic uniform re-seed alone
-        # fails on (F04 BucheRastrigin, F05 LinearSlope).
-        x_best_for_sweep = st.pop_x[int(np.argmin(st.pop_f))].copy()
-        for sweep_cand in self._axis_sweep(x_best_for_sweep, lo, hi):
-            if not st.budget_left:
-                break
-            f_sweep = float(self.func(sweep_cand))
-            st.history_x.append(sweep_cand.copy())
-            st.history_f.append(f_sweep)
-            st.history_sigma_eval.append(
-                float(np.linalg.norm(sweep_cand - x_best_for_sweep)))
-            if f_sweep < st.best_so_far:
-                st.best_so_far = f_sweep
-                # Inject the better candidate into the population so the upcoming
-                # spillover anchors on it (or, on basin switch, so it's part of
-                # the historical best).
-                worst_i = int(np.argmax(st.pop_f))
-                st.pop_x[worst_i] = sweep_cand.copy()
-                st.pop_f[worst_i] = f_sweep
-                st.pop_age[worst_i] = 0
-        if not st.budget_left:
-            return True
 
         best_pre_spillover = st.best_so_far
         if basin_switch:

@@ -413,7 +413,7 @@ function pollShellJob() {
 // ── Config modal (Quick Run / Workflow settings) ──
 const CM_KEY = 'config_modal_last';
 const CM_DEFAULTS = {
-  quick:    { n_runs: 10, max_evals: 2000,  label: '', dim: '2',
+  quick:    { n_runs: 20, max_evals: 5000,  label: '', dim: '2',
               methods: null, funcset: 'quick', funcs: null },
   workflow: { n_runs: 30, max_evals: 15000, use_all: false, label: '' },
 };

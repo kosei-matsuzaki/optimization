@@ -793,7 +793,7 @@ def save_stats(
     mmo_keys = [f"mmo_sr_{thr:.0e}".replace("e-0", "e-") for thr in PEAK_THRESHOLDS]
     fieldnames_s = ["function", "category", "method", "mean_time_s",
                     "mean_best_f", "median_best_f", *sr_keys,
-                    "evals_succ_med", "ert", "ecdf_auc",
+                    "evals_succ_mean", "evals_succ_med", "ert", "ecdf_auc",
                     "mean_optima_found", "mean_optima_rate", "n_optima",
                     *pr_keys, *mmo_keys]
     with open(summary_path, "a", newline="") as f:
@@ -811,7 +811,8 @@ def save_stats(
             evals_list = [_evals_to_target(r, success_threshold) for r in results]
             ert = f"{sum(evals_list) / n_success:.0f}" if n_success > 0 else "inf"
             succ_evals = [e for e, ok in zip(evals_list, success_mask) if ok]
-            evals_succ_med = f"{np.median(succ_evals):.0f}" if succ_evals else "inf"
+            evals_succ_mean = f"{np.mean(succ_evals):.0f}"   if succ_evals else "inf"
+            evals_succ_med  = f"{np.median(succ_evals):.0f}" if succ_evals else "inf"
             max_budget = max((len(r.history_f) for r in results), default=0)
             auc = ecdf_auc(results, SR_THRESHOLDS, max_budget) if max_budget else 0.0
             row = {
@@ -821,6 +822,7 @@ def save_stats(
                 "mean_time_s": f"{np.mean(times):.3f}",
                 "mean_best_f":   f"{np.mean(best_fs):.4e}",
                 "median_best_f": f"{np.median(best_fs):.4e}",
+                "evals_succ_mean": evals_succ_mean,
                 "evals_succ_med": evals_succ_med,
                 "ert":           ert,
                 "ecdf_auc":      f"{auc:.4f}",

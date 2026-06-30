@@ -347,6 +347,22 @@ CUSTOM_BENCHMARKS: list[BenchmarkFunction] = [
     _dejong_f5(),
 ]
 
+# Name -> factory for custom benchmarks, so workers can reconstruct a fresh
+# instance from just the name. Keep in sync with CUSTOM_BENCHMARKS.
+_CUSTOM_FACTORIES = {
+    "C01-Himmelblau":     _himmelblau,
+    "C02-SixHumpCamel":   _six_hump_camel,
+    "C03-Shubert":        _shubert,
+    "C04-FiveWell":       _five_well,
+    "C05-Eggholder":      _eggholder,
+    "C06-Michalewicz":    _michalewicz,
+    "C07-BukinN6":        _bukin_n6,
+    "C08-StyblinskiTang": _styblinski_tang,
+    "C09-Easom":          _easom,
+    "C10-SchafferN2":     _schaffer_n2,
+    "C11-DeJongF5":       _dejong_f5,
+}
+
 BENCHMARKS    = _build(2)
 BENCHMARKS_3D = _build(3)
 BENCHMARKS_4D = _build(4)
@@ -395,3 +411,20 @@ BENCHMARKS_CEC2022_10D = _build_cec2022(10)
 BENCHMARKS_CEC2022_10D_BY_NAME: dict[str, BenchmarkFunction] = {
     b.name: b for b in BENCHMARKS_CEC2022_10D
 }
+
+
+def make_benchmark_by_name(name: str, dim: int) -> BenchmarkFunction:
+    """Reconstruct a fresh benchmark from its name (for use in worker processes).
+
+    Covers custom benchmarks (C*), BBOB (F*), and CEC2022 (G*). Custom
+    benchmarks are 2-D only; ``dim`` is ignored for them.
+    """
+    if name in _CUSTOM_FACTORIES:
+        return _CUSTOM_FACTORIES[name]()
+    spec = next((s for s in _BBOB_SPECS if s[1] == name), None)
+    if spec is not None:
+        return _make_bbob(spec[0], spec[1], spec[2], dim)
+    spec = next((s for s in _CEC2022_SPECS if s[1] == name), None)
+    if spec is not None:
+        return _make_cec2022(spec[0], spec[1], spec[2], dim)
+    raise ValueError(f"Unknown benchmark: {name}")
