@@ -20,13 +20,44 @@
 
 ## 探索オペレータ：3 つの伝染チャネル
 
-毎世代、空きスロットを 3 チャネルに配分して子個体を生成する（割合は `air_ratio` / `h2h_ratio` と残り）。
+毎世代、空きスロットを 3 チャネルに配分して子個体を生成する（割合は `air_ratio` / `h2h_ratio` と残り）。この配分は固定でなく、**per-landscape チャネルルーター**（後述）が集団共分散シグナルから landscape を検知して空気感染予算を最適チャネルへ振り分ける。
 
 | チャネル | 疫学アナロジー | 数学的形 | 役割 |
 |---|---|---|---|
 | **接触感染** (Close-contact) | 親密接触による局所感染 | `x_parent + σ_i · L_pop · N(0, I)`（`L_pop L_pop^T = C_pop`、集団経験共分散の固有分解）| 親近傍の精密探索。σ_i は親の品質と年齢で適応、`C_pop` で **瞬間共分散** を獲得（履歴累積なし、CMA-ES と差別化） |
 | **飛沫感染** (Droplet) | 飛沫を介した宿主間感染 | `x_parent + F·(x_strain − x_parent) + F·(x_a − x_b)` ＋ 親との二項交叉 (CR=0.9, DE 標準値) | 系統 (niched elite) からの引力 ＋ 集団内差分ベクトルで集団形状を補強しつつ、二項交叉で座標方向の親情報を保護 (DE/current-to-best/1/bin) |
 | **空気感染** (Airborne) | エアロゾルによる広域感染 | `x_random_host + N(0, σ_air I)`（drilling 中は停止）| 集団に依存しない遠方探索。局所最適脱出。`σ < span × 1e-3` の drilling mode では雑音化するため停止 |
+
+---
+
+## per-landscape チャネルルーター（`channel_schedule=True`, デフォルト）
+
+3 チャネルの割合を landscape に応じて動的に振り分ける機構（`core/optimizers/mceso.py:_channel_ratios`）。**空気感染(air)予算の最適な行き先は関数タイプで割れる**（ill-cond 谷は droplet、separable は close、多峰は air 温存）ため、一律配分でなく **run ごとに 1 ルートを検知して確定**する。
+
+**検知シグナル**（3 つ、いずれも f 非依存・スケール不変・EMA 平滑、接触感染の固有分解から算出）:
+- `cond` = log10(λmax/λmin) 集団共分散の固有値比 — 悪条件度
+- `algA` = 固有ベクトルの平均 max|成分| — 軸整列（separability）
+- `mgap` = 座標方向の最大正規化間隙 — separable の第 2 指標（regular separable vs deceptive を分離）
+
+**ルート確定**（run 内で一度決めて固定 = flip-flop 回避）:
+```
+・cond EMA > cond_droplet_early (4.0) に達したら即 DROPLET 確定（早期 latch）
+・gen route_commit_gen (120) で未確定なら:
+    cond > cond_droplet_thresh (3.0)                          → DROPLET
+    elif algA > align_close_thresh (0.965) かつ mgap > close_mgap_thresh (0.36) → CLOSE
+    else                                                     → KEEP-AIR
+・確定前は base keep-air で走る
+```
+
+**各ルートの動作**（air 予算の行き先。σ-ramp で連続的に）:
+
+| route | 動作 | 対象 landscape（例）|
+|---|---|---|
+| **DROPLET** | air を減らし飛沫感染へ | ill-cond 谷/ridge（F11/F12/F13/F14/F08）|
+| **CLOSE** | air を減らし接触感染へ | separable/軸整列（F04/F16）|
+| **KEEP-AIR** | base 比のまま（air 温存）| 多峰/deceptive（F17/F19/F20/C11）＋ 未検知の全関数 |
+
+**設計判断**: (1) **デフォルト=keep-air=base** なので検知が立たない関数は base 完全一致で無傷（bounded risk）。(2) **決定論的**（報酬バンディットなし — reactive UCB 版 V2a は overall regression で却下）。(3) **run 内 commit で固定**（per-gen 分類は閾値付近で flip-flop し回帰する）。(4) 一律再配分（air を σ や cond で一律に削る 4 案）は全て overall SR@1e-10 を落として却下 — close-contact が深精度の load-bearing チャネルで、一律削減は必ずそれを毀損するため。統合経緯・シグナル診断は [history.md](history.md) 参照。
 
 ---
 
@@ -152,6 +183,12 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `sigma_ceil_ratio` | 1.0 | σ_global の絶対上限（× span）|
 | `precision_sigma_ratio` | 1e-3 | drilling mode 発動の σ 閾値（σ < span × 1e-3 で発動。σ ベースなので問題スケール不変）|
 | `sigma_drill_down` | 0.85 | drilling mode 中の σ 縮小乗数（通常の sigma_down より積極的）|
+| `channel_schedule` | True | per-landscape チャネルルーター有効化（デフォルト ON）。False で旧 flat-ratio 挙動に復帰 |
+| `cond_droplet_early` | 4.0 | 早期 droplet latch の cond EMA 閾値（真の ill-cond は急騰、rugged の一時スパイクは未達）|
+| `route_commit_gen` | 120 | ルート確定チェックポイント（世代）。それまで base keep-air |
+| `cond_droplet_thresh` | 3.0 | commit 時 cond EMA がこれ超で DROPLET |
+| `align_close_thresh` | 0.965 | commit 時 algA EMA がこれ超（かつ mgap 条件）で CLOSE |
+| `close_mgap_thresh` | 0.36 | CLOSE の追加条件（mgap EMA。regular separable F04≈0.41 と deceptive F17≈0.29 を分離）|
 
 ---
 

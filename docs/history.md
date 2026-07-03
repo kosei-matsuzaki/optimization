@@ -47,6 +47,7 @@ MC-ESO に先立つウイルス模倣手法 **VirusOptimizerV2 (VSO V2)** は全
 | **次元適応 n_pop** (`n_pop=max(20, 4·dim)`, 2026-06) | 固定 20 は高次元で過小。dim=10 で niching restart が CEC2022 G06-Hybrid1 を彷徨 best_f 2140→40 once n_pop=40。BBOB dim2/3 は 20 で無変更 |
 | **Drilling 中の空気感染停止** | `σ < span × precision_sigma_ratio` で `air_ratio_eff = 0`。drilling 中の広域ランダム雑音を排除し精度劣化を防止 |
 | **逐次 niching（多解探索）** (`_basin_exhausted`, 2026-06 統合) | σ-exhaustion 検知（スケール・f_opt 非依存）で掘り切った basin から restart。SR 無犠牲で多解 PR を改善（下記）|
+| **per-landscape チャネルルーター** (`channel_schedule=True`, 2026-07 統合) | 各 run で集団共分散の 3 シグナル（`cond`=固有値比 / `algA`=軸整列 / `mgap`=座標間隙, いずれも EMA・f 非依存）から landscape を検知し、空気感染(air)予算を droplet/close/keep-air の 1 ルートへ振り分け（gen120 commit ＋ 早期 droplet latch, run 内固定）。一律再配分（4 案全 REJECT）と異なりデフォルト=keep-air=base で無検知関数は無傷。**BBOB dim2 +0.6pt（87.9→88.4, F04/F11/F12/F13/F14/F16 +5）・dim3 +0.6pt（回帰なし）・CEC2022 dim10 hold-out で best_f 改善（G06 364→202）**＝全次元・hold-out 汎化。詳細は下記「チャネル割合スケジューリングの探索」|
 
 ---
 
@@ -188,3 +189,115 @@ MC-ESO に先立つウイルス模倣手法 **VirusOptimizerV2 (VSO V2)** は全
 **次元適応 n_pop の発見**: MC-ESO は n_pop=20 を全次元固定していたが高次元で過小。dim=10 で n_pop sweep の結果 **40 が sweet spot（80 は悪化）**、特に **G06-Hybrid1 を best_f 2140→40 に解消**（niching restart が小集団で彷徨っていた）。`n_pop=None` デフォルトで **`max(20, 4·dim)`**（dim≤5 は 20 で BBOB dim2/3 無変更＝回帰リスクゼロ、dim=10 で 40）。残課題: G05-Levy 等 dim10 多峰での niching 小回帰（n=20 で再確認する）。
 
 検証ログ: `results/20260*_cec_holdout_check_quick/`（dim10）、`*_dim3_check_quick/`（dim3）。
+
+---
+
+## チャネル割合スケジューリングの探索（2026-07）— 一律再配分は全 REJECT、目標は per-landscape ルーティング
+
+「感染チャネルの割合をスケジューラで制御して配分を改善する」という方向を、`MultiChannelEpidemicOptimizer(channel_schedule=...)` フラグ（既定 False＝base と bit-identical）＋一時エントリ `MC-ESO-Sched` で検証した。**割合を一律にいじる 4 案はすべて overall SR@1e-10 を落として不採用**（quick n=20 / 5000 / 全 35 関数, dim2, base 87.9%）:
+
+| 案 | 変更（channel_schedule=True の中身） | SR@1e-10 | 判定 |
+|---|---|---|---|
+| 1 | air を σ の log で `air_ratio`→0 に連続ランプ、空き枠→**close** | 87.0（−0.9）| REJECT |
+| 2 | 同上ランプ、空き枠→**droplet** | 87.7（−0.1）| REJECT |
+| Phase1 | air を conditioning `c`（cov 固有値比 EMA）でゲート `air_ratio·(1−c)`、空き枠→close | 86.6（−1.3）| REJECT |
+| Phase2 | air 不変、**droplet↔close の境界のみ** `h2h_ratio·(1+0.5·c)` で再配分 | 86.7（−1.1）| REJECT |
+
+**診断（4 案から確定）**:
+1. **close-contact は SR@1e-10（深精度 1e-10 到達）の load-bearing チャネル**。per-host σ_i 微細化＋回転対応で最後の drilling を担うため、**どこであれ close の枠を削ると深精度 run が数本落ちる**。
+2. **conditioning `c` は "ill-cond のときだけ" ではなく多くの関数の収束時に広く立ち上がる**（集団が basin 方向に伸びる）。ゆえに `c` 起動の再配分は close を広範に削り SR@1e-10 を毀損する。適応異方性 floor（穏やかな log 補間・EMA が transient 吸収）には効くが、**チャネル割合の on/off トリガーには粗すぎる**。
+3. **base 比（air 0.3 / droplet 0.4 / close 0.3 ＋ drilling cliff）は既に SR@1e-10 の well-tuned な局所最適**（簡潔化監査で各チャネルの寄与も確認済み）。摂動＝悪化。V2a（チャネル比 UCB-AOS）却下と同根で、**「割合を一律にいじる」軸自体が overall では頭打ち**。
+
+**ただし per-function には明確な最適配分が存在する**（best_f 併記で確認、[[feedback_per_function_bestf]]）。air の予算を「どこへ回すのが最適か」が関数タイプで割れる:
+
+| air 予算の最適な行き先 | 関数（代表） | landscape 種別 |
+|---|---|---|
+| **air のまま維持**（air を減らすと悪化） | F10-EllipsoidalRot, F15-RastriginRot, C05, F06, F17, F19, F20, F24 | 回転 ill-cond（滑らか）＋ 多峰/deceptive（escape 要）|
+| **droplet 中心** | F11-Discus, F12-BentCigar, **F13-SharpRidge（+20〜35）**, F14-DiffPowers | ill-cond の谷/ridge（DE 差分が谷を辿る）|
+| **close 中心** | F04-BucheRastrigin, F16-Weierstrass, C09-Easom | separable / rugged（軸整列の精密化）|
+
+**目標（今後の方針）= landscape 検知による air 予算の per-landscape ルーティング**。一律配分ではなく「F10/F15 は air 維持・F11–F14 は droplet・F04/F16 は close」と関数ごとに正しく振り分ける検知機構を作れれば、トレードオフ（F13+droplet で伸ばしつつ C11/F17 の air escape を守る）を両取りして大きく改善できる、というのが狙い。
+
+**未解決の検知課題**: 単一 conditioning `c`（固有値比）では **F10（air 維持が最適）と F11–F14（droplet が最適）がどちらも ill-cond で高 `c` となり分離できない**。separability（cov の軸整列度＝対角エネルギー比）で F04（separable→close）は拾えるが、ill-cond 内の "air 維持 vs droplet" を分ける第3の構造シグナル（例: 固有値スペクトルの形状 — 滑らかな勾配 ellipsoid か、単一軸支配の cigar/discus/ridge か）が要る。**報酬ベース（V2a バンディット）は再発禁止**、あくまで f 非依存の構造シグナルで検知する。
+
+検証ログ: 案1 `results/20260701_105621_eval_sched_quick/`、案2 `..._111711_eval_sched2_quick/`、Phase1 `..._113615_eval_phase1_quick/`、Phase2 `..._115405_eval_phase2_quick/`。実装足場は `mceso.py:_channel_ratios` ＋ `channel_schedule`（既定で base、ルーティング研究継続のため保持）。
+
+### シグナル診断（全35関数, 2026-07）— `cond` ＋ `algA` で最適ルートが分離
+
+router を作る前に、**base MC-ESO を一切変えず**（SR 不変）各世代の集団共分散・動態から f 非依存の構造シグナルを測定し、既知の最適ルート（air 予算の行き先: droplet / close / keep-air）との対応を全 35 関数で可視化した（`scripts/measure_channel_signals.py`、n_runs=8, dim2, 探索フェーズ＝σ>drilling の世代の median → run 平均）。
+
+**結論: 2 シグナルで優先関数が綺麗に割れる**。
+- **`cond`（= log10 λmax/λmin, 固有値比）> 2.5 → droplet**: F11–14（3.3–5.6）を切り出す。間に [1.63, 3.34] のギャップ。F08/F09 Rosenbrock（2.5–2.6）も droplet の得意領域なので有益に巻き込む。
+- **cond ≤ 2.5 かつ `algA`（軸整列度＝separability, ドミナント固有ベクトルの max\|成分\|）> 0.98 → close**: F04(0.988)/F16(0.994) を切り出す。
+- **それ以外 → keep-air（＝base 完全一致）**: 多峰/回転（F19/F15/F24/C05/C11…）は air 据置きで escape 保護。**判断がつかない維持関数は自動的に base のまま無傷**という安全構造。
+
+診断した他シグナルは分離器として劣ることも確認（`offd` 相関非対角は F16 と F17/F24 が重なり不可、`nelX` はニッチ上限 6 に飽和し無情報、`nelt`/`spil`/`kurt`/`mgap` は多峰でノイジー）。→ **cond + algA を採用**。
+
+**全 35 関数の測定値**（`cond`=log10固有値比, `PR`=participation ratio[1,2], `algA`=軸整列[.71,1], `offd`=相関非対角RMS[0,1], `divs`=分散/span, `kurt`=超過尖度, `mgap`=最大正規化間隙, `nelt`=平均ニッチ数, `spil`=spillover回数。route: ★=改善優先, ·=維持, ✗=非重視）:
+
+| function | route | pri | cond | PR | algA | offd | divs | kurt | mgap | nelt | spil |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| F12-BentCigar | droplet | ★ | 5.64 | 1.00 | 1.000 | 0.956 | 0.009 | −0.29 | 0.271 | 2.09 | 3.8 |
+| F11-Discus | droplet | ★ | 5.42 | 1.00 | 0.953 | 1.000 | 0.009 | −0.26 | 0.239 | 1.99 | 3.2 |
+| F13-SharpRidge | droplet | ★ | 4.89 | 1.00 | 0.956 | 1.000 | 0.005 | 0.13 | 0.257 | 1.67 | 6.0 |
+| F14-DiffPowers | droplet | ★ | 3.34 | 1.00 | 0.965 | 0.993 | 0.002 | −0.34 | 0.246 | 1.50 | 3.6 |
+| F02-EllipsoidalSep | droplet? | · | 5.62 | 1.00 | 1.000 | 0.406 | 0.005 | 1.24 | 0.380 | 1.95 | 3.4 |
+| F10-EllipsoidalRot | droplet? | · | 5.53 | 1.00 | 0.977 | 1.000 | 0.009 | −0.28 | 0.243 | 1.96 | 3.1 |
+| F16-Weierstrass | close | ★ | 1.63 | 1.05 | 0.994 | 0.486 | 0.050 | 0.21 | 0.427 | 3.35 | 4.1 |
+| F04-BucheRastrigin | close | ★ | 0.91 | 1.25 | 0.988 | 0.315 | 0.010 | 0.48 | 0.411 | 2.03 | 7.5 |
+| F06-AttractiveSector | close? | ★ | 1.26 | 1.11 | 0.957 | 0.698 | 0.002 | 0.43 | 0.349 | 1.48 | 2.9 |
+| F18-SchafferF7ill | ? | ★ | 2.63 | 1.00 | 0.974 | 0.978 | 0.008 | −0.24 | 0.268 | 1.95 | 2.6 |
+| C05-Eggholder | keep-air | · | 1.33 | 1.12 | 0.823 | 0.754 | 0.001 | 0.75 | 0.394 | 1.96 | 11.6 |
+| F20-Schwefel | keep-air | · | 1.16 | 1.14 | 0.956 | 0.691 | 0.024 | −0.27 | 0.313 | 2.38 | 6.5 |
+| F15-RastriginRot | keep-air | · | 1.07 | 1.18 | 0.861 | 0.774 | 0.018 | 0.01 | 0.343 | 2.33 | 4.4 |
+| F17-SchafferF7 | keep-air | ✗ | 0.95 | 1.23 | 0.974 | 0.474 | 0.003 | 0.02 | 0.290 | 1.72 | 2.8 |
+| F19-GriewankRosenbrock | keep-air | ★ | 0.73 | 1.38 | 0.951 | 0.513 | 0.101 | −0.14 | 0.311 | 4.29 | 5.2 |
+| F24-LunacekRastrigin | keep-air | ✗ | 0.64 | 1.47 | 0.876 | 0.498 | 0.076 | 0.21 | 0.325 | 4.31 | 13.1 |
+| C11-DeJongF5 | keep-air | ✗ | 0.54 | 1.53 | 0.951 | 0.300 | 0.006 | −0.07 | 0.340 | 2.68 | 7.8 |
+| C07-BukinN6 | - | · | 4.15 | 1.00 | 0.993 | 0.992 | 0.001 | 1.26 | 0.335 | 1.67 | 13.0 |
+| F22-Gallagher21 | - | · | 2.74 | 1.00 | 0.900 | 0.993 | 0.012 | −0.56 | 0.239 | 2.29 | 4.1 |
+| F08-Rosenbrock | - | · | 2.56 | 1.01 | 0.897 | 0.986 | 0.007 | −0.18 | 0.272 | 2.12 | 3.4 |
+| F09-RosenbrockRot | - | · | 2.55 | 1.01 | 0.962 | 0.963 | 0.006 | −0.07 | 0.293 | 2.00 | 3.4 |
+| F05-LinearSlope | - | · | 2.28 | 1.01 | 0.999 | 0.437 | 0.003 | −0.09 | 0.290 | 1.71 | 4.2 |
+| F07-StepEllipsoidal | - | · | 1.57 | 1.05 | 0.781 | 0.944 | 0.009 | −0.62 | 0.241 | 2.12 | 5.0 |
+| F21-Gallagher101 | - | · | 1.31 | 1.10 | 0.799 | 0.897 | 0.017 | −0.48 | 0.275 | 2.56 | 4.0 |
+| C02-SixHumpCamel | - | · | 1.28 | 1.21 | 0.980 | 0.609 | 0.053 | −0.56 | 0.574 | 2.19 | 3.6 |
+| F03-RastriginSep | - | · | 1.03 | 1.19 | 0.994 | 0.294 | 0.018 | 0.08 | 0.397 | 2.50 | 4.1 |
+| C01-Himmelblau | - | · | 0.83 | 1.30 | 0.933 | 0.547 | 0.001 | 1.32 | 0.603 | 1.81 | 2.4 |
+| F23-Katsuura | - | · | 0.67 | 1.43 | 0.912 | 0.435 | 0.144 | −0.09 | 0.282 | 5.49 | 3.4 |
+| C03-Shubert | - | · | 0.65 | 1.45 | 0.940 | 0.385 | 0.038 | 1.15 | 0.533 | 3.00 | 3.5 |
+| C06-Michalewicz | - | · | 0.62 | 1.46 | 0.971 | 0.255 | 0.002 | 0.44 | 0.363 | 2.15 | 3.9 |
+| C08-StyblinskiTang | - | · | 0.49 | 1.59 | 0.935 | 0.313 | 0.001 | 0.79 | 0.415 | 1.65 | 3.9 |
+| C04-FiveWell | - | · | 0.46 | 1.62 | 0.915 | 0.309 | 0.002 | −0.13 | 0.310 | 1.99 | 3.5 |
+| F01-Sphere | - | · | 0.38 | 1.71 | 0.917 | 0.268 | 0.002 | −0.13 | 0.301 | 1.60 | 4.0 |
+| C10-SchafferN2 | - | · | 0.34 | 1.76 | 0.894 | 0.258 | 0.031 | −0.50 | 0.248 | 2.72 | 4.0 |
+| C09-Easom | - | · | 0.32 | 1.78 | 0.873 | 0.252 | 0.250 | −0.73 | 0.252 | 5.30 | 7.6 |
+
+**ルーティングの安全性（全 35 関数の落ち先確認）**: 優先関数は全て改善 or 安全側に落ちる（F11–14→droplet, F04/F16→close, F19→keep-air, F06/F17→keep-air は base 維持）。維持関数は keep-air（base 完全一致で無傷）か、droplet（F08/F09 は得意領域）/close（F03/F05 separable）で許容。**残リスク**: F22-Gallagher21（多峰）が cond2.74 で droplet 落ち（base 100%・過去 variant 未回帰で低リスク）、close バケツが F03/F05/C02 を巻き込む（separable で許容見込み）、閾値は dim2 tuned で hold-out 汎化確認要。→ この cond+algA ルーターを実装・検証する。
+
+### ルーターの実装反復と本体統合（2026-07, 採用）
+
+診断を基に router を実装し、5 回の反復で仕上げてから本体統合した。**ルート確定の設計が肝**（per-gen で毎世代分類すると閾値付近の関数が flip-flop して回帰する）:
+
+| 反復 | ルート確定方式 | overall SR@1e-10 | 問題 |
+|---|---|---|---|
+| per-gen | 毎世代 cond/algA で分類（固定なし）| ±0.0（87.9→87.9）| 閾値付近 F04/F06/F14 が flip-flop 回帰、F13+30 は取れた |
+| commit@120 | gen120 で 1 回確定・固定 | −0.6 | flip-flop は解消も F13 の早期 droplet を取り逃す（late commit）＋F23−20 |
+| hybrid | cond>4.0 早期 droplet latch ＋ gen120 commit | −0.1 | F04/F06/F14 解消・F13 回復も、algA だけでは F04(close希望)と F17(air希望)が分離不能で F17/F20 が close 誤爆 −15/−5 |
+| **+mgap（採用）** | hybrid ＋ close 条件に `mgap>0.36`（座標間隙）を AND | **+0.6（87.9→88.4）** | F17/F20 を keep-air に戻し F04 close 維持。改善 7（F04/F11/F12/F13/F14/F16 +5, F24 +5）/回帰 2（F20−5, F23−10）|
+
+**分離できなかった F04 vs F17 を第 3 シグナル `mgap` で解決**: 両者 algA≈0.975 で軸整列は同じだが、regular separable(F04)は座標方向に広い間隙(mgap≈0.41)、deceptive(F17)は密(≈0.29)。`close = algA>0.965 かつ mgap>0.36` で分離。
+
+**汎化検証（統合の必須ゲート, SC/IRSC の轍回避）**: BBOB dim2 +0.6（87.9→88.4）/ BBOB dim3 +0.6（43.5→44.2, 有意回帰なし・SR@1e-4 64.6→69.0）/ CEC2022 dim10 hold-out は SR 同（0%）だが **median best_f 改善 2・悪化 0（G06 364→202, G03 改善）**。**全次元・hold-out で回帰なし**を確認し `channel_schedule=True` を**本体デフォルトに統合**（`MC-ESO-Orig`=`channel_schedule=False` で旧 flat-ratio を pin）。確定シグナル/閾値: `cond_droplet_early=4.0`（早期 latch）/`route_commit_gen=120`/`cond_droplet_thresh=3.0`/`align_close_thresh=0.965`＋`close_mgap_thresh=0.36`。
+
+**残課題（統合後）**: F13/F14/F18/F23 は median best_f が既に 1e-12〜1e-15 到達済みだが少数 run が誤 basin で stuck（SR<100%）。これは"降下"最適化でなく"脱出"の問題で、チャネル配分では届かない。→ 下記 stuck-run 脱出（媒介チャネル）へ。
+
+### stuck-gated 媒介感染チャネル（2026-07, 現状 REJECT）
+
+上記の stuck-run 問題（router では届かない）に対し、**4 つ目の伝染チャネル「媒介感染（migratory / vector-borne）」**を実装（`migratory_channel`）。drilling 中（σ<span×1e-3）かつ停滞（no_improve≥閾値）でのみ発火し、dead-slot の一部を「best からの構造化大ジャンプ」（半分は主固有ベクトル方向＝ridge/valley 脱出、半分は等方＝多峰脱出、span×0.2）に充てる。
+
+**初回（no_improve≥100, ratio0.5）: REJECT。** 「best_f=全 eval min ＋ μ+λ rollback だから SR を下げない」という前提が**実測で否定**された（stuck 救出 F23 60→85 **+25**/F18+10/F13+5 は本物だが、**F14−15/F17−10/F19−5 の回帰**で相殺、overall +0.1 誤差内・Wilcoxon 0/0）。**教訓: 追加チャネルは有限 dead-slot で他チャネル子個体を置換し RNG をずらすため、一度発火するとその run 全体が非 bit-identical になり、回復途中の run（F14 の平坦 basin 遅延 breakthrough）を壊す＝純加算でない。**（`project_migratory_channel` に教訓記録）。
+
+**厳格化版（`migratory_no_improve_thresh=200`／`migratory_ratio=0.34`）も REJECT（確定）。** overall SR@1e-10 ±0（88.4→88.4, Wilcoxon 0/0）。回帰関数は 4→3 に減ったが **F17−20（悪化拡大）/F14−15 は消えず**、救出 F23+20/F13+15/F18+5 と同格で相殺という構造が 2 回とも再現。**gate 調整では解けない** — 救う stuck（F23）と壊す stuck（F17）はどちらも「多峰で停滞」で検知区別不能（router の per-gen flip-flop 問題と同型）。媒介チャネルは確定 REJECT、`migratory_channel` フラグは既定 OFF で保持（研究記録）。検証ログ: 初回 `results/20260702_001636_eval_mig_quick/`、厳格版 `results/20260703_184939_eval_mig_strict_quick/`。
+
+検証ログ（ルーター確定〜統合）: router4=`results/20260701_225007_eval_router4_quick/`、dim3=`..._005956_eval_gen_dim3_quick/`、CEC=`..._115938_eval_gen_cec_quick/`。診断スクリプト: `scripts/measure_channel_signals.py`。

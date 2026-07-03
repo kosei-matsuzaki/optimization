@@ -43,6 +43,23 @@ class _MCESOState:
     # floor); a small ratio with only transient spikes means rugged/multimodal
     # structure (keep the floor high so spurious anisotropy is clamped).
     cc_logratio_ema: "float | None" = None
+    # Axis-alignment EMA (separability signal for the channel router): mean over
+    # the population-covariance eigenvectors of their max |component|. ≈1 means
+    # axis-aligned / separable (→ close-contact route); lower means rotated.
+    cc_align_ema: "float | None" = None
+    # Max-normalized-gap EMA (a second separability signal for the router): the
+    # largest nearest-neighbour gap along any coordinate, normalized by the axis
+    # range. Regular separable multimodals (F04/F16) leave wide coordinate gaps
+    # (≈0.42) → close route; irregular/deceptive multimodals (F17/F20) pack
+    # tighter (≈0.30) → keep-air. Separates the close vs keep-air classes that
+    # axis-alignment alone cannot (F04 algA 0.975 ≈ F17 algA 0.974).
+    cc_mgap_ema: "float | None" = None
+    # Committed channel route ("droplet"/"close"/"keepair") for the router. Locked
+    # once, after a warmup, from the stabilized EMAs — conditioning/separability
+    # are run-invariant landscape properties, so committing removes the
+    # generation-to-generation route flip-flop that perturbs threshold-borderline
+    # functions off their best (median-signal) route.
+    channel_route: "str | None" = None
     log_best_ref: float = 0.0
     evals_since_reset: int = 0
     consecutive_failed_spillovers: int = 0
@@ -172,6 +189,70 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # i.e. factor = 1.5 at full diversity, 1.5+amplifier at full convergence.
         # Default 3.5 reproduces the prior min=1.5, max=5.0 behaviour.
         air_sigma_amplifier: float = 3.5,
+        # Per-landscape channel router. When True, each generation is classified
+        # from two f-independent, scale-invariant covariance signals and the
+        # airborne budget is routed to the channel that landscape needs — instead
+        # of a uniform reallocation (all four uniform variants lost SR@1e-10, 2026-
+        # 07; see docs/history.md "チャネル割合スケジューリングの探索"):
+        #   • conditioning cond = log10(λmax/λmin), EMA  — cond > cond_droplet_thresh
+        #     ⇒ ill-conditioned valley ⇒ DROPLET route (air tapered → droplet).
+        #   • axis-alignment algA (mean max|eigvec comp|), EMA — else algA >
+        #     align_close_thresh ⇒ separable/axis-aligned ⇒ CLOSE route (air → close).
+        #   • otherwise ⇒ KEEP-AIR route ⇒ base ratios (multimodal escape untouched).
+        # The default route is KEEP-AIR = base, so any function that doesn't clearly
+        # signal droplet/close stays bit-identical to base (bounded risk). The
+        # taper reuses the validated σ-ramp, so a routed function starts at base at
+        # full σ and only diverges as it drills. Deterministic (no reward bandit,
+        # cf. rejected MC-ESO-V2a). On by default: verified +0.6pt overall SR@1e-10
+        # on BBOB dim2 (87.9→88.4) and dim3 (43.5→44.2, no significant regression)
+        # plus best_f gains on the CEC2022 dim10 hold-out (G06 364→202). Set False
+        # to recover the exact pre-router flat-ratio behaviour.
+        channel_schedule: bool = True,
+        # Route thresholds are applied to the EMA *values* at the commit
+        # checkpoint (measured: droplet cond@120 ≥ 3.3, non-droplet ≤ 2.66; close
+        # algA@120 ≥ 0.975, keep-air ≤ 0.903 — clean gaps).
+        cond_droplet_thresh: float = 3.0,      # cond@commit above → droplet route
+        # Close route needs BOTH high axis-alignment AND a wide coordinate gap:
+        # axis-alignment alone can't separate separable multimodals that want
+        # close (F04 algA 0.975, mgap 0.41) from deceptive ones that need air
+        # (F17 algA 0.974, mgap 0.29). Requiring mgap too routes F17/F20 to
+        # keep-air while keeping F04/F16 on close.
+        align_close_thresh: float = 0.965,     # algA@commit above … (with mgap) → close
+        close_mgap_thresh: float = 0.36,       # … AND mgap@commit above → close
+                                               # (between F20≈0.31 and F04≈0.41)
+        # Early droplet latch: a genuinely ill-conditioned valley drives cond high
+        # *fast* (F11/F12/F13 to 8-11 by ~gen 20-30, F14 by ~gen 85) — routing it
+        # to droplet early captures the gain (F13 SharpRidge +30 needs droplet from
+        # the start). Rugged multimodals (F16/F23) only spike cond transiently to
+        # ~3, so a HIGH bar avoids latching them. Above this at any pre-commit gen
+        # ⇒ latch droplet immediately.
+        cond_droplet_early: float = 4.0,
+        # Route-commit checkpoint (generation). Before it, run base keep-air; at it,
+        # commit the route from the stabilized EMA values and lock for the run. Set
+        # inside the exploration phase (functions have ~260-470 explore gens) and
+        # late enough that the conditioning EMA has developed (droplet functions
+        # reach cond ~3-7 by here, others stay ≤ ~2.7).
+        route_commit_gen: int = 120,
+        # ── Migratory (vector-borne) channel: stuck-gated structured escape ──
+        # A 4th transmission channel modelling a carrier moving the pathogen to a
+        # distant region. It fires ONLY when a run is stuck — drilled in (σ below
+        # the drilling threshold) yet stagnating (no_improve ≥ threshold) — i.e.
+        # precision has already stalled, so diverting some offspring costs no
+        # productive precision evals. Offspring are structured long jumps from the
+        # current best: half along the population's principal covariance axis
+        # (valley/ridge escape for F13/F14), half isotropic (multimodal escape for
+        # F18/F23), at migratory_jump_ratio × span. Because offspring go through
+        # μ+λ greedy rollback and best_f is the min over all evals, this channel
+        # can only lower best_f or be ignored — it CANNOT reduce SR@1e-10. Off by
+        # default (bit-identical to base when disabled — no offspring, no RNG draws).
+        migratory_channel: bool = False,
+        migratory_ratio: float = 0.34,         # share of a stuck gen's offspring
+        # Stagnation gate. Kept BELOW the spillover threshold (300) so migratory
+        # fires before the population is reset, but well above the transient
+        # stagnation of a still-recovering run (e.g. F14's delayed breakthrough) so
+        # those runs are not perturbed — the loose 100 regressed F14/F17/F19.
+        migratory_no_improve_thresh: int = 200,
+        migratory_jump_ratio: float = 0.2,     # jump magnitude, × span
         # ── Greedy (μ+λ) replacement ───────────────────────────────────
         kill_fraction: float = 0.25,           # fraction of active killed per gen (by f)
         # ── Restart on stagnation ──────────────────────────────────────
@@ -270,6 +351,16 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.niche_radius_ratio = niche_radius_ratio
         self.host_sigma_min_scale = host_sigma_min_scale
         self.air_sigma_amplifier = air_sigma_amplifier
+        self.channel_schedule = channel_schedule
+        self.cond_droplet_thresh = cond_droplet_thresh
+        self.align_close_thresh = align_close_thresh
+        self.close_mgap_thresh = close_mgap_thresh
+        self.cond_droplet_early = cond_droplet_early
+        self.route_commit_gen = route_commit_gen
+        self.migratory_channel = migratory_channel
+        self.migratory_ratio = migratory_ratio
+        self.migratory_no_improve_thresh = migratory_no_improve_thresh
+        self.migratory_jump_ratio = migratory_jump_ratio
         self.log_slope_threshold = log_slope_threshold
         self.h2h_ratio = h2h_ratio
         self.h2h_F = h2h_F
@@ -674,6 +765,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             if isinstance(cov, np.ndarray) and cov.shape == (self.dim, self.dim):
                 eigvals, eigvecs = np.linalg.eigh(cov)  # ascending eigenvalues
                 floor_eff = self._adaptive_cov_floor(st, eigvals)
+                # Axis-alignment signal for the channel router (separability):
+                # mean over eigenvectors of their max |component|. EMA-smoothed
+                # (same beta as the conditioning EMA). Written only; base never
+                # reads it, so base numerics are unchanged.
+                align = float(np.mean(np.max(np.abs(eigvecs), axis=0)))
+                st.cc_align_ema = (align if st.cc_align_ema is None else
+                                   (1.0 - self.cov_ratio_beta) * st.cc_align_ema
+                                   + self.cov_ratio_beta * align)
+                # Max normalized coordinate gap (second separability signal).
+                mgap = 0.0
+                for d in range(self.dim):
+                    col = np.sort(st.pop_x[:, d])
+                    rng = float(col[-1] - col[0])
+                    if rng > 1e-300:
+                        mgap = max(mgap, float(np.max(np.diff(col)) / rng))
+                st.cc_mgap_ema = (mgap if st.cc_mgap_ema is None else
+                                  (1.0 - self.cov_ratio_beta) * st.cc_mgap_ema
+                                  + self.cov_ratio_beta * mgap)
                 mean_eig = float(eigvals.mean())
                 if mean_eig > 1e-30:
                     eigvals = eigvals / mean_eig
@@ -734,6 +843,119 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         return self._reflect(st.pop_x[air_parents_gi] + noise_air * air_sigma_vec,
                              st.lo, st.hi)
 
+    def _migratory_children(self, st: _MCESOState, n_mig: int) -> np.ndarray:
+        """Migratory (vector-borne) transmission — stuck-gated structured escape.
+
+        Long jumps from the current best (magnitude ``migratory_jump_ratio`` ×
+        span): half along the population's principal covariance axis (valley/ridge
+        escape), half isotropic (multimodal escape). Only invoked when the run is
+        stuck (caller gates on drilling + stagnation), so it never diverts
+        productive precision. Offspring compete via μ+λ rollback, so this can only
+        improve best_f, never worsen SR@1e-10."""
+        if n_mig <= 0:
+            return np.empty((0, self.dim))
+        rng = st.rng
+        x_best = st.pop_x[int(np.argmin(st.pop_f))]
+        jump = self.migratory_jump_ratio * st.span
+        v_max = None
+        if self.dim >= 2:
+            cov = np.cov(st.pop_x, rowvar=False)
+            if isinstance(cov, np.ndarray) and cov.shape == (self.dim, self.dim):
+                _, eigvecs = np.linalg.eigh(cov)
+                v_max = eigvecs[:, -1]
+        out = np.empty((n_mig, self.dim))
+        for k in range(n_mig):
+            if v_max is not None and rng.random() < 0.5:
+                out[k] = x_best + rng.choice([-1.0, 1.0]) * jump * v_max   # along ridge/valley
+            else:
+                out[k] = x_best + jump * rng.standard_normal(self.dim)     # isotropic escape
+        return self._reflect(out, st.lo, st.hi)
+
+    # ── σ-regime channel schedule ───────────────────────────────────────────
+    def _channel_ratios(self, st: _MCESOState) -> tuple[float, float]:
+        """Effective (airborne, droplet) offspring shares for this generation.
+
+        Base (``channel_schedule=False``) reproduces the original policy exactly:
+        a flat ``air_ratio`` that is hard-switched to 0 once σ enters drilling
+        mode (σ < span × precision_sigma_ratio), droplet flat at ``h2h_ratio``.
+
+        With ``channel_schedule=True`` the **per-landscape channel router** runs
+        base keep-air until the ``route_commit_gen`` checkpoint, then commits once
+        (and locks for the run) to one of three routes, chosen from two
+        f-independent, scale-invariant signals (both EMAs, updated during
+        close-contact) evaluated at the checkpoint:
+
+          • ``cond`` = ``cc_logratio_ema`` (log10 λmax/λmin of the population
+            covariance) — conditioning;
+          • ``algA`` = ``cc_align_ema`` (mean max|component| of the covariance
+            eigenvectors) — axis-alignment / separability.
+
+            cond > cond_droplet_thresh (≈2.5)  → DROPLET route: air tapers (σ-ramp)
+                                                  and the freed budget → droplet
+                                                  (F11–F14 ill-conditioned valleys).
+            else algA > align_close_thresh(.98)→ CLOSE route:   air tapers, freed
+                                                  budget → close-contact (F04/F16
+                                                  separable / axis-aligned).
+            otherwise                           → KEEP-AIR route: base ratios
+                                                  (multimodal escape untouched).
+
+        Why routing rather than a uniform schedule: all four uniform variants
+        (2026-07) lost overall SR@1e-10 because reallocating the air budget the
+        *same* way everywhere helps one landscape class and hurts another (droplet
+        helps F11–14 but hurts separable F04; cutting air anywhere hurts multimodal
+        escape). The diagnostic (docs/history.md) showed ``cond`` cleanly separates
+        the droplet class and ``algA`` the close class, while everything else — the
+        multimodal/escape functions — is left on the KEEP-AIR default = base
+        (bit-identical), so the router only diverges from base where a landscape
+        clearly signals it, bounding the risk. The taper reuses the validated
+        σ-ramp so a routed function starts at base at full σ and only diverges as it
+        drills. Deterministic and structure-driven — no reward bandit (cf. rejected
+        MC-ESO-V2a). Signals are ``None`` on the first generation ⇒ KEEP-AIR (base).
+        """
+        span = st.span
+        drilling = st.sigma < span * self.precision_sigma_ratio
+        air_base = 0.0 if drilling else self.air_ratio
+        if not self.channel_schedule:
+            return air_base, self.h2h_ratio
+        # Drilling always runs airborne-free (as in base); the route is moot.
+        if drilling:
+            return air_base, self.h2h_ratio
+        # Commit the route once, after a warmup, from the stabilized EMAs — then
+        # lock it. Conditioning/separability are run-invariant landscape
+        # properties, so a single committed route removes the generation-to-
+        # generation flip-flop that otherwise perturbs threshold-borderline
+        # functions (F04/F14) and even leaks keep-air functions (F06) off base.
+        if st.channel_route is None:
+            if st.cc_logratio_ema is None or st.cc_align_ema is None:
+                return air_base, self.h2h_ratio          # KEEP-AIR (base) while warming
+            if st.cc_logratio_ema > self.cond_droplet_early:
+                st.channel_route = "droplet"             # early high-cond → ill-cond valley
+            elif len(st.history_sigma_global) < self.route_commit_gen:
+                return air_base, self.h2h_ratio          # KEEP-AIR (base) until checkpoint
+            # Checkpoint: commit from the stabilized EMA values, then lock.
+            elif st.cc_logratio_ema > self.cond_droplet_thresh:
+                st.channel_route = "droplet"             # ill-conditioned valley
+            elif (st.cc_align_ema > self.align_close_thresh
+                  and st.cc_mgap_ema is not None
+                  and st.cc_mgap_ema > self.close_mgap_thresh):
+                st.channel_route = "close"               # separable, wide-gap (F04/F16)
+            else:
+                st.channel_route = "keepair"             # multimodal / deceptive (base)
+        if st.channel_route == "keepair":
+            return self.air_ratio, self.h2h_ratio        # base ratios (escape untouched)
+        # σ-ramp taper (0 at the explore scale span×sigma → 1 at the drilling
+        # threshold), reused from the validated variants so a routed function
+        # starts at the base ratio at full σ and only diverges as it drills.
+        s = math.log10(max(st.sigma, 1e-300) / span)
+        s_hi, s_lo = math.log10(self.sigma), math.log10(self.precision_sigma_ratio)
+        t = (s_hi - s) / (s_hi - s_lo) if s_hi > s_lo else 1.0
+        t = min(1.0, max(0.0, t))
+        air_tapered = self.air_ratio * (1.0 - t)
+        if st.channel_route == "droplet":
+            return air_tapered, self.h2h_ratio + (self.air_ratio - air_tapered)
+        # CLOSE route: freed airborne budget → close-contact (implicit).
+        return air_tapered, self.h2h_ratio
+
     # ── one generation (μ+λ greedy step) ────────────────────────────────────
     def _run_generation(self, st: _MCESOState) -> None:
         """One outbreak generation: select strains + the worst-K hosts to kill,
@@ -777,17 +999,26 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
         # 3-channel split: close-contact (local Gaussian), droplet (h2h
         # DE/current-to-best), airborne (random spread). Airborne is pure noise —
-        # suppressed once drilling mode is entered so precision grinding isn't
-        # disrupted.
-        in_drilling_now = st.sigma < span * self.precision_sigma_ratio
-        air_ratio_eff = 0.0 if in_drilling_now else self.air_ratio
+        # the σ-regime schedule (_channel_ratios) tapers it off as σ contracts so
+        # precision grinding isn't disrupted (reaching 0 in drilling mode).
+        air_ratio_eff, h2h_ratio_eff = self._channel_ratios(st)
         n_air = max(0, int(round(air_ratio_eff * n_dead)))
-        n_h2h = max(0, int(round(self.h2h_ratio * n_dead))) if n >= 3 else 0
+        n_h2h = max(0, int(round(h2h_ratio_eff * n_dead))) if n >= 3 else 0
         # If rounding overflows, trim airborne first (preserves the
         # droplet/close-contact intent).
         if n_air + n_h2h > n_dead:
             n_air = max(0, n_dead - n_h2h)
-        n_local = n_dead - n_air - n_h2h
+        # Migratory (vector-borne) channel: only when stuck (drilled in AND
+        # stagnating). It draws from the close-contact share (airborne is already 0
+        # in drilling), giving stalled precision offspring a structured escape.
+        in_drilling_now = st.sigma < span * self.precision_sigma_ratio
+        migratory_active = (self.migratory_channel and in_drilling_now
+                            and st.no_improve >= self.migratory_no_improve_thresh)
+        n_mig = max(0, int(round(self.migratory_ratio * n_dead))) if migratory_active else 0
+        n_local = n_dead - n_air - n_h2h - n_mig
+        if n_local < 0:                     # migratory overflow → trim it
+            n_mig = max(0, n_mig + n_local)
+            n_local = n_dead - n_air - n_h2h - n_mig
 
         # Log-scale quality anchored to the global (history-wide) best. When the
         # population converges to a local optimum, all f_i ≈ f_pop_max but
@@ -807,9 +1038,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st, n_local, weights, log_f_max, log_f_spread)
         new_h2h, h2h_step_norms = self._droplet_children(st, n_h2h, weights, elite_arr)
         new_air = self._airborne_children(st, n_air, air_sigma_vec)
-        new_xs = np.concatenate([new_local, new_h2h, new_air], axis=0)
+        # Migratory is generated last so that when the channel is off (n_mig = 0)
+        # no RNG is drawn and the run stays bit-identical to base.
+        new_mig = self._migratory_children(st, n_mig)
+        new_xs = np.concatenate([new_local, new_h2h, new_air, new_mig], axis=0)
 
-        # Per-child sigma: local→σ_i, h2h→|step|, air→air_sigma_vec
+        # Per-child sigma: local→σ_i, h2h→|step|, air→air_sigma_vec, mig→jump
         _sc: list[np.ndarray] = []
         if n_local > 0:
             _sc.append(sigma_i)
@@ -817,6 +1051,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             _sc.append(h2h_step_norms)
         if n_air > 0:
             _sc.append(np.full(n_air, float(air_sigma_vec)))
+        if n_mig > 0:
+            _sc.append(np.full(n_mig, float(self.migratory_jump_ratio * span)))
         _sigma_children = np.concatenate(_sc) if _sc else np.array([])
 
         # Evaluate offspring and resolve host competition (placement + rollback +

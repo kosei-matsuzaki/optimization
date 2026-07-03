@@ -126,6 +126,12 @@ _OPTIMIZERS = {
     "L-SHADE":      (LSHADEOptimizer,               {}),
     "SaVOA":        (SaVOAOptimizer,                {}),
     "MC-ESO":       (MultiChannelEpidemicOptimizer, {}),
+    # Temporary verification variants (remove once verdict is in). The router is
+    # now the committed default, so:
+    #  Orig = pre-router flat-ratio MC-ESO (channel_schedule off) — regression ref.
+    #  Mig  = committed MC-ESO + stuck-gated migratory (vector-borne) escape channel.
+    "MC-ESO-Orig": (MultiChannelEpidemicOptimizer, {"channel_schedule": False}),
+    "MC-ESO-Mig":  (MultiChannelEpidemicOptimizer, {"migratory_channel": True}),
 }
 
 
