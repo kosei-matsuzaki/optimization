@@ -50,9 +50,46 @@ const CAT_LABELS = {
   'multi-optima':   'Custom',
   'deceptive-2d':   'Deceptive 2D',
 };
-let overallData = null;
+
+// Shape-tag axes (mirrors TAG_AXES in core/benchmarks.py) — used to order and
+// group the tag columns of the 形状タグ別 unified matrix under axis headers.
+const TAG_AXES = [
+  { axis: 'modality',     tags: ['unimodal', 'multimodal', 'multi-global'] },
+  { axis: 'separability', tags: ['separable', 'non-separable'] },
+  { axis: 'conditioning', tags: ['well-conditioned', 'moderate-cond', 'ill-conditioned'] },
+  { axis: 'structure',    tags: ['global-structure', 'weak-structure'] },
+  { axis: 'landscape',    tags: ['smooth', 'linear', 'asymmetric', 'plateau', 'bent-valley',
+                                 'sharp-ridge', 'rugged', 'deceptive', 'boundary-optimum', 'needle'] },
+  { axis: 'suite-shape',  tags: ['hybrid', 'composition'] },
+];
+const TAG_AXIS_OF = {};
+TAG_AXES.forEach(a => a.tags.forEach(t => { TAG_AXIS_OF[t] = a.axis; }));
+// Restrict TAG_AXES to a given (already scope-limited) tag set, preserving axis order.
+function _tagColumns(tagList) {
+  const set = new Set(tagList);
+  return TAG_AXES
+    .map(a => ({ axis: a.axis, tags: a.tags.filter(t => set.has(t)) }))
+    .filter(a => a.tags.length);
+}
+
+let overallRaw = null;              // full /api/overall payload (all suites)
+let overallData = null;             // payload for the currently selected suite scope
+let overallScope = null;            // 'bbob' | 'custom' | 'cec' | 'all'
+let overallView = 'ranking';        // active overall sub-view: ranking | detail | wilcoxon
 let overallDetailKey = 'sr_deep';   // selected indicator for the unified detail view
-let overallSortKey = 'evals';       // leaderboard sort column
+let overallSortKey = 'sr_deep';     // leaderboard sort column (default: SR@1e-10)
+
+// Benchmark suite of a function, by name prefix (F*=BBOB, C*=Custom, G*=CEC2022).
+function suiteOf(name) {
+  return ({ F: 'bbob', C: 'custom', G: 'cec' })[(name || '')[0]] || 'other';
+}
+const SCOPE_LABELS = {
+  bbob:   'BBOB',
+  custom: 'Custom',
+  cec:    'CEC2022',
+  other:  'その他',
+  all:    '全体（混在）',
+};
 
 // Sortable leaderboard columns. dir = natural "best first" direction:
 //   rank columns ascending (rank 1 = best), score columns descending (higher = best).
@@ -88,18 +125,23 @@ function _sortedLeaderboard() {
   });
 }
 
-// ── URL hash persistence: #dim2/F01-Sphere ──
+// ── URL hash persistence: #dim2/F01-Sphere or #dim2/__overall__/detail ──
 function _parseHash() {
   const h = location.hash.slice(1);
-  if (!h) return { dim: null, func: null };
+  if (!h) return { dim: null, func: null, view: null };
   const parts = h.split('/');
-  return parts.length >= 2
-    ? { dim: parts[0], func: decodeURIComponent(parts.slice(1).join('/')) }
-    : { dim: null,     func: decodeURIComponent(parts[0]) };
+  if (parts.length < 2) return { dim: null, func: decodeURIComponent(parts[0]), view: null };
+  const dim = parts[0];
+  const rest = parts.slice(1).map(decodeURIComponent);
+  if (rest[0] === '__overall__') return { dim, func: '__overall__', view: rest[1] || null };
+  return { dim, func: rest.join('/'), view: null };
 }
 function _updateHash() {
   if (!currentDim || !currentFunc) return;
-  history.replaceState(null, '', `#${currentDim}/${encodeURIComponent(currentFunc)}`);
+  const tail = currentFunc === '__overall__'
+    ? `__overall__/${overallView || 'ranking'}`
+    : encodeURIComponent(currentFunc);
+  history.replaceState(null, '', `#${currentDim}/${tail}`);
 }
 
 // ── Sidebar run header init ──
@@ -197,7 +239,7 @@ function switchViewMode(mode) {
   // Leaving overall mode? Restore a per-function selection so the panes have something to show.
   if (currentFunc === '__overall__') {
     setOverallMode(false);
-    document.getElementById('overall-entry')?.classList.remove('active');
+    _clearOverallNav();
     const fns = (DIMS_DATA[currentDim] || {}).functions || [];
     if (fns.length) {
       currentFunc = fns[0];
@@ -233,6 +275,7 @@ function switchViewMode(mode) {
 
 // ── Dimension switch ─────────────────────────────────────────────────────────
 function switchDim(dim) {
+  overallRaw = null;
   overallData = null;
   currentDim = dim;
   document.querySelectorAll('#dim-tabs button')
@@ -309,19 +352,21 @@ function buildFuncList() {
     list.appendChild(li);
   });
 
-  const { func: hashFunc } = _parseHash();
-  if (hashFunc && functions.includes(hashFunc)) {
+  const { func: hashFunc, view: hashView } = _parseHash();
+  if (hashFunc === '__overall__') {
+    selectOverall(hashView || overallView);
+  } else if (hashFunc && functions.includes(hashFunc)) {
     selectFunc(hashFunc);
   } else {
-    // Default landing: 全体評価
-    selectOverall();
+    // Default landing: 全体評価（ランキング）
+    selectOverall(overallView);
   }
 }
 
 function selectFunc(func) {
   setOverallMode(false);
   currentFunc = func;
-  document.getElementById('overall-entry')?.classList.remove('active');
+  _clearOverallNav();
   document.querySelectorAll('#func-list a')
     .forEach(a => a.classList.toggle('active', a.dataset.func === func));
   document.querySelectorAll('.card-func-badge').forEach(el => el.textContent = func);
@@ -593,25 +638,86 @@ function setOverallMode(on) {
   document.getElementById('overall-wrap').style.display = on ? '' : 'none';
 }
 
-async function selectOverall() {
+// The three overall sub-views map to one card each; the scope bar is shared.
+const OVERALL_VIEWS = ['ranking', 'detail', 'wilcoxon'];
+function _setOverallNav(view) {
+  document.querySelectorAll('#overall-nav .ov-nav-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.ovview === view));
+}
+function _clearOverallNav() {
+  document.querySelectorAll('#overall-nav .ov-nav-btn').forEach(b => b.classList.remove('active'));
+}
+// Show only the card for the active sub-view (scope bar stays visible for all).
+function _applyOverallView() {
+  const map = {
+    ranking:  'overall-ranking-card',
+    detail:   'overall-detail-card',
+    wilcoxon: 'overall-wilcoxon-card',
+  };
+  OVERALL_VIEWS.forEach(v => {
+    const el = document.getElementById(map[v]);
+    if (el) el.style.display = (v === overallView) ? '' : 'none';
+  });
+}
+
+async function selectOverall(view) {
+  if (OVERALL_VIEWS.includes(view)) overallView = view;
   currentFunc = '__overall__';
-  _updateHash();   // persist #dim/__overall__ so a reload stays on the overall view
+  _updateHash();   // persist #dim/__overall__/<view> so a reload stays put
   document.querySelectorAll('#func-list a').forEach(a => a.classList.remove('active'));
-  document.getElementById('overall-entry')?.classList.add('active');
+  _setOverallNav(overallView);
   document.querySelectorAll('.card-func-badge').forEach(el => el.textContent = '');
   setOverallMode(true);
-  if (!overallData) await fetchOverallData();
+  if (!overallRaw) await fetchOverallData();
   renderOverall();
 }
 
 async function fetchOverallData() {
   try {
     const res = await fetch(`/api/overall/${encodeURIComponent(RUN_ID)}/${currentDim}`);
-    if (res.ok) overallData = await res.json();
-  } catch (_) { overallData = null; }
+    overallRaw = res.ok ? await res.json() : null;
+  } catch (_) { overallRaw = null; }
+  _applyScope();
+}
+
+// Point overallData at the payload for the selected suite scope. Keeps the
+// prior scope across dim/data refreshes when it still exists; otherwise falls
+// back to the first available scope (BBOB when present).
+function _applyScope() {
+  const scopes = overallRaw?.scopes || [];
+  if (!scopes.length) { overallData = overallRaw; return; }
+  if (!scopes.includes(overallScope)) overallScope = scopes[0];
+  overallData = overallRaw.by_suite?.[overallScope] || overallRaw;
+}
+
+function _renderScopeBar() {
+  const el = document.getElementById('overall-scope-bar');
+  if (!el) return;
+  const scopes = overallRaw?.scopes || [];
+  // Nothing to switch between (single suite) → hide the bar entirely.
+  if (scopes.length <= 1) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  el.style.display = '';
+  const nFuncOf = s => (overallRaw.by_suite?.[s]?.funcs || []).length;
+  el.innerHTML = '<span class="ov-scope-label">評価範囲</span>' + scopes.map(s =>
+    `<button class="ov-scope-btn ${s === overallScope ? 'active' : ''}${s === 'all' ? ' is-all' : ''}" `
+    + `data-scope="${s}">${htmlesc(SCOPE_LABELS[s] || s)}`
+    + `<span class="ov-scope-n">${nFuncOf(s)}</span></button>`
+  ).join('');
+  if (!el.dataset.bound) {
+    el.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-scope]');
+      if (!btn || btn.dataset.scope === overallScope) return;
+      overallScope = btn.dataset.scope;
+      _applyScope();
+      renderOverall();
+    });
+    el.dataset.bound = '1';
+  }
 }
 
 function renderOverall() {
+  _renderScopeBar();
+  _applyOverallView();
   if (!overallData || !overallData.leaderboard || !overallData.leaderboard.length) {
     document.getElementById('overall-leaderboard-container').innerHTML =
       '<p class="empty-state">データがありません。</p>';
@@ -633,30 +739,39 @@ function _renderLeaderboard(lb) {
     return Math.max(0, Math.min(1, (nMethods - mr) / (nMethods - 1)));
   };
 
-  // Friedman test stats line (per indicator).
-  const statBlock = (ind, label) => {
+  // Friedman test stats — rendered as a small table (指標 × χ²_F / p / 判定 / CD)
+  // rather than an inline run, which was ambiguous once it wrapped.
+  const frRow = (ind, label) => {
     const s = fried[ind];
     if (!s) return '';
     const chi2 = s.chi2 == null ? '—' : s.chi2.toFixed(2);
     const pStr = s.p == null ? '—' : (s.p < 1e-4 ? s.p.toExponential(1) : s.p.toFixed(4));
-    const pCls = (s.p != null && s.p < 0.05) ? 'sig' : 'nonsig';
     const cd   = s.cd == null ? '—' : s.cd.toFixed(2);
-    return `
-      <div class="stat-block">
-        <span class="ind">${label}</span>
-        <span class="label">χ²_F</span><span>${chi2}</span>
-        <span class="label">p</span><span class="pval ${pCls}">${pStr}</span>
-        <span class="label">CD₀.₀₅</span><span>${cd}</span>
-      </div>`;
+    const sig  = (s.p != null && s.p < 0.05);
+    const verdict = s.p == null ? ''
+      : `<span class="fr-chip ${sig ? 'sig' : 'nonsig'}">${sig ? '有意' : 'n.s.'}</span>`;
+    return `<tr>
+        <td class="fr-ind">${label}</td>
+        <td>${chi2}</td>
+        <td class="fr-p ${sig ? 'sig' : 'nonsig'}">${pStr}</td>
+        <td class="fr-verdict">${verdict}</td>
+        <td>${cd}</td>
+      </tr>`;
   };
-  let statsHtml = `
-    <div class="ov-friedman-stats">
-      ${statBlock('bf', 'best_f')}
-      ${statBlock('evals', 'Evals')}
-      <div class="stat-block">
-        <span class="label">N (funcs)</span><span>${nFuncs}</span>
-        <span class="label">k (methods)</span><span>${nMethods}</span>
-      </div>
+  // Friedman section — its own heading (matches 総合ランキング), placed below
+  // the leaderboard in a separate container.
+  const statsHtml = `
+    <div class="card-header-row ov-subhead">
+      <span class="card-title-label">Friedman 検定</span>
+      <span class="card-subtitle">N = ${nFuncs} 関数 · k = ${nMethods} 手法 · 手法間の順位差の有意性</span>
+    </div>
+    <table class="fr-tbl">
+      <thead><tr><th>指標</th><th>χ²_F</th><th>p 値</th><th>判定</th><th>CD₀.₀₅</th></tr></thead>
+      <tbody>${frRow('bf', 'best_f')}${frRow('evals', 'Evals')}</tbody>
+    </table>
+    <div class="fr-note">
+      χ²_F・p 値 = 手法間の順位差が全体として有意か（<strong>p &lt; 0.05 で有意差あり</strong>）。
+      CD₀.₀₅ = Nemenyi 臨界差 — 2 手法の平均ランク差がこの値以上なら、その 2 手法は有意に異なる。
     </div>`;
 
   const sortHdr = (key, label, title) => {
@@ -664,7 +779,7 @@ function _renderLeaderboard(lb) {
     const arrow = isActive ? (OV_SORT_KEYS[key].dir === 'asc' ? '▲' : '▼') : '↕';
     return `<div><span class="ov-rank-sort ${isActive ? 'active' : ''}" data-sort-key="${key}" title="${title} · クリックでソート">${label}<span class="sort-arrow">${arrow}</span></span></div>`;
   };
-  let html = statsHtml + `
+  let html = `
     <div class="ov-rank-header">
       <div>#</div><div>Method</div>
       ${sortHdr('bf', 'Mean Rank (best_f)', 'best_f（全 run 平均 mean_best_f）の Friedman 平均ランク（低い＝優）')}
@@ -707,6 +822,8 @@ function _renderLeaderboard(lb) {
   html += '</div>';
   const container = document.getElementById('overall-leaderboard-container');
   container.innerHTML = html;
+  const friedmanEl = document.getElementById('overall-friedman-container');
+  if (friedmanEl) friedmanEl.innerHTML = statsHtml;
   if (!container.dataset.sortBound) {
     container.addEventListener('click', e => {
       const btn = e.target.closest('.ov-rank-sort');
@@ -812,9 +929,68 @@ function _renderDetail(lb) {
   ch += '</tbody></table></div>';
   document.getElementById('overall-detail-category').innerHTML = ch;
 
+  // ── 形状タグ別 統合ビュー ──
+  // One matrix whose columns are shape tags grouped by axis. Two stacked
+  // sections share the columns: (1) each method's aggregate of the selected
+  // indicator over the functions carrying the tag — "how does each method do on
+  // this shape?"; (2) the function → tag correspondence dots — "which functions
+  // define this tag?". A function contributes to every tag it carries (columns
+  // overlap by design; orthogonal shape axes, not a partition).
+  const ftags = overallData.func_tags || {};
+  const axisCols = _tagColumns(overallData.all_tags || []);
+  const flatTags = axisCols.flatMap(a => a.tags.map(t => ({ t, axis: a.axis })));
+  const funcsWith = t => funcs.filter(f => (ftags[f] || []).includes(t));
+  const nCols = flatTags.length + 2;   // row-header + tags + All
+
+  let th = '<div class="ov-tbl-wrap"><table class="ov-tbl sticky-col ovm-matrix">';
+  th += '<thead><tr><th class="ovm-corner" rowspan="2">手法 / 関数</th>';
+  axisCols.forEach(a => {
+    th += `<th class="ovm-axis tax-${a.axis}" colspan="${a.tags.length}">${htmlesc(a.axis)}</th>`;
+  });
+  th += '<th class="ov-mean-col" rowspan="2">All</th></tr><tr>';
+  flatTags.forEach(({ t, axis }) => {
+    const n = funcsWith(t).length;
+    th += `<th class="ovm-tag tax-${axis}" title="${htmlesc(t)}（${n} 関数）">`
+        + `<span class="ovm-tag-label">${htmlesc(t)}</span><span class="ovm-tag-n">${n}</span></th>`;
+  });
+  th += '</tr></thead><tbody>';
+
+  // Section 1: per-method aggregate of the selected indicator, per tag.
+  th += `<tr class="ovm-sect"><td colspan="${nCols}">手法別集計 — ${htmlesc(ind.label)}（各タグを持つ関数のみで${ind.type === 'rank' ? '平均ランク' : '平均'}）</td></tr>`;
+  ordered.forEach((row, i) => {
+    th += `<tr class="${_medalCls(i)}"><td class="ovm-rowh">${htmlesc(row.method)}</td>`;
+    flatTags.forEach(({ t }) => { th += `<td>${cell(meanOver(row.method, funcsWith(t)))}</td>`; });
+    th += `<td class="ov-mean-col">${fmtMean(meanOver(row.method, funcs))}</td></tr>`;
+  });
+
+  // Section 2: function → tag correspondence (which functions carry each tag).
+  th += `<tr class="ovm-sect"><td colspan="${nCols}">関数のタグ対応（● = そのタグを持つ）</td></tr>`;
+  funcs.forEach(f => {
+    const set = new Set(ftags[f] || []);
+    const m = f.match(/^([A-Za-z]+\d+)-(.*)$/);
+    const num = m ? m[1] : '';
+    const name = m ? m[2] : f;
+    th += `<tr class="ovm-frow"><td class="ovm-rowh ovm-fn" title="${htmlesc(f)}">`
+        + `<a class="ovm-fn-link" href="#" onclick="selectFunc('${htmlesc(f)}');return false;" title="${htmlesc(f)} を開く">`
+        + (num ? `<span class="ovm-fn-num">${htmlesc(num)}</span>` : '')
+        + `<span class="ovm-fn-name">${htmlesc(name)}</span></a>`
+        + `<span class="ovm-fn-cat">${htmlesc(CAT_LABELS[fcat[f]] || fcat[f] || '')}</span></td>`;
+    flatTags.forEach(({ t, axis }) => {
+      th += set.has(t)
+        ? `<td class="ovm-cell tax-${axis} on" title="${htmlesc(shortLabel(f) + ' · ' + t)}"><span class="ovm-dot"></span></td>`
+        : '<td class="ovm-cell off"></td>';
+    });
+    th += `<td class="ov-mean-col ovm-tagcount">${(ftags[f] || []).length}</td></tr>`;
+  });
+  th += '</tbody></table></div>';
+  document.getElementById('overall-detail-tags').innerHTML = th;
+
   // ── 関数別 ──
   let fh = '<div class="ov-tbl-wrap"><table class="ov-tbl sticky-col"><thead><tr><th>Method</th>';
-  funcs.forEach(f => { fh += `<th title="${htmlesc(f)}">${htmlesc(shortLabel(f))}</th>`; });
+  funcs.forEach(f => {
+    const tt = (ftags[f] || []).join(', ');
+    fh += `<th title="${htmlesc(f + (tt ? '  ·  ' + tt : ''))}">${htmlesc(shortLabel(f))}</th>`;
+  });
   fh += '<th class="ov-mean-col">Mean</th></tr></thead><tbody>';
   ordered.forEach((row, i) => {
     fh += `<tr class="${_medalCls(i)}"><td>${htmlesc(row.method)}</td>`;
@@ -920,9 +1096,11 @@ async function buildUnifiedTable(func) {
     return isNaN(n) ? '—' : (n * 100).toFixed(0) + '%';
   }
 
-  // Multi-threshold SR profile rendered as a 7-bar mini ECDF chart.
-  const SR_TARGETS = ['sr_1e-1', 'sr_1e-2', 'sr_1e-3', 'sr_1e-4', 'sr_1e-5', 'sr_1e-7', 'sr_1e-10'];
-  const SR_TARGET_LABELS = ['1e⁻¹', '1e⁻²', '1e⁻³', '1e⁻⁴', '1e⁻⁵', '1e⁻⁷', '1e⁻¹⁰'];
+  // Per-precision success-rate heatmap: one colored cell per target precision.
+  // Loose targets on the left (1e⁻¹) → tight on the right (1e⁻¹⁰, the primary metric).
+  const SR_TARGETS = ['sr_1e-4', 'sr_1e-7', 'sr_1e-10'];
+  const SR_TARGET_LABELS = ['1e⁻⁴', '1e⁻⁷', '1e⁻¹⁰'];
+  const SR_TARGET_VALS = [1e-4, 1e-7, 1e-10];     // f(x) 閾値（f_opt=0 前提）
 
   // Parse "85%" / "0.85" / 0.85 → 0.85 (fraction in [0,1]); null on missing.
   function parseSRFraction(raw) {
@@ -939,40 +1117,52 @@ async function buildUnifiedTable(func) {
     return typeof raw === 'number' ? raw : null;
   }
 
-  function fmtECDFProfile(sr) {
-    // 7 vertical bars; height of filled portion ∝ SR. Width 12px, height 22px.
-    const BAR_W = 12, GAP = 2, H = 22, PAD_X = 2;
-    const totalW = PAD_X * 2 + 7 * BAR_W + 6 * GAP;
-    const bars = SR_TARGETS.map((k, i) => {
+  // Sequential green heatmap: 0% → pale, 100% → deep green. Number is always
+  // printed so the exact value is readable regardless of color.
+  function srHeatColor(frac) {
+    const f = Math.max(0, Math.min(1, frac));
+    const L = 97 - 63 * f;              // lightness 97 → 34
+    const S = 32 + 36 * f;              // saturation 32 → 68
+    const bg = `hsl(150, ${S.toFixed(0)}%, ${L.toFixed(0)}%)`;
+    const fg = L < 62 ? '#ffffff' : '#0f3d24';
+    return { bg, fg };
+  }
+
+  // Emit the 7 <td> heatmap cells for one method's SR profile.
+  function fmtSRHeatCells(sr) {
+    return SR_TARGETS.map((k, i) => {
       const v = parseSRFraction(sr[k]);
-      const valid = v != null;
-      const filled = valid ? Math.max(0, Math.min(1, v)) : 0;
-      const fillH = filled * H;
-      const fillY = H - fillH;
-      const x = PAD_X + i * (BAR_W + GAP);
-      // Color intensity by SR — same hue, darker when higher
-      const fillCol = valid
-        ? `rgba(79, 70, 229, ${(0.35 + 0.55 * filled).toFixed(3)})`
-        : 'rgba(0,0,0,0.0)';
-      const tip = valid
-        ? `SR@${SR_TARGET_LABELS[i]} = ${(filled * 100).toFixed(0)}%`
-        : `SR@${SR_TARGET_LABELS[i]} not available`;
-      return `
-        <g><title>${tip}</title>
-          <rect x="${x}" y="0" width="${BAR_W}" height="${H}" rx="1.5" fill="#e5e7eb"/>
-          ${valid && filled > 0
-            ? `<rect x="${x}" y="${fillY.toFixed(2)}" width="${BAR_W}" height="${fillH.toFixed(2)}" rx="1.5" fill="${fillCol}"/>`
-            : `<line x1="${x + BAR_W / 2}" y1="${H / 2}" x2="${x + BAR_W / 2}" y2="${H / 2}" stroke="#9ca3af"/>`}
-        </g>`;
+      const cls = 'sr-heat';
+      if (v == null) {
+        return `<td class="${cls} sr-heat-na" title="SR@${SR_TARGET_LABELS[i]} 未計測">—</td>`;
+      }
+      const frac = Math.max(0, Math.min(1, v));
+      const { bg, fg } = srHeatColor(frac);
+      const pct = (frac * 100).toFixed(0);
+      return `<td class="${cls}" style="background:${bg};color:${fg};"`
+        + ` title="SR@${SR_TARGET_LABELS[i]} = ${pct}%">${pct}<span class="sr-heat-pct">%</span></td>`;
     }).join('');
-    return `<svg class="ecdf-bars" viewBox="0 0 ${totalW} ${H}" width="${totalW}" height="${H}" aria-label="ECDF profile">${bars}</svg>`;
+  }
+
+  // Per-seed ✓/✗ cells: did this single run reach each target precision?
+  // f_opt = 0 for BBOB/Custom, so "reached" ⟺ final best_f ≤ target.
+  function fmtRunReachCells(run) {
+    const bf = parseFloat(run.best_f);
+    return SR_TARGET_VALS.map((t, i) => {
+      const cls = 'sr-reach';
+      if (isNaN(bf)) return `<td class="${cls} sr-heat-na">—</td>`;
+      const hit = bf <= t;
+      return `<td class="${cls} ${hit ? 'sr-reach-hit' : 'sr-reach-miss'}"`
+        + ` title="1 run が SR@${SR_TARGET_LABELS[i]} ${hit ? '到達' : '未到達'} (best_f=${run.best_f})">`
+        + `${hit ? '✓' : '✗'}</td>`;
+    }).join('');
   }
 
 
   const COLS = [
     { label: 'Method / Seed', desc: 'Click ▶ to expand per-run details.' },
     { label: 'best_f',        desc: 'Mean of final best f(x) across all runs. Lower is better. BBOB functions: global minimum = 0.' },
-    { label: 'ECDF profile',  desc: 'BBOB-style success rate at multiple precision targets, displayed as 7 stacked tiles (1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-7, 1e-10). Hover for exact values. Loose targets on the left, tight on the right.' },
+    { label: 'SR@target', desc: '各精度目標(1e⁻⁴ / 1e⁻⁷ / 1e⁻¹⁰)に到達した run の割合(%)。左=緩い→右=厳しい。セルの色は成功率(濃い緑=高)、数値は正確な%。1e⁻¹⁰が主指標。行を展開すると各 seed が目標ごとに ✓(到達)/✗(未到達) で表示される。' },
     { label: 'Evals (succ mean)', desc: 'Mean number of evaluations to reach the 1e-4 target across successful runs only. Failed runs are excluded (no penalty extrapolation). Taken over successful runs (small spread, outliers unlikely), so the mean is used rather than the median. Read together with SR. — means no successful run.' },
     { label: 'time (s)',      desc: 'Mean wall-clock time per run (seconds).' },
     { label: 'optima rate',   desc: 'Fraction of distinct global optima found per run (capture radius ε = 0.1 × span). N/A for single-optimum functions.' },
@@ -984,6 +1174,11 @@ async function buildUnifiedTable(func) {
     `<span class="col-legend-key">${c.label}</span><span class="col-legend-desc">${c.desc}</span>`
   ).join('');
 
+  // Sub-header row: one column per precision target (1e⁻¹ … 1e⁻¹⁰).
+  const srSubHead = SR_TARGET_LABELS.map(lbl =>
+    `<th class="sr-head">${lbl}</th>`
+  ).join('');
+
   let html = `
   <details class="col-legend">
     <summary>凡例<span class="col-legend-toggle">▶</span></summary>
@@ -991,10 +1186,18 @@ async function buildUnifiedTable(func) {
   </details>
   <div class="table-wrap">
   <table class="unified-table">
-    <thead><tr>
-      ${TH('Method / Seed', 'style="text-align:left;min-width:150px;"')}
-      ${TH('best_f')} ${TH('ECDF profile', 'style="min-width:158px;"')} ${TH('Evals (succ mean)')} ${TH('time (s)')} ${TH('optima rate')} ${TH('evals')}
-    </tr></thead>
+    <thead>
+      <tr>
+        <th rowspan="2" style="text-align:left;min-width:150px;">Method / Seed</th>
+        <th rowspan="2">best_f</th>
+        <th colspan="${SR_TARGETS.length}" class="sr-group-head">SR@target</th>
+        <th rowspan="2">Evals (succ mean)</th>
+        <th rowspan="2">time (s)</th>
+        <th rowspan="2">optima rate</th>
+        <th rowspan="2">evals</th>
+      </tr>
+      <tr>${srSubHead}</tr>
+    </thead>
     <tbody id="unified-tbody">`;
 
   summaryRows.forEach((sr, si) => {
@@ -1007,20 +1210,19 @@ async function buildUnifiedTable(func) {
           ${method}
         </div></td>
         <td class="${bfColors[si]}">${fmtNum(sr.mean_best_f)}</td>
-        <td class="ecdf-cell">${fmtECDFProfile(sr)}</td>
+        ${fmtSRHeatCells(sr)}
         <td class="${evalsColors[si]}">${fmtEvals(sr.evals_succ_mean ?? sr.evals_succ_med ?? sr.ert)}</td>
         <td>${fmtNum(sr.mean_time_s)}</td>
         <td class="${orColors[si]}">${fmtNum(sr.mean_optima_rate)}</td>
         <td style="color:var(--muted);">—</td>
       </tr>`;
     runs.forEach(run => {
-      const ok  = run.success === 'True';
       const ors = parseFloat(run.optima_rate);
       html += `
         <tr class="run-row" data-method="${htmlesc(method)}" style="display:none;">
           <td class="run-cell">seed ${run.seed}</td>
           <td>${fmtNum(run.best_f)}</td>
-          <td class="${ok ? 'cell-success' : 'cell-failure'}" style="text-align:center;">${ok ? '✓' : '✗'}</td>
+          ${fmtRunReachCells(run)}
           <td style="color:var(--muted);">—</td>
           <td>${fmtNum(run.time_s)}</td>
           <td>${isNaN(ors) ? '—' : ors.toFixed(2)}</td>
@@ -1056,9 +1258,18 @@ function renderOverallWilcoxon() {
   const card = document.getElementById('overall-wilcoxon-card');
   const container = document.getElementById('overall-wilcoxon-container');
   if (!container || !card) return;
-  const rows = DIMS_DATA[currentDim]?.wilcoxon || [];
-  if (!rows.length) { card.style.display = 'none'; container.innerHTML = ''; return; }
-  card.style.display = '';
+  let rows = DIMS_DATA[currentDim]?.wilcoxon || [];
+  // Restrict the pairwise matrix to the selected suite scope so BBOB / Custom
+  // win-tie-loss counts are not mixed (the "all" scope keeps every function).
+  if (overallScope && overallScope !== 'all') {
+    rows = rows.filter(r => suiteOf(r.function) === overallScope);
+  }
+  // Card visibility is owned by _applyOverallView (the 統計的優位差 sub-tab);
+  // here we only fill content, showing an empty state when the scope has no data.
+  if (!rows.length) {
+    container.innerHTML = '<p class="empty-state">この評価範囲には Wilcoxon データがありません。</p>';
+    return;
+  }
 
   const ref = rows[0].reference;
   const funcs   = Array.from(new Set(rows.map(r => r.function)));
@@ -1237,7 +1448,8 @@ async function pollResultData() {
     if (funcKey !== _lastFuncKey) {
       _lastFuncKey = funcKey;
       DIMS_DATA = data.dims_data;
-      overallData = null;   // invalidate so the overall view refreshes in place
+      overallRaw = null;    // invalidate so the overall view refreshes in place
+      overallData = null;
       await loadMediaIndex();
       buildTypeSelector();
       buildFuncList();

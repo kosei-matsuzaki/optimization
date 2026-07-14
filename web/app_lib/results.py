@@ -170,7 +170,8 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
     if not rows:
         return {"methods": [], "categories": [], "funcs": [],
                 "leaderboard": [], "func_ranks": {}, "func_scores": {},
-                "func_categories": {}, "friedman": {}}
+                "func_categories": {}, "func_tags": {}, "all_tags": [],
+                "friedman": {}, "scopes": [], "by_suite": {}}
 
     def parse_sr(s: str) -> float:
         if not s or s == "N/A":
@@ -194,9 +195,16 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
     methods = sorted(set(r["method"]   for r in rows))
     func_categories: dict[str, str] = {}
     data: dict[str, dict] = {}
+    # Shape tags: prefer the CSV `tags` column (pipe-joined); for legacy runs
+    # that predate it, fall back to the canonical map keyed by function name.
+    from core.benchmarks import SHAPE_TAGS
+    func_tags: dict[str, list[str]] = {}
     for row in rows:
         f, m = row["function"], row["method"]
         func_categories[f] = row.get("category", "unknown")
+        raw_tags = (row.get("tags") or "").strip()
+        func_tags[f] = (raw_tags.split("|") if raw_tags
+                        else list(SHAPE_TAGS.get(f, [])))
         # Rank bf by the across-run MEAN best_f; fall back to median for runs
         # that lack mean_best_f.
         bf_raw = row.get("mean_best_f") or row.get("median_best_f") or "inf"
@@ -224,121 +232,140 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
     # bf / evals: lower-is-better. ecdf: higher-is-better — negated when ranking.
     INDICATORS = ("bf", "evals", "ecdf")
     HIGHER_BETTER = {"ecdf"}
-
-    # Per-function, per-indicator ranks via average-tie ranking.
-    # Missing data → worst rank for that block (still flagged via "missing" set).
     k = len(methods)
-    func_ranks: dict[str, dict[str, dict[str, float]]] = {ind: {} for ind in INDICATORS}
-    rank_matrix: dict[str, list[list[float]]] = {ind: [] for ind in INDICATORS}
 
-    for func in funcs:
-        md = data.get(func, {})
+    def _build(fs: list[str]) -> dict:
+        """Full overall-evaluation payload restricted to the function subset
+        ``fs``. Ranking, means, category breakdown and Friedman stats are all
+        computed within ``fs`` only, so mixing suites (BBOB / Custom / CEC2022)
+        never contaminates a suite-scoped view. Ranks are per-function so
+        recomputing them on a subset yields identical values."""
+        fs = sorted(fs)
+        # Per-function, per-indicator ranks via average-tie ranking.
+        f_ranks: dict[str, dict[str, dict[str, float]]] = {ind: {} for ind in INDICATORS}
+        r_matrix: dict[str, list[list[float]]] = {ind: [] for ind in INDICATORS}
+        for func in fs:
+            md = data.get(func, {})
+            for ind in INDICATORS:
+                missing = float("-inf") if ind in HIGHER_BETTER else float("inf")
+                vals = np.array([md.get(m, {}).get(ind, missing) for m in methods],
+                                dtype=float)
+                if ind in HIGHER_BETTER:
+                    vals = -vals
+                ranks_arr = rankdata(vals, method="average")
+                ranks_dict = {m: float(r) for m, r in zip(methods, ranks_arr)}
+                f_ranks[ind][func] = ranks_dict
+                r_matrix[ind].append([ranks_dict[m] for m in methods])
+
+        cats = sorted({func_categories.get(f, "unknown") for f in fs})
+
+        # Friedman χ²_F + Nemenyi CD per indicator (over the subset's blocks).
+        fried: dict[str, dict] = {}
+        n_blocks = len(fs)
         for ind in INDICATORS:
-            missing = float("-inf") if ind in HIGHER_BETTER else float("inf")
-            vals = np.array([
-                md.get(m, {}).get(ind, missing) for m in methods
-            ], dtype=float)
-            # For higher-is-better metrics, negate so rankdata still treats
-            # smaller-rank-number = better.
-            if ind in HIGHER_BETTER:
-                vals = -vals
-            ranks_arr = rankdata(vals, method="average")
-            ranks_dict = {m: float(r) for m, r in zip(methods, ranks_arr)}
-            func_ranks[ind][func] = ranks_dict
-            rank_matrix[ind].append([ranks_dict[m] for m in methods])
-
-    categories = sorted(set(func_categories.values()))
-
-    # Friedman χ²_F + Nemenyi CD per indicator.
-    friedman: dict[str, dict] = {}
-    n_blocks = len(funcs)
-    for ind in INDICATORS:
-        # friedmanchisquare expects one array per method, values across blocks.
-        cols = np.array(rank_matrix[ind])           # shape (n_blocks, k)
-        if n_blocks >= 2 and k >= 3:
-            try:
-                chi2, pval = friedmanchisquare(*[cols[:, j] for j in range(k)])
-                chi2_f, p_f = float(chi2), float(pval)
-            except ValueError:
+            cols = np.array(r_matrix[ind]) if r_matrix[ind] else np.empty((0, k))
+            if n_blocks >= 2 and k >= 3:
+                try:
+                    chi2, pval = friedmanchisquare(*[cols[:, j] for j in range(k)])
+                    chi2_f, p_f = float(chi2), float(pval)
+                except ValueError:
+                    chi2_f, p_f = float("nan"), float("nan")
+            else:
                 chi2_f, p_f = float("nan"), float("nan")
-        else:
-            chi2_f, p_f = float("nan"), float("nan")
-        # Nemenyi CD at α=0.05: q_α / sqrt(2) * sqrt(k(k+1)/(6N))
-        if k >= 2 and n_blocks >= 1:
-            try:
-                q_alpha = float(studentized_range.ppf(0.95, k, np.inf))
-                cd = q_alpha / np.sqrt(2.0) * np.sqrt(k * (k + 1) / (6.0 * n_blocks))
-                cd_f = float(cd)
-            except Exception:
+            if k >= 2 and n_blocks >= 1:
+                try:
+                    q_alpha = float(studentized_range.ppf(0.95, k, np.inf))
+                    cd_f = q_alpha / np.sqrt(2.0) * np.sqrt(k * (k + 1) / (6.0 * n_blocks))
+                except Exception:
+                    cd_f = float("nan")
+            else:
                 cd_f = float("nan")
-        else:
-            cd_f = float("nan")
-        friedman[ind] = {
-            "chi2":     None if np.isnan(chi2_f) else round(chi2_f, 3),
-            "p":        None if np.isnan(p_f)    else float(f"{p_f:.4g}"),
-            "cd":       None if np.isnan(cd_f)   else round(cd_f, 3),
-            "n_blocks": n_blocks,
-            "k":        k,
-        }
-
-    leaderboard = []
-    for method in methods:
-        sr_vals      = [data.get(f, {}).get(method, {}).get("sr", 0.0)      for f in funcs]
-        sr_deep_vals = [data.get(f, {}).get(method, {}).get("sr_deep", 0.0) for f in funcs]
-        pr_vals      = [data.get(f, {}).get(method, {}).get("pr", 0.0)      for f in funcs]
-        mean_sr      = float(np.mean(sr_vals))      if sr_vals      else 0.0
-        mean_sr_deep = float(np.mean(sr_deep_vals)) if sr_deep_vals else 0.0
-        mean_pr      = float(np.mean(pr_vals))      if pr_vals      else 0.0
-        cat_sr: dict[str, float | None] = {}
-        for cat in categories:
-            cf = [f for f in funcs if func_categories.get(f) == cat]
-            cat_sr[cat] = (
-                float(np.mean([data.get(f, {}).get(method, {}).get("sr", 0.0) for f in cf]))
-                if cf else None
-            )
-        entry: dict = {
-            "method":       method,
-            "mean_sr":      round(mean_sr, 4),       # SR@1e-4 (auxiliary)
-            "mean_sr_deep": round(mean_sr_deep, 4),  # SR@1e-10 (primary)
-            "mean_pr":      round(mean_pr, 4),       # PR@1e-4 (multi-optima discovery rate)
-            "category_sr":  {c: (round(v, 4) if v is not None else None)
-                             for c, v in cat_sr.items()},
-        }
-        for ind in INDICATORS:
-            rvals = [func_ranks[ind].get(f, {}).get(method, float(k)) for f in funcs]
-            arr = np.array(rvals, dtype=float)
-            entry[f"mean_rank_{ind}"] = round(float(np.mean(arr)), 2)
-            entry[f"rank_std_{ind}"]  = round(float(np.std(arr)),  2)
-            entry[f"n_best_{ind}"]    = int(np.sum(arr == 1.0))
-            entry[f"n_worst_{ind}"]   = int(np.sum(arr == float(k)))
-        leaderboard.append(entry)
-
-    # Primary sort: evals mean rank → SR@1e-10 → SR@1e-4 (bf/ecdf ranks are
-    # only used in the detail view, not the leaderboard).
-    leaderboard.sort(key=lambda x: (x["mean_rank_evals"], -x["mean_sr_deep"], -x["mean_sr"]))
-
-    # Raw per-function score values (higher-is-better, 0..1) for the unified
-    # detail view. Ranks live in func_ranks; these are the SR/PR scores so the
-    # frontend can show category + per-function breakdowns per selected metric.
-    func_scores: dict[str, dict[str, dict[str, float]]] = {
-        "sr_deep": {}, "sr": {}, "pr": {},
-    }
-    for f in funcs:
-        for skey in func_scores:
-            func_scores[skey][f] = {
-                m: float(data.get(f, {}).get(m, {}).get(skey, 0.0)) for m in methods
+            fried[ind] = {
+                "chi2":     None if np.isnan(chi2_f) else round(chi2_f, 3),
+                "p":        None if np.isnan(p_f)    else float(f"{p_f:.4g}"),
+                "cd":       None if np.isnan(cd_f)   else round(cd_f, 3),
+                "n_blocks": n_blocks,
+                "k":        k,
             }
 
-    return {
-        "methods":         methods,
-        "categories":      categories,
-        "funcs":           funcs,
-        "func_categories": func_categories,
-        "leaderboard":     leaderboard,
-        "func_ranks":      func_ranks,
-        "func_scores":     func_scores,
-        "friedman":        friedman,
-    }
+        lb = []
+        for method in methods:
+            sr_vals      = [data.get(f, {}).get(method, {}).get("sr", 0.0)      for f in fs]
+            sr_deep_vals = [data.get(f, {}).get(method, {}).get("sr_deep", 0.0) for f in fs]
+            pr_vals      = [data.get(f, {}).get(method, {}).get("pr", 0.0)      for f in fs]
+            mean_sr      = float(np.mean(sr_vals))      if sr_vals      else 0.0
+            mean_sr_deep = float(np.mean(sr_deep_vals)) if sr_deep_vals else 0.0
+            mean_pr      = float(np.mean(pr_vals))      if pr_vals      else 0.0
+            cat_sr: dict[str, float | None] = {}
+            for cat in cats:
+                cf = [f for f in fs if func_categories.get(f) == cat]
+                cat_sr[cat] = (
+                    float(np.mean([data.get(f, {}).get(method, {}).get("sr", 0.0) for f in cf]))
+                    if cf else None
+                )
+            entry: dict = {
+                "method":       method,
+                "mean_sr":      round(mean_sr, 4),       # SR@1e-4 (auxiliary)
+                "mean_sr_deep": round(mean_sr_deep, 4),  # SR@1e-10 (primary)
+                "mean_pr":      round(mean_pr, 4),       # PR@1e-4 (multi-optima discovery rate)
+                "category_sr":  {c: (round(v, 4) if v is not None else None)
+                                 for c, v in cat_sr.items()},
+            }
+            for ind in INDICATORS:
+                rvals = [f_ranks[ind].get(f, {}).get(method, float(k)) for f in fs]
+                arr = np.array(rvals, dtype=float) if rvals else np.array([float(k)])
+                entry[f"mean_rank_{ind}"] = round(float(np.mean(arr)), 2)
+                entry[f"rank_std_{ind}"]  = round(float(np.std(arr)),  2)
+                entry[f"n_best_{ind}"]    = int(np.sum(arr == 1.0))
+                entry[f"n_worst_{ind}"]   = int(np.sum(arr == float(k)))
+            lb.append(entry)
+        # Primary sort: evals mean rank → SR@1e-10 → SR@1e-4.
+        lb.sort(key=lambda x: (x["mean_rank_evals"], -x["mean_sr_deep"], -x["mean_sr"]))
+
+        f_scores: dict[str, dict[str, dict[str, float]]] = {
+            "sr_deep": {}, "sr": {}, "pr": {},
+        }
+        for f in fs:
+            for skey in f_scores:
+                f_scores[skey][f] = {
+                    m: float(data.get(f, {}).get(m, {}).get(skey, 0.0)) for m in methods
+                }
+        sub_tags = {f: func_tags.get(f, []) for f in fs}
+        return {
+            "methods":         methods,
+            "categories":      cats,
+            "funcs":           fs,
+            "func_categories": {f: func_categories.get(f, "unknown") for f in fs},
+            "func_tags":       sub_tags,
+            "all_tags":        sorted({t for ts in sub_tags.values() for t in ts}),
+            "leaderboard":     lb,
+            "func_ranks":      f_ranks,
+            "func_scores":     f_scores,
+            "friedman":        fried,
+        }
+
+    # Partition functions into benchmark suites by name prefix and build a full
+    # payload per suite. F* = BBOB, C* = Custom, G* = CEC2022. An "all" scope is
+    # added only when more than one suite is present (otherwise it is redundant).
+    def _suite_of(name: str) -> str:
+        return {"F": "bbob", "C": "custom", "G": "cec"}.get(name[:1], "other")
+
+    SUITE_ORDER = ["bbob", "custom", "cec", "other"]
+    suite_funcs: dict[str, list[str]] = {}
+    for f in funcs:
+        suite_funcs.setdefault(_suite_of(f), []).append(f)
+    present = [s for s in SUITE_ORDER if s in suite_funcs]
+
+    by_suite: dict[str, dict] = {s: _build(suite_funcs[s]) for s in present}
+    if len(present) > 1:
+        by_suite["all"] = _build(funcs)
+    scopes = present + (["all"] if len(present) > 1 else [])
+
+    # Backward compatibility: the top-level payload mirrors the default scope
+    # (whole run when mixed, else the single suite) so any older consumer keeps
+    # working. The frontend reads `by_suite` / `scopes` for the suite selector.
+    default = by_suite.get("all") or by_suite[present[0]]
+    return {**default, "scopes": scopes, "by_suite": by_suite}
 
 
 # ── git + run metadata ──────────────────────────────────────────────────────

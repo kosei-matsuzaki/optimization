@@ -1,0 +1,207 @@
+/* Benchmarks reference: function × shape-tag matrix.
+   Axis colors are set per-axis via .bm-ax-<axis> classes so header, legend,
+   and cell dots stay visually grouped. */
+
+.bm-wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+
+/* ── Intro ──────────────────────────────────────────────────────────────── */
+.bm-intro { margin-bottom: 22px; }
+.bm-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+.bm-desc {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: 900px;
+  margin: 0 0 14px;
+}
+.bm-desc strong { color: var(--text); font-weight: 600; }
+.bm-desc em { color: var(--accent-dark); font-style: normal; }
+.bm-desc code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Axis legend ────────────────────────────────────────────────────────── */
+.bm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+}
+.bm-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px 3px 8px;
+}
+.bm-legend-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--ax);
+}
+
+/* ── Matrix ─────────────────────────────────────────────────────────────── */
+.bm-matrix-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+.bm-matrix {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+/* Header: axis groups (top) + tag names (bottom, vertical) */
+.bm-axis-row .bm-axis {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--ax);
+  padding: 5px 6px;
+  text-align: center;
+  border-right: 2px solid var(--surface);
+  position: sticky; top: 0; z-index: 3;
+}
+.bm-tag-row .bm-tag {
+  vertical-align: bottom;
+  padding: 6px 0 8px;
+  height: 118px;
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  border-right: 1px solid var(--border-light);
+  position: sticky; top: 26px; z-index: 2;
+}
+.bm-tag-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ax-dark);
+  white-space: nowrap;
+  margin: 0 auto;
+}
+.bm-tag-count {
+  display: block;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Corner + function-name column (sticky left) */
+.bm-corner {
+  position: sticky; left: 0; top: 0; z-index: 5;
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  border-right: 2px solid var(--border);
+  padding: 6px 12px;
+  text-align: left;
+  font-weight: 800;
+  color: var(--text);
+  min-width: 180px;
+}
+.bm-corner-sub {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: none;
+}
+.bm-fname {
+  position: sticky; left: 0; z-index: 1;
+  background: var(--surface);
+  border-right: 2px solid var(--border);
+  border-bottom: 1px solid var(--border-light);
+  padding: 5px 12px;
+  text-align: left;
+  min-width: 180px;
+  white-space: nowrap;
+}
+.bm-fn {
+  display: block;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.bm-cat {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* Suite separator rows */
+.bm-suite-row td {
+  position: sticky; left: 0;
+  background: var(--accent-light);
+  border-top: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 12px;
+}
+.bm-suite-label {
+  font-weight: 800;
+  font-size: 12.5px;
+  color: var(--accent-dark);
+  letter-spacing: 0.02em;
+}
+.bm-suite-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: 8px;
+}
+
+/* Cells */
+.bm-cell {
+  text-align: center;
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  width: 26px;
+  min-width: 26px;
+  padding: 0;
+}
+.bm-cell.on { background: var(--ax-bg); }
+.bm-dot {
+  display: inline-block;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: var(--ax);
+  vertical-align: middle;
+}
+tbody tr:hover .bm-cell.off { background: var(--border-light); }
+tbody tr:hover .bm-fname,
+tbody tr:hover .bm-cell.on { filter: brightness(0.97); }
+
+/* ── Per-axis color assignment ──────────────────────────────────────────── */
+.bm-ax-modality     { --ax: #4f46e5; --ax-dark: #3730a3; --ax-bg: #eef2ff; }
+.bm-ax-separability { --ax: #0d9488; --ax-dark: #0f766e; --ax-bg: #d5f5f0; }
+.bm-ax-conditioning { --ax: #d97706; --ax-dark: #b45309; --ax-bg: #fef3c7; }
+.bm-ax-structure    { --ax: #9333ea; --ax-dark: #7e22ce; --ax-bg: #f3e8ff; }
+.bm-ax-landscape    { --ax: #2563eb; --ax-dark: #1d4ed8; --ax-bg: #dbeafe; }
+.bm-ax-suite-shape  { --ax: #e11d48; --ax-dark: #be123c; --ax-bg: #ffe4e9; }

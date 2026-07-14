@@ -29,9 +29,11 @@ python3 web/app.py
 | Remote Runs | 最新 10 件のワークフロー実行を一覧表示。完了済みは進捗バー付きでダウンロード可能 |
 | Local Results | `results/` 配下の結果一覧。名前変更・削除・実行中ジョブの停止に対応 |
 | 結果詳細 | 次元タブ・関数タブで切替え。Landscape / Convergence / Evals / Population 等の図を表示 |
-| Summary テーブル | 手法別の成績を色分け表示（best=緑、worst=赤）。ヘッダークリックでソート可能 |
+| Summary テーブル | 手法別の成績を色分け表示（best=緑、worst=赤）。ヘッダークリックでソート可能。**SR@target** 列は 1e⁻⁴ / 1e⁻⁷ / 1e⁻¹⁰ の 3 目標を色付きヒートマップ（濃い緑=高 SR、数値=正確な%）で並べる（1e⁻¹⁰が主指標）。行を展開すると各 seed が目標ごとに ✓（到達）/✗（未到達）で表示される（旧「ECDF profile」ミニバーを置換） |
+| 全体評価ナビ（左タブ 3 分割） | 左サイドバーの「全体評価」を **ランキング / 成績詳細 / 統計的優位差** の 3 エントリに分割（`#overall-nav`）。各エントリが 1 カードに対応し、選択中のカードのみ表示（評価範囲セレクタは 3 ビュー共通で常時表示）。URL ハッシュは `#dim2/__overall__/<view>` で永続化しリロードでも同じサブビューに戻る |
+| 評価範囲セレクタ（suite scope） | 全体評価の先頭に **BBOB / Custom /（あれば CEC2022）/ 全体（混在）** の切替バーを表示。選択スイートに応じて**ランキング・SR mean・カテゴリ別/形状タグ別・関数別・Wilcoxon をすべて再集計**する（BBOB と Custom を混ぜた平均を出さない）。バックエンドが関数名プレフィックス（F/C/G）でスイート分割し `by_suite` として全ペイロードを返すため、Friedman χ²_F / Nemenyi CD もスイート内の関数数で正しく再計算される。単一スイートのみの次元（dim3/4 は BBOB のみ等）ではバー非表示 |
 | Overall ランキング | 全関数横断の Friedman 平均順位を **best_f（全 run 平均 mean_best_f）/ Evals（succ-only mean）** の 2 列で表示（並べ替えは Evals→SR）＋ Nemenyi 臨界差。SR は **SR@1e-10（主指標）/ SR@1e-4（補助）/ PR@1e-4（多解の最適点発見率）** の 3 列を併記（ECDF ランクは成績詳細ビューに残置せず非表示） |
-| 成績詳細（統合ビュー） | カテゴリ別と関数別の内訳を 1 つに統合し、**指標セレクタ**で表示を切替。指標は SR@1e-10 / SR@1e-4 / PR@1e-4（score 型＝% ヒートマップ）と best_f（全 run 平均 mean_best_f）/ Evals（rank 型＝順位チップ）。手法は選択指標の平均で並べ替え |
+| 成績詳細（統合ビュー） | **カテゴリ別（BBOB 公式グループ）・形状タグ別・関数別**の内訳を **指標セレクタ**（SR@1e-10 / SR@1e-4 / PR@1e-4＝% ヒートマップ、best_f / Evals＝順位チップ）で切替。**形状タグ別は関数×タグ対応マトリクスと手法集計を 1 つに統合**: タグ列を軸（modality / separability / …）でグループ化し、上段=各手法のそのタグを持つ関数群での集計値、下段=どの関数がそのタグを持つか（● の対応表、`/benchmarks` と同じ配色）。これにより「各手法がどの形状に強い/弱いか」と「そのタグを構成する関数」を同一の列上で読める。手法は選択指標の平均で並べ替え。**関数のタグ対応（下段）の関数名は F01 等のスイート番号を前置し、クリックでその関数の関数別ビュー（`selectFunc`）へ遷移する** |
 | Per-run Stats | 各 run の詳細統計（成功 / 失敗を色分け） |
 
 ### ビューモード（結果詳細画面）
@@ -107,6 +109,7 @@ web/
 | メソッド | パス | 説明 |
 |---|---|---|
 | GET | `/` | ダッシュボード（結果一覧・Quick Run・GH Actions） |
+| GET | `/benchmarks` | ベンチマーク関数 × 形状タグ 対応マトリクス（run 非依存の静的リファレンス。`SHAPE_TAGS` / `TAG_AXES` 由来。関数を行・タグを列とし、軸ごとに色分け。ヘッダ nav からアクセス） |
 | GET | `/methods` | MC-ESO 手法解説ページ |
 | GET | `/results/<run_id>` | 結果詳細ページ |
 | GET | `/media/<path>` | `results/` 配下の図・ファイル配信 |
@@ -132,7 +135,7 @@ web/
 | GET | `/api/stats/<run_id>/<dim>/<func>` | per-run 詳細統計 CSV |
 | GET | `/api/media-index/<run_id>/<dim>` | 可視化ファイルの索引 |
 | GET | `/api/result-data/<run_id>` | 次元・関数・summary・wilcoxon |
-| GET | `/api/overall/<run_id>/<dim>` | 全関数横断の Friedman ランキング |
+| GET | `/api/overall/<run_id>/<dim>` | 全関数横断の Friedman ランキング。`scopes`（例 `["bbob","custom","all"]`）と `by_suite`（各スイートの完全ペイロード: leaderboard / friedman / func_categories / func_tags / func_scores …）を返す。トップレベルは後方互換のため既定スコープ（混在時は `all`）のペイロードを併載 |
 
 ---
 

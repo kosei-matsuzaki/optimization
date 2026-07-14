@@ -219,6 +219,38 @@
   }
   .ov-entry-btn.active::before { color: var(--accent); }
 
+  /* 全体評価 sub-view nav (ランキング / 成績詳細 / 統計的優位差) */
+  .ov-nav {
+    display: flex; flex-direction: column; gap: 4px;
+    margin: 14px 16px 0; flex-shrink: 0;
+  }
+  .ov-nav-btn {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    color: var(--text-2);
+    font-size: 12.5px; font-weight: 700;
+    font-family: var(--mono); letter-spacing: .1px;
+    cursor: pointer; text-align: left;
+    transition: background .14s, color .14s, border-color .14s, box-shadow .14s;
+  }
+  .ov-nav-btn::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted); flex-shrink: 0; transition: background .14s, box-shadow .14s;
+  }
+  .ov-nav-btn:hover {
+    background: var(--accent-light); color: var(--accent); border-color: rgba(79,70,229,.22);
+  }
+  .ov-nav-btn:hover::before { background: var(--accent); }
+  .ov-nav-btn.active {
+    background: linear-gradient(135deg, rgba(79,70,229,.22) 0%, rgba(129,140,248,.12) 100%);
+    color: var(--accent); border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(79,70,229,.16);
+  }
+  .ov-nav-btn.active::before { background: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,.18); }
+
   /* ── Compare panel v2 ───────────────────────────────────────────────────── */
   #compare-panel {
     flex: 1; overflow-y: auto; display: none; flex-direction: column; gap: 0;
@@ -295,6 +327,30 @@
     max-width: 50%;
   }
   .card-func-badge:empty, .card-func-badge.empty { display: none; }
+
+  /* ── Flat sections with a lineless heading ───────────────────────────────── */
+  /* Scoped to the results main column: no per-heading panel and no rules on the
+     heading. Cohesion is carried by (a) proximity — a tight gap under each
+     heading vs a wide gap between sections — and (b) a bold title marked by a
+     small accent dot. */
+  .main .card {
+    background: none; border: none; border-radius: 0;
+    box-shadow: none; padding: 0; margin-bottom: 32px;
+  }
+  .main .card:last-child { margin-bottom: 6px; }
+  .main .card-header-row {
+    margin: 0 0 12px; padding: 0; border-bottom: none;
+  }
+  .main .card-header-row::before { display: none; }   /* drop the global accent rail */
+  .main .card-title-label {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-size: 14.5px; font-weight: 800; letter-spacing: .2px;
+  }
+  .main .card-title-label::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-muted) 100%);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .14);
+  }
 
   /* ── Media grid (Function mode: all methods, Method mode: all functions) ─── */
   .media-grid {
@@ -375,11 +431,38 @@
   .unified-table td, .unified-table th { white-space: nowrap; }
   .unified-table th:not(:first-child), .unified-table td:not(:first-child) { text-align: right; }
 
-  /* ── ECDF profile (BBOB-style multi-threshold SR mini bar chart) ────────── */
-  td.ecdf-cell { padding: 6px 6px !important; vertical-align: middle; }
-  .ecdf-bars { display: inline-block; vertical-align: middle; }
-  .ecdf-bars rect { transition: opacity .14s; }
-  .ecdf-bars g:hover rect { opacity: .85; }
+  /* ── SR heatmap (per-precision success-rate cells) ──────────────────────── */
+  .unified-table th.sr-group-head {
+    text-align: center !important;
+    font-size: 10.5px; font-weight: 800; letter-spacing: .4px;
+    color: var(--text-2);
+    border-bottom: 1px solid var(--border-light);
+    background: var(--surface-2);
+  }
+  .unified-table th.sr-head {
+    text-align: center !important;
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    padding: 3px 6px !important; min-width: 40px;
+    font-family: var(--mono);
+  }
+  .unified-table td.sr-heat {
+    text-align: center !important;
+    padding: 6px 6px !important;
+    font-variant-numeric: tabular-nums;
+    font-size: 11.5px; font-weight: 700;
+    min-width: 40px;
+  }
+  .unified-table td.sr-heat .sr-heat-pct { font-size: 8.5px; opacity: .7; margin-left: .5px; }
+  .unified-table td.sr-heat-na { color: var(--muted) !important; font-weight: 400; }
+
+  /* Per-seed ✓/✗ reach cells (run rows) */
+  .unified-table td.sr-reach {
+    text-align: center !important;
+    padding: 5px 6px !important;
+    font-size: 12px; font-weight: 700; min-width: 40px;
+  }
+  .unified-table td.sr-reach-hit  { color: #15803d; background: rgba(21,128,61,.08); }
+  .unified-table td.sr-reach-miss { color: #b91c1c; background: rgba(185,28,28,.06); }
 
   /* ── Wilcoxon panel ─────────────────────────────────────────────────────── */
   .wilcoxon-panel {
@@ -510,6 +593,72 @@
     border-left: 1px solid var(--border-light);
   }
 
+  /* ── 形状タグ別 統合マトリクス (function × tag correspondence + method aggregates) ── */
+  /* Two header rows (axis groups + vertical tag names): disable per-cell vertical
+     stickiness (would overlap) and keep only horizontal first-column sticky. */
+  .ovm-matrix thead th { position: static; }
+  .ovm-matrix.sticky-col thead th:first-child,
+  .ovm-matrix.sticky-col tbody td:first-child {
+    position: sticky; left: 0; z-index: 2; background: var(--surface);
+  }
+  .ovm-matrix .ovm-axis {
+    color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .04em;
+    padding: 4px 6px; text-align: center; background: var(--ax);
+    border-right: 2px solid var(--surface); border-bottom: none;
+  }
+  /* th.ovm-tag needed to override .ov-tbl thead th:first-child (the first tag is
+     the first cell of the 2nd header row and was inheriting min-width:140px). */
+  .ovm-matrix thead th.ovm-tag {
+    vertical-align: bottom; padding: 6px 0 7px; text-align: center;
+    min-width: 32px; width: 32px; background: var(--surface);
+    border-bottom: 1px solid var(--border-light);
+  }
+  .ovm-tag-label {
+    writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);
+    font-size: 10.5px; font-weight: 600; color: var(--ax-dark);
+    white-space: nowrap; margin: 0 auto; display: block;
+  }
+  .ovm-tag-n {
+    display: block; text-align: center; font-size: 9px; font-weight: 700;
+    color: var(--muted); margin-top: 3px;
+  }
+  .ovm-matrix .ovm-corner { min-width: 150px; vertical-align: bottom; }
+
+  /* Section divider rows */
+  .ovm-matrix tr.ovm-sect td {
+    background: var(--accent-light); color: var(--accent-dark);
+    font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+    padding: 5px 14px; text-align: left; position: sticky; left: 0;
+  }
+  /* Function-correspondence rows: tighter, dot cells */
+  .ovm-matrix td.ovm-rowh { font-size: 11.5px; }
+  .ovm-fn { line-height: 1.15; }
+  .ovm-fn-link { display: block; text-decoration: none; cursor: pointer; }
+  .ovm-fn-link:hover .ovm-fn-name { color: var(--accent); text-decoration: underline; }
+  .ovm-fn-num {
+    display: inline-block; margin-right: 4px; font-size: 9.5px; font-weight: 800;
+    color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .ovm-fn-link:hover .ovm-fn-num { color: var(--accent); }
+  .ovm-fn-name { display: inline; font-weight: 700; color: var(--text); }
+  .ovm-fn-cat  { display: block; font-size: 9.5px; font-weight: 500; color: var(--muted); }
+  .ovm-matrix tr.ovm-frow td { padding-top: 4px; padding-bottom: 4px; }
+  .ovm-cell { width: 26px; min-width: 26px; padding: 0 !important; }
+  .ovm-cell.on { background: var(--ax-bg); }
+  .ovm-dot {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--ax); vertical-align: middle;
+  }
+  .ovm-tagcount { color: var(--muted); font-weight: 700; }
+
+  /* Per-axis colors (mirror TAG_AXES / benchmarks.css) */
+  .tax-modality     { --ax: #4f46e5; --ax-dark: #3730a3; --ax-bg: #eef2ff; }
+  .tax-separability { --ax: #0d9488; --ax-dark: #0f766e; --ax-bg: #d5f5f0; }
+  .tax-conditioning { --ax: #d97706; --ax-dark: #b45309; --ax-bg: #fef3c7; }
+  .tax-structure    { --ax: #9333ea; --ax-dark: #7e22ce; --ax-bg: #f3e8ff; }
+  .tax-landscape    { --ax: #2563eb; --ax-dark: #1d4ed8; --ax-bg: #dbeafe; }
+  .tax-suite-shape  { --ax: #e11d48; --ax-dark: #be123c; --ax-bg: #ffe4e9; }
+
   /* Wilcoxon chip cell */
   .ov-wc-chip {
     display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
@@ -614,6 +763,36 @@
   }
   .ov-rank-sort.active .sort-arrow { opacity: 1; color: #6366f1; }
 
+  /* ── Suite scope selector (BBOB / Custom / … / 全体) ─────────────────────── */
+  .ov-scope-bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    padding: 8px 12px; margin-bottom: 14px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .ov-scope-label {
+    font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+    color: var(--muted); margin-right: 6px;
+  }
+  .ov-scope-btn {
+    cursor: pointer; user-select: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface);
+    font-size: 12.5px; font-weight: 700; color: var(--text-2);
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .ov-scope-btn:hover { border-color: var(--accent-muted); color: var(--text); }
+  .ov-scope-btn.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .ov-scope-btn.is-all { border-style: dashed; }
+  .ov-scope-btn.is-all.active { background: var(--muted); border-color: var(--muted); border-style: solid; }
+  .ov-scope-n {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 999px;
+    background: rgba(15,23,42,.08); color: inherit;
+  }
+  .ov-scope-btn.active .ov-scope-n { background: rgba(255,255,255,.22); }
+
   /* ── Unified detail: indicator selector + section labels ─────────────────── */
   .ov-detail-selector {
     display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
@@ -636,25 +815,37 @@
   .ov-detail-section-label:first-of-type { margin-top: 2px; }
 
   /* Friedman test statistics line */
-  .ov-friedman-stats {
-    display: flex; flex-wrap: wrap; gap: 18px;
-    padding: 8px 12px; margin-bottom: 8px;
-    background: var(--surface-2); border-radius: var(--radius-sm);
-    font-size: 11.5px; color: var(--text); font-family: var(--mono);
+  /* Friedman section — heading (below the leaderboard) + summary table + note */
+  .main .card-header-row.ov-subhead { margin-top: 26px; }
+  .fr-tbl { border-collapse: collapse; font-size: 12px; font-family: var(--mono); }
+  .fr-tbl th, .fr-tbl td {
+    padding: 5px 16px 5px 0; text-align: right; white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
-  .ov-friedman-stats .stat-block {
-    display: flex; align-items: baseline; gap: 6px;
-  }
-  .ov-friedman-stats .stat-block .label {
-    font-size: 10px; text-transform: uppercase; letter-spacing: .6px;
+  .fr-tbl th:last-child, .fr-tbl td:last-child { padding-right: 0; }
+  .fr-tbl th:first-child, .fr-tbl td:first-child { text-align: left; }
+  .fr-tbl thead th {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
     color: var(--muted); font-weight: 700;
+    border-bottom: 1px solid var(--border); padding-bottom: 6px;
   }
-  .ov-friedman-stats .stat-block .ind {
-    font-size: 10px; color: var(--muted); font-weight: 600;
-    padding: 1px 5px; border-radius: 3px; background: var(--surface);
+  .fr-tbl tbody td { color: var(--text); border-bottom: 1px solid var(--border-light); }
+  .fr-tbl tbody tr:last-child td { border-bottom: none; }
+  .fr-ind { font-weight: 700; }
+  .fr-p.sig { color: #16a34a; font-weight: 700; }
+  .fr-p.nonsig { color: var(--muted); }
+  .fr-verdict { text-align: center; }
+  .fr-chip {
+    display: inline-block; font-size: 9.5px; font-weight: 700;
+    padding: 1px 7px; border-radius: 999px; line-height: 1.5;
   }
-  .ov-friedman-stats .stat-block .pval.sig { color: #16a34a; font-weight: 700; }
-  .ov-friedman-stats .stat-block .pval.nonsig { color: var(--muted); }
+  .fr-chip.sig    { background: rgba(22,163,74,.14); color: #15803d; }
+  .fr-chip.nonsig { background: var(--surface); color: var(--muted); border: 1px solid var(--border-light); }
+  .fr-note {
+    margin-top: 9px; font-size: 10.5px; color: var(--muted); line-height: 1.6;
+    max-width: 560px;
+  }
+  .fr-note strong { color: var(--text-2); font-weight: 700; }
 
   /* ── Column legend ───────────────────────────────────────────────────────── */
   .col-legend { margin-top: 14px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); overflow: hidden; }

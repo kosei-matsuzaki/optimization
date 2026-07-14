@@ -54,8 +54,12 @@
 
     {% if dims %}
 
-    <!-- Overall evaluation entry (top-level, separate from per-function views) -->
-    <button id="overall-entry" class="ov-entry-btn" onclick="selectOverall()">全体評価</button>
+    <!-- Overall evaluation entries (top-level, separate from per-function views) -->
+    <div class="ov-nav" id="overall-nav">
+      <button class="ov-nav-btn" data-ovview="ranking"  onclick="selectOverall('ranking')">ランキング</button>
+      <button class="ov-nav-btn" data-ovview="detail"   onclick="selectOverall('detail')">成績詳細</button>
+      <button class="ov-nav-btn" data-ovview="wilcoxon" onclick="selectOverall('wilcoxon')">統計的優位差</button>
+    </div>
 
     <!-- View mode tabs (per-function analysis) -->
     <div class="view-mode-bar">
@@ -164,24 +168,31 @@
     <!-- Overall evaluation cards (shown when 全体評価 is selected) -->
     <div id="overall-wrap" style="display:none;">
 
+      <!-- Benchmark-suite scope selector (BBOB / Custom / … / 全体) -->
+      <div id="overall-scope-bar" class="ov-scope-bar" style="display:none;"></div>
+
       <!-- Ranking with embedded bars -->
-      <div class="card">
+      <div class="card" id="overall-ranking-card">
         <div class="card-header-row">
           <span class="card-title-label">総合ランキング</span>
           <span class="card-subtitle">Friedmanランク（低い＝優）· bf=median_best_f / Evals=成功 run のみで評価数中央値 / ECDF=AUC (高いほど良いがランクは低いほど良い) · 同着は平均ランク</span>
         </div>
         <div id="overall-leaderboard-container"></div>
+        <div id="overall-friedman-container"></div>
       </div>
 
-      <!-- Unified detail: category + per-function, switchable by indicator -->
-      <div class="card">
+      <!-- Unified detail: category + shape-tag matrix (function × tag correspondence
+           with per-method aggregates) + per-function, switchable by indicator -->
+      <div class="card" id="overall-detail-card">
         <div class="card-header-row">
-          <span class="card-title-label">成績詳細（カテゴリ別・関数別）</span>
+          <span class="card-title-label">成績詳細（カテゴリ別・形状タグ別・関数別）</span>
           <span class="card-subtitle" id="overall-detail-subtitle">指標を選択してカテゴリ別／関数別の内訳を切り替え</span>
         </div>
         <div id="overall-detail-selector" class="ov-detail-selector"></div>
-        <div class="ov-detail-section-label">カテゴリ別</div>
+        <div class="ov-detail-section-label">カテゴリ別（BBOB 公式グループ）</div>
         <div id="overall-detail-category"></div>
+        <div class="ov-detail-section-label">形状タグ別（関数の対応 × 手法の集計）</div>
+        <div id="overall-detail-tags"></div>
         <div class="ov-detail-section-label">関数別</div>
         <div id="overall-detail-function"></div>
       </div>

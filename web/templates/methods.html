@@ -26,7 +26,7 @@
         新しい多経路感染モデル
       </div>
       <h1 class="hero-title">MC-ESO<em>Multi-Channel Epidemic Spread Optimizer</em></h1>
-      <p class="hero-desc">既存メタヒューリスティクスは <strong>単一の再生メカニズム</strong>を持つ（DE = 差分変異, ES = ガウス変異, PSO = 速度ベクトル, GA = 交叉）。対して MC-ESO は感染症の流行を模し、<strong>3 つの伝染チャネル</strong>（接触・飛沫・空気）を並列に走らせる。さらに経験共分散＋適応異方性 floor・宿主競合・情報化スピルオーバー・逐次 niching を組合せ、<strong>全 35 関数（BBOB 24 ＋ Custom 11, dim=2）</strong>の最高精度 <strong>SR@1e-10 平均 87.9%</strong> で <strong>比較 8 手法中の最高値</strong>を達成（DE 85.7% を上回り、CMA-ES / PSO / SaVOA を大きく引き離す）。</p>
+      <p class="hero-desc">既存メタヒューリスティクスは <strong>単一の再生メカニズム</strong>を持つ（DE = 差分変異, ES = ガウス変異, PSO = 速度ベクトル, GA = 交叉）。対して MC-ESO は感染症の流行を模し、<strong>3 つの伝染チャネル</strong>（接触・飛沫・空気）を並列に走らせる。さらに経験共分散＋適応異方性 floor・宿主競合・情報化スピルオーバー・逐次 niching を組合せ、<strong>全 35 関数（BBOB 24 ＋ Custom 11, dim=2）</strong>の最高精度 <strong>SR@1e-10 平均 89.9%</strong> で <strong>比較 8 手法中の最高値</strong>を達成（DE 85.7% を上回り、CMA-ES / PSO / SaVOA を大きく引き離す）。</p>
     </div>
     <div class="hero-schematic">
       <svg viewBox="0 0 460 200" xmlns="http://www.w3.org/2000/svg">
@@ -112,12 +112,12 @@
   <div class="perf-grid">
     <div class="perf-headline">
       <div class="perf-headline-label">全 35 関数 SR@1e-10 平均（主指標, n=20 × 5000 evals, dim=2）</div>
-      <div class="perf-headline-value">87.9<span style="font-size:13px; font-weight:600; color:var(--text-2); margin-left:4px;">%</span></div>
+      <div class="perf-headline-value">89.9<span style="font-size:13px; font-weight:600; color:var(--text-2); margin-left:4px;">%</span></div>
       <div class="perf-headline-sub">MC-ESO ＝ 比較 8 手法中で最高。21/35 関数で SR@1e-10 = 100%</div>
     </div>
     <div class="perf-cell is-best">
       <div class="perf-cell-method">MC-ESO</div>
-      <div class="perf-cell-value">87.9%</div>
+      <div class="perf-cell-value">89.9%</div>
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">DE</div>
@@ -125,7 +125,7 @@
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">IPOP</div>
-      <div class="perf-cell-value">76.4%</div>
+      <div class="perf-cell-value">76.6%</div>
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">L-SHADE</div>
@@ -133,7 +133,7 @@
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">BIPOP</div>
-      <div class="perf-cell-value">73.0%</div>
+      <div class="perf-cell-value">73.1%</div>
     </div>
     <div class="perf-cell">
       <div class="perf-cell-method">SaVOA</div>
@@ -159,7 +159,7 @@
   <h2 class="sec-heading reveal" id="vso">
     <span class="sec-num">01</span>MC-ESO — Multi-Channel Epidemic Spread Optimizer
   </h2>
-  <p class="sec-sub reveal">感染症の流行を模倣した提案手法。3 チャネル並列伝染 ＋ 経験共分散（適応異方性 floor）＋ 宿主競合 ＋ 情報化スピルオーバー ＋ 逐次 niching の組合せで、全 35 関数 (dim=2) の最高精度 <strong>SR@1e-10 平均 87.9%</strong> を達成し、比較 8 手法中で最高（DE 85.7% / IPOP-CMA-ES 76.4% / CMA-ES 60.0%）。成功 run の評価回数中央値も 562 と集団系手法で最速。</p>
+  <p class="sec-sub reveal">感染症の流行を模倣した提案手法。3 チャネル並列伝染 ＋ 経験共分散（適応異方性 floor）＋ 宿主競合 ＋ 情報化スピルオーバー ＋ 逐次 niching の組合せで、全 35 関数 (dim=2) の最高精度 <strong>SR@1e-10 平均 89.9%</strong> を達成し、比較 8 手法中で最高（DE 85.7% / IPOP-CMA-ES 76.6% / CMA-ES 60.0%）。成功 run の評価回数中央値も 552 と集団系手法で最速。</p>
 
   <div class="vso-layout">
     <div class="h3">コアとなるアナロジー</div>
@@ -214,7 +214,7 @@
               <div class="concept-title">Droplet</div>
             </div>
           </div>
-          <div class="concept-body">飛沫を介した宿主間伝染。trial = \(x_\text{p} + F(x_\text{strain}{-}x_\text{p}) + F(x_a{-}x_b)\) を作り、親と座標ごとに <strong>確率 \(CR=0.9\) で二項交叉</strong> (DE/current-to-best/1/bin と同型、DE 標準値)。差分ベクトルが集団形状を反映する <strong>暗黙的異方性</strong>、系統への引力で valley 進行を加速、二項交叉が separable 多峰の座標方向情報を保護。</div>
+          <div class="concept-body">飛沫を介した宿主間伝染。trial = \(x_\text{p} + F(x_\text{strain}{-}x_\text{p}) + F(x_a{-}x_b)\) を作り、親と座標ごとに <strong>確率 \(CR=0.9\) で二項交叉</strong> (DE/current-to-best/1/bin と同型、DE 標準値)。差分ベクトルが集団形状を反映する <strong>暗黙的異方性</strong>、系統への引力で valley 進行を加速、二項交叉が separable 多峰の座標方向情報を保護。<strong>悪条件 (droplet) ルート確定 run では第 2 差分 \(+F(x_c{-}x_d)\) を追加</strong>（current-to-best/2）してドナー多様性を増し、誤盆地で停滞した run を救出（F13/F14、高次元でより顕著）。他ルートでは追加せず base と完全一致。</div>
         </div>
 
         <div class="concept-card c-airborne">
@@ -491,7 +491,7 @@ strains ← []
         <div class="fc-fork-card fc-card-expanded">
           <div class="fc-fork-num">5b — 飛沫感染（割合 h2h_ratio）</div>
           <div class="fc-card-title">Droplet: 系統 ＋ 差分</div>&#x2060;
-          <span class="fc-desc">親 + F·(系統 − 親) + F·(x_a − x_b)。差分ベクトルが集団形状を反映し、明示的共分散学習なしに valley 方向を捕捉。系統への引力で進行加速。</span>
+          <span class="fc-desc">親 + F·(系統 − 親) + F·(x_a − x_b)。差分ベクトルが集団形状を反映し、明示的共分散学習なしに valley 方向を捕捉。系統への引力で進行加速。悪条件 (droplet) ルートでは第 2 差分 F·(x_c − x_d) を追加し停滞 run を救出。</span>
           <div class="fc-detail">
             <div class="fc-fork-inner">
               <div>
@@ -503,10 +503,11 @@ strains ← []
               </div>
               <div class="fc-mechanism">
                 <div class="fc-pane-title">系統引力 ＋ 集団差分</div>
-                <div class="math-display">\[ x_\text{child} = \mathrm{reflect}\!\big(x_\text{parent} + F\cdot(x_\text{strain} - x_\text{parent}) + F\cdot(x_a - x_b)\big) \]</div>
+                <div class="math-display">\[ x_\text{child} = \mathrm{reflect}\!\big(x_\text{parent} + F\cdot(x_\text{strain} - x_\text{parent}) + F\cdot(x_a - x_b) \;\underbrace{+\, F\cdot(x_c - x_d)}_{\text{droplet route only}}\big) \]</div>
                 <div class="fc-note">
                   <span class="lbl">暗黙的異方性</span>\(x_a - x_b\) の大きさ・方向は集団形状を反映 → 谷沿いに伸びた集団からは谷沿いの差分が出る。<br>
-                  <span class="lbl">F08-F12 で核心</span>等方ガウスでは越えられない曲がった谷・ill-conditioned 楕円体を、暗黙的共分散経由で攻略可能に。
+                  <span class="lbl">F08-F12 で核心</span>等方ガウスでは越えられない曲がった谷・ill-conditioned 楕円体を、暗黙的共分散経由で攻略可能に。<br>
+                  <span class="lbl">route-gated 第 2 差分</span>ルーターが <em>droplet</em> を確定した run のみ \(+F(x_c-x_d)\)（current-to-best/<strong>2</strong>）を追加。ドナー多様性が増し、誤盆地で停滞した run を救出（F13/F14 を 55→100% / 75→100%、高次元 dim3 では F02/F10/F11/F12/F13/F14 全体で有意改善 +12.9pt）。他ルートでは追加せず base と bit-identical で多峰探索を無傷に保つ。
                 </div>
               </div>
             </div>
@@ -628,7 +629,7 @@ strains ← []
   <h2 class="sec-heading reveal" id="baselines">
     <span class="sec-num">02</span>ベースライン手法
   </h2>
-  <p class="sec-sub reveal">MC-ESO と比較する 7 つの既存アルゴリズム。標準的な進化戦略・群知能・差分進化に加え、近代的な restart 付き CMA-ES（IPOP / BIPOP）と適応 DE（L-SHADE）も外部ライブラリ経由で同条件で評価する。</p>
+  <p class="sec-sub reveal">MC-ESO と比較する 9 つの既存アルゴリズム。標準的な進化戦略・群知能・差分進化に加え、近代的な restart 付き CMA-ES（IPOP / BIPOP）と適応 DE（L-SHADE）を外部ライブラリ経由で、さらに低次元での下限基準となる multistart 局所探索（NM-Restart）と多解探索の専門手法（NCDE）も同条件で評価する。</p>
 
   <div class="method-cards reveal">
 
@@ -727,7 +728,7 @@ strains ← []
       <div class="method-card-inner">
         <div class="method-card-name">IPOP-CMA-ES</div>
         <div class="method-card-type">進化戦略 ＋ 集団倍化 restart</div>
-        <p>CMA-ES に <strong>IPOP restart</strong>（Auger &amp; Hansen 2005）を加えた近代手法。収束を検出するごとに集団サイズ \(\lambda\) を倍化して再起動し、多峰・大域構造の弱い問題への頑健性を高める。pycma 実装をラップ。多解（Himmelblau）では盲目 restart が複数 basin を拾い PR が高い一方、SR@1e-10 平均は 76.4% と MC-ESO に及ばない。</p>
+        <p>CMA-ES に <strong>IPOP restart</strong>（Auger &amp; Hansen 2005）を加えた近代手法。収束を検出するごとに集団サイズ \(\lambda\) を倍化して再起動し、多峰・大域構造の弱い問題への頑健性を高める。pycma 実装をラップ。多解（Himmelblau）では盲目 restart が複数 basin を拾い PR が高い一方、SR@1e-10 平均は 76.6% と MC-ESO に及ばない。</p>
       </div>
     </div>
 
@@ -736,7 +737,7 @@ strains ← []
       <div class="method-card-inner">
         <div class="method-card-name">BIPOP-CMA-ES</div>
         <div class="method-card-type">進化戦略 ＋ 2 regime restart</div>
-        <p>大規模・小規模 2 つの \(\lambda\) regime を予算が釣り合うよう交互に再起動する CMA-ES 変種（Hansen 2009）。pycma 実装をラップ。盲目 restart で多解を拾う構造のため Himmelblau の PR は全手法中最高（0.76）だが、深精度の SR@1e-10 平均は 73.0% に留まる。</p>
+        <p>大規模・小規模 2 つの \(\lambda\) regime を予算が釣り合うよう交互に再起動する CMA-ES 変種（Hansen 2009）。pycma 実装をラップ。盲目 restart で多解を拾う構造のため Himmelblau の PR は全手法中最高（0.76）だが、深精度の SR@1e-10 平均は 73.1% に留まる。</p>
       </div>
     </div>
 
@@ -749,6 +750,24 @@ strains ← []
       </div>
     </div>
 
+    <!-- NM-Restart -->
+    <div class="method-card mc-nm">
+      <div class="method-card-inner">
+        <div class="method-card-name">NM-Restart</div>
+        <div class="method-card-type">multistart 局所探索 — 下限ベースライン</div>
+        <p>restart 付き Nelder-Mead simplex（1965）。ランダム初期点から scipy の bounded Nelder-Mead を tight な収束条件（xatol=1e-12 / fatol=1e-14）まで走らせ、予算まで再スタートを繰り返す。restart 間の情報引き継ぎは一切なし。低次元 BBOB では multistart 局所探索が極めて強いため、<strong>「凝った手法は本当に必要か」に答える基準線</strong>として置く。</p>
+      </div>
+    </div>
+
+    <!-- NCDE -->
+    <div class="method-card mc-ncde">
+      <div class="method-card-inner">
+        <div class="method-card-name">NCDE</div>
+        <div class="method-card-type">niching DE — 多解探索の専門手法</div>
+        <p>Neighborhood-based Crowding DE（Qu+ 2012）。DE と同一の trial 生成に対し、donor を最近傍 \(m=6\) 個体に限定（近傍変異）し、trial を親でなく<strong>最近傍個体</strong>と競わせる（crowding 置換）。部分集団が別 basin に共存する真の niching 手法で、<strong>多解指標（PR / MMOsr）で MC-ESO の逐次 niching と直接比較</strong>する専門ベースライン。\(n=30, F=0.5, CR=0.9\) は DE と同一。</p>
+      </div>
+    </div>
+
   </div><!-- /method-cards -->
 
 
@@ -756,15 +775,15 @@ strains ← []
   <h2 class="sec-heading reveal" id="differences">
     <span class="sec-num">03</span>MC-ESO と既存手法の比較
   </h2>
-  <p class="sec-sub reveal">MC-ESO は <strong>多経路感染モデル</strong>という新概念により、全 35 関数 (dim=2) の最高精度 <strong>SR@1e-10 平均 87.9%</strong> で比較 8 手法中の最高値を達成。最大の競合である DE (85.7%) も上回り、CMA-ES / PSO / SaVOA を大きく引き離す。以下では (1) 性能スコア、(2) 統計的優位性、(3) 設計上の違いを整理する。</p>
+  <p class="sec-sub reveal">MC-ESO は <strong>多経路感染モデル</strong>という新概念により、全 35 関数 (dim=2) の最高精度 <strong>SR@1e-10 平均 89.9%</strong> で比較 8 手法中の最高値を達成。最大の競合である DE (85.7%) も上回り、CMA-ES / PSO / SaVOA を大きく引き離す。以下では (1) 性能スコア、(2) 統計的優位性、(3) 設計上の違いを整理する。</p>
 
   <div class="concept-section reveal">
     <div class="concept-section-label">性能スコア — 全 35 関数 SR@1e-10 平均（主指標, dim=2, n=20 × 5000 evals）</div>
     <div class="cmp-board">
       <div class="cmp-board-row row-mceso proposed">
         <div class="cmp-name">MC-ESO <span class="proposed-badge">提案</span></div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:87.9%;"></div></div>
-        <div class="cmp-score-val">87.9%</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:89.9%;"></div></div>
+        <div class="cmp-score-val">89.9%</div>
       </div>
       <div class="cmp-board-row row-de">
         <div class="cmp-name">DE</div>
@@ -773,8 +792,8 @@ strains ← []
       </div>
       <div class="cmp-board-row row-ipop">
         <div class="cmp-name">IPOP-CMA-ES</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:76.4%;"></div></div>
-        <div class="cmp-score-val">76.4%</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:76.6%;"></div></div>
+        <div class="cmp-score-val">76.6%</div>
       </div>
       <div class="cmp-board-row row-lshade">
         <div class="cmp-name">L-SHADE</div>
@@ -783,8 +802,8 @@ strains ← []
       </div>
       <div class="cmp-board-row row-bipop">
         <div class="cmp-name">BIPOP-CMA-ES</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:73.0%;"></div></div>
-        <div class="cmp-score-val">73.0%</div>
+        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:73.1%;"></div></div>
+        <div class="cmp-score-val">73.1%</div>
       </div>
       <div class="cmp-board-row row-savoa">
         <div class="cmp-name">SaVOA</div>
@@ -802,7 +821,7 @@ strains ← []
         <div class="cmp-score-val">57.0%</div>
       </div>
     </div>
-    <p style="font-size:11.5px; color:var(--text-2); line-height:1.6; margin:10px 2px 0;">補助指標: SR@1e-4 でも MC-ESO 92.4% が最高（DE 88.9% / L-SHADE 86.4%）。成功 run の評価回数中央値は MC-ESO 562 で、集団系手法（DE 1223 / L-SHADE 1744 / PSO 1568）より高速。CMA-ES 系（386〜457）はより速いが SR は大きく劣る。</p>
+    <p style="font-size:11.5px; color:var(--text-2); line-height:1.6; margin:10px 2px 0;">補助指標: SR@1e-4 でも MC-ESO 92.1% が最高（DE 88.9% / L-SHADE 86.4%）。成功 run の評価回数中央値は MC-ESO 552 で、集団系手法（DE 1223 / L-SHADE 1744 / PSO 1568）より高速。CMA-ES 系（382〜408）はより速いが SR は大きく劣る。</p>
   </div>
 
   <div class="concept-section reveal">
@@ -811,13 +830,13 @@ strains ← []
       <div class="cmp-aspect">
         <div class="cmp-aspect-head">関数別の有意な 勝ち / 負け（MC-ESO 視点）</div>
         <div class="cmp-aspect-body">
-          <div class="cmp-row"><span class="cmp-tag" style="color:var(--text-2);border-color:var(--border)">PSO</span><span class="cmp-row-text">31 勝 0 敗 — 全面的に優位</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">19 勝 3 敗</span></div>
-          <div class="cmp-row"><span class="cmp-tag" style="color:var(--ch-airborne);border-color:rgba(95,158,160,.30)">BIPOP</span><span class="cmp-row-text">16 勝 3 敗</span></div>
-          <div class="cmp-row"><span class="cmp-tag" style="color:var(--success);border-color:rgba(47,158,68,.30)">L-SHADE</span><span class="cmp-row-text">14 勝 6 敗</span></div>
-          <div class="cmp-row"><span class="cmp-tag" style="color:var(--ch-contact);border-color:rgba(79,124,172,.30)">IPOP</span><span class="cmp-row-text">13 勝 3 敗</span></div>
-          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">13 勝 4 敗</span></div>
-          <div class="cmp-row"><span class="cmp-tag" style="color:var(--success);border-color:rgba(47,158,68,.30)">DE</span><span class="cmp-row-text">3 勝 6 敗 — 最大の競合。overall SR@1e-10 は MC-ESO が上回るが、関数別ペア比較では DE が優位な関数が多い（separable 多峰系）。両者の使い分けが今後の論点</span></div>
+          <div class="cmp-row"><span class="cmp-tag" style="color:var(--text-2);border-color:var(--border)">PSO</span><span class="cmp-row-text">28 勝 0 敗 — 全面的に優位</span></div>
+          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">20 勝 1 敗</span></div>
+          <div class="cmp-row"><span class="cmp-tag" style="color:var(--ch-airborne);border-color:rgba(95,158,160,.30)">BIPOP</span><span class="cmp-row-text">16 勝 1 敗</span></div>
+          <div class="cmp-row"><span class="cmp-tag" style="color:var(--ch-contact);border-color:rgba(79,124,172,.30)">IPOP</span><span class="cmp-row-text">13 勝 1 敗</span></div>
+          <div class="cmp-row"><span class="cmp-tag" style="color:var(--success);border-color:rgba(47,158,68,.30)">L-SHADE</span><span class="cmp-row-text">13 勝 4 敗</span></div>
+          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">11 勝 4 敗</span></div>
+          <div class="cmp-row"><span class="cmp-tag" style="color:var(--success);border-color:rgba(47,158,68,.30)">DE</span><span class="cmp-row-text">3 勝 4 敗 — 最大の競合。overall SR@1e-10 は MC-ESO が上回るが、関数別ペア比較では DE が優位な関数がやや多い（separable 多峰系）。両者の使い分けが今後の論点</span></div>
         </div>
       </div>
     </div>
@@ -832,7 +851,7 @@ strains ← []
         <div class="cmp-aspect-body">
           <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">強力(ガウス局所)／普通(向き変異 or ランダム)の 2 種</span></div>
           <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">共分散行列 \(\Sigma\) からの楕円ガウスサンプリング</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">3 チャネル並列</span>接触感染（\(C_\text{pop}\) で異方化ガウス）＋ 飛沫感染（DE current-to-best）＋ 空気感染（ランダム、drilling 中停止）</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">3 チャネル並列</span>接触感染（\(C_\text{pop}\) で異方化ガウス）＋ 飛沫感染（DE current-to-best、悪条件ルートは /2）＋ 空気感染（ランダム、drilling 中停止）</span></div>
         </div>
       </div>
 
@@ -841,7 +860,7 @@ strains ← []
         <div class="cmp-aspect-body">
           <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">等方ガウスのみ。ill-cond で崩れる（F10 / F11 とも SR@1e-10 = 0%）</span></div>
           <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">共分散行列の rank-1/rank-μ 適応学習で明示的に獲得（履歴累積）。ill-cond は強い（F10 / F11 / F12 = 100%）</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">瞬間共分散 ＋ 適応 floor</span>接触感染が当世代の経験共分散 \(C_\text{pop}\) でサンプリング（履歴なし）、異方性 floor を固有値比で自動調整。明示的共分散学習なしに F10 = 100%、F11 / F12 = 95% と CMA-ES に肉薄</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">瞬間共分散 ＋ 適応 floor</span>接触感染が当世代の経験共分散 \(C_\text{pop}\) でサンプリング（履歴なし）、異方性 floor を固有値比で自動調整。明示的共分散学習なしに F10 / F11 / F12 = 100%（route-gated 飛沫 current-to-best/2 が F11/F12 を 95→100% に押上げ）と CMA-ES と同等</span></div>
         </div>
       </div>
 
@@ -859,7 +878,7 @@ strains ← []
         <div class="cmp-aspect-body">
           <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">なし(\(\sigma\) 縮退で停滞固定)</span></div>
           <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">`es.stop()` 後の multistart(best 中心、\(\sigma\times 0.1\))</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">情報化リスタート</span>no_improve ≥ 300 かつ \(f_\text{best} > 10^{-8}\) で発動。リザーバ再着火＋basin 忌避で探索結果を再利用（盲目 IPOP restart と差別化）。ill-cond の整列失敗を救済（F10 = 100%, F12 = 95%）</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">情報化リスタート</span>no_improve ≥ 300 かつ \(f_\text{best} > 10^{-8}\) で発動。リザーバ再着火＋basin 忌避で探索結果を再利用（盲目 IPOP restart と差別化）。ill-cond の整列失敗を救済（F10 / F12 = 100%）</span></div>
         </div>
       </div>
 

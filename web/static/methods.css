@@ -645,6 +645,8 @@
   .mc-ipop   { --mc-color: var(--ch-contact);  --mc-tint: rgba(79,124,172,.09);  --mc-border: rgba(79,124,172,.30);  border-top-color: var(--ch-contact); }
   .mc-bipop  { --mc-color: var(--ch-airborne); --mc-tint: rgba(95,158,160,.10);  --mc-border: rgba(95,158,160,.30);  border-top-color: var(--ch-airborne); }
   .mc-lshade { --mc-color: var(--success);    --mc-tint: rgba(47,158,68,.08);   --mc-border: rgba(47,158,68,.28);   border-top-color: var(--success); }
+  .mc-nm     { --mc-color: #6c757d;           --mc-tint: rgba(108,117,125,.10); --mc-border: rgba(108,117,125,.32); border-top-color: #6c757d; }
+  .mc-ncde   { --mc-color: #b0578d;           --mc-tint: rgba(176,87,141,.09);  --mc-border: rgba(176,87,141,.30);  border-top-color: #b0578d; }
 
   .method-card-inner { padding: 18px 20px 18px; position: relative; }
   .method-card-name {

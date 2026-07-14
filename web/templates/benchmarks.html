@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Benchmarks — Optimization Lab{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/benchmarks.css">
+{% endblock %}
+
+{% block header_back %}<a href="/" class="header-back" title="ホームへ戻る">←</a>{% endblock %}
+{% block header_title %}Benchmarks{% endblock %}
+{% block header_nav %}
+<nav class="header-nav">
+  <a href="/methods" class="nav-link">Methods</a>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="bm-wrap">
+
+  <div class="bm-intro">
+    <h2 class="bm-title">関数 × 形状タグ 対応表</h2>
+    <p class="bm-desc">
+      各ベンチマーク関数の<strong>実際のランドスケープ形状</strong>を、直交する複数軸のタグで分類したもの
+      （<code>core/benchmarks.py</code> の <code>SHAPE_TAGS</code> が定義元）。
+      BBOB 公式グループ（<code>category</code>）は 1 軸しか表さないため、形状はこのタグ側で読む。
+      <em>例: F02 は category=separable だが形状は ill-conditioned、F03 は category=separable だが形状は multimodal。</em>
+    </p>
+    <div class="bm-legend">
+      {% for a in axes %}
+      <span class="bm-legend-item bm-ax-{{ a.axis }}">
+        <span class="bm-legend-dot"></span>{{ a.axis }}
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="bm-matrix-scroll">
+    <table class="bm-matrix">
+      <thead>
+        <tr class="bm-axis-row">
+          <th class="bm-corner" rowspan="2">関数 <span class="bm-corner-sub">category</span></th>
+          {% for a in axes %}
+          <th class="bm-axis bm-ax-{{ a.axis }}" colspan="{{ a.tags|length }}">{{ a.axis }}</th>
+          {% endfor %}
+        </tr>
+        <tr class="bm-tag-row">
+          {% for a in axes %}{% for t in a.tags %}
+          <th class="bm-tag bm-ax-{{ a.axis }}" title="{{ t }} — {{ counts[t] }} 関数">
+            <span class="bm-tag-label">{{ t }}</span>
+            <span class="bm-tag-count">{{ counts[t] }}</span>
+          </th>
+          {% endfor %}{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in suites %}
+        <tr class="bm-suite-row">
+          <td colspan="{{ columns|length + 1 }}">
+            <span class="bm-suite-label">{{ s.label }}</span>
+            <span class="bm-suite-sub">{{ s.sub }}</span>
+          </td>
+        </tr>
+        {% for r in s.rows %}
+        <tr>
+          <th class="bm-fname" scope="row">
+            <span class="bm-fn">{{ r.name }}</span>
+            <span class="bm-cat">{{ r.category }}</span>
+          </th>
+          {% for a in axes %}{% for t in a.tags %}
+          {% if t in r.tags %}
+          <td class="bm-cell bm-ax-{{ a.axis }} on" title="{{ r.name }} · {{ t }}"><span class="bm-dot"></span></td>
+          {% else %}
+          <td class="bm-cell off"></td>
+          {% endif %}
+          {% endfor %}{% endfor %}
+        </tr>
+        {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

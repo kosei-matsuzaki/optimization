@@ -49,6 +49,42 @@ def methods():
     return render_template("methods.html")
 
 
+@app.route("/benchmarks")
+def benchmarks_page():
+    """Static reference: the function × shape-tag correspondence matrix.
+
+    Run-independent — derived directly from core.benchmarks (SHAPE_TAGS /
+    TAG_AXES), the single source of truth for benchmark shape classification.
+    """
+    from core.benchmarks import (_BBOB_SPECS, CUSTOM_BENCHMARKS,
+                                  _CEC2022_SPECS, SHAPE_TAGS, TAG_AXES)
+
+    def _row(name: str, category: str) -> dict:
+        return {"name": name, "category": category,
+                "tags": SHAPE_TAGS.get(name, [])}
+
+    suites = [
+        {"key": "bbob",   "label": "BBOB",    "sub": "24 関数 (dim 2/3/4)",
+         "rows": [_row(n, c) for _fid, n, c in _BBOB_SPECS]},
+        {"key": "custom", "label": "Custom",  "sub": "11 関数 (2-D)",
+         "rows": [_row(b.name, b.category) for b in CUSTOM_BENCHMARKS]},
+        {"key": "cec",    "label": "CEC2022", "sub": "12 関数 (dim 10, hold-out)",
+         "rows": [_row(n, c) for _ioh, n, c in _CEC2022_SPECS]},
+    ]
+    # Flat column list (axis order) + per-tag usage count across all functions.
+    all_rows = [r for s in suites for r in s["rows"]]
+    counts: dict[str, int] = {}
+    for r in all_rows:
+        for t in r["tags"]:
+            counts[t] = counts.get(t, 0) + 1
+    axes = [{"axis": axis, "tags": [t for t in tags if counts.get(t)]}
+            for axis, tags in TAG_AXES]
+    axes = [a for a in axes if a["tags"]]
+    columns = [t for a in axes for t in a["tags"]]
+    return render_template("benchmarks.html", suites=suites, axes=axes,
+                           columns=columns, counts=counts)
+
+
 @app.route("/results/<run_id>")
 def result_detail(run_id: str):
     run_dir = RESULTS_DIR / run_id
