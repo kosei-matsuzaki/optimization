@@ -3,7 +3,8 @@ __pycache__/
 *.pyc
 .DS_Store
 .claude/
-presentation/mceso_slides/figures/svg_cache/
+presentation/**/build/render/
+*.tmp
 .quick.pid
 .quick.dir
 .venv/
