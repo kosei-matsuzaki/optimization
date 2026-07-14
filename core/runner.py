@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import dataclasses
 import time
+import zlib
 import numpy as np
-from .benchmarks import BenchmarkFunction
+from .benchmarks import BenchmarkFunction, make_noisy_func
 from .optimizers import BaseOptimizer, OptimizeResult
 
 try:
@@ -14,20 +16,48 @@ except ImportError:
     _HAS_SCIPY = False
 
 
+def _rescore_noiseless(r: OptimizeResult, true_func) -> OptimizeResult:
+    """Re-score a run that optimized a NOISY objective on the true (noise-free)
+    f of every visited point — the COCO-noisy convention. history_f / best_f /
+    history_best become true values; the optimizer never saw them."""
+    history_f = [float(true_func(x)) for x in r.history_x]
+    best_idx = int(np.argmin(history_f))
+    history_best: list[float] = []
+    cur = float("inf")
+    for f in history_f:
+        cur = min(cur, f)
+        history_best.append(cur)
+    return dataclasses.replace(
+        r, best_x=r.history_x[best_idx], best_f=history_f[best_idx],
+        history_f=history_f, history_best=history_best)
+
+
 def run_experiment(
     optimizer_cls: type[BaseOptimizer],
     benchmark: BenchmarkFunction,
     n_runs: int = 10,
     max_evals: int = 5000,
+    noise_model: str | None = None,
     **optimizer_kwargs,
 ) -> tuple[list[OptimizeResult], list[float]]:
     results: list[OptimizeResult] = []
     times: list[float] = []
     for i in range(n_runs):
-        opt = optimizer_cls(benchmark, seed=i * 100, **optimizer_kwargs)
+        bench_i = benchmark
+        if noise_model:
+            # Noise RNG is per (function, model, run) via a stable CRC32 seed —
+            # reproducible across processes and independent of the optimizer seed.
+            noise_seed = zlib.crc32(
+                f"{benchmark.name}|{noise_model}|{i}".encode())
+            bench_i = dataclasses.replace(benchmark, func=make_noisy_func(
+                benchmark.func, noise_model, np.random.default_rng(noise_seed)))
+        opt = optimizer_cls(bench_i, seed=i * 100, **optimizer_kwargs)
         t0 = time.perf_counter()
-        results.append(opt.optimize(max_evals=max_evals))
+        result = opt.optimize(max_evals=max_evals)
         times.append(time.perf_counter() - t0)
+        if noise_model:
+            result = _rescore_noiseless(result, benchmark.func)
+        results.append(result)
     return results, times
 
 

@@ -18,6 +18,8 @@ MC-ESO と比較する既存最適化手法の一覧と実装詳細。提案手�
 | DE | 進化的アルゴリズム | 直接比較対象（MC-ESO の飛沫チャネルが借用する差分変異の本家・単一機構版） |
 | L-SHADE | 適応的 DE | ベースライン（Tanabe & Fukunaga 2014、CEC2014 チャンピオン） |
 | SaVOA | ウイルス模倣・既存 | 直接比較対象（同じ生物模倣着想だが単一再生メカニズム） |
+| NM-Restart | multistart 局所探索 | **下限ベースライン**（低次元 BBOB では restart 局所探索が非常に強い＝メタヒューリスティクスの意義を示すための基準線） |
+| NCDE | niching DE | **多解比較対象**（Qu+ 2012。PR / MMOsr で MC-ESO の逐次 niching と比較する専門手法） |
 
 ---
 
@@ -59,6 +61,35 @@ MC-ESO と比較する既存最適化手法の一覧と実装詳細。提案手�
 ## SaVOA（既存ウイルス手法・直接比較対象）
 
 VOA の自己適応版（Liang & Juarez, 2020 近似実装）。sigma を世代ごとに乗法的に適応（改善 → σ×1.2、停滞 → σ×0.9）することで、手動チューニング不要にしたもの。同じ生物模倣着想だが再生メカニズムは単一。実装は `core/optimizers/savoa.py`。
+
+---
+
+## NM-Restart（multistart 局所探索・下限ベースライン）
+
+restart 付き Nelder-Mead simplex（Nelder & Mead, 1965）。一様ランダム初期点から scipy の bounded Nelder-Mead を tight な収束条件（`xatol=1e-12` / `fatol=1e-14`、SR@1e-10 閾値より十分深い）まで走らせ、予算が尽きるまで再スタートを繰り返す。restart 間の情報引き継ぎは一切なし。
+
+**位置づけ**: 2〜3 次元の BBOB では multistart 局所探索が極めて強い（COCO の公開データでも既知）ため、「凝った手法を使わずとも解ける問題設定ではないか」という査読上の問いに答える下限ベースライン。提案手法の機構が意味を持つには、最低限この基準線を超える必要がある。盲目 restart が自然に複数 basin を拾うため、多解指標（PR）でも強い比較相手になる。実装は `core/optimizers/nelder_mead.py`。
+
+| パラメータ | 値 | 意味 |
+|---|---|---|
+| `xatol` / `fatol` | 1e-12 / 1e-14 | 1 restart あたりの収束判定（1e-10 到達を妨げない深さ） |
+| 予算管理 | ラッパーで厳密 | 評価カウンタが `max_evals` 到達で即停止（超過なし） |
+
+---
+
+## NCDE（niching DE・多解比較対象）
+
+Neighborhood-based Crowding DE（Qu, Suganthan & Liang, 2012）。DE ベースラインと同一の trial 生成（rand/1/bin, 同じ `n_pop`/`F`/`CR`）に対し、niching のための 2 変更を加える:
+
+1. **近傍変異** — donor `a, b, c` を全集団からではなく target の最近傍 `m` 個体から選ぶ。差分ベクトルが basin 内に収まり、niche ごとの局所収束が可能になる。
+2. **crowding 置換** — trial は親ではなく**最近傍個体**と競合（即時置換・steady-state）。trial が自分の近傍しか置き換えられないため、別 basin の部分集団が共存する。
+
+**位置づけ**: MC-ESO の逐次 niching（σ-exhaustion）に対する多解探索（PR / MMOsr）の専門比較手法。DE 系統を共有するため「並列 crowding niche vs 逐次 niching」という機構差が切り分けやすい。実装は `core/optimizers/ncde.py`。
+
+| パラメータ | 値 | 意味 |
+|---|---|---|
+| `n_pop` / `F` / `CR` | 30 / 0.5 / 0.9 | DE ベースラインと同一 |
+| `m` | 6 | 近傍変異の近傍サイズ。`m ≥ n_pop−1` で素の crowding DE（Thomsen 2004）に戻るが、素の crowding は donor が basin をまたぎ deep 精度が出ない（Himmelblau PR@1e-4 が 0% vs m=6 で 80%+）ため近傍変異版を採用 |
 
 ---
 

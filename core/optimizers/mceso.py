@@ -189,6 +189,25 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # i.e. factor = 1.5 at full diversity, 1.5+amplifier at full convergence.
         # Default 3.5 reproduces the prior min=1.5, max=5.0 behaviour.
         air_sigma_amplifier: float = 3.5,
+        # ── Droplet difference structure (route-gated best2, 2026-07) ────
+        # Swaps the *math inside* the droplet channel without adding a 4th
+        # channel; at its default the run is bit-identical to base off the
+        # droplet route. A 2026-07 sweep of heavier-tailed / oppositional
+        # airborne and Cauchy close-contact / rand1 / cur2pbest / global-best2
+        # droplet kernels was rejected (all regressed overall SR@1e-10); only
+        # the route-gated best2 below generalised. Details in docs/history.md.
+        #   droplet_variant: host-to-host DE difference structure.
+        #     "best2_droplet" (default) — current-to-best/2 on the committed
+        #                     DROPLET route, else current-to-best/1. The 2nd
+        #                     difference vector rescues stalled ill-conditioned runs
+        #                     (F13/F14 at dim2; F02/F10/F11/F12/F13/F14 all large at
+        #                     dim3, +12.9pt overall) while off-route multimodals stay
+        #                     bit-identical to base. On droplet only (route-gated):
+        #                     a *global* 2nd vector regresses keep-air multimodals.
+        #     "cur2best"    — x_p + F(x_strain−x_p) + F(x_a−x_b) everywhere
+        #                     (single-difference; pre-2026-07 behaviour, regression
+        #                     reference).
+        droplet_variant: str = "best2_droplet",
         # Per-landscape channel router. When True, each generation is classified
         # from two f-independent, scale-invariant covariance signals and the
         # airborne budget is routed to the channel that landscape needs — instead
@@ -351,6 +370,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.niche_radius_ratio = niche_radius_ratio
         self.host_sigma_min_scale = host_sigma_min_scale
         self.air_sigma_amplifier = air_sigma_amplifier
+        self.droplet_variant = droplet_variant
         self.channel_schedule = channel_schedule
         self.cond_droplet_thresh = cond_droplet_thresh
         self.align_close_thresh = align_close_thresh
@@ -813,13 +833,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         h2h_a_li = rng.integers(0, n, size=n_h2h)
         h2h_b_li = rng.integers(0, n, size=n_h2h)
         diff = st.pop_x[h2h_a_li] - st.pop_x[h2h_b_li]
+        parents_x = st.pop_x[h2h_parents_gi]
+        # current-to-best/2 on the committed DROPLET route: a second difference
+        # vector adds donor diversity that rescues runs stalled in a wrong ill-
+        # conditioned basin. Applied ONLY on the droplet route, so multimodal
+        # keep-air functions — which a global second vector regresses — stay
+        # bit-identical to base (the extra RNG draw is skipped off-route).
+        # droplet_variant="cur2best" pins the single-difference behaviour.
+        if self.droplet_variant == "best2_droplet" and st.channel_route == "droplet":
+            c = rng.integers(0, n, size=n_h2h)
+            d = rng.integers(0, n, size=n_h2h)
+            diff = diff + (st.pop_x[c] - st.pop_x[d])
         if len(elite_arr) > 0:
             strain_pos = self._droplet_strain_positions(st, elite_arr, n_h2h)
-            best_pull = strain_pos - st.pop_x[h2h_parents_gi]
+            best_pull = strain_pos - parents_x
             h2h_step = self.h2h_F * (best_pull + diff)
         else:
             h2h_step = self.h2h_F * diff
-        h2h_trial = st.pop_x[h2h_parents_gi] + h2h_step
+        h2h_trial = parents_x + h2h_step
         cr_mask = rng.random((n_h2h, self.dim)) < self.h2h_CR
         forced = rng.integers(0, self.dim, size=n_h2h)
         cr_mask[np.arange(n_h2h), forced] = True

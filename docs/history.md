@@ -13,7 +13,7 @@ MC-ESO の開発で試した機構・フラグの履歴。**何を試し、採�
 `quick_check.py` の `_OPTIMIZERS` は **MC-ESO 本体 ＋ 7 ベースライン（CMA-ES / IPOP / BIPOP / PSO / DE / L-SHADE / SaVOA）の 8 手法**を並べた標準比較セット。改良案や診断 variant を検証するときだけ、`_OPTIMIZERS` に一時的に MC-ESO のサブクラス／別 entry を追加して quick で overall 改善を測り、確認できれば本体に統合してから一時 entry を外す。**診断・ablation variant は常設しない**（`core/optimizers/mceso_ablations.py` に実体があり、必要時に追加する）。
 
 ```bash
-./run.sh quick --all       # BBOB 24 + Custom 11 で評価（手法評価は必ず全関数）
+./run.sh quick --all       # 2D BBOB-24 で評価（手法評価の標準。Custom は --custom で追加）
 ./run.sh quick --funcs F08-Rosenbrock,F09-RosenbrockRot,F10-EllipsoidalRot,F12-BentCigar --max-evals 10000
 ```
 
@@ -48,6 +48,7 @@ MC-ESO に先立つウイルス模倣手法 **VirusOptimizerV2 (VSO V2)** は全
 | **Drilling 中の空気感染停止** | `σ < span × precision_sigma_ratio` で `air_ratio_eff = 0`。drilling 中の広域ランダム雑音を排除し精度劣化を防止 |
 | **逐次 niching（多解探索）** (`_basin_exhausted`, 2026-06 統合) | σ-exhaustion 検知（スケール・f_opt 非依存）で掘り切った basin から restart。SR 無犠牲で多解 PR を改善（下記）|
 | **per-landscape チャネルルーター** (`channel_schedule=True`, 2026-07 統合) | 各 run で集団共分散の 3 シグナル（`cond`=固有値比 / `algA`=軸整列 / `mgap`=座標間隙, いずれも EMA・f 非依存）から landscape を検知し、空気感染(air)予算を droplet/close/keep-air の 1 ルートへ振り分け（gen120 commit ＋ 早期 droplet latch, run 内固定）。一律再配分（4 案全 REJECT）と異なりデフォルト=keep-air=base で無検知関数は無傷。**BBOB dim2 +0.6pt（87.9→88.4, F04/F11/F12/F13/F14/F16 +5）・dim3 +0.6pt（回帰なし）・CEC2022 dim10 hold-out で best_f 改善（G06 364→202）**＝全次元・hold-out 汎化。詳細は下記「チャネル割合スケジューリングの探索」|
+| **route-gated best2**（飛沫 current-to-best/2, `droplet_variant="best2_droplet"`, 2026-07 統合） | droplet ルート確定 run のみ飛沫の差分に第 2 差分ベクトル `+F·(x_c−x_d)` を追加（off-route は追加 RNG も引かず base と bit-identical）。悪条件谷/ridge のドナー多様性を増し、誤 basin で停滞した run を救出。**dim2 +1.6pt（88.4→90.0, F13 55→100/F14 75→100 Wilcoxon large）・dim3 +12.9pt（44.2→57.1, F02/F10/F11/F12/F13/F14 全 large・負け1）・CEC2022 dim10 改善3/悪化2（G01 64×）**＝全次元・hold-out 汎化。積み残しだった「stuck-run 脱出（媒介チャネル REJECT）」を 4 本目でなく飛沫の中身＋既存ルーターのゲートで解決。詳細は下記「チャネル中身差し替えの系統スイープ」|
 
 ---
 
@@ -107,6 +108,23 @@ MC-ESO に先立つウイルス模倣手法 **VirusOptimizerV2 (VSO V2)** は全
 
 - 削除した 2 機構は寄与が「定義上ゼロ／既定 OFF」なので確定削除。弱い維持機構（streak basin-switch・air_sigma_amplifier）は次回 n=20 評価で F04/F17 の寄与が崩れれば追加削除候補。
 - 検証ログ: `results/20260630_140730_simplify_DEFG_quick/`（軸 sweep・空気・per-host σ・basin-switch）、`results/20260630_145732_simplify_HI_quick/`（境界 snap・空気 σ 増幅）。
+
+---
+
+## 集団レベル3機構の必要性 ablation（n=20, 2026-07）
+
+[mceso.md](mceso.md#集団レベルの-3機構) の「集団レベルの 3 機構（系統共存 / 宿主競合 / スピルオーバー）＋ drilling」を **1 機構ずつ OFF にして全寄与を n=20 標準で定量化**。各 OFF 版を full MC-ESO（reference）と比較（quick n=20 / 5000 / `--all` 2D BBOB-24, base SR@1e-10=92.9%）。ablation 実体は `mceso_ablations.py`（宿主競合＝`MCESONoHostCompetition` で rollback 無効、スピルオーバー＝既存 `MCESONoSpillover`）＋ kwargs（系統共存＝`n_elite_max=1` で単一 best strain に縮退、drilling＝`sigma_drill_down=0.95` で加速収縮除去）。
+
+| 機構 OFF | 変種 | SR@1e-10 | Δpt | evals_mean | Wilcoxon 有意悪化(数) | 寄与が集中する関数 |
+|---|---|---|---|---|---|---|
+| **宿主競合**（rollback） | `abl_noHostComp` | 71.0% | **−21.9** | 1473（遅化） | **8**（F06/F10/F11/F12/F13/F14/F17/F18） | ill-cond 谷/ridge（F13/F14 −75, F10 −60, F11/F12 −40, F06 −50）。μ+λ 単調改善保証が悪条件精密降下の生命線 |
+| **スピルオーバー** | `abl_noSpill` | 80.2% | **−12.7** | 562（速化） | **6**（F03/F04/F15/F19/F20/F24） | separable/多峰（F04 −80, F15 −65, F03/F20/F19 −35〜−50）。誤 basin/deceptive からの脱出リスタート |
+| **系統共存** | `abl_noStrain` | 90.6% | −2.3 | 962 | 2（F06/F17） | F17 −25/F04 −19 中心。ただし F18/F23 で **+9**（トレードオフ）。診断の novelty gap（live n_elite≈1）と整合＝寄与は限定的 |
+| **drilling**（sigma_drill_down） | `abl_noDrill` | 91.7% | −1.3 | 795 | 1（F17） | F17 −35 が主だが F18 +9/F24 +5 で相殺。加速収縮の overall 寄与は誤差級 |
+
+**結論（寄与の序列）**: **宿主競合 ≫ スピルオーバー ≫ 系統共存 ≈ drilling**。4 機構すべて overall SR@1e-10 を上げており（OFF で全て低下）、**どの ablation も MC-ESO を Wilcoxon で有意に上回った関数はゼロ**（4 機構とも「性能に寄与」を確認）。ただし寄与量は 2 桁違う: 宿主競合の rollback（単調改善保証）と停滞スピルオーバーが load-bearing、系統共存と drilling は net で僅少。**系統共存/drilling は簡潔化候補に見えるが、F17 等で SR@1e-10 を落とす（net でも −2.3/−1.3pt）ため [[feedback_sr_non_negotiable]] により削除不可**。系統共存・drilling が deceptive ill-cond 多峰（F18/F23/F24）でだけ逆に足を引っ張る（OFF で改善）のは既知のトレードオフ（air escape 系と同根）。
+
+検証ログ: `results/20260708_001002_eval_pop_ablation_quick/`（全 24 関数 × 5 手法, summary/wilcoxon.csv）。ablation entry は `quick_check.py`（`abl_noStrain`/`abl_noHostComp`/`abl_noSpill`/`abl_noDrill`）。
 
 ---
 
@@ -301,3 +319,46 @@ router を作る前に、**base MC-ESO を一切変えず**（SR 不変）各世
 **厳格化版（`migratory_no_improve_thresh=200`／`migratory_ratio=0.34`）も REJECT（確定）。** overall SR@1e-10 ±0（88.4→88.4, Wilcoxon 0/0）。回帰関数は 4→3 に減ったが **F17−20（悪化拡大）/F14−15 は消えず**、救出 F23+20/F13+15/F18+5 と同格で相殺という構造が 2 回とも再現。**gate 調整では解けない** — 救う stuck（F23）と壊す stuck（F17）はどちらも「多峰で停滞」で検知区別不能（router の per-gen flip-flop 問題と同型）。媒介チャネルは確定 REJECT、`migratory_channel` フラグは既定 OFF で保持（研究記録）。検証ログ: 初回 `results/20260702_001636_eval_mig_quick/`、厳格版 `results/20260703_184939_eval_mig_strict_quick/`。
 
 検証ログ（ルーター確定〜統合）: router4=`results/20260701_225007_eval_router4_quick/`、dim3=`..._005956_eval_gen_dim3_quick/`、CEC=`..._115938_eval_gen_cec_quick/`。診断スクリプト: `scripts/measure_channel_signals.py`。
+
+### チャネル中身差し替えの系統スイープ（2026-07）— 追加でなく「中身」を全チャネル網羅、route-gated best2 のみ採用
+
+「3 チャネル（close/droplet/air）が最良である保証はない」という問いに対し、**追加系（4 本目）はほぼ全滅済み**（V2b 4 チャネル / 媒介チャネル ×2 / UCB-AOS 比率 / 一律再配分 4 案）— 有限 dead-slot を奪い RNG をずらして回復途中 run を壊すため。そこで**本数は 3 本のまま、各チャネルの数学（中身）を差し替える**方向を系統スイープした。各変種はフラグ化し**デフォルト＝base 完全一致（bit-identical）**を smoke test で確認、1 pass（base を 1 回だけ回す）で 8 変種を同時評価。
+
+**スクリーニング（quick n=20 / 5000 / dim2, base SR@1e-10=90.5%※C01-C06+BBOB24 の 30 関数 ← C07-C11 は前段 experimenter の watchdog 中断で欠落、優先関数は全含む）**:
+
+| チャネル | 変種 | 中身 | overall SR@1e-10 | 判定 |
+|---|---|---|---|---|
+| 空気 | airCauchy / airLevy / airOpp / airUnif | Cauchy裾 / Mantegna Lévy(β=1.5) / 反対向き 2·centroid−host / 全域一様 | 89.5 / 88.5 / 89.2 / 89.7 | **全 REJECT** |
+| 接触 | clCauchy | 回転・異方性維持で radial を Cauchy | 89.5 | REJECT |
+| 飛沫 | drRand1 / drPbest | DE/rand/1 / current-to-pbest(top15%) | 82.3 / 88.3 | REJECT |
+| 飛沫 | drBest2（global） | current-to-best/2 を全ルート | 90.8（+0.3, 相殺） | REJECT |
+
+**当初本命だった「空気の重い裾」は不成立**（escape 関数は drilling 停止＋router keep-air で既に保護され、裾を重くしてもノイズ増のみ）。**網羅したからこそ本命でなく飛沫の第 2 差分ベクトルが浮上**。
+
+**drBest2（global）の実態＝媒介チャネル REJECT と同型のトレードオフ**: F13-SharpRidge 55→100(+45)/F14 75→100(+25) を救う一方、F17/F18/F24/C05/F23 の多峰 keep-air を毀損して overall +0.3 とノイズ内（summary の Wilcoxon「0/2」は多峰回帰がノイジーで有意化せず誤誘導）。決定差は**壊す関数は全て keep-air ルート・救う F13/F14 は droplet ルート**。
+
+**route-gate 版 `best2_droplet`（採用）**: 第 2 差分を **droplet 確定 run のみ**適用（off-route は c,d を引かず base と bit-identical → keep-air 多峰を構造的に無傷化）。全 35 関数で:
+- **dim2 +1.6pt（88.4→90.0）**: F13 55→100/F14 75→100（Wilcoxon large）、小回帰 F18−10/F19−5（borderline-cond 多峰が稀に droplet 誤ルート）。
+- **dim3 +12.9pt（44.2→57.1）**: F02+45/F10+80/F11+60/F13+50/F14+60、Wilcoxon で base に有意勝ち6（F02/F10/F11/F12/F13/F14 全 large）・負け1、evals も速化（2169→1890）。高次元ほど悪条件谷が難しく第 2 差分が効く。
+- **CEC2022 dim10 hold-out**: median best_f 改善3（G01 0.0167→0.00026=64×, G06 202→166, G11）/ 悪化2（G03/G07）＝ net 正。
+
+**drilling-gate 版 `best2_stuck`（REJECT）**: 「stuck 局面に限定すれば漏れ F18/F19 を消せる」狙いで route∧drilling∧… を試したが、救出の大半が drilling 到達前の droplet 降下で起きるため **F13 +45→+20/F14 +25→+10 と減衰し overall +0.6 に低下**。route-gate（drilling 制限なし）が優位。
+
+→ **全次元・hold-out で汎化**（却下された SC/IRSC / 媒介チャネルの轍を回避）を確認し `droplet_variant="best2_droplet"` を**本体デフォルトに統合**。積み残しだった「F13/F14 の stuck-run はチャネル配分では届かない→媒介チャネル(4 本目)」を、**4 本目でなく飛沫チャネルの中身（current-to-best/2）＋既存ルーターのゲート**で解決（in-place ゆえ媒介チャネルの「dead-slot RNG ずらし」問題を構造的に回避）。**不採用変種（air 全種 / close-cauchy / rand1 / cur2pbest / global-best2 / best2_stuck）はコードから削除**。
+
+検証ログ: スイープ `results/20260703_194850_eval_channel_sweep_quick/`（air/close/droplet 8 変種, C07-C11 欠落）、dim2 確認 `results/20260706_173734_4d85c1c_quick/`（base+best2+best2R 全 35）、drilling-gate `results/20260706_184052_4d85c1c_quick/`、hold-out dim3 `results/20260706_185749_4d85c1c_quick/`・CEC `results/20260706_190420_4d85c1c_quick/`。
+
+### 進捗報告データの取得（2026-07-07）— 既存手法比較（10 手法）＋変更点 ablation 累積梯子
+
+進捗報告用に 2 データセットを quick（n=20 / 5000 / dim2 / 全 35 関数）で取得。
+
+**既存手法比較**（`results/20260707_進捗報告データ_既存手法比較_10手法/`）: 新規追加した NM-Restart / NCDE を含む 9 ベースライン + MC-ESO。**MC-ESO が SR@1e-10 89.9% で 10 手法中 1 位**（2 位 DE 85.7%）。旧 8 手法は前回 run（`20260706_進捗報告データ_既存手法比較/`）を再現（pycma 系のみ非決定性で ±0.3pt 内）。NM-Restart（60.6%）には多峰 16 関数で圧勝・SR で負けるのは F23-Katsuura のみ（65 vs 60）＝「2D は multistart 局所探索で十分」への反証データ。NCDE（38.7%）は C01 の多解被覆で優る（PR@1e-4 0.85 vs 0.53）が単解精度は最下位。留意: C01 の PR は NM-Restart が 1.00 で最強。
+
+**変更点 ablation 累積梯子**（`results/20260707_進捗報告データ_変更点ablation/`、再現確認 run: `20260707_154422_ablation_ladder_quick/` — 関数別 SR@1e-10 完全一致＝決定性 OK）: 5/18 版から committed 改善を 1 つずつ有効化する累積梯子。**85.1 → +ir 85.4 → +floor/nich 87.9 → +router 88.4 → +best2 89.9**。変種の再構成フラグ（`quick_check.py` に一時登録、名称は summary.csv の method 名）:
+
+| 変種 | kwargs（`MultiChannelEpidemicOptimizer`） |
+|---|---|
+| `abl0_base2018`（5/18 版再構成） | `droplet_variant="cur2best", channel_schedule=False, cov_floor_low=0.01, exhausted_no_improve_mult=1e9, ir_archive_frac=0.0, ir_repel_max_tries=0` |
+| `abl1_ir` | 同上から `ir_archive_frac` / `ir_repel_max_tries` を既定に戻す |
+| `abl2_floornich` | `droplet_variant="cur2best", channel_schedule=False` |
+| `abl3_router` | `droplet_variant="cur2best"` |

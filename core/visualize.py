@@ -791,7 +791,7 @@ def save_stats(
     # tolerance — the share of the K global optima found / runs finding all K.
     pr_keys = [f"pr_{thr:.0e}".replace("e-0", "e-") for thr in PEAK_THRESHOLDS]
     mmo_keys = [f"mmo_sr_{thr:.0e}".replace("e-0", "e-") for thr in PEAK_THRESHOLDS]
-    fieldnames_s = ["function", "category", "method", "mean_time_s",
+    fieldnames_s = ["function", "category", "tags", "method", "mean_time_s",
                     "mean_best_f", "median_best_f", *sr_keys,
                     "evals_succ_mean", "evals_succ_med", "ert", "ecdf_auc",
                     "mean_optima_found", "mean_optima_rate", "n_optima",
@@ -818,6 +818,7 @@ def save_stats(
             row = {
                 "function": benchmark.name,
                 "category": benchmark.category,
+                "tags": "|".join(benchmark.tags),
                 "method": method,
                 "mean_time_s": f"{np.mean(times):.3f}",
                 "mean_best_f":   f"{np.mean(best_fs):.4e}",

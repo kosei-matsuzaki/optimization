@@ -136,3 +136,55 @@ class MCESONoBoundarySnap(MultiChannelEpidemicOptimizer):
         x_rel = (x - lo) % (2 * span)
         x_rel = np.where(x_rel > span, 2 * span - x_rel, x_rel)
         return x_rel + lo
+
+
+# ── mechanism-necessity ablations (2026-07) ──────────────────────────────────
+# Isolate the three population-level mechanisms named in docs/mceso.md
+# ("集団レベルの 3 機構") one at a time to measure each one's contribution:
+#   • Strain coexistence  → n_elite_max=1 kwarg (single best strain, no
+#                           multi-basin donor pool; current-to-best pull kept).
+#   • Spillover           → MCESONoSpillover (above).
+#   • Drilling            → sigma_drill_down=0.95 kwarg (no accelerated
+#                           contraction in drilling mode).
+# Host competition has no single kwarg toggle (the μ+λ greedy *kill* is
+# structurally needed to open dead slots for offspring), so its competitive
+# element — the rollback that rejects children failing to beat the host they
+# replaced — is ablated with the subclass below.
+class MCESONoHostCompetition(MultiChannelEpidemicOptimizer):
+    """MC-ESO with the host-competition rollback removed.
+
+    Base ``_place_and_compete`` places each offspring into the dead slot of the
+    worst-K host, then **rolls back** any child that failed to outcompete the
+    host it replaced — so the outbreak improves monotonically (μ+λ greedy). This
+    variant keeps the worst-K kill and placement (dead slots are still needed to
+    hold offspring) but **accepts every child unconditionally**, isolating
+    whether the competitive "must beat the incumbent" rule carries performance.
+    Aging is preserved; only the rollback comparison is dropped.
+    """
+
+    def _place_and_compete(
+        self, st: _MCESOState, new_xs: np.ndarray, sigma_children: np.ndarray,
+        n_dead: int, dead_global: np.ndarray,
+        dead_orig_x, dead_orig_f,
+    ) -> None:
+        replaced_slots: list[int] = []
+        for k in range(min(n_dead, len(new_xs))):
+            slot = int(dead_global[k])
+            x = new_xs[k]
+            f = float(self.func(x))
+            st.pop_x[slot] = x
+            st.pop_f[slot] = f
+            st.pop_age[slot] = 0
+            replaced_slots.append(slot)
+            sigma_used_k = (float(sigma_children[k])
+                            if k < len(sigma_children) else float(st.sigma))
+            self._record_eval(st, x, f, sigma_used_k)
+            if not st.budget_left:
+                break
+
+        # No rollback: children are kept even if worse than the host they
+        # replaced (the ablated mechanism). Age active survivors as in base.
+        replaced_mask = np.zeros(self.n_pop, dtype=bool)
+        if replaced_slots:
+            replaced_mask[replaced_slots] = True
+        st.pop_age[~replaced_mask] += 1

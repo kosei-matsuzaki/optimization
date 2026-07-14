@@ -9,6 +9,8 @@ Classic / proposed baselines:
   cmaes           CMAESOptimizer
   mceso           MultiChannelEpidemicOptimizer  (the proposed method)
   pso / de / savoa  PSOOptimizer, DEOptimizer, SaVOAOptimizer
+  nelder_mead     MultistartNelderMeadOptimizer  (multistart local-search floor)
+  ncde            NCDEOptimizer                  (niching / multi-solution reference)
 Stronger external-library baselines (formerly optimizers_modern.py):
   lshade          LSHADEOptimizer
   restart_cmaes   IPOPCMAESOptimizer, BIPOPCMAESOptimizer
@@ -23,6 +25,8 @@ from .mceso_niching import MCESOEndemic
 from .pso import PSOOptimizer
 from .de import DEOptimizer
 from .savoa import SaVOAOptimizer
+from .nelder_mead import MultistartNelderMeadOptimizer
+from .ncde import NCDEOptimizer
 from .lshade import LSHADEOptimizer
 from .restart_cmaes import IPOPCMAESOptimizer, BIPOPCMAESOptimizer
 
@@ -31,5 +35,6 @@ __all__ = [
     "CMAESOptimizer", "MultiChannelEpidemicOptimizer",
     "MCESONoSpillover", "MCESORandomRestart", "MCESONoBoundarySnap", "MCESOEndemic",
     "PSOOptimizer", "DEOptimizer", "SaVOAOptimizer",
+    "MultistartNelderMeadOptimizer", "NCDEOptimizer",
     "LSHADEOptimizer", "IPOPCMAESOptimizer", "BIPOPCMAESOptimizer",
 ]

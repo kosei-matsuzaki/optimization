@@ -60,12 +60,14 @@ MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマー�
 - 手法を比較・評価する際は、必ず **3 指標**（SR / 平均評価回数 `evals_succ_mean` / Wilcoxon 検定）を揃えて報告する。単一指標（SR のみ等）での判定は不可。
 - **主指標は SR@1e-10**（最高精度）。補助的に SR@1e-2/1e-4/1e-7 も併記する。
 - **SR@1e-10 を下げる構成は採用しない**（多解探索の改善でも例外なし。最低 1 解は深精度到達を保証）。
-- 全関数で集計し、**関数別の改善・悪化を必ず列挙**する（regression の見落としを防ぐ）。
+- **評価は原則 2 次元 BBOB-24（F01-F24）のみで集計・判定する**。**関数別の改善・悪化を必ず列挙**する（regression の見落としを防ぐ）。
+- **Custom ベンチ（C01-C11）は評価の主対象ではない**。多峰・多解性能など特定の目的を重視して確認したいときにのみ `--custom` で追加参照する（判定の採否は原則 BBOB-24 で決める）。
 - Wilcoxon は `MC-ESO` を reference とし α=0.05、A12 効果量も併記。
 
 ### 評価範囲・実行コマンドの基準（判定は quick n=20 / eval=5000 で統一）
 
-- **手法の検証・評価はすべて `./run.sh quick --all --n-runs 20 --max-evals 5000` で行う**（quick のデフォルトが n_runs=20 / max_evals=5000 なので `--all` だけで可）。BBOB 24 + Custom 11 の全関数で実施し、quick-12 サブセットでの判定は不可。
+- **手法の検証・評価はすべて `./run.sh quick --all --n-runs 20 --max-evals 5000` で行う**（quick のデフォルトが n_runs=20 / max_evals=5000 なので `--all` だけで可）。`--all` は **2 次元 BBOB-24（F01-F24）のみ**を回す。quick-12 サブセットでの判定は不可。
+- **Custom ベンチ（C01-C11）を確認したい場合のみ `--all --custom` を使う**（多峰・多解など特定目的の参照用。判定の採否は原則 BBOB-24 で決める）。Custom 単独は `--funcs C01,C02,...` で選択できる。
 - **GitHub Actions の `./run.sh trigger`（n=100）は裏で補助的に回す実験であり、手法の検証・評価では参照しない。** 評価の根拠は常に上記 quick n=20 の結果とする。
 - 結果は `results/YYYYMMDD_HHMMSS_<label>_quick/dim{N}/{summary,wilcoxon}.csv` から 3 指標を集計して報告する。
 - ベンチマーク関数・指標カラムの詳細は [docs/experiments.md](docs/experiments.md) を参照。

@@ -1,8 +1,92 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable
 import numpy as np
 import ioh
+
+
+# ── Shape tags ───────────────────────────────────────────────────────────────
+# The BBOB `category` (separable / moderate-cond / ill-cond / multimodal /
+# weak-structure) follows Hansen et al.'s official 5 groups, but each group name
+# only names ONE axis — so a function's actual landscape shape is not read off
+# the group (e.g. F02 sits in "separable" yet its defining difficulty is
+# ill-conditioning; F03 sits in "separable" yet its defining difficulty is
+# multimodality). `SHAPE_TAGS` gives an orthogonal, multi-axis description of the
+# shape itself, keyed by function name. Axes used (a function carries the tags
+# that apply to it):
+#   modality      : unimodal | multimodal | multi-global
+#   separability  : separable | non-separable
+#   conditioning  : well-conditioned | moderate-cond | ill-conditioned
+#   structure     : global-structure | weak-structure   (multimodal only)
+#   landscape     : smooth | linear | asymmetric | plateau | bent-valley |
+#                   sharp-ridge | rugged | deceptive | boundary-optimum | needle
+#   suite-shape   : hybrid | composition                (CEC2022 constructions)
+# Keep in sync with the tables in docs/experiments.md.
+SHAPE_TAGS: dict[str, list[str]] = {
+    # BBOB — tags describe the true shape, independent of the official group.
+    "F01-Sphere":             ["unimodal", "separable", "well-conditioned", "smooth"],
+    "F02-EllipsoidalSep":     ["unimodal", "separable", "ill-conditioned"],
+    "F03-RastriginSep":       ["multimodal", "separable", "global-structure"],
+    "F04-BucheRastrigin":     ["multimodal", "separable", "global-structure", "asymmetric"],
+    "F05-LinearSlope":        ["unimodal", "separable", "linear", "boundary-optimum"],
+    "F06-AttractiveSector":   ["unimodal", "non-separable", "asymmetric", "moderate-cond"],
+    "F07-StepEllipsoidal":    ["unimodal", "non-separable", "plateau", "moderate-cond"],
+    "F08-Rosenbrock":         ["unimodal", "non-separable", "bent-valley"],
+    "F09-RosenbrockRot":      ["unimodal", "non-separable", "bent-valley"],
+    "F10-EllipsoidalRot":     ["unimodal", "non-separable", "ill-conditioned"],
+    "F11-Discus":             ["unimodal", "non-separable", "ill-conditioned"],
+    "F12-BentCigar":          ["unimodal", "non-separable", "ill-conditioned", "bent-valley"],
+    "F13-SharpRidge":         ["unimodal", "non-separable", "ill-conditioned", "sharp-ridge"],
+    "F14-DiffPowers":         ["unimodal", "non-separable", "ill-conditioned"],
+    "F15-RastriginRot":       ["multimodal", "non-separable", "global-structure"],
+    "F16-Weierstrass":        ["multimodal", "non-separable", "global-structure", "rugged"],
+    "F17-SchafferF7":         ["multimodal", "non-separable", "global-structure", "moderate-cond"],
+    "F18-SchafferF7ill":      ["multimodal", "non-separable", "global-structure", "ill-conditioned"],
+    "F19-GriewankRosenbrock": ["multimodal", "non-separable", "global-structure", "bent-valley"],
+    "F20-Schwefel":           ["multimodal", "separable", "weak-structure", "deceptive"],
+    "F21-Gallagher101":       ["multimodal", "non-separable", "weak-structure"],
+    "F22-Gallagher21":        ["multimodal", "non-separable", "weak-structure"],
+    "F23-Katsuura":           ["multimodal", "non-separable", "weak-structure", "rugged"],
+    "F24-LunacekRastrigin":   ["multimodal", "non-separable", "weak-structure", "deceptive"],
+    # Custom 2-D — `multi-global` marks the multi-global-optima problems (PR metric).
+    "C01-Himmelblau":         ["multi-global", "multimodal", "smooth"],
+    "C02-SixHumpCamel":       ["multi-global", "multimodal", "smooth"],
+    "C03-Shubert":            ["multi-global", "multimodal", "rugged"],
+    "C04-FiveWell":           ["multimodal", "deceptive"],
+    "C05-Eggholder":          ["multimodal", "rugged", "deceptive", "boundary-optimum"],
+    "C06-Michalewicz":        ["multimodal", "plateau", "deceptive"],
+    "C07-BukinN6":            ["multimodal", "sharp-ridge", "deceptive"],
+    "C08-StyblinskiTang":     ["multimodal", "deceptive"],
+    "C09-Easom":              ["unimodal", "plateau", "needle"],
+    "C10-SchafferN2":         ["multimodal", "rugged"],
+    "C11-DeJongF5":           ["multimodal", "plateau", "deceptive"],
+    # CEC2022 hold-out (dim=10).
+    "G01-Zakharov":           ["unimodal", "non-separable", "ill-conditioned"],
+    "G02-Rosenbrock":         ["multimodal", "non-separable", "bent-valley"],
+    "G03-SchafferF7":         ["multimodal", "non-separable", "rugged"],
+    "G04-Rastrigin":          ["multimodal", "non-separable", "global-structure"],
+    "G05-Levy":               ["multimodal", "non-separable", "global-structure"],
+    "G06-Hybrid1":            ["multimodal", "non-separable", "hybrid"],
+    "G07-Hybrid2":            ["multimodal", "non-separable", "hybrid"],
+    "G08-Hybrid3":            ["multimodal", "non-separable", "hybrid"],
+    "G09-Composition1":       ["multimodal", "non-separable", "weak-structure", "composition"],
+    "G10-Composition2":       ["multimodal", "non-separable", "weak-structure", "composition"],
+    "G11-Composition3":       ["multimodal", "non-separable", "weak-structure", "composition"],
+    "G12-Composition4":       ["multimodal", "non-separable", "weak-structure", "composition"],
+}
+
+# Presentation grouping of shape tags by axis — used to order/label columns in
+# reference views (the /benchmarks matrix). Mirrors the axes documented above and
+# TAG_ORDER in web/static/result.js (JS cannot import this, so keep both in sync).
+TAG_AXES: list[tuple[str, list[str]]] = [
+    ("modality",     ["unimodal", "multimodal", "multi-global"]),
+    ("separability", ["separable", "non-separable"]),
+    ("conditioning", ["well-conditioned", "moderate-cond", "ill-conditioned"]),
+    ("structure",    ["global-structure", "weak-structure"]),
+    ("landscape",    ["smooth", "linear", "asymmetric", "plateau", "bent-valley",
+                      "sharp-ridge", "rugged", "deceptive", "boundary-optimum", "needle"]),
+    ("suite-shape",  ["hybrid", "composition"]),
+]
 
 
 @dataclass
@@ -14,6 +98,57 @@ class BenchmarkFunction:
     category: str
     dim: int = 2
     optima_pos: list[list[float]] | None = None
+    tags: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        # Single source of truth: derive shape tags from the name unless a caller
+        # supplied them explicitly. Covers every construction path (BBOB, custom,
+        # CEC2022, and the worker-side make_benchmark_by_name reconstruction).
+        if not self.tags:
+            self.tags = list(SHAPE_TAGS.get(self.name, []))
+
+
+# ── Evaluation-noise models (quick --noise mode) ──────────────────────────
+# BBOB-noisy-style multiplicative noise on the OBSERVED f: the optimizer only
+# ever sees the noisy value; scoring re-evaluates visited points noise-free
+# (see core/runner.run_experiment). Multiplicative forms keep the models
+# scale-invariant across functions (f - f_opt >= 0 by construction). Following
+# the BBOB-noisy convention, noise is suppressed once true f <= NOISE_FREE_LEVEL
+# so the deepest precision targets stay measurable.
+NOISE_FREE_LEVEL = 1e-8
+NOISE_MODELS = ("gauss_mild", "gauss_sev", "cauchy")
+
+
+def make_noisy_func(
+    base_func: Callable[[np.ndarray], float],
+    model: str,
+    rng: np.random.Generator,
+) -> Callable[[np.ndarray], float]:
+    """Wrap ``base_func`` with one of NOISE_MODELS (its own RNG, independent
+    of the optimizer's seed):
+
+      gauss_mild   f * exp(0.01 * N(0,1))       BBOB moderate gaussian
+      gauss_sev    f * exp(1.00 * N(0,1))       BBOB severe gaussian (~x e^±2)
+      cauchy       f * (1 + |Cauchy|) w.p. 0.2  seldom-severe upward spikes
+    """
+    if model not in NOISE_MODELS:
+        raise ValueError(f"unknown noise model {model!r}; choose from {NOISE_MODELS}")
+
+    def noisy(x: np.ndarray) -> float:
+        f = float(base_func(x))
+        if f <= NOISE_FREE_LEVEL:
+            return f
+        if model == "gauss_mild":
+            return f * float(np.exp(0.01 * rng.standard_normal()))
+        if model == "gauss_sev":
+            return f * float(np.exp(1.0 * rng.standard_normal()))
+        # cauchy: upward-only spikes so min-tracking is stressed by outliers,
+        # not poisoned by spuriously deflated observations.
+        if rng.random() < 0.2:
+            return f * (1.0 + abs(float(rng.standard_cauchy())))
+        return f
+
+    return noisy
 
 
 # BBOB noiseless suite (Hansen et al., 2009)

@@ -63,9 +63,12 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 
 | コマンド | 説明 |
 |---|---|
-| `./run.sh quick --all` | **手法評価の標準コマンド**。BBOB 24 + Custom 11 の全関数を n_runs=20 / max_evals=5000 で評価 |
+| `./run.sh quick --all` | **手法評価の標準コマンド**。**2 次元 BBOB-24（F01-F24）のみ**を n_runs=20 / max_evals=5000 で評価 |
+| `./run.sh quick --all --custom` | BBOB-24 に Custom 11（C01-C11, 2D 限定）を追加。多峰・多解など**特定目的の参照時のみ**使う |
+| `./run.sh quick --funcs C01-Himmelblau,C02-SixHumpCamel` | Custom 単独に絞り込んだ集中確認 |
 | `./run.sh quick --funcs F08-Rosenbrock,F10-EllipsoidalRot` | 任意関数に絞り込んだ集中検証（デバッグ用） |
 | `./run.sh quick --n-runs 5 --max-evals 3000` | パラメータを上書きしてローカル確認 |
+| `./run.sh quick --all --noise gauss_sev` | **ノイズ評価モード**（診断用）。noisy f をアルゴリズムに見せ、指標は真値で再採点（下記） |
 | `./run.sh ui` | Results UI を起動 → http://localhost:8080 |
 | `./run.sh trigger` | GitHub Actions ワークフローをトリガー（**補助実験**, n=100。評価には使わない） |
 | `./run.sh download` / `./run.sh download <RUN_ID>` | 完了済みワークフロー結果をダウンロード |
@@ -74,15 +77,25 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 
 ```bash
 # 手法の検証・評価（標準）
-./run.sh quick --all      # n_runs=20 / max_evals=5000 / 全関数
-./run.sh ui               # 結果を Results UI で確認
+./run.sh quick --all             # n_runs=20 / max_evals=5000 / 2D BBOB-24 のみ
+./run.sh quick --all --custom    # 多峰・多解など特定目的の参照時のみ Custom を追加
+./run.sh ui                      # 結果を Results UI で確認
 
 # 補助実験（裏で回す。評価には参照しない）
 ./run.sh trigger          # n=100 ワークフローを投入
 ./run.sh download         # 完了後にダウンロード
 ```
 
-> **実行ルール**: `quick_check.py` はローカル専用スクリプトで、`python3 quick_check.py` を直接呼ばず `./run.sh quick` を使う。手法評価は**必ず全関数（`--all`）・n_runs=20・max_evals=5000** で実施し、quick-12 サブセットでの判定は行わない。`main.py`（補助実験）はローカルでは実行せず GitHub Actions 経由のみ。
+> **実行ルール**: `quick_check.py` はローカル専用スクリプトで、`python3 quick_check.py` を直接呼ばず `./run.sh quick` を使う。手法評価は**原則 2 次元 BBOB-24（`--all`）・n_runs=20・max_evals=5000** で実施し、quick-12 サブセットでの判定は行わない。Custom（C01-C11）は多峰・多解など特定目的を確認したいときにのみ `--custom` で追加参照する（採否判定は原則 BBOB-24 で決める）。`main.py`（補助実験）はローカルでは実行せず GitHub Actions 経由のみ。
+
+### ノイズ評価モード（`--noise`, 診断用）
+
+`./run.sh quick --noise {gauss_mild|gauss_sev|cauchy}` で BBOB-noisy 流の評価ノイズを掛けて頑健性を測る（`core/benchmarks.py: NOISE_MODELS / make_noisy_func`、採点は `core/runner.run_experiment`）。
+
+- **アルゴリズムには noisy f のみを見せ、報告される全指標（SR / evals_succ / Wilcoxon / summary.csv）は訪問点の真値で再採点する**（COCO-noisy 慣行。観測 min で採点するとノイズ下裾を拾った見かけ成功が混ざるため）。
+- ノイズは乗法型でスケール不変: `gauss_mild` = f·exp(0.01·N)、`gauss_sev` = f·exp(1.0·N)、`cauchy` = 確率 0.2 で f×(1+|Cauchy|) の上方スパイク。**真値 f ≤ 1e-8 はノイズ無効**（最終ターゲットが測定可能のまま残る、BBOB-noisy 慣行）。
+- ノイズ RNG は (関数, モデル, run) の CRC32 seed で optimizer seed と独立・再現可能。
+- **位置づけは診断**: noiseless の標準評価（SR@1e-10 死守ルール等）とは独立で、採否判定には使わない。`result.json` に `"noise"` フィールドが記録される。
 
 ### 評価の分析・自動化
 
@@ -102,7 +115,7 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 | 試行回数 | **20 run**（seed = 0, 100, 200, ..., 1900） |
 | 評価上限 | **5,000 回/run** |
 | 成功判定 | best f ≤ 1e-4 |
-| 次元数 | 2次元（BBOB 24関数 + カスタム関数）、3次元（BBOB 24関数）、CEC2022 hold-out（dim10） |
+| 次元数 | **2次元 BBOB-24（F01-F24）が判定の主対象**。Custom（C01-C11）は `--custom` で追加する特定目的の参照用。3次元（BBOB 24関数）・CEC2022 hold-out（dim10）は汎化確認用 |
 | sigma0（CMA-ES 系） | `0.2 × (hi - lo)` |
 
 > 補助的に GitHub Actions で n=100 の実験（`./run.sh trigger`）も回しているが、手法の検証・評価では参照しない。評価の根拠は常に上記 quick n=20 の結果とする。
@@ -121,50 +134,72 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 > - インスタンス変換（シフト・回転）が適用されており、座標軸や原点への過適合を防ぐ
 > - 既発表の CMA-ES, PSO, GA 等の結果と直接比較できる
 
-| FID | 関数名 | グループ | 主な難しさ |
-|---|---|---|---|
-| F01 | Sphere | separable | 最も単純。アルゴリズムの健全性確認 |
-| F02 | Ellipsoidal (sep.) | separable | 軸方向に強い条件数 |
-| F03 | Rastrigin (sep.) | separable | 分離可能な多峰性 |
-| F04 | Büche-Rastrigin | separable | 非対称な多峰性 |
-| F05 | Linear Slope | separable | 最適解が境界上 |
-| F06 | Attractive Sector | moderate-cond | 非対称な単峰性 |
-| F07 | Step Ellipsoidal | moderate-cond | 段差状の不連続性 |
-| F08 | Rosenbrock | moderate-cond | バナナ型の曲がった谷 |
-| F09 | Rosenbrock (rot.) | moderate-cond | Rosenbrock に回転を適用 |
-| F10 | Ellipsoidal (rot.) | ill-cond | 高条件数、軸非整合 |
-| F11 | Discus | ill-cond | 1次元のみ強く伸びた形状 |
-| F12 | Bent Cigar | ill-cond | 曲がった葉巻型 |
-| F13 | Sharp Ridge | ill-cond | 鋭い稜線 |
-| F14 | Different Powers | ill-cond | 次元ごとに異なるべき乗 |
-| F15 | Rastrigin (rot.) | multimodal | 局所解が密、回転あり |
-| F16 | Weierstrass | multimodal | 高度に多峰・不規則 |
-| F17 | Schaffer F7 | multimodal | 中程度の多峰性 |
-| F18 | Schaffer F7 (ill) | multimodal | F17 に高条件数を追加 |
-| F19 | Griewank-Rosenbrock | multimodal | 複合的な地形 |
-| F20 | Schwefel | weak-structure | 大域構造が弱い多峰性 |
-| F21 | Gallagher 101 peaks | weak-structure | 101 個のガウス峰が散在 |
-| F22 | Gallagher 21 peaks | weak-structure | F21 より峰が少なく深い |
-| F23 | Katsuura | weak-structure | フラクタル的な地形 |
-| F24 | Lunacek bi-Rastrigin | weak-structure | 大域最適解が欺瞞的な位置 |
+#### 分類の 2 軸: 公式グループ（category）と形状タグ（tags）
+
+各関数には **2 通りの分類**を付与している（`core/benchmarks.py`）。
+
+- **`category`（BBOB 公式 5 グループ）**: Hansen et al. の原著グループ（separable / moderate-cond / ill-cond / multimodal / weak-structure）をそのまま採用。**既発表結果との比較可能性**を保つための単一軸ラベルであり変更しない。
+- **`tags`（形状タグ）**: 公式グループ名は 1 軸しか表さないため、関数の**実際のランドスケープ形状**が読み取れない（例: F02 は "separable" グループだが本質的難しさは悪条件、F03 は "separable" グループだが本質は多峰）。これを補うため、形状を**直交する複数軸**で記述するタグを別途付与する。`SHAPE_TAGS` が唯一の定義元で、`summary.csv` の `tags` 列（`|` 区切り）に出力され、Results UI の「形状タグ別」内訳と各関数のツールチップに表示される。
+
+形状タグの軸（各関数は該当するタグを複数持つ）:
+
+| 軸 | 値 |
+|---|---|
+| modality（峰性） | `unimodal` / `multimodal` / `multi-global`（大域最適解が複数） |
+| separability（分離性） | `separable` / `non-separable` |
+| conditioning（条件数） | `well-conditioned` / `moderate-cond` / `ill-conditioned` |
+| structure（大域構造・多峰時のみ） | `global-structure` / `weak-structure` |
+| landscape（局所形状） | `smooth` / `linear` / `asymmetric` / `plateau` / `bent-valley` / `sharp-ridge` / `rugged` / `deceptive` / `boundary-optimum` / `needle` |
+| suite-shape（CEC2022 構成） | `hybrid` / `composition` |
+
+| FID | 関数名 | グループ | 形状タグ | 主な難しさ |
+|---|---|---|---|---|
+| F01 | Sphere | separable | unimodal, separable, well-conditioned, smooth | 最も単純。アルゴリズムの健全性確認 |
+| F02 | Ellipsoidal (sep.) | separable | unimodal, separable, **ill-conditioned** | 軸方向に強い条件数（形状は悪条件単峰） |
+| F03 | Rastrigin (sep.) | separable | **multimodal**, separable, global-structure | 分離可能な多峰性（形状は多峰） |
+| F04 | Büche-Rastrigin | separable | **multimodal**, separable, global-structure, asymmetric | 非対称な多峰性 |
+| F05 | Linear Slope | separable | unimodal, separable, linear, boundary-optimum | 最適解が境界上 |
+| F06 | Attractive Sector | moderate-cond | unimodal, non-separable, asymmetric, moderate-cond | 非対称な単峰性 |
+| F07 | Step Ellipsoidal | moderate-cond | unimodal, non-separable, plateau, moderate-cond | 段差状の不連続性（階段プラトー） |
+| F08 | Rosenbrock | moderate-cond | unimodal, non-separable, bent-valley | バナナ型の曲がった谷 |
+| F09 | Rosenbrock (rot.) | moderate-cond | unimodal, non-separable, bent-valley | Rosenbrock に回転を適用 |
+| F10 | Ellipsoidal (rot.) | ill-cond | unimodal, non-separable, ill-conditioned | 高条件数、軸非整合 |
+| F11 | Discus | ill-cond | unimodal, non-separable, ill-conditioned | 1次元のみ強く伸びた形状 |
+| F12 | Bent Cigar | ill-cond | unimodal, non-separable, ill-conditioned, bent-valley | 曲がった葉巻型の谷 |
+| F13 | Sharp Ridge | ill-cond | unimodal, non-separable, ill-conditioned, sharp-ridge | 鋭い稜線（非平滑） |
+| F14 | Different Powers | ill-cond | unimodal, non-separable, ill-conditioned | 次元ごとに異なるべき乗 |
+| F15 | Rastrigin (rot.) | multimodal | multimodal, non-separable, global-structure | 局所解が密、回転あり |
+| F16 | Weierstrass | multimodal | multimodal, non-separable, global-structure, rugged | 高度に多峰・不規則（rugged） |
+| F17 | Schaffer F7 | multimodal | multimodal, non-separable, global-structure, moderate-cond | 中程度の多峰性 |
+| F18 | Schaffer F7 (ill) | multimodal | multimodal, non-separable, global-structure, ill-conditioned | F17 に高条件数を追加 |
+| F19 | Griewank-Rosenbrock | multimodal | multimodal, non-separable, global-structure, bent-valley | Rosenbrock 谷を含む複合地形 |
+| F20 | Schwefel | weak-structure | multimodal, **separable**, weak-structure, deceptive | 大域構造が弱く欺瞞的（大域は境界寄り。座標独立で分離可能だが公式グループは weak-structure） |
+| F21 | Gallagher 101 peaks | weak-structure | multimodal, non-separable, weak-structure | 101 個のガウス峰が散在 |
+| F22 | Gallagher 21 peaks | weak-structure | multimodal, non-separable, weak-structure | F21 より峰が少なく深い |
+| F23 | Katsuura | weak-structure | multimodal, non-separable, weak-structure, rugged | フラクタル的な地形 |
+| F24 | Lunacek bi-Rastrigin | weak-structure | multimodal, non-separable, weak-structure, deceptive | 二重ファネルで大域が欺瞞的 |
+
+**太字**は公式グループ名からは読めない、形状タグで補正される特性（F02=悪条件、F03/F04=多峰）。
 
 ### Custom 関数（2-D）
 
 BBOB がカバーしない **多大域最適解**・**deceptive 2-D 多峰** 系の古典的テスト関数を補完。MC-ESO の「ニッチ系統共存」と「広域 spillover」の挙動を BBOB の回転・シフトに依らない素のランドスケープで検証する目的。各関数は `f(x) − f_opt` で正規化し最小値を 0 とする。
 
-| ID | 関数名 | 探索域 | カテゴリ | 主な難しさ |
-|---|---|---|---|---|
-| C01 | Himmelblau | [-5, 5]² | multi-optima | 大域最適解が **4 箇所**（ニッチ性能の直接評価） |
-| C02 | Six-hump Camel | [-2, 2]² | multi-optima | 大域最適解が **2 箇所** |
-| C03 | Shubert | [-10, 10]² | multi-optima | 大域最適解が **18 箇所**（積形式・約760 局所解） |
-| C04 | Five-well Potential | [-20, 20]² | deceptive-2d | 5 つの井戸（うち1つが大域）|
-| C05 | Eggholder | [-512, 512]² | deceptive-2d | 極めて鋭い多峰・大域は境界近傍 |
-| C06 | Michalewicz (m=10) | [0, π]² | deceptive-2d | 平坦域に細い谷、急峻 |
-| C07 | Bukin N.6 | [-15, 15]² | deceptive-2d | y = 0.01x² の極細谷、gradient 不連続 |
-| C08 | Styblinski-Tang | [-5, 5]² | deceptive-2d | 4 局所解、3 つが大域に近い深さ |
-| C09 | Easom | [-100, 100]² | deceptive-2d | 広大な平坦域中の鋭い単一峰（needle-in-haystack）|
-| C10 | Schaffer N.2 | [-100, 100]² | deceptive-2d | 同心円状の多峰、原点中心 |
-| C11 | De Jong F5 (Shekel's foxholes) | [-65.536, 65.536]² | deceptive-2d | 5×5 格子の25局所解 |
+> **位置づけ**: Custom は評価の**主対象ではない**。標準の手法評価は 2 次元 BBOB-24（F01-F24）で行い、Custom は多峰・多解性能など**特定の目的を重視して確認したいときにのみ** `./run.sh quick --all --custom`（または `--funcs C01,...` で単独）で参照する。採否の判定は原則 BBOB-24 で決める。
+
+| ID | 関数名 | 探索域 | カテゴリ | 形状タグ | 主な難しさ |
+|---|---|---|---|---|---|
+| C01 | Himmelblau | [-5, 5]² | multi-optima | multi-global, multimodal, smooth | 大域最適解が **4 箇所**（ニッチ性能の直接評価） |
+| C02 | Six-hump Camel | [-2, 2]² | multi-optima | multi-global, multimodal, smooth | 大域最適解が **2 箇所** |
+| C03 | Shubert | [-10, 10]² | multi-optima | multi-global, multimodal, rugged | 大域最適解が **18 箇所**（積形式・約760 局所解） |
+| C04 | Five-well Potential | [-20, 20]² | deceptive-2d | multimodal, deceptive | 5 つの井戸（うち1つが大域）|
+| C05 | Eggholder | [-512, 512]² | deceptive-2d | multimodal, rugged, deceptive, boundary-optimum | 極めて鋭い多峰・大域は境界近傍 |
+| C06 | Michalewicz (m=10) | [0, π]² | deceptive-2d | multimodal, plateau, deceptive | 平坦域に細い谷、急峻 |
+| C07 | Bukin N.6 | [-15, 15]² | deceptive-2d | multimodal, sharp-ridge, deceptive | y = 0.01x² の極細谷、gradient 不連続 |
+| C08 | Styblinski-Tang | [-5, 5]² | deceptive-2d | multimodal, deceptive | 4 局所解、3 つが大域に近い深さ |
+| C09 | Easom | [-100, 100]² | deceptive-2d | unimodal, plateau, needle | 広大な平坦域中の鋭い単一峰（needle-in-haystack）|
+| C10 | Schaffer N.2 | [-100, 100]² | deceptive-2d | multimodal, rugged | 同心円状の多峰、原点中心 |
+| C11 | De Jong F5 (Shekel's foxholes) | [-65.536, 65.536]² | deceptive-2d | multimodal, plateau, deceptive | 5×5 格子の25局所解 |
 
 ### CEC2022（hold-out）
 
@@ -176,7 +211,7 @@ BBOB とは独立した CEC2022 12 関数（`ioh` 経由、dim=10）を hold-out
 
 ## 評価方法論
 
-> **評価の鉄則**: 手法を比較・評価する際は必ず以下の **3 指標**（SR / 評価回数 / 統計検定）を揃えて報告する。単一指標（SR のみ等）での判定は不可。評価は必ず全関数で実施し、関数別の改善・悪化を列挙して regression を見落とさない。
+> **評価の鉄則**: 手法を比較・評価する際は必ず以下の **3 指標**（SR / 評価回数 / 統計検定）を揃えて報告する。単一指標（SR のみ等）での判定は不可。評価は**原則 2 次元 BBOB-24（F01-F24）全関数**で実施し、関数別の改善・悪化を列挙して regression を見落とさない。Custom（C01-C11）は多峰・多解など特定目的の参照用で、採否判定の主対象にはしない。
 
 ### 1. SR（Success Rate, 多段報告）
 

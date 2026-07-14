@@ -15,12 +15,16 @@ from pathlib import Path
 
 from core.benchmarks import (
     BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME,
-    BENCHMARKS_CEC2022_10D_BY_NAME,
+    BENCHMARKS_CEC2022_10D_BY_NAME, NOISE_MODELS,
 )
 from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
     DEOptimizer, SaVOAOptimizer,
+    MultistartNelderMeadOptimizer, NCDEOptimizer,
     LSHADEOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
+)
+from core.optimizers.mceso_ablations import (
+    MCESONoSpillover, MCESONoHostCompetition,
 )
 from core.runner import (run_experiment, summarize, wilcoxon_vs_reference,
                          peak_metrics)
@@ -68,7 +72,8 @@ def _append_wilcoxon(dim_dir: Path, bench_name: str,
                 "a12_magnitude":      stat["a12_magnitude"],
             })
 
-# Curated 12-function subset — two representatives per BBOB group + custom.
+# Curated 12-function subset — two representatives per BBOB group. BBOB-only:
+# custom benchmarks are opt-in (--custom) per the 2D-BBOB evaluation standard.
 # Used as the default quick set.
 _QUICK_FUNCTIONS: list[str] = [
     "F01-Sphere",            # separable        — unimodal baseline
@@ -78,11 +83,11 @@ _QUICK_FUNCTIONS: list[str] = [
     "F10-EllipsoidalRot",    # ill-cond         — cond ≈ 10^6
     "F12-BentCigar",         # ill-cond         — extreme cond ≈ 10^6
     "F15-RastriginRot",      # multimodal       — structured landscape
+    "F16-Weierstrass",       # multimodal       — highly rugged
     "F17-SchafferF7",        # multimodal       — irregular rough landscape
     "F20-Schwefel",          # weak-structure   — deceptive optima
     "F21-Gallagher101",      # weak-structure   — 101 Gaussian peaks
-    "C01-Himmelblau",        # custom 2D-only   — 4 global optima
-    "C02-SixHumpCamel",      # custom 2D-only   — 2 global optima
+    "F24-LunacekRastrigin",  # weak-structure   — deceptive double funnel
 ]
 
 # Full BBOB-24 set (F01-F24) + 2D-only custom benchmarks. Built programmatically
@@ -95,7 +100,9 @@ _CUSTOM_2D_ONLY: list[str] = sorted(
     {n for n in BENCHMARKS_BY_NAME if n.startswith("C")},
     key=lambda n: int(n[1:3]),
 )
-_ALL_FUNCTIONS: list[str] = _BBOB_NAMES + _CUSTOM_2D_ONLY
+# Standard evaluation set (--all): 2D BBOB-24 only. Custom benchmarks are
+# opt-in via --custom (multimodal / multi-optima focus) — see docs/experiments.md.
+_ALL_FUNCTIONS: list[str] = _BBOB_NAMES
 
 # Held-out CEC2022 suite (dim=10). Independent of BBOB transformations —
 # used to test whether MC-ESO mechanisms generalize beyond the BBOB suite
@@ -114,7 +121,7 @@ _DIM_REGISTRIES: dict[int, dict[str, object]] = {
 # suppression, informed-restart spillover (reservoir re-ignition + basin-memory
 # repulsion), sequential niching (σ-exhaustion), host competition with rollback,
 # σ adapt — are baked into the base implementation. This dict is the standard
-# comparison: MC-ESO vs the 7 baselines. Diagnostic / ablation variants are NOT
+# comparison: MC-ESO vs the 9 baselines. Diagnostic / ablation variants are NOT
 # registered here (they live in core/optimizers/mceso_ablations.py and can be
 # added back temporarily when isolating a mechanism's contribution).
 _OPTIMIZERS = {
@@ -125,18 +132,46 @@ _OPTIMIZERS = {
     "DE":           (DEOptimizer,                   {}),
     "L-SHADE":      (LSHADEOptimizer,               {}),
     "SaVOA":        (SaVOAOptimizer,                {}),
+    # Multistart local-search floor: in 2D BBOB a restarted Nelder-Mead is a
+    # strong reference — any metaheuristic gain must clear this bar.
+    "NM-Restart":   (MultistartNelderMeadOptimizer, {}),
+    # Dedicated niching baseline: the multi-solution (PR / MMOsr) comparison
+    # partner for MC-ESO's sequential niching.
+    "NCDE":         (NCDEOptimizer,                 {}),
     "MC-ESO":       (MultiChannelEpidemicOptimizer, {}),
-    # Temporary verification variants (remove once verdict is in). The router is
-    # now the committed default, so:
-    #  Orig = pre-router flat-ratio MC-ESO (channel_schedule off) — regression ref.
-    #  Mig  = committed MC-ESO + stuck-gated migratory (vector-borne) escape channel.
-    "MC-ESO-Orig": (MultiChannelEpidemicOptimizer, {"channel_schedule": False}),
-    "MC-ESO-Mig":  (MultiChannelEpidemicOptimizer, {"migratory_channel": True}),
+    # Temporary entries: cumulative ablation ladder for the progress report
+    # (each rung re-enables one committed improvement; MC-ESO = all on).
+    #  abl0 = 5/18-era base: blind-uniform restart, fixed high cov floor,
+    #         no niching, no router, single-difference droplet.
+    "abl0_base2018":  (MultiChannelEpidemicOptimizer, {
+        "droplet_variant": "cur2best", "channel_schedule": False,
+        "cov_floor_low": 0.01, "exhausted_no_improve_mult": 1e9,
+        "ir_archive_frac": 0.0, "ir_repel_max_tries": 0}),
+    #  abl1 = + informed restart (reservoir re-ignition + basin repulsion)
+    "abl1_ir":        (MultiChannelEpidemicOptimizer, {
+        "droplet_variant": "cur2best", "channel_schedule": False,
+        "cov_floor_low": 0.01, "exhausted_no_improve_mult": 1e9}),
+    #  abl2 = + adaptive anisotropy floor + sequential niching
+    "abl2_floornich": (MultiChannelEpidemicOptimizer, {
+        "droplet_variant": "cur2best", "channel_schedule": False}),
+    #  abl3 = + per-landscape channel router (full MC-ESO minus best2)
+    "abl3_router":    (MultiChannelEpidemicOptimizer, {
+        "droplet_variant": "cur2best"}),
+    # Mechanism-necessity ablations (2026-07): each turns OFF one of the three
+    # population-level mechanisms (docs/mceso.md 集団レベルの 3 機構) vs full MC-ESO.
+    #  系統共存 OFF: single best strain (no multi-basin donor pool)
+    "abl_noStrain":   (MultiChannelEpidemicOptimizer, {"n_elite_max": 1}),
+    #  宿主競合 OFF: keep worst-K kill + placement, drop rollback (accept all)
+    "abl_noHostComp": (MCESONoHostCompetition,         {}),
+    #  スピルオーバー OFF: no stagnation restart (channels grind one basin)
+    "abl_noSpill":    (MCESONoSpillover,               {}),
+    #  Drilling OFF: no accelerated σ contraction in drilling mode
+    "abl_noDrill":    (MultiChannelEpidemicOptimizer, {"sigma_drill_down": 0.95}),
 }
 
 
 def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int,
-             optimizers: dict | None = None) -> None:
+             optimizers: dict | None = None, noise: str | None = None) -> None:
     """Run all functions in a dimension group and save results to dim_dir."""
     dim_dir.mkdir(parents=True, exist_ok=True)
     if optimizers is None:
@@ -153,7 +188,8 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int,
         for method, (cls, kwargs) in optimizers.items():
             kw = {**kwargs, **({"sigma0": sigma0} if cls in _SIGMA_USERS else {})}
             results, times = run_experiment(
-                cls, bench, n_runs=n_runs, max_evals=max_evals, **kw
+                cls, bench, n_runs=n_runs, max_evals=max_evals,
+                noise_model=noise, **kw
             )
             results_per_method[method] = results
             times_per_method[method] = times
@@ -211,6 +247,8 @@ def main(
     dim: int = 2,
     suite: str = "bbob",
     methods: list[str] | None = None,
+    with_custom: bool = False,
+    noise: str | None = None,
 ) -> None:
     output_dir = Path(output_dir)
     if suite == "cec2022":
@@ -225,9 +263,19 @@ def main(
                 f"--dim {dim} not supported for BBOB suite. "
                 "Use --suite cec2022 for the CEC2022 dim=10 hold-out set.")
         registry = _DIM_REGISTRIES[dim]
+        # Standard: 2D BBOB-only. Custom benchmarks are opt-in via --custom (or by
+        # naming them explicitly with --funcs, which selects from the full registry).
         func_set = _ALL_FUNCTIONS if use_all else _QUICK_FUNCTIONS
-        # Custom benchmarks (C01/C02) are 2D-only — drop them silently for higher dims
+        if with_custom:
+            func_set = func_set + [n for n in _CUSTOM_2D_ONLY if n not in func_set]
+        # Custom benchmarks are 2D-only — drop them for higher dims
         func_set = [n for n in func_set if dim == 2 or n not in _CUSTOM_2D_ONLY]
+        # Explicit --funcs may name custom benchmarks not in the BBOB-only set;
+        # make them selectable at dim=2 without requiring --custom.
+        if funcs and dim == 2:
+            named_custom = [n for n in _CUSTOM_2D_ONLY
+                            if n in funcs and n not in func_set]
+            func_set = func_set + named_custom
     # Filter optimizers by --methods (preserve order from _OPTIMIZERS).
     if methods:
         method_filter = {m.strip() for m in methods if m and m.strip()}
@@ -242,8 +290,13 @@ def main(
 
     print(f"quick_check  suite={suite}  dim={dim}  n_runs={n_runs}  "
           f"max_evals={max_evals}  "
-          f"set={'all' if use_all else 'quick'}  funcs={funcs or 'all'}  "
-          f"methods={list(optimizers)}")
+          f"set={'all' if use_all else 'quick'}  custom={with_custom}  "
+          f"noise={noise or 'off'}  "
+          f"funcs={funcs or 'all'}  methods={list(optimizers)}")
+    if noise:
+        print("NOISE MODE: optimizers observe the noisy f; all reported metrics "
+              "are re-scored on the noise-free f of visited points "
+              "(COCO-noisy convention, noise-free below 1e-8).")
 
     func_filter = set(funcs) if funcs else None
     benchmarks: list = []
@@ -260,7 +313,7 @@ def main(
 
     print(f"\n=== dim{dim} ===")
     _run_dim(benchmarks, output_dir / f"dim{dim}", n_runs, max_evals,
-             optimizers=optimizers)
+             optimizers=optimizers, noise=noise)
 
 
 if __name__ == "__main__":
@@ -271,7 +324,11 @@ if __name__ == "__main__":
     parser.add_argument("--funcs",      type=str, default=None,
                         help="Comma-separated function names to run (default: all in selected set)")
     parser.add_argument("--all",        action="store_true",
-                        help="Use the full BBOB set (F01-F24, + C01-C11 custom for dim=2) instead of the quick subset")
+                        help="Use the full 2D BBOB-24 set (F01-F24) instead of the quick subset. "
+                             "BBOB-only — add --custom to also run the C01-C11 custom benchmarks.")
+    parser.add_argument("--custom",     action="store_true",
+                        help="Also run the 2D-only custom benchmarks (C01-C11) — opt-in for "
+                             "multimodal / multi-optima focus. Ignored for dim != 2.")
     parser.add_argument("--dim",        type=int, default=2, choices=sorted(_DIM_REGISTRIES),
                         help="Problem dimension (default 2). C01/C02 are 2D-only and skipped for higher dims.")
     parser.add_argument("--suite",      type=str, default="bbob", choices=["bbob", "cec2022"],
@@ -279,11 +336,15 @@ if __name__ == "__main__":
                              "'cec2022' uses the 12-function CEC2022 hold-out at dim=10.")
     parser.add_argument("--methods",    type=str, default=None,
                         help="Comma-separated optimizer names to run "
-                             "(default: all 8 baselines).  "
+                             "(default: all registered methods).  "
                              "Available: " + ", ".join(_OPTIMIZERS.keys()))
+    parser.add_argument("--noise",      type=str, default=None, choices=list(NOISE_MODELS),
+                        help="Evaluation-noise mode: optimizers observe a noisy f "
+                             "(multiplicative, BBOB-noisy style); metrics are re-scored "
+                             "on the noise-free f of visited points.")
     args = parser.parse_args()
     funcs_list = [s.strip() for s in args.funcs.split(",")] if args.funcs else None
     methods_list = [s.strip() for s in args.methods.split(",")] if args.methods else None
     main(n_runs=args.n_runs, max_evals=args.max_evals, output_dir=args.output_dir,
          funcs=funcs_list, use_all=args.all, dim=args.dim, suite=args.suite,
-         methods=methods_list)
+         methods=methods_list, with_custom=args.custom, noise=args.noise)

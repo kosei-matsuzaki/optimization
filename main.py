@@ -7,6 +7,7 @@ from core.benchmarks import BENCHMARKS, BENCHMARKS_3D, BENCHMARKS_4D, CUSTOM_BEN
 from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
     DEOptimizer, SaVOAOptimizer,
+    MultistartNelderMeadOptimizer, NCDEOptimizer,
     LSHADEOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
 )
 from core.runner import run_experiment, summarize
@@ -27,6 +28,9 @@ _BASE_OPTIMIZERS = {
     "DE":      (DEOptimizer,                   {}),
     "SaVOA":   (SaVOAOptimizer,                {}),
     "L-SHADE": (LSHADEOptimizer,               {}),
+    # Multistart local-search floor (2D BBOB reviewer bar) + niching reference.
+    "NM-Restart": (MultistartNelderMeadOptimizer, {}),
+    "NCDE":       (NCDEOptimizer,                 {}),
     # MC-ESO now natively does sequential niching (multi-solution) + adaptive
     # anisotropy floor — both built into the base class, no separate variant.
     "MC-ESO":  (MultiChannelEpidemicOptimizer, {}),

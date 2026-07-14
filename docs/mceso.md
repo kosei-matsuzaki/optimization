@@ -25,7 +25,7 @@
 | チャネル | 疫学アナロジー | 数学的形 | 役割 |
 |---|---|---|---|
 | **接触感染** (Close-contact) | 親密接触による局所感染 | `x_parent + σ_i · L_pop · N(0, I)`（`L_pop L_pop^T = C_pop`、集団経験共分散の固有分解）| 親近傍の精密探索。σ_i は親の品質と年齢で適応、`C_pop` で **瞬間共分散** を獲得（履歴累積なし、CMA-ES と差別化） |
-| **飛沫感染** (Droplet) | 飛沫を介した宿主間感染 | `x_parent + F·(x_strain − x_parent) + F·(x_a − x_b)` ＋ 親との二項交叉 (CR=0.9, DE 標準値) | 系統 (niched elite) からの引力 ＋ 集団内差分ベクトルで集団形状を補強しつつ、二項交叉で座標方向の親情報を保護 (DE/current-to-best/1/bin) |
+| **飛沫感染** (Droplet) | 飛沫を介した宿主間感染 | `x_parent + F·(x_strain − x_parent) + F·(x_a − x_b)`（droplet ルート確定時は第 2 差分 `+ F·(x_c − x_d)` を追加＝current-to-best/**2**）＋ 親との二項交叉 (CR=0.9, DE 標準値) | 系統 (niched elite) からの引力 ＋ 集団内差分ベクトルで集団形状を補強しつつ、二項交叉で座標方向の親情報を保護。**悪条件ルート (droplet) では第 2 差分ベクトルでドナー多様性を増し、誤 basin で停滞した run を救出**（F13/F14、高次元でより顕著）|
 | **空気感染** (Airborne) | エアロゾルによる広域感染 | `x_random_host + N(0, σ_air I)`（drilling 中は停止）| 集団に依存しない遠方探索。局所最適脱出。`σ < span × 1e-3` の drilling mode では雑音化するため停止 |
 
 ---
@@ -106,8 +106,10 @@
    │   └─ child = 親 + σ_i × V √Λ × Gauss(0, I)
    │       → 瞬間共分散による回転・異方性追従。F11/F14 で ill-cond 楕円体に整列
    ├─ 飛沫感染 [h2h_ratio = 0.4]
-   │   └─ trial = 親 + h2h_F × (x_strain − 親) + h2h_F × (x_a − x_b)
-   │       child = 各次元で確率 h2h_CR (=0.9, DE 標準値) で trial を採用、残りは親をそのまま継承
+   │   ├─ trial = 親 + h2h_F × (x_strain − 親) + h2h_F × (x_a − x_b)
+   │   │   （**channel_route == "droplet" の run のみ** 第 2 差分 + h2h_F × (x_c − x_d) を加算
+   │   │    ＝ current-to-best/**2**。off-route では追加 RNG を引かず base と bit-identical）
+   │   └─ child = 各次元で確率 h2h_CR (=0.9, DE 標準値) で trial を採用、残りは親をそのまま継承
    │       DE/current-to-best/1/bin と同型: 差分ベクトル ＋ 系統引力で集団形状を反映、
    │       二項交叉が separable 多峰の座標方向情報を保護
    └─ 空気感染 [air_ratio_eff = 0.3 if σ ≥ span × 1e-3 else 0]
@@ -164,6 +166,7 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `h2h_ratio` | 0.4 | 飛沫感染チャネルの割合 |
 | `h2h_F` | 0.5 | 飛沫感染の差分ベクトルスケール係数 |
 | `h2h_CR` | 0.9 | 飛沫感染後の二項交叉率（DE/bin 標準値、座標方向の親情報を確率 1-CR で継承）|
+| `droplet_variant` | `"best2_droplet"` | 飛沫の差分構造。`best2_droplet`（デフォルト）＝ droplet ルート確定 run のみ第 2 差分ベクトルを追加 (current-to-best/2)、他ルートは current-to-best/1 で base と bit-identical。`"cur2best"` で全ルート単一差分（旧挙動、回帰リファレンス）。route-gate なので悪条件 (F13/F14) を救出しつつ多峰 keep-air を無傷にする（グローバル第 2 差分は多峰を毀損）|
 | `kill_fraction` | 0.25 | 宿主競合で毎世代排除する割合 |
 | `restart_no_improve_threshold` | 300 | スピルオーバー発動の no_improve 閾値 |
 | `restart_sigma_ratio` | 0.3 | スピルオーバー後の σ（σ_init に対する比率） |

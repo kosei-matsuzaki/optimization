@@ -77,7 +77,7 @@ PID_FILE=".quick.pid"
 DIR_FILE=".quick.dir"
 
 cmd_quick() {
-  local n_runs=20 max_evals=5000 label="" use_all=0 dim=2 methods=""
+  local n_runs=20 max_evals=5000 label="" use_all=0 dim=2 methods="" with_custom=0 noise=""
   local pass_args=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -85,15 +85,18 @@ cmd_quick() {
       --max-evals) max_evals="$2"; pass_args+=("$1" "$2"); shift 2 ;;
       --funcs)     pass_args+=("$1" "$2"); shift 2 ;;
       --all)       use_all=1;      pass_args+=("$1"); shift ;;
+      --custom)    with_custom=1;  pass_args+=("$1"); shift ;;
       --dim)       dim="$2";       pass_args+=("$1" "$2"); shift 2 ;;
       --methods)   methods="$2";   pass_args+=("$1" "$2"); shift 2 ;;
       --suite)     pass_args+=("$1" "$2"); shift 2 ;;
+      --noise)     noise="$2";     pass_args+=("$1" "$2"); shift 2 ;;
       --label)     label="$2";     shift 2 ;;
       *)           pass_args+=("$1"); shift ;;
     esac
   done
   local set_name
   if [[ $use_all -eq 1 ]]; then set_name="all"; else set_name="quick"; fi
+  if [[ $with_custom -eq 1 ]]; then set_name="${set_name}c"; fi
   set_name="${set_name}-d${dim}"
   local suffix
   suffix="${label:-$(git rev-parse --short HEAD 2>/dev/null || echo 'nogit')}"
@@ -111,6 +114,17 @@ cmd_quick() {
       "$(date +%Y-%m-%dT%H:%M:%S)" \
       "$(git rev-parse --short HEAD 2>/dev/null || echo 'nogit')" \
       "$n_runs" "$max_evals" "$set_name" "$dim" > "$dir/result.json"
+  fi
+  if [[ -n "$noise" ]]; then
+    "$PY" - <<PYEOF
+import json
+path = "$dir/result.json"
+with open(path) as f:
+    m = json.load(f)
+m["noise"] = "$noise"
+with open(path, "w") as f:
+    json.dump(m, f, indent=2)
+PYEOF
   fi
   "$PY" quick_check.py --output-dir "$dir" "${pass_args[@]+"${pass_args[@]}"}" &
   local pid=$!
@@ -208,14 +222,15 @@ Usage: ./run.sh <command> [options]
       保存先: results/YYYYMMDD_HHMMSS_<label|commit>/
 
   quick [--n-runs N] [--max-evals N] [--dim {2|3|10}] [--methods LIST]
-        [--funcs LIST] [--suite {bbob|cec2022}] [--all] [--label NAME]
-      ローカルで手法を検証・評価する（評価の標準: n_runs=20, max_evals=5000, --all）
+        [--funcs LIST] [--suite {bbob|cec2022}] [--all] [--custom] [--label NAME]
+      ローカルで手法を検証・評価する（評価の標準: 2D BBOB-24 のみ / n_runs=20, max_evals=5000, --all）
       デフォルト: --n-runs 20 --max-evals 5000 --dim 2
       --methods は比較する手法のコンマ区切り（空欄=全手法）
         例: --methods "MC-ESO,DE,L-SHADE"
         利用可能: CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,PSO,DE,L-SHADE,SaVOA,MC-ESO
       --funcs は対象関数のコンマ区切り（例: F01-Sphere,F03-RastriginSep）
-      --all で BBOB-26 フルセット（未指定時は quick-12 サブセット）
+      --all で 2D BBOB-24 フルセット（未指定時は quick-12 サブセット）※どちらも BBOB のみ
+      --custom で Custom ベンチ（C01-C11, 2D 限定）を追加＝多峰/多解など特定目的の参照用
       --label で保存フォルダ名を指定（省略時はコミットハッシュ）
       保存先: results/YYYYMMDD_HHMMSS_<label|commit>_quick/
 
