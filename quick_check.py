@@ -15,6 +15,7 @@ from pathlib import Path
 
 from core.benchmarks import (
     BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME,
+    BENCHMARKS_5D_BY_NAME, BENCHMARKS_10D_BY_NAME, BENCHMARKS_20D_BY_NAME,
     BENCHMARKS_CEC2022_10D_BY_NAME, NOISE_MODELS,
 )
 from core.optimizers import (
@@ -109,10 +110,16 @@ _ALL_FUNCTIONS: list[str] = _BBOB_NAMES
 # they were tuned against. Selected with --suite cec2022 (forces --dim 10).
 _CEC2022_NAMES: list[str] = sorted(BENCHMARKS_CEC2022_10D_BY_NAME)
 
+# BBOB registries keyed by dimension. n = 2, 3, 5, 10, 20 are supported for the
+# BBOB suite (dimension-scaling snapshot). The CEC2022 hold-out is a separate
+# suite (--suite cec2022) with its own dim=10 registry, so BBOB's dim=10 no
+# longer collides with it.
 _DIM_REGISTRIES: dict[int, dict[str, object]] = {
-    2: BENCHMARKS_BY_NAME,
-    3: BENCHMARKS_3D_BY_NAME,
-    10: BENCHMARKS_CEC2022_10D_BY_NAME,
+    2:  BENCHMARKS_BY_NAME,
+    3:  BENCHMARKS_3D_BY_NAME,
+    5:  BENCHMARKS_5D_BY_NAME,
+    10: BENCHMARKS_10D_BY_NAME,
+    20: BENCHMARKS_20D_BY_NAME,
 }
 
 # MC-ESO (Multi-Channel Epidemic Spread Optimizer): all core mechanisms
@@ -167,6 +174,16 @@ _OPTIMIZERS = {
     "abl_noSpill":    (MCESONoSpillover,               {}),
     #  Drilling OFF: no accelerated σ contraction in drilling mode
     "abl_noDrill":    (MultiChannelEpidemicOptimizer, {"sigma_drill_down": 0.95}),
+    # Pre-fix reference for the dimension-scaled stagnation window (2026-08-23):
+    # the old fixed 300-eval window. Bit-identical to MC-ESO at dim 2 by
+    # construction; diverges only at dim ≥ 3. Kept as the regression pin for the
+    # high-dimension work (see docs/history.md「次元スケーリングの計測と高次元崩壊」).
+    "hd_win0":        (MultiChannelEpidemicOptimizer, {"restart_window_dim_scale": 0.0}),
+    # Pre-fix reference for the scale-invariant parent selection (2026-08-24):
+    # the raw-f softmax, which flattens to uniform once the population converges
+    # (measured effective parent count 20.0 of 20 at dim 2). Regression pin for
+    # the audit — see docs/history.md「全パラメータの次元不変性 監査」.
+    "dimf_softmax0":  (MultiChannelEpidemicOptimizer, {"softmax_beta": 0.0}),
 }
 
 
@@ -255,12 +272,13 @@ def main(
         if dim != 10:
             print(f"--suite cec2022 forces dim=10 (got {dim})")
             dim = 10
-        registry = _DIM_REGISTRIES[10]
+        registry = BENCHMARKS_CEC2022_10D_BY_NAME
         func_set = _CEC2022_NAMES
     else:
-        if dim not in _DIM_REGISTRIES or dim == 10:
+        if dim not in _DIM_REGISTRIES:
             raise SystemExit(
-                f"--dim {dim} not supported for BBOB suite. "
+                f"--dim {dim} not supported for BBOB suite "
+                f"(available: {sorted(_DIM_REGISTRIES)}). "
                 "Use --suite cec2022 for the CEC2022 dim=10 hold-out set.")
         registry = _DIM_REGISTRIES[dim]
         # Standard: 2D BBOB-only. Custom benchmarks are opt-in via --custom (or by
@@ -330,7 +348,9 @@ if __name__ == "__main__":
                         help="Also run the 2D-only custom benchmarks (C01-C11) — opt-in for "
                              "multimodal / multi-optima focus. Ignored for dim != 2.")
     parser.add_argument("--dim",        type=int, default=2, choices=sorted(_DIM_REGISTRIES),
-                        help="Problem dimension (default 2). C01/C02 are 2D-only and skipped for higher dims.")
+                        help="BBOB problem dimension (default 2; one of 2/3/5/10/20). "
+                             "Custom C01-C11 are 2D-only and skipped for higher dims. "
+                             "For the CEC2022 hold-out use --suite cec2022 (forces dim=10).")
     parser.add_argument("--suite",      type=str, default="bbob", choices=["bbob", "cec2022"],
                         help="Benchmark suite. 'bbob' (default) uses BBOB-24 + custom; "
                              "'cec2022' uses the 12-function CEC2022 hold-out at dim=10.")

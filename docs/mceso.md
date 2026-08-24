@@ -67,7 +67,7 @@
 |---|---|---|
 | **系統共存** (Strain coexistence) | 空間的に離れた感染拠点の同時存続 | ニッチ半径で離れた最大 6 系統を保護、飛沫チャネルの引力対象 pool |
 | **宿主競合** (Host competition) | 新感染が既存宿主に勝てないと排除される | 毎世代 25% kill、子が親より悪ければ rollback → 集団は単調改善 |
-| **スピルオーバー** (Spillover, 情報化リスタート) | 既存系統の絶滅後、生存リザーバから未感染域へ飛び火 | 300 評価改善なし AND f_best / \|f_init\| > 1e-8 で発動。**情報化再播種**: 一部 (`ir_archive_frac`) を永続系統アーカイブまわりで再着火、残りは放棄 basin 重心を斥力で避けた Uniform（集団免疫）。連続失敗 2 回で basin switch (best 破棄＋σ_init リセット) に escalate。盲目 Uniform restart（IPOP 流）との差別化点 |
+| **スピルオーバー** (Spillover, 情報化リスタート) | 既存系統の絶滅後、生存リザーバから未感染域へ飛び火 | 停滞窓（dim2 で 300 評価、次元比例）改善なし AND f_best / \|f_init\| > 1e-8 で発動。**情報化再播種**: 一部 (`ir_archive_frac`) を永続系統アーカイブまわりで再着火、残りは放棄 basin 重心を斥力で避けた Uniform（集団免疫）。連続失敗 2 回で basin switch (best 破棄＋σ_init リセット) に escalate。盲目 Uniform restart（IPOP 流）との差別化点 |
 
 > **なぜ系統共存が多峰問題に効くか**: 単純な top-k 選択では最初に見つかった最適解周辺に個体が集中し、Himmelblau（最適解4箇所）のような多最適解問題で致命的になる。系統選択は (1) f 値の良い順に走査し、(2) 既保護系統との距離が全て `niche_radius_ratio × span` を超える候補のみ追加、(3) `n_elite_max` 個で終了する。これにより空間的に離れた複数の最適解周辺に独立した感染系統が自然形成され、飛沫感染の引力対象となる。
 
@@ -81,7 +81,7 @@
       最大 n_elite_max (=6) 個保護
 
 2. スピルオーバー判定（停滞時の情報化リスタート、basin 回避版）
-   └─ no_improve ≥ restart_no_improve_threshold (=300) かつ
+   └─ no_improve ≥ 停滞窓 = restart_no_improve_threshold (=300) × (dim/2)^restart_window_dim_scale (=1.0) かつ
       f_best / |f_init| > restart_quality_rel_floor (=1e-8) のとき発動（相対 8 桁進捗未満なら spillover、それ以下なら precision とみなし保護）。
       ① 発動時に集団の niched elite を永続アーカイブへ harvest、放棄 basin の重心を記憶（集団免疫メモリ）。
       ② **情報化再播種**（盲目 Uniform でなく探索結果を活用）:
@@ -95,8 +95,11 @@
 3. 宿主競合: 死亡判定（μ+λ greedy）
    └─ 集団の f 値降順で下位 kill_fraction (=25%) を排除。最良宿主は自動生存
 
-4. 親（感染源）の選択（softmax）
-   └─ w_i ∝ exp(f_max − f_i)、f が低い個体ほど高い感染力（softmax 温度は 1.0 固定）
+4. 親（感染源）の選択（softmax、スケール不変）
+   └─ w_i ∝ exp(−softmax_beta × (f_i − f_min)/(f_max − f_min))、f が低い個体ほど高い感染力
+      集団内の f 範囲で正規化するため、問題の f スケール・次元によらず同じ選択圧になる
+      （旧式 exp(f_max − f_i) は f の絶対差依存で、収束して f 差が ≪1 になると重みが
+        平坦化し実効親数が n_pop と一致＝一様選択に退化していた。[history.md](history.md) 参照）
 
 5. 子個体の 3 チャネル生成（空きスロット数だけ）
    ├─ 接触感染 [残り]
@@ -134,7 +137,7 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 
 - **σ 適応（always-on）** — 改善時 `× sigma_up (1.1)`、非改善時 `× sigma_down (0.95)`（SaVOA 流の乗法適応を毎世代適用）。以前は `no_improve` ゲートで停滞中の減衰を緩める fallback を持っていたが、HP 削減（`sigma_adapt_stagnation_gate`, `sigma_decay`）と引き換えに除去した。
 - **Drilling mode** — `σ < span × precision_sigma_ratio (1e-3)` に入ると「σ が basin スケールまで収縮済み」と判定し、非改善時の縮小を `× sigma_drill_down (0.85)` に強化して浮動小数限界まで追い込む。同時に空気感染チャネルを停止（`air_ratio_eff = 0`）し広域ランダム雑音による精度劣化を防ぐ。σ ベース閾値なので shift / scaling されたベンチマークでも調整不要。「正しい basin 到達」を `best_so_far` で判定するため、deceptive landscape での誤発動リスクは小さい。
-- **Spillover / basin switch（情報化リスタート）** — `no_improve ≥ 300` かつ `f_best / |f_init| > 1e-8` で停滞と判定し、best を保持して残りを再播種する。再播種は**盲目 Uniform でなく情報化**: 発動時に集団の niched elite を永続アーカイブへ harvest し放棄 basin の重心を記憶、再播種スロットの一部 (`ir_archive_frac`) を生存アーカイブまわりで再着火、残りは記憶 basin を斥力で避けた Uniform（集団免疫＝未踏域探索）。連続失敗が `basin_switch_after_failed_spillovers (2)` 回に達し、かつ `f_best / |f_init| > basin_switch_quality_rel_floor (1e-2)` なら **basin switch**（best も破棄し σ を σ_init にリセット）に escalate。quality gate により高精度到達済みの run（F13 ridge, C01 deep precision）での暴発を防ぐ。IPOP-CMA-ES の "restart with larger population" の MC-ESO 版だが、**探索結果（リザーバ・basin メモリ）を再利用する点で盲目 restart と差別化**（統合経緯は [history.md](history.md) 参照）。
+- **Spillover / basin switch（情報化リスタート）** — `no_improve ≥ 停滞窓`（dim2 で 300、`restart_window_dim_scale` により次元比例）かつ `f_best / |f_init| > 1e-8` で停滞と判定し、best を保持して残りを再播種する。再播種は**盲目 Uniform でなく情報化**: 発動時に集団の niched elite を永続アーカイブへ harvest し放棄 basin の重心を記憶、再播種スロットの一部 (`ir_archive_frac`) を生存アーカイブまわりで再着火、残りは記憶 basin を斥力で避けた Uniform（集団免疫＝未踏域探索）。連続失敗が `basin_switch_after_failed_spillovers (2)` 回に達し、かつ `f_best / |f_init| > basin_switch_quality_rel_floor (1e-2)` なら **basin switch**（best も破棄し σ を σ_init にリセット）に escalate。quality gate により高精度到達済みの run（F13 ridge, C01 deep precision）での暴発を防ぐ。IPOP-CMA-ES の "restart with larger population" の MC-ESO 版だが、**探索結果（リザーバ・basin メモリ）を再利用する点で盲目 restart と差別化**（統合経緯は [history.md](history.md) 参照）。
 
 ---
 
@@ -168,7 +171,9 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `h2h_CR` | 0.9 | 飛沫感染後の二項交叉率（DE/bin 標準値、座標方向の親情報を確率 1-CR で継承）|
 | `droplet_variant` | `"best2_droplet"` | 飛沫の差分構造。`best2_droplet`（デフォルト）＝ droplet ルート確定 run のみ第 2 差分ベクトルを追加 (current-to-best/2)、他ルートは current-to-best/1 で base と bit-identical。`"cur2best"` で全ルート単一差分（旧挙動、回帰リファレンス）。route-gate なので悪条件 (F13/F14) を救出しつつ多峰 keep-air を無傷にする（グローバル第 2 差分は多峰を毀損）|
 | `kill_fraction` | 0.25 | 宿主競合で毎世代排除する割合 |
-| `restart_no_improve_threshold` | 300 | スピルオーバー発動の no_improve 閾値 |
+| `softmax_beta` | 5.0 | 親（感染源）選択の選択圧。`w ∝ exp(−beta × (f_i − f_min)/(f_max − f_min))` と集団の f 範囲で正規化するため、f のスケールにも次元にも依存しない。0.0 で旧式 `exp(f_max − f_i)`（絶対差依存＝収束後は一様選択に退化）に復帰。β=8 は高次元で更に強いが dim2 を −2.29pt 落とすため不採用 |
+| `restart_no_improve_threshold` | 300 | スピルオーバー発動の no_improve 閾値（dim2 基準。実効値は下記 `restart_window_dim_scale` でスケール）|
+| `restart_window_dim_scale` | 1.0 | 停滞窓の次元スケール指数。実効窓 = `restart_no_improve_threshold × (dim/2)^this`。`no_improve` は**評価回数**カウンタだが 1 世代は `kill_fraction × n_pop` 評価を消費するため（dim2 で 5、dim10 で 10、dim20 で 20）、固定窓は**世代数で見ると高次元ほど縮む**。dim2 では係数が必ず 1.0 になるので低次元は bit-identical、0.0 で旧固定窓に復帰 |
 | `restart_sigma_ratio` | 0.3 | スピルオーバー後の σ（σ_init に対する比率） |
 | `restart_quality_rel_floor` | 1e-8 | スピルオーバー skip 閾値（best_so_far / \|f_init\| ≤ this で skip）。乗法スケール不変 |
 | `basin_switch_after_failed_spillovers` | 2 | この連続失敗回数で best 破棄＋σ_init リセットの完全ベイスン乗換え |

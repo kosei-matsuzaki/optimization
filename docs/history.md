@@ -362,3 +362,155 @@ router を作る前に、**base MC-ESO を一切変えず**（SR 不変）各世
 | `abl1_ir` | 同上から `ir_archive_frac` / `ir_repel_max_tries` を既定に戻す |
 | `abl2_floornich` | `droplet_variant="cur2best", channel_schedule=False` |
 | `abl3_router` | `droplet_variant="cur2best"` |
+
+---
+
+## 次元スケーリングの計測と高次元崩壊（2026-07〜08）
+
+### 現状把握 — dim3 で 1 位を失い、dim5 以上で崩壊（2026-07-24）
+
+BBOB を dim 2/3/5/10/20 でレジストリ化し（`core/benchmarks.py:_build(d)`、`quick_check.py --dim`）、**評価予算を次元比例（2500×d）**にして全手法を計測（quick n=20, `--all`）。検証ログ: `results/20260724_014240_perf_d2_quick/` ほか d3/d5/d10/d20。
+
+| 手法 | d2 | d3 | d5 | d10 | d20 |
+|---|---|---|---|---|---|
+| **MC-ESO** | **93.3** | 67.3 | **17.3** | **6.5** | **0.0** |
+| IPOP-CMA-ES | 83.8 | 67.3 | 56.0 | 47.1 | 47.3 |
+| BIPOP-CMA-ES | 79.2 | 67.7 | 54.8 | 49.4 | 47.3 |
+| DE | 89.4 | 71.0 | 44.0 | 15.4 | 7.7 |
+| CMA-ES | 64.6 | 53.5 | 44.4 | 42.7 | 40.8 |
+
+（SR@1e-10 平均。予算不足ではない — d10 は 25000 evals）**dim3 で既に 1 位でなく、dim5 で最下位群**。失敗は 2 系統に分かれる:
+- **精度グラインドの失速**: d10 F01-Sphere は SR@1e-2 100% → 1e-10 30%。正しい basin にいるのに深精度へ降りられない。
+- **悪条件で完全崩壊**: d10 F08/F10/F11/F12/F14 は SR@1e-1 すら 0%。
+
+### 外れた仮説 3 つ（2026-07-25〜26）
+
+いずれも d5/d10 で改善せず（`results/20260725_115355_diag2_d5_quick/`、`20260726_015000_proto_d5_quick/` 他, n=8）。診断 variant は常設しない方針に従い `quick_check.py` の一時エントリ（`diag_dropAll` / `diag_npopSmall` / `diag_accum05` / `diag_accum15`）も削除済み（kwargs は下表のとおりで再登録できる）:
+
+| 仮説 | 変種 | 結果 |
+|---|---|---|
+| router が高次元で ill-cond を誤ルートし best2 が発火しない | `diag_dropAll`（`cond_droplet_early=-1e9` で全 run droplet 強制）| d5 3.1→16.2 と動くが CMA-ES 85.6 に遠く、d10 は 0.0 のまま |
+| 世代数不足（n_pop=40 が大きすぎる）| `diag_npopSmall`（`n_pop=12`）| d5 0.6 / d10 0.0（悪化）|
+| C_pop の単世代推定分散が高次元で大きすぎる → basin ローカル共分散 EMA 累積（rank-μ 風、spillover でリセット）| `cc_accum_rate` 0.05 / 0.15 | SR@1e-10 不変（d5 3.1 / d10 0.0）、**SR@1e-2 は 57.5→38.1 と悪化**。寄与ゼロ以下が確定したため `cc_accum_rate` / `cc_accum_min_dim` / `_MCESOState.cc_cov_accum` と累積分岐は**コードから削除**（再現するには `_close_contact_children` の `cov` を世代間 EMA に差し替える）|
+
+### 真因 — 停滞窓の単位バグと spillover リミットサイクル（2026-08-23, 採用）
+
+**σ の軌跡を直接トレースして特定**（`history_sigma_global` / `history_no_improve`、d10 F01/F10 の 1 run）:
+
+```
+no_improve: 290 → 240 → 190 → 140 → 90 → 40 → 290 → ...   （サイクル）
+sigma/span: 1.36e-2 → ... → 4.89e-2 → 1.36e-2（spillover でリセット）
+spillover 発火: F01 46 回 / F10 65 回、drilling 到達 0%
+```
+
+`no_improve` は**評価回数**カウンタだが、1 世代は `kill_fraction × n_pop` 評価を消費する（dim2 で 5、dim10 で 10、dim20 で 20）。よって**固定 300 評価の窓は世代数で見ると次元とともに縮む**（dim2 = 60 世代 → dim10 = 30 世代）。高次元ほど長い grind が必要なのに逆方向。結果、spillover が絶えず発火して σ を `σ_init × restart_sigma_ratio` に戻すリミットサイクルに入り、σ は `0.2×0.3×0.95^30 = 1.29e-2·span` で下げ止まる（**実測 σ_min と完全一致**）。drilling 領域（1e-3·span）に一度も入れないため深精度 SR が出ない。加えて 1 回の spillover が n_pop−1 = 39 評価を消費し、予算の約 10% を再播種に浪費していた。
+
+**修正**: 停滞窓を `restart_no_improve_threshold × (dim/2)^restart_window_dim_scale`（既定 1.0）に。**dim2 では係数が必ず 1.0 なので低次元は bit-identical**（BBOB-24 × 24 関数 × 8 指標で差分セル 0 を確認）。`_stagnation_window()` を `_spillover_should_fire` / `_basin_exhausted` の両方が参照する。
+
+**検証（quick n=20, `--all`, 予算 2500×d, 旧挙動 `hd_win0` = `restart_window_dim_scale=0.0` と 2 手法比較）**:
+
+| 次元 | SR@1e-10 旧→新 | SR@1e-4 旧→新 | Wilcoxon (ref=新) |
+|---|---|---|---|
+| d2 | 93.33 → 93.33（**全指標 bit-identical**）| 96.46 → 96.46 | — |
+| d3 | 67.29 → 67.08（−0.21）| 80.21 → 80.62 | 勝ち 4（F12/F13/F14/F23）/ 負け 1（F03 medium）|
+| d5 | 17.29 → 17.50（+0.21）| 35.62 → 31.67（悪化）| 勝ち 6 / 負け 4（F03/F07/F09/F11）|
+| d10 | 6.46 → **10.00（+3.54）** | 13.75 → **20.62** | **勝ち 14 / 負け 2**（F07/F11）|
+| d20 | 0.00 → **5.42（+5.42）** | 0.21 → **11.25** | **勝ち 21 / 負け 2**（F07/F11、大半が large）|
+
+**効果は次元とともに拡大する**（係数 = dim/2 なので機構の予測どおり）。d20 では SR@1e-2 も 7.71 → 21.04 で、F05 が SR@1e-10 0→100、F06 が SR@1e-2 0→100、F14 40→100、F02 5→90。回帰は d10/d20 とも F07-StepEllipsoidal / F11-Discus の 2 関数に固定している。
+
+関数別（d10）: F01 30→80、F02 25→45、F05 80→100、F08 SR@1e-2 0→50、F17 SR@1e-2 5→45。回帰は F07-StepEllipsoidal（−10）と F11-Discus（SR@1e-2 85→15）。d3/d5 が wash なのは、窓を伸ばすと悪条件（F12/F13/F14）が伸びる一方で separable 多峰（F03/F04/F07）の escape リスタートが減るトレードオフのため。
+
+**指数の選択**: 保守版（窓を世代数一定＝子個体数比例、dim2/3/5 は完全無変更・dim10 で係数 2）も d10 全 24 関数で比較したが、**dim スケール版（係数 5）が優る**（SR@1e-10 10.00 vs 8.96、Wilcoxon 勝ち 9 / 負け 2）。よって連続スケール（指数 1.0）を採用。検証ログ: `results/20260823_231616_hdwin_d2_quick/`（d2）、`20260823_233141_hdwin_d3_quick/`、`hdwin_d5`、`hdwin_d10`、保守版比較 `hdwin600_d10`。
+
+**教訓**: 絞り込み関数セット（悪条件寄り 10 関数）での中間測定は d5 で「+5pt」と出たが、**全 24 関数では +0.2pt** だった。セット選択のバイアスで効果を過大評価する典型例で、判定は必ず `--all` で行う。
+
+### 残る課題 — 高次元の悪条件（未解決）
+
+窓を直しても **d10 の F08/F10/F11/F12 は SR@1e-10 0%** のまま（drilling には世代の 5〜58% で入るのに median best_f が 1e+0〜1e+1 で停止）。d20 では F06/F14 が SR@1e-2 100% に届くようになったが、深精度（1e-10）は依然として悪条件関数で出ない。`cov_floor_low` を 1e-3 → 1e-5/1e-7/1e-9 に下げるスイープでも改善はノイズ級で、**異方性 floor は主因ではない**。IPOP/BIPOP-CMA-ES が同条件で 100% を取るのは rank-μ が「選択された子の**移動ステップ**」から共分散を学ぶためで、MC-ESO の C_pop は「エリート集団の**位置分布**」— 情報源が異なる。次の候補は「成功した子個体のステップから共分散を推定する」方向（失敗した `cc_accum_rate` は位置共分散の EMA であり別物）。
+
+---
+
+## 全パラメータの次元不変性 監査（2026-08-24）
+
+停滞窓の単位バグ（上節）を受けて、**44 個の全パラメータについて次元依存の有無をコード読解＋実測で洗い出した**。実測は base MC-ESO を一切変えずに、各パラメータが制御している「派生量」を dim 2/5/10/20 で測る方式（`scratchpad` の probe を `_softmax_weights` / `_adaptive_cov_floor` / `_record_generation` にフック、全 24 関数 × 2 run、予算 2500×d）。
+
+### 実測された派生量のドリフト
+
+| dim | n_pop | parEff（実効親数）| nelt（飽和%）| cond | algA | mgap | anis | route 分布 |
+|---|---|---|---|---|---|---|---|---|
+| 2 | 20 | 19.4 (97%) | 1.21 (8.5) | 2.48 | 0.924 | 0.263 | 556 | keepair 11 / droplet 8 / close 4 |
+| 5 | 20 | 19.3 (96%) | 1.21 (8.5) | 3.07 | 0.764 | 0.346 | 898 | droplet 14 / keepair 10 / close 0 |
+| 10 | 40 | 36.2 (91%) | 1.21 (14.5) | 2.91 | 0.644 | 0.312 | 1352 | keepair 13 / droplet 11 / close 0 |
+| 20 | 80 | 60.3 (75%) | 1.67 (23.5) | **15.37** | 0.542 | 0.309 | 2029 | keepair 12 / droplet 12 / close 0 |
+
+### 監査結果の分類
+
+**A. 次元不変が保証されている（問題なし）**: 子個体の配分比（`air_ratio` / `h2h_ratio` / `kill_fraction` / `ir_archive_frac`）、f 相対ゲート（`restart_quality_rel_floor` / `basin_switch_quality_rel_floor` / `log_slope_threshold`）、DE 係数（`h2h_F` / `h2h_CR` — 交叉座標数が `CR·d` で自動スケール）、回数・個数カウント（`n_elite_max` / `exhausted_no_improve_mult` / `basin_switch_after_failed_spillovers` / `ir_repel_max_tries`）、span 相対の座標あたり σ 比率（`sigma` / `sigma_ceil_ratio` / `restart_sigma_ratio` / `ir_reignite_sigma_ratio`）、`air_sigma_amplifier`（`diversity_ratio` が一様分布 std 0.289 で正規化済み）、`cov_ratio_beta`。
+
+**B. 次元依存が確認された**（`restart_no_improve_threshold` は上節で修正済み）:
+
+| パラメータ | ドリフト | 機序 |
+|---|---|---|
+| `align_close_thresh` (0.965) | algA 0.924→0.542 | ランダム基底の平均 max\|成分\| は √(2 ln d/d) で減衰 → d≥5 で到達不能、CLOSE ルート消滅 |
+| `cond_droplet_thresh/early` (3.0/4.0) | cond 2.48→15.37 | 収束後の C_pop が数値的ランク落ち（λmin→0）。d20 では conditioning でなくランク崩壊を測っている |
+| `cov_ratio_lo/hi` (1e3/3e4) | 同上 cond を入力 | d20 で常時飽和 → 適応異方性 floor の rugged/ill-cond 判別が死ぬ |
+| `niche_radius_ratio` / `ir_repel_radius_ratio` (0.1×span) | ニッチ飽和 8.5%→23.5% | d 次元の典型点間距離 ∝ √d なので半径が相対的に縮小 |
+| `sigma_up`/`sigma_down`/`sigma_drill_down` | — | 世代あたり固定倍率だが収束所要世代数は ∝ d（CMA-ES は damping ∝ 1/d）|
+| `precision_sigma_ratio` / `sigma_floor_ratio` | — | σ は座標あたりだが実変位は σ√d |
+
+**C. 次元依存ではないが機能していない**: **softmax 親選択**。`exp(f_max − f_i)` が f の**絶対差**依存のため、収束して f 差が ≪1 になると重みが平坦化する。実効親数 parEff = 1/Σw² は **dim2 の中央世代で 20.00/20（完全一様）**。「f が低い個体ほど感染力が高い」という MC-ESO の中核の着想が、実際にはほぼ一様ランダム選択に退化していた。
+
+### スクリーニング（quick 相当・自前ハーネス, d10, n=10, **全 24 関数**）
+
+B/C の各項目を既定 OFF のフラグとして実装（dim2 で no-op を確認）し、1 つずつ測定。base SR@1e-10 = 10.0:
+
+| 変種 | SR@1e-2 | 1e-4 | 1e-7 | SR@1e-10 | 判定 |
+|---|---|---|---|---|---|
+| `niche_radius_dim_scale=1`（半径 ∝√d）| 28.3 | 22.9 | 10.8 | **8.3（−1.7）** | REJECT |
+| `align_signal_dim_norm`（IPR 正規化）| 27.1 | 20.0 | 12.1 | 10.0（±0）| **変化ゼロ**（下記）|
+| `cond_rank_guard=1e-8` | 26.7 | 20.0 | 12.1 | 10.0（±0）| d10 では無効果（cond 2.91 < guard 上限）。判定は d20 で |
+| `sigma_adapt_dim_scale=1`（倍率 ∝1/d）| 28.8 | 22.5 | **16.7** | 10.0（±0）| 指数 1.0 は強すぎ（F01 70→**0**）。0.5 で再試験 |
+| `sigma_threshold_dim_scale=1`（σ 閾値 /√d）| 27.5 | 21.7 | 11.7 | 9.6（−0.4）| REJECT |
+| **`softmax_beta=5`（スケール不変選択）** | 26.2 | 21.2 | 15.4 | **13.3（+3.3）** | 有望 |
+
+### ルーターは閾値較正でなく「推定器」の問題（重要）
+
+`align_signal_dim_norm` で**変化がゼロ**だった理由を診断（`route_probe.py`, 全 24 関数の commit 時シグナル）。次元正規化した軸整列度（0=ランダム基底 / 1=完全整列）は **dim10 で全 24 関数が 0.00〜0.33**（separable の F03 が 0.108、F04 が 0.039。dim2 では 0.644 / −0.012）。**閾値の較正ミスではなく、40 個体・10 次元の標本共分散からは軸整列度そのものが推定できていない**（固有ベクトルが推定ノイズに支配される）。`cond` も同様に劣化し、dim2 で 5.64 だった F12-BentCigar が dim10 では 2.23 に落ちて **最も droplet を要する悪条件関数が keep-air へ落ちる**。
+
+→ **ルーターの 3 シグナルはすべて同一の C_pop 由来で、高次元では C_pop 自体が谷に整列していないため、ルーター全体が情報を失う**。閾値の次元補正では復旧しない。復旧には推定器の変更（成功ステップからの共分散推定、または n_pop 増）が要る＝「高次元の悪条件」の残課題と同根。
+
+### softmax のスケール不変化 — dim2 ゲート（quick n=20, `--all`）
+
+| | SR@1e-2 | SR@1e-4 | SR@1e-7 | SR@1e-10 | evals |
+|---|---|---|---|---|---|
+| base | 96.46 | 96.46 | 95.00 | **93.33** | 804 |
+| `softmax_beta=3` | 96.04 | 96.04 | 93.96 | 92.08（−1.25）| 775 |
+| **`softmax_beta=5`** | 96.04 | 95.83 | 95.00 | **93.54（+0.21）** | 798 |
+
+β=5 は dim2 でも primary を下げない。関数別は F18-SchafferF7ill **65→100（+35, Wilcoxon 有意勝ち）** / F04 +5 / F13 +5 に対し F06 −10 / F17 −5 / **F24 35→10（−25）**、Wilcoxon 有意な負けはゼロ。β=3 は −1.25pt で却下。検証ログ: `results/20260824_125218_dimf_softmax_d2_quick/`。 β=8 も測ったが dim2 で **91.04（−2.29、有意な負け 2: F06/F17）** となり却下（`results/20260824_135003_dimf_sm8_d2_quick/`）。**β=5 が上限**。
+
+### 候補 2 種の全次元検証（quick n=20, `--all`, 予算 2500×d）
+
+| 変種 | dim2 | dim3 | dim5 | dim10 | dim20 |
+|---|---|---|---|---|---|
+| **`softmax_beta=5`（採用）** | **+0.21**（W1/L0）| **+6.67**（W2/L1）| **+8.12**（W6/**L0**）| **+3.12**（W7/L3）| **+6.87**（W9/L2）|
+| `sigma_adapt_dim_scale=0.5` | ±0（構造的 no-op）| **−2.29** | +3.12（有意差なし）| +3.54（W5/**L0**）| — |
+
+（SR@1e-10 の base 比 pt、括弧内は Wilcoxon の変種勝ち/base 勝ち）
+
+**`sigma_adapt_dim_scale` は保留/却下**: dim10 単独では W5/L0 と綺麗だが **dim3 で −2.29pt**（F19 −35 / F23 −25 / F06 −20 / F20 −15）。dim2 が no-op でも汎化ゲートを通らない。
+
+**`softmax_beta=5` は全次元で改善**。dim5 が最大（17.50 → 25.62、**有意な負けゼロ**、F06 5→65 / F08 5→50 / F09 20→40 / F07 40→55 / F22 20→40）、dim3 でも +6.67（F03/F18 +25、F11/F13/F14 +20）。有意な負けは dim3 の F19-GriewankRosenbrock と dim10 の F08/F17/F18 に限られる。**次元バグではなくスケール不変性の欠如**の修正であり、修正の効果が全次元に及ぶのはそのため。dim20 でも SR@1e-10 5.42 → **12.29（+6.87）**、Wilcoxon **9 勝 2 敗**（F01 10→95 / F02 20→100、負けは F17/F20）。検証ログ: `results/20260824_165135_dimf_cand_d3_quick/`、`20260824_171811_dimf_cand_d5_quick/`、`20260824_135012_dimf_cand_d10_quick/`、`20260824_175214_dimf_sm5_d20_quick/`。
+
+### 採用と後片付け
+
+**`softmax_beta = 5.0` を本体デフォルトに統合**（`_softmax_weights`）。全次元で SR@1e-10 が改善し、判定基準の dim2 でも回帰なし・有意な負けゼロという条件を満たしたため。`softmax_beta=0.0` で旧式（生の f 差）に戻せる（`quick_check.py` の `dimf_softmax0` が回帰ピン）。
+
+**不採用フラグはコードから削除**（本節に測定値を残したので再実装可能）: `niche_radius_dim_scale`（半径 ∝√d, d10 −1.7）/ `sigma_threshold_dim_scale`（σ 閾値 /√d, d10 −0.4）/ `align_signal_dim_norm` ＋ `align_close_thresh_norm`（IPR 正規化, 変化ゼロ）/ `cond_rank_guard`（d10 無効果、d20 は未測定だが上記のとおりルーターは推定器ごと機能しないため保留のまま削除）/ `sigma_adapt_dim_scale`（dim3 −2.29 で汎化ゲート不通過）。
+
+### この監査で分かった構造的な限界（今後の課題）
+
+1. **ルーターは高次元で機能しない** — 3 シグナルすべてが C_pop 由来で、高次元では C_pop 自体が推定ノイズに支配される。閾値の次元補正では復旧しない。
+2. **高次元の悪条件は未解決** — 停滞窓と選択圧を直しても d10 の F10/F11/F12 は SR@1e-10 0% のまま。
+3. 1 と 2 は**同根**（C_pop が谷に整列しない）。次の一手は「成功した子個体の移動ステップから共分散を推定する」方向（CMA-ES の rank-μ に相当）で、これはルーターのシグナル品質と接触感染の整列を同時に改善しうる。

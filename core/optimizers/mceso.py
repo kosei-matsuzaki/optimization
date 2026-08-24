@@ -276,6 +276,35 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         kill_fraction: float = 0.25,           # fraction of active killed per gen (by f)
         # ── Restart on stagnation ──────────────────────────────────────
         restart_no_improve_threshold: int = 300,  # no_improve count that triggers restart
+        # ``no_improve`` counts EVALUATIONS, but stagnation is a *generational*
+        # signal and a generation costs kill_fraction·n_pop evals — 5 at dim 2,
+        # 10 at dim 10, 20 at dim 20. A fixed eval window therefore shrinks in
+        # generations exactly where more generations are needed, and the spillover
+        # degenerates into a limit cycle: σ is reset to σ_init·restart_sigma_ratio
+        # every window, so it can never contract past
+        # σ_init·restart_sigma_ratio·sigma_down^(window/children) and drilling mode
+        # is never reached (measured at dim 10: 46-65 spillovers/run, σ bottoming at
+        # 1.3e-2·span, drilling 0% of generations). The window is therefore scaled
+        # by (dim / 2) ** restart_window_dim_scale — 1.0 at dim 2 for ANY exponent,
+        # so the low-dimensional behaviour is bit-identical; 0.0 disables scaling.
+        restart_window_dim_scale: float = 1.0,
+        # ── Dimension-invariance flags (audit 2026-08-24) ─────────────────────
+        # Every one defaults to the pre-audit behaviour, and each is a no-op at
+        # dim 2 by construction, so dim-2 judgement runs stay bit-identical.
+        #
+        # softmax_beta: parent ("infectivity") selection weight. The original
+        #   form exp(f_max − f_i) uses RAW f differences, so once the population
+        #   converges and the f spread falls below 1 the weights flatten to
+        #   uniform — the measured effective parent count was 20.0 of 20 at
+        #   dim 2, i.e. the selection was inert on every problem. The default
+        #   uses the range-normalised, scale-invariant form
+        #   w ∝ exp(−beta · (f_i − f_min)/(f_max − f_min)), which gives the same
+        #   pressure whatever the f scale or the dimension. Verified at every
+        #   dimension (SR@1e-10 vs the raw form): dim2 +0.21 / dim3 +6.67 /
+        #   dim5 +8.12 / dim10 +3.12 / dim20 +6.87. beta = 0 restores the raw,
+        #   scale-dependent form (regression pin). beta = 8 was also measured and
+        #   rejected: better in high dim but −2.29 at dim 2.
+        softmax_beta: float = 5.0,
         restart_sigma_ratio: float = 0.3,      # σ after restart, relative to σ_init
         # Quality floors are RELATIVE to the initial-population best
         # f_init_scale = max(|best_of_initial_population|, ε). On problems
@@ -386,6 +415,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.h2h_F = h2h_F
         self.kill_fraction = kill_fraction
         self.restart_no_improve_threshold = restart_no_improve_threshold
+        self.restart_window_dim_scale = restart_window_dim_scale
+        self.softmax_beta = softmax_beta
         self.restart_sigma_ratio = restart_sigma_ratio
         self.restart_quality_rel_floor = restart_quality_rel_floor
         self.basin_switch_after_failed_spillovers = basin_switch_after_failed_spillovers
@@ -460,7 +491,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
     def _softmax_weights(self, f_vals: np.ndarray) -> np.ndarray:
         # Softmax over -f with unit temperature (fixed; ablation showed no
-        # benefit from tuning T away from the canonical 1.0).
+        # benefit from tuning T away from the canonical 1.0). Note this uses RAW
+        # f differences, so the selection pressure depends on the problem's f
+        # scale; softmax_beta > 0 switches to the range-normalised form, which
+        # gives the same pressure whatever the f scale or the dimension.
+        if self.softmax_beta > 0.0:
+            f_min, f_max = float(f_vals.min()), float(f_vals.max())
+            spread = f_max - f_min
+            if spread <= 0.0:
+                return np.full(len(f_vals), 1.0 / len(f_vals))
+            w = np.exp(-self.softmax_beta * (f_vals - f_min) / spread)
+            return w / w.sum()
         scores = f_vals.max() - f_vals
         scores -= scores.max()
         w = np.exp(scores)
@@ -627,8 +668,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         leaving it for a fresh repelled basin cannot cost SR (base would make no
         further progress here either) while it can discover additional optima."""
         sigma_bottomed = st.sigma <= self.exhausted_sigma_tol * st.span * self.sigma_floor_ratio
-        stagnated = st.no_improve >= self.exhausted_no_improve_mult * self.restart_no_improve_threshold
+        stagnated = st.no_improve >= self.exhausted_no_improve_mult * self._stagnation_window()
         return sigma_bottomed and stagnated
+
+    def _stagnation_window(self) -> float:
+        """Stagnation window in evaluations, scaled for dimension.
+
+        ``no_improve`` is an eval counter, but "the outbreak has stalled" is a
+        generational statement and a generation consumes kill_fraction·n_pop
+        evaluations, which grows with dim. Scaling by (dim/2)**dim_scale keeps
+        the window meaningful in generations at high dim while leaving dim 2 —
+        the reference the defaults were tuned at — exactly at
+        ``restart_no_improve_threshold`` (the factor is 1.0 there for any
+        exponent, so low-dim runs stay bit-identical).
+        """
+        if self.restart_window_dim_scale == 0.0:
+            return float(self.restart_no_improve_threshold)
+        return (self.restart_no_improve_threshold
+                * (self.dim / 2.0) ** self.restart_window_dim_scale)
 
     def _spillover_should_fire(self, st: _MCESOState) -> bool:
         """Whether a spillover triggers this generation. Two regimes:
@@ -638,9 +695,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         • otherwise → the precision-gated condition (don't disturb an in-progress
           drilling), which protects SR@1e-10 on hard single-optimum functions.
         """
+        window = self._stagnation_window()
         if self._basin_exhausted(st):
-            return st.no_improve >= self.restart_no_improve_threshold
-        return (st.no_improve >= self.restart_no_improve_threshold
+            return st.no_improve >= window
+        return (st.no_improve >= window
                 and st.best_so_far > self.restart_quality_rel_floor * st.f_init_scale)
 
     def _spillover_basin_switch(self, st: _MCESOState) -> bool:
