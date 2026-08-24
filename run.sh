@@ -221,7 +221,7 @@ Usage: ./run.sh <command> [options]
       --label で保存フォルダ名を指定（省略時はコミットハッシュ）
       保存先: results/YYYYMMDD_HHMMSS_<label|commit>/
 
-  quick [--n-runs N] [--max-evals N] [--dim {2|3|10}] [--methods LIST]
+  quick [--n-runs N] [--max-evals N] [--dim {2|3|5|10|20}] [--methods LIST]
         [--funcs LIST] [--suite {bbob|cec2022}] [--all] [--custom] [--label NAME]
       ローカルで手法を検証・評価する（評価の標準: 2D BBOB-24 のみ / n_runs=20, max_evals=5000, --all）
       デフォルト: --n-runs 20 --max-evals 5000 --dim 2

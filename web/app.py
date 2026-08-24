@@ -161,7 +161,8 @@ def api_functions():
 @app.route("/api/run", methods=["POST"])
 def api_run():
     n_runs    = max(1,   min(100,   int(request.form.get("n_runs",   3))))
-    max_evals = max(100, min(20000, int(request.form.get("max_evals", 2000))))
+    # Cap at 50000 so high-dimension budgets (dim20 ≈ 2500×d = 50000) are allowed.
+    max_evals = max(100, min(50000, int(request.form.get("max_evals", 2000))))
     label     = re.sub(r'[^\w\-]', '_', request.form.get("label", "").strip())[:40].strip('_')
     # Checkbox value arrives as the literal string "true" / "on" / "1" when ticked;
     # treat anything else (including absent) as off.
@@ -171,7 +172,7 @@ def api_run():
         dim = int(request.form.get("dim", "2"))
     except ValueError:
         dim = 2
-    if dim not in (2, 3, 10):
+    if dim not in (2, 3, 5, 10, 20):
         dim = 2
     # Methods — comma-separated, sanitised (alnum / dash / dot / comma / space only)
     methods_raw = request.form.get("methods", "").strip()

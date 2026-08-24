@@ -26,9 +26,17 @@ def list_results() -> list[str]:
 
 
 def list_dims(run_dir: Path) -> list[str]:
+    # Sort numerically by the dimension after "dim" so tabs read
+    # dim2, dim3, dim5, dim10, dim20 (not lexical: dim10 < dim2 < dim20).
+    def _dim_key(name: str) -> tuple[int, str]:
+        try:
+            return (int(name[3:]), name)
+        except ValueError:
+            return (10**9, name)
     return sorted(
-        d.name for d in run_dir.iterdir()
-        if d.is_dir() and d.name.startswith("dim")
+        (d.name for d in run_dir.iterdir()
+         if d.is_dir() and d.name.startswith("dim")),
+        key=_dim_key,
     )
 
 

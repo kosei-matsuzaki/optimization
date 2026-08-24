@@ -10,7 +10,7 @@
 optimization/
 ├── core/                       # 研究コア（ベンチマーク・最適化手法・実験・可視化）
 │   ├── __init__.py             # 主要クラス/関数の公開API再エクスポート（visualize除く）
-│   ├── benchmarks.py           # BBOB 24関数 + カスタム + CEC2022（ioh 経由、2D/3D/4D/10D）
+│   ├── benchmarks.py           # BBOB 24関数（ioh 経由、dim 2/3/5/10/20）+ カスタム(2D) + CEC2022(10D)
 │   ├── optimizers/             # 手法ごと1ファイル（__init__.py で全クラス再エクスポート）
 │   │   ├── base.py             # OptimizeResult, BaseOptimizer
 │   │   ├── cmaes.py            # CMA-ES（best-anchored restart）
@@ -67,6 +67,7 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 | `./run.sh quick --all --custom` | BBOB-24 に Custom 11（C01-C11, 2D 限定）を追加。多峰・多解など**特定目的の参照時のみ**使う |
 | `./run.sh quick --funcs C01-Himmelblau,C02-SixHumpCamel` | Custom 単独に絞り込んだ集中確認 |
 | `./run.sh quick --funcs F08-Rosenbrock,F10-EllipsoidalRot` | 任意関数に絞り込んだ集中検証（デバッグ用） |
+| `./run.sh quick --all --dim {2\|3\|5\|10\|20} --max-evals <2500×d>` | **次元スケーリング計測**（BBOB-24 を各次元で）。現状把握のスナップショット用。採否判定は 2D が主対象 |
 | `./run.sh quick --n-runs 5 --max-evals 3000` | パラメータを上書きしてローカル確認 |
 | `./run.sh quick --all --noise gauss_sev` | **ノイズ評価モード**（診断用）。noisy f をアルゴリズムに見せ、指標は真値で再採点（下記） |
 | `./run.sh ui` | Results UI を起動 → http://localhost:8080 |
@@ -115,7 +116,7 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 | 試行回数 | **20 run**（seed = 0, 100, 200, ..., 1900） |
 | 評価上限 | **5,000 回/run** |
 | 成功判定 | best f ≤ 1e-4 |
-| 次元数 | **2次元 BBOB-24（F01-F24）が判定の主対象**。Custom（C01-C11）は `--custom` で追加する特定目的の参照用。3次元（BBOB 24関数）・CEC2022 hold-out（dim10）は汎化確認用 |
+| 次元数 | **2次元 BBOB-24（F01-F24）が判定の主対象**。Custom（C01-C11）は `--custom` で追加する特定目的の参照用。3次元（BBOB 24関数）・CEC2022 hold-out（dim10）は汎化確認用。**次元スケーリング計測用に BBOB は dim 2/3/5/10/20 を `--dim` で選択可**（`_build(d)` を各次元でレジストリ化。eval 予算は次元比例 `2500×d` を目安＝ d2=5000 / d3=7500 / d5=12500 / d10=25000 / d20=50000。採否判定は従来どおり 2D を主対象とし、多次元は現状把握のスナップショット用） |
 | sigma0（CMA-ES 系） | `0.2 × (hi - lo)` |
 
 > 補助的に GitHub Actions で n=100 の実験（`./run.sh trigger`）も回しているが、手法の検証・評価では参照しない。評価の根拠は常に上記 quick n=20 の結果とする。

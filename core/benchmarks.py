@@ -501,12 +501,28 @@ _CUSTOM_FACTORIES = {
 BENCHMARKS    = _build(2)
 BENCHMARKS_3D = _build(3)
 BENCHMARKS_4D = _build(4)
+# Higher-dimensional BBOB registries for the dimension-scaling snapshot
+# (n = 2, 3, 5, 10, 20). BBOB is defined at any dimension via ioh, so these are
+# just `_build(d)` at the requested d. Custom (C*) benchmarks are 2-D only and
+# are intentionally absent here.
+BENCHMARKS_5D  = _build(5)
+BENCHMARKS_10D = _build(10)
+BENCHMARKS_20D = _build(20)
 
 BENCHMARKS_BY_NAME: dict[str, BenchmarkFunction] = {
     b.name: b for b in BENCHMARKS + CUSTOM_BENCHMARKS
 }
 BENCHMARKS_3D_BY_NAME: dict[str, BenchmarkFunction] = {
     b.name: b for b in BENCHMARKS_3D
+}
+BENCHMARKS_5D_BY_NAME: dict[str, BenchmarkFunction] = {
+    b.name: b for b in BENCHMARKS_5D
+}
+BENCHMARKS_10D_BY_NAME: dict[str, BenchmarkFunction] = {
+    b.name: b for b in BENCHMARKS_10D
+}
+BENCHMARKS_20D_BY_NAME: dict[str, BenchmarkFunction] = {
+    b.name: b for b in BENCHMARKS_20D
 }
 
 

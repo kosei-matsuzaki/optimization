@@ -24,7 +24,7 @@ python3 web/app.py
 
 | 機能 | 説明 |
 |---|---|
-| Quick Run | `quick_check.py` をバックグラウンド実行。手法・関数セット・次元をモーダルで指定し、ライブターミナル出力を表示 |
+| Quick Run | `quick_check.py` をバックグラウンド実行。手法・関数セット・次元（BBOB dim 2/3/5/10/20）をモーダルで指定し、ライブターミナル出力を表示。`max_evals` は 50000 まで指定可（dim20 の 2500×d=50000 予算に対応）。次元タブは数値順（dim2→dim20）で並ぶ |
 | GitHub Actions Trigger | `gh` CLI 経由でワークフローをトリガー |
 | Remote Runs | 最新 10 件のワークフロー実行を一覧表示。完了済みは進捗バー付きでダウンロード可能 |
 | Local Results | `results/` 配下の結果一覧。名前変更・削除・実行中ジョブの停止に対応 |
