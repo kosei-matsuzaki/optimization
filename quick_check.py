@@ -184,6 +184,14 @@ _OPTIMIZERS = {
     # (measured effective parent count 20.0 of 20 at dim 2). Regression pin for
     # the audit — see docs/history.md「全パラメータの次元不変性 監査」.
     "dimf_softmax0":  (MultiChannelEpidemicOptimizer, {"softmax_beta": 0.0}),
+    # σ-pinning detector (2026-08-25): σ equilibrates at a dimension-independent
+    # improvement rate (0.350), which the realised rate meets at dim 10, pinning
+    # σ above the drilling threshold — F08/F09 never drill at all. Detected
+    # directly as "no drilling for 30% of the budget", which fires on 68-74% of
+    # generations there and on 0% of the multimodal functions that every
+    # dimension-scaled variant regressed.
+    "pin30d5":        (MultiChannelEpidemicOptimizer,
+                       {"sigma_pin_evals_frac": 0.30, "sigma_pin_damp": 0.5}),
 }
 
 

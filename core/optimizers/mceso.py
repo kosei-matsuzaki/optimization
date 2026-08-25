@@ -60,6 +60,11 @@ class _MCESOState:
     # generation-to-generation route flip-flop that perturbs threshold-borderline
     # functions off their best (median-signal) route.
     channel_route: "str | None" = None
+    # Evaluation count at which σ was last inside the drilling regime. The
+    # pathology — σ pinned by its own control law so the precision scale is
+    # never reached — shows up as this falling far behind the current count
+    # (see sigma_pin_evals_frac).
+    last_drill_eval: int = 0
     log_best_ref: float = 0.0
     evals_since_reset: int = 0
     consecutive_failed_spillovers: int = 0
@@ -274,6 +279,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         migratory_jump_ratio: float = 0.2,     # jump magnitude, × span
         # ── Greedy (μ+λ) replacement ───────────────────────────────────
         kill_fraction: float = 0.25,           # fraction of active killed per gen (by f)
+        # ── Incubation (the E of SEIR) ───────────────────────────────────────
+        # MC-ESO models S→I only: a host infected this generation can infect
+        # others in the very next one. Real epidemics have a latent period —
+        # exposed hosts are not yet infectious — and its absence is what drives
+        # the measured degeneracy: the newest best individual immediately becomes
+        # the preferred parent, the next generation clusters around it, and the
+        # population's effective rank collapses (1.98 of 10 at dim 10, 5.74 of 20
+        # at dim 20, on every function including the isotropic Sphere). The
+        # estimate→sample→estimate loop closes because reproduction is dominated
+        # by whatever was just created.
+        #
+        # Requiring a host to survive ``incubation_gens`` generations before it
+        # may be drawn as a parent keeps the parent pool older and more spread
+        # out, so offspring are generated from a wider subspace. pop_age already
+        # exists (it modulates σ_i) and is simply not consulted by selection.
+        # 0 = off, and the run is bit-identical (weights are untouched, so the
+        # RNG draw sequence is unchanged).
+        incubation_gens: int = 0,
         # ── Restart on stagnation ──────────────────────────────────────
         restart_no_improve_threshold: int = 300,  # no_improve count that triggers restart
         # ``no_improve`` counts EVALUATIONS, but stagnation is a *generational*
@@ -335,6 +358,43 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Multiplicative step-size adaptation. Once σ < span × precision_sigma_ratio
         # the contraction switches to sigma_drill_down to drill to FP precision.
         sigma_up: float = 1.1,                 # gentle expansion when improving
+        # ── σ-pinning detector ───────────────────────────────────────────────
+        # The multiplicative rule equilibrates where the generation improvement
+        # rate equals
+        #     s* = ln(1/sigma_down) / (ln(sigma_up) + ln(1/sigma_down)) = 0.350,
+        # a value independent of BOTH dimension and problem. The realised rate is
+        # not: 0.033-0.060 on every function at dim 2, but 0.27-0.34 at dim 10,
+        # where F08/F09 sit right at s* and never enter drilling mode at all
+        # (σ stalls at 5e-3 span, median f ≈ 1). More budget cannot help; it is a
+        # fixed point of the control law.
+        #
+        # Detect that state directly rather than special-casing dimension: count
+        # consecutive generations in which σ stays above the drilling threshold,
+        # and once the count passes sigma_pin_gens damp sigma_up so s* itself
+        # moves up and σ can contract again. Measured drilling shares say this
+        # separates cleanly — 0.0% on the pinned dim-10 functions (the counter
+        # grows without bound) against 33-64% everywhere at dim 2/3 (the counter
+        # is reset constantly), so the detector is silent at the low dimensions
+        # the defaults are tuned for. Note the improvement-rate EMA was tried
+        # first and does NOT discriminate: it is dominated by the easy early
+        # generations and fired on 43-99% of generations at dim 10, multimodal
+        # functions included.
+        # The threshold is a fraction of the eval budget rather than a fixed
+        # generation count, because the initial descent is legitimately spent
+        # above the drilling threshold at every dimension — only failing to get
+        # there for a large share of the whole run is pathological.
+        # 0 disables the detector (bit-identical: no state is read).
+        # Failing to drill is necessary but NOT sufficient: a run that is still
+        # descending fast simply has not finished its coarse phase (measured:
+        # F01-Sphere at dim 20 drills only 23% of generations yet is progressing
+        # by orders of magnitude, and damping it there cost SR@1e-10 95% → 70%).
+        # The pathology is drilling starvation AND stalled progress, so the
+        # detector also requires no_improve — which is already reset only on a
+        # *meaningful* log-f slope, so it is exactly a "progress has stalled"
+        # counter — to have reached a fraction of the spillover window.
+        sigma_pin_evals_frac: float = 0.0,     # share of budget without drilling → pinned
+        sigma_pin_stagnant_frac: float = 0.5,  # × stagnation window of no_improve
+        sigma_pin_damp: float = 0.25,          # sigma_up ** this while pinned
         sigma_down: float = 0.95,              # gentle contraction when not
         sigma_floor_ratio: float = 1e-6,       # σ_global absolute floor (× span)
         sigma_ceil_ratio: float = 1.0,         # σ_global absolute ceiling (× span)
@@ -414,6 +474,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.h2h_ratio = h2h_ratio
         self.h2h_F = h2h_F
         self.kill_fraction = kill_fraction
+        self.incubation_gens = incubation_gens
         self.restart_no_improve_threshold = restart_no_improve_threshold
         self.restart_window_dim_scale = restart_window_dim_scale
         self.softmax_beta = softmax_beta
@@ -424,6 +485,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.exhausted_sigma_tol = exhausted_sigma_tol
         self.exhausted_no_improve_mult = exhausted_no_improve_mult
         self.sigma_up = sigma_up
+        self.sigma_pin_evals_frac = sigma_pin_evals_frac
+        self.sigma_pin_stagnant_frac = sigma_pin_stagnant_frac
+        self.sigma_pin_damp = sigma_pin_damp
         self.sigma_down = sigma_down
         self.sigma_floor_ratio = sigma_floor_ratio
         self.sigma_ceil_ratio = sigma_ceil_ratio
@@ -670,6 +734,26 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         sigma_bottomed = st.sigma <= self.exhausted_sigma_tol * st.span * self.sigma_floor_ratio
         stagnated = st.no_improve >= self.exhausted_no_improve_mult * self._stagnation_window()
         return sigma_bottomed and stagnated
+
+    def _equilibrium_rate(self) -> float:
+        """Improvement rate at which the multiplicative σ rule sits still."""
+        lu, ld = math.log(self.sigma_up), math.log(1.0 / self.sigma_down)
+        return ld / (lu + ld) if (lu + ld) > 0 else 1.0
+
+    def _sigma_up_eff(self, st: _MCESOState) -> float:
+        """σ growth factor, damped while σ has been unable to reach the drilling
+        threshold for a long time — i.e. it is pinned at its own equilibrium.
+        Damping raises that equilibrium so σ can contract again."""
+        if self.sigma_pin_evals_frac <= 0.0:
+            return self.sigma_up
+        starved = len(st.history_f) - st.last_drill_eval
+        if starved < self.sigma_pin_evals_frac * st.max_evals:
+            return self.sigma_up
+        # …and progress must actually have stalled: a run still descending fast
+        # is in its coarse phase, not pinned.
+        if st.no_improve < self.sigma_pin_stagnant_frac * self._stagnation_window():
+            return self.sigma_up
+        return self.sigma_up ** self.sigma_pin_damp
 
     def _stagnation_window(self) -> float:
         """Stagnation window in evaluations, scaled for dimension.
@@ -1085,6 +1169,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             return
 
         weights = self._softmax_weights(st.pop_f)
+        if self.incubation_gens > 0:
+            # Latent (freshly infected) hosts are not yet infectious.
+            eligible = st.pop_age >= self.incubation_gens
+            if eligible.any():
+                masked = weights * eligible
+                total = float(masked.sum())
+                if total > 0.0:
+                    weights = masked / total
 
         # 3-channel split: close-contact (local Gaussian), droplet (h2h
         # DE/current-to-best), airborne (random spread). Airborne is pure noise —
@@ -1162,8 +1254,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         span = st.span
         in_drilling = st.sigma < span * self.precision_sigma_ratio
         sigma_floor_eff = span * self.sigma_floor_ratio
+        if self.sigma_pin_evals_frac > 0.0 and in_drilling:
+            st.last_drill_eval = len(st.history_f)
         if st.best_so_far < gen_best_before:
-            st.sigma *= self.sigma_up
+            st.sigma *= self._sigma_up_eff(st)
         else:
             st.sigma *= self.sigma_drill_down if in_drilling else self.sigma_down
         st.sigma = max(sigma_floor_eff, min(st.sigma, span * self.sigma_ceil_ratio))
