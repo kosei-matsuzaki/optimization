@@ -60,6 +60,26 @@ class _MCESOState:
     # generation-to-generation route flip-flop that perturbs threshold-borderline
     # functions off their best (median-signal) route.
     channel_route: "str | None" = None
+    # Persistent close-contact covariance (rank-μ style). Starts at I and is
+    # updated from the steps of infections that took hold, so it stays full rank
+    # by construction — unlike C_pop, which is re-estimated every generation from
+    # a population drawn from it and collapses to rank ≈ 2 of 10 in high dim.
+    cc_C: "np.ndarray | None" = None
+    # Evolution path: an exponentially-weighted sum of recent successful step
+    # directions. Rank-μ needs many samples per generation to estimate a shape;
+    # close-contact supplies only ~0.1-0.3 successful steps per generation
+    # (measured), which is exactly the sample-starved regime the path is designed
+    # for — it accumulates one direction across generations instead.
+    cc_path: "np.ndarray | None" = None
+    # Parent positions of this generation's offspring (same order as the
+    # concatenated children) and the σ used, so the accepted steps can be
+    # recovered for the update. Written only when the persistent covariance is on.
+    gen_parent_x: list = field(default_factory=list)
+    gen_sigma_used: list = field(default_factory=list)
+    # How many of this generation's children came from close-contact — only they
+    # are drawn from C, so only they may update it.
+    gen_n_local: int = 0
+    gen_parent_f: "np.ndarray | None" = None
     # Evaluation count at which σ was last inside the drilling regime. The
     # pathology — σ pinned by its own control law so the precision scale is
     # never reached — shows up as this falling far behind the current count
@@ -432,6 +452,84 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         cov_ratio_lo: float = 1e3,             # natural ratio at/below → high floor
         cov_ratio_hi: float = 3e4,             # natural ratio at/above → low floor
         cov_ratio_beta: float = 0.1,           # EMA rate (rejects rugged spikes)
+        # ── Persistent close-contact covariance (rank-μ) ─────────────────────
+        # C_pop is re-estimated every generation from a population that was drawn
+        # from it, so the estimate→sample→estimate loop closes and the effective
+        # rank collapses (measured 1.98 of 10 at dim 10, 5.74 of 20 at dim 20, on
+        # every function — including F01-Sphere, whose true conditioning is 1.0
+        # yet which is sampled at an effective conditioning of 4.2e3). Every
+        # remedy that left this loop intact failed, and the measurements say the
+        # binding constraint is the quality of the search directions, not the step
+        # size. CMA-ES escapes the loop only because its distribution is a
+        # PERSISTENT object with a learning rate.
+        #
+        # cc_learning_rate > 0 gives close-contact its own covariance C, started
+        # at the identity and updated from the steps of infections that took hold:
+        #     C ← (1−c)·C + c·mean(y yᵀ),  y = (x_child − x_parent)/σ_used
+        # With a small c the identity component decays slowly, so C stays full
+        # rank by construction while accumulating the valley geometry. Note this
+        # is NOT the earlier cc_accum_rate attempt, which EMA-ed the population
+        # *position* covariance and therefore inherited the collapse.
+        #
+        # C is reset to the identity on spillover / basin switch, so a basin
+        # change re-adapts instantly — the property CMA-ES gives up by carrying
+        # its covariance and evolution path across restarts. Cost is unchanged:
+        # base already eigendecomposes a d×d matrix every generation.
+        # 0.0 = off (pure C_pop close-contact), which is the pre-2026-08 behaviour.
+        # The whole persistent-covariance apparatus is a HIGH-dimensional
+        # remedy: at dim 2 the population's effective rank is 1.5 of 2, there is
+        # no collapse to repair, and the raised close-contact share needed to
+        # feed the learner costs the droplet/airborne escape that the tuned
+        # dim-2 behaviour depends on (measured: SR@1e-10 93.54 → 87.92, with F23
+        # 70→35, F18 100→60, F13 100→75). So it is switched on by dimension:
+        # (dim/2 − 1) / (cc_dim_ref/2 − 1) clipped to [0, 1], which is exactly 0
+        # at dim 2 — bit-identical — and 1 at cc_dim_ref and above.
+        cc_dim_ref: int = 10,
+        cc_learning_rate: float = 0.05,
+        # How much of the sampling shape comes from the persistent C rather than
+        # the instantaneous C_pop. The two are complementary, not alternatives:
+        # C_pop is right immediately wherever the population can align with the
+        # landscape (F02-EllipsoidalSep and F05 are solved 100% by base and are
+        # destroyed — 100% → 0% — if C_pop is simply replaced), while the learned
+        # C keeps full rank where the population collapses (F06 0→100, F08 10→50,
+        # F09 0→40). Blending keeps the instantaneous covariance that
+        # distinguishes MC-ESO from CMA-ES and adds persistence only as a
+        # supplement. 0 = pure C_pop (base), 1 = pure learned C.
+        #
+        # Blending the two MATRICES does not work: normalising C_pop to mean
+        # eigenvalue 1 leaves its smallest eigenvalue near 1e-6 on an
+        # ill-conditioned valley, and adding w × (a near-isotropic C) lifts it to
+        # about w/dim, capping the achievable anisotropy at ~dim/w — 33x at
+        # w = 0.3, where F02 needs 1e6. That is the same trap the rejected
+        # cov_shrink fell into. Instead SPLIT the close-contact offspring: a
+        # cc_persist_frac share is drawn from the learned C and the rest from
+        # C_pop, and host competition decides which shape was right. No matrix is
+        # blended, so neither shape loses its anisotropy, and no online
+        # discriminator is needed — which is exactly what having several
+        # transmission routes is for.
+        cc_persist_frac: float = 0.5,
+        cc_air_ratio: float = 0.10,            # airborne share once the gate is open
+        # 0.25, not 0.20: the droplet channel's binomial crossover is what
+        # protects coordinate-wise structure, and starving it costs
+        # F02-EllipsoidalSep at dim 20 (100% → 15%, a12 = 1.00). 0.25 restores
+        # F02 (median f 1.1e-9 → 4.3e-12, past the 1e-10 bar) while giving up
+        # nothing at dim 10 (+12.08pt either way); 0.30 costs 3.3pt at dim 10.
+        cc_h2h_ratio: float = 0.25,            # droplet share once the gate is open
+        # Anisotropy floor for the LEARNED covariance. C_pop needs a floor
+        # because rank deficiency gives it exact zero eigenvalues; the learned C
+        # is built up from the identity and stays full rank (measured effective
+        # rank 9.9 of 10), so it needs almost none — and cov_floor_low (1e-3)
+        # caps its eigenvalue ratio at ~1e4 in variance, i.e. ~100:1 in σ, two
+        # orders short of the 1e6 conditioning of F10/F11/F12/F14. Those four
+        # functions are 0% for MC-ESO and 100% for every CMA-ES variant at dim
+        # 5/10/20, and they account for most of the remaining gap.
+        cc_cov_floor: float = 1e-11,
+        # Rank-1 (evolution path) weight and the path's own decay. c_path ≈ 4/dim
+        # follows CMA-ES's cumulation time constant; the rank-1 term is what makes
+        # ill-conditioned valleys tractable when only a handful of samples arrive
+        # per generation.
+        cc_rank1_weight: float = 0.0,
+        cc_path_decay: float = 0.0,            # 0 → 4/dim
         # ── Informed restart (reservoir re-ignition + herd-immunity repulsion) ─
         # The spillover re-seed is *informed*, not a blind uniform draw: a
         # persistent niche-separated strain archive is harvested at every
@@ -499,6 +597,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.cov_ratio_lo = cov_ratio_lo
         self.cov_ratio_hi = cov_ratio_hi
         self.cov_ratio_beta = cov_ratio_beta
+        self.cc_dim_ref = cc_dim_ref
+        self.cc_learning_rate = cc_learning_rate
+        self.cc_persist_frac = cc_persist_frac
+        self.cc_air_ratio = cc_air_ratio
+        self.cc_h2h_ratio = cc_h2h_ratio
+        self.cc_cov_floor = cc_cov_floor
+        self.cc_rank1_weight = cc_rank1_weight
+        self.cc_path_decay = cc_path_decay
         self.ir_archive_frac = ir_archive_frac
         self.ir_reignite_sigma_ratio = ir_reignite_sigma_ratio
         self.ir_repel_radius_ratio = ir_repel_radius_ratio
@@ -654,6 +760,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         """Harvest the converging basin into the persistent strain archive and
         record its centroid for herd-immunity repulsion — before the reseed
         overwrites the population."""
+        # A new basin has its own geometry: reset the persistent close-contact
+        # covariance so re-adaptation is instant (CMA-ES instead carries its
+        # covariance and evolution path across restarts).
+        if self._cc_dim_gate() > 0.0:
+            st.cc_C = np.eye(self.dim)
+            st.cc_path = np.zeros(self.dim)
         # Remember the basin we are about to abandon (its current best location).
         best_i = int(np.argmin(st.pop_f))
         st.ir_basin_centroids.append(st.pop_x[best_i].copy())
@@ -754,6 +866,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if st.no_improve < self.sigma_pin_stagnant_frac * self._stagnation_window():
             return self.sigma_up
         return self.sigma_up ** self.sigma_pin_damp
+
+    def _cc_dim_gate(self) -> float:
+        """How strongly the persistent-covariance machinery applies at this
+        dimension: 0 at dim 2 (so the tuned low-dim behaviour is bit-identical)
+        rising to 1 at ``cc_dim_ref``."""
+        if self.cc_learning_rate <= 0.0:
+            return 0.0
+        span = max(1e-9, self.cc_dim_ref / 2.0 - 1.0)
+        return float(min(1.0, max(0.0, (self.dim / 2.0 - 1.0) / span)))
+
+    def _cc_channel_ratios(self) -> tuple[float, float]:
+        """Airborne / droplet shares, tapered toward the close-contact-dominant
+        setting the learner needs as the dimension gate opens."""
+        g = self._cc_dim_gate()
+        if g <= 0.0:
+            return self.air_ratio, self.h2h_ratio
+        return (self.air_ratio + g * (self.cc_air_ratio - self.air_ratio),
+                self.h2h_ratio + g * (self.cc_h2h_ratio - self.h2h_ratio))
 
     def _stagnation_window(self) -> float:
         """Stagnation window in evaluations, scaled for dimension.
@@ -920,13 +1050,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         ar = np.minimum(st.pop_age[gi_arr].astype(float) / 5.0, 1.0)
         host_scale = self.host_sigma_min_scale ** (lq * (0.7 + 0.3 * ar))
         noise = rng.standard_normal((n_local, self.dim))
+        raw_noise = noise.copy()   # kept for the persistent-C stream below
         local_parent_x = st.pop_x[gi_arr].copy()
         sigma_i = st.sigma * host_scale
+        if self._cc_dim_gate() > 0.0:
+            st.gen_parent_x.append(local_parent_x.copy())
+            st.gen_sigma_used.append(sigma_i.copy())
+            st.gen_parent_f = st.pop_f[gi_arr].copy()
+            st.gen_n_local = n_local
         if self.dim >= 2:
             cov = np.cov(st.pop_x, rowvar=False)
             if isinstance(cov, np.ndarray) and cov.shape == (self.dim, self.dim):
                 eigvals, eigvecs = np.linalg.eigh(cov)  # ascending eigenvalues
                 floor_eff = self._adaptive_cov_floor(st, eigvals)
+                if self._cc_dim_gate() > 0.0:
+                    # The adaptive floor is calibrated against C_pop's natural
+                    # eigenvalue ratios and would clamp a learned C exactly while
+                    # it is learning the extreme anisotropy these functions need.
+                    floor_eff = self.cc_cov_floor
                 # Axis-alignment signal for the channel router (separability):
                 # mean over eigenvectors of their max |component|. EMA-smoothed
                 # (same beta as the conditioning EMA). Written only; base never
@@ -955,6 +1096,20 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 # Transform: noise (n_local, dim) @ (eigvecs · √eigvals)ᵀ
                 transform = eigvecs * np.sqrt(eigvals)[None, :]
                 noise = noise @ transform.T
+        gate = self._cc_dim_gate()
+        if (gate > 0.0 and self.cc_persist_frac > 0.0
+                and st.cc_C is not None and self.dim >= 2 and n_local > 0):
+            # Second close-contact stream, shaped by the persistent C. It reuses
+            # the SAME standard-normal rows (kept in raw_noise before the C_pop
+            # transform), so no extra RNG is drawn and the split is exact.
+            n_p = int(round(min(1.0, self.cc_persist_frac) * gate * n_local))
+            if n_p > 0:
+                ev2, evec2 = np.linalg.eigh(st.cc_C)
+                m2 = float(ev2.mean())
+                ev2 = ev2 / m2 if m2 > 1e-30 else np.ones(self.dim)
+                ev2 = np.maximum(ev2, self.cc_cov_floor)
+                ev2 = ev2 / float(ev2.mean())
+                noise[-n_p:] = raw_noise[-n_p:] @ (evec2 * np.sqrt(ev2)[None, :]).T
         new_local = self._reflect(local_parent_x + noise * sigma_i[:, None], st.lo, st.hi)
         return new_local, sigma_i
 
@@ -999,6 +1154,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         h2h_offspring = np.where(cr_mask, h2h_trial, st.pop_x[h2h_parents_gi])
         eff_step = h2h_offspring - st.pop_x[h2h_parents_gi]
         h2h_step_norms = np.linalg.norm(eff_step, axis=1)
+        if self._cc_dim_gate() > 0.0:
+            st.gen_parent_x.append(st.pop_x[h2h_parents_gi].copy())
+            st.gen_sigma_used.append(h2h_step_norms.copy())
         new_h2h = self._reflect(h2h_offspring, st.lo, st.hi)
         return new_h2h, h2h_step_norms
 
@@ -1013,6 +1171,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         rng = st.rng
         air_parents_gi = rng.integers(0, self.n_pop, size=n_air)
         noise_air = rng.standard_normal((n_air, self.dim))
+        if self._cc_dim_gate() > 0.0:
+            st.gen_parent_x.append(st.pop_x[air_parents_gi].copy())
+            st.gen_sigma_used.append(np.full(n_air, float(np.max(air_sigma_vec))))
         return self._reflect(st.pop_x[air_parents_gi] + noise_air * air_sigma_vec,
                              st.lo, st.hi)
 
@@ -1087,12 +1248,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         """
         span = st.span
         drilling = st.sigma < span * self.precision_sigma_ratio
-        air_base = 0.0 if drilling else self.air_ratio
+        # Base ratios, tapered toward the close-contact-dominant setting the
+        # persistent-covariance learner needs once the dimension gate opens.
+        air_r, h2h_r = self._cc_channel_ratios()
+        air_base = 0.0 if drilling else air_r
         if not self.channel_schedule:
-            return air_base, self.h2h_ratio
+            return air_base, h2h_r
         # Drilling always runs airborne-free (as in base); the route is moot.
         if drilling:
-            return air_base, self.h2h_ratio
+            return air_base, h2h_r
         # Commit the route once, after a warmup, from the stabilized EMAs — then
         # lock it. Conditioning/separability are run-invariant landscape
         # properties, so a single committed route removes the generation-to-
@@ -1100,11 +1264,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # functions (F04/F14) and even leaks keep-air functions (F06) off base.
         if st.channel_route is None:
             if st.cc_logratio_ema is None or st.cc_align_ema is None:
-                return air_base, self.h2h_ratio          # KEEP-AIR (base) while warming
+                return air_base, h2h_r                  # KEEP-AIR (base) while warming
             if st.cc_logratio_ema > self.cond_droplet_early:
                 st.channel_route = "droplet"             # early high-cond → ill-cond valley
             elif len(st.history_sigma_global) < self.route_commit_gen:
-                return air_base, self.h2h_ratio          # KEEP-AIR (base) until checkpoint
+                return air_base, h2h_r                  # KEEP-AIR (base) until checkpoint
             # Checkpoint: commit from the stabilized EMA values, then lock.
             elif st.cc_logratio_ema > self.cond_droplet_thresh:
                 st.channel_route = "droplet"             # ill-conditioned valley
@@ -1115,7 +1279,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             else:
                 st.channel_route = "keepair"             # multimodal / deceptive (base)
         if st.channel_route == "keepair":
-            return self.air_ratio, self.h2h_ratio        # base ratios (escape untouched)
+            return air_r, h2h_r                          # base ratios (escape untouched)
         # σ-ramp taper (0 at the explore scale span×sigma → 1 at the drilling
         # threshold), reused from the validated variants so a routed function
         # starts at the base ratio at full σ and only diverges as it drills.
@@ -1123,11 +1287,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         s_hi, s_lo = math.log10(self.sigma), math.log10(self.precision_sigma_ratio)
         t = (s_hi - s) / (s_hi - s_lo) if s_hi > s_lo else 1.0
         t = min(1.0, max(0.0, t))
-        air_tapered = self.air_ratio * (1.0 - t)
+        air_tapered = air_r * (1.0 - t)
         if st.channel_route == "droplet":
-            return air_tapered, self.h2h_ratio + (self.air_ratio - air_tapered)
+            return air_tapered, h2h_r + (air_r - air_tapered)
         # CLOSE route: freed airborne budget → close-contact (implicit).
-        return air_tapered, self.h2h_ratio
+        return air_tapered, h2h_r
 
     # ── one generation (μ+λ greedy step) ────────────────────────────────────
     def _run_generation(self, st: _MCESOState) -> None:
@@ -1215,6 +1379,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         air_sigma_vec = air_sigma_base * air_sigma_factor
 
         # Batch generate all children (channel order fixes the RNG draw sequence)
+        if self._cc_dim_gate() > 0.0:
+            st.gen_parent_x = []
+            st.gen_sigma_used = []
+            st.gen_n_local = 0
+            if st.cc_C is None:
+                st.cc_C = np.eye(self.dim)
         new_local, sigma_i = self._close_contact_children(
             st, n_local, weights, log_f_max, log_f_spread)
         new_h2h, h2h_step_norms = self._droplet_children(st, n_h2h, weights, elite_arr)
@@ -1313,17 +1483,78 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 break
 
         # Host-competition rollback: children worse than the host they replaced.
+        survived: list = []
         if dead_orig_x is not None:
             for k, slot in enumerate(replaced_slots):
                 if dead_orig_f[k] < st.pop_f[slot]:
                     st.pop_x[slot] = dead_orig_x[k]
                     st.pop_f[slot] = dead_orig_f[k]
+                elif self._cc_dim_gate() > 0.0:
+                    survived.append((k, st.pop_x[slot].copy(), st.pop_f[slot]))
+        if self._cc_dim_gate() > 0.0:
+            self._update_cc_cov(st, survived)
 
         # Age active survivors (per-generation).
         replaced_mask = np.zeros(self.n_pop, dtype=bool)
         if replaced_slots:
             replaced_mask[replaced_slots] = True
         st.pop_age[~replaced_mask] += 1
+
+    def _update_cc_cov(self, st: _MCESOState, survived: list) -> None:
+        """Rank-μ update of the persistent close-contact covariance.
+
+        Only infections that took hold contribute, and each contributes the
+        direction it travelled scaled by the σ it was drawn with, so the matrix
+        learns shape and not scale:
+
+            C ← (1−c)·C + c · mean( y yᵀ ),   y = (x_child − x_parent) / σ_used
+
+        The identity C starts from decays at rate c, so with a small c the matrix
+        keeps full rank while accumulating the valley geometry — the property the
+        instantaneous population covariance cannot have. Renormalised to mean
+        eigenvalue 1 so σ keeps its meaning.
+        """
+        if not survived or st.cc_C is None or not st.gen_parent_x:
+            return
+        parents = np.concatenate(st.gen_parent_x, axis=0)
+        sigmas = np.concatenate(st.gen_sigma_used, axis=0)
+        ys = []
+        pf = st.gen_parent_f
+        for k, child_x, child_f in survived:
+            # Only close-contact children are drawn from C; droplet and airborne
+            # follow different distributions and would bias the estimate. And the
+            # step must be a genuine success — better than the host that spawned
+            # it — because the placement test only asks it to beat a worst-quartile
+            # host, which is not a success criterion (measured acceptance 0.47).
+            if k >= st.gen_n_local or k >= len(parents) or k >= len(sigmas):
+                continue
+            if pf is not None and k < len(pf) and not (child_f < pf[k]):
+                continue
+            sig = float(sigmas[k])
+            if sig <= 1e-300:
+                continue
+            ys.append((child_x - parents[k]) / sig)
+        if not ys:
+            return
+        Y = np.asarray(ys)
+        rank_mu = (Y.T @ Y) / len(Y)
+        c = min(1.0, self.cc_learning_rate)
+        c1 = min(1.0, self.cc_rank1_weight)
+        C = (1.0 - c - c1) * st.cc_C + c * rank_mu
+        if c1 > 0.0:
+            # Evolution path: cumulate the mean successful direction so a single
+            # sample per generation still builds a usable rank-1 term.
+            cp = self.cc_path_decay if self.cc_path_decay > 0.0 else 4.0 / self.dim
+            cp = min(1.0, cp)
+            step = Y.mean(axis=0)
+            if st.cc_path is None:
+                st.cc_path = np.zeros(self.dim)
+            st.cc_path = ((1.0 - cp) * st.cc_path
+                          + math.sqrt(cp * (2.0 - cp) * len(Y)) * step)
+            C = C + c1 * np.outer(st.cc_path, st.cc_path)
+        tr = float(np.trace(C))
+        if tr > 1e-300 and np.all(np.isfinite(C)):
+            st.cc_C = C * (self.dim / tr)      # mean eigenvalue 1
 
     # ── per-generation dynamics recording ───────────────────────────────────
     def _record_generation(self, st: _MCESOState) -> None:

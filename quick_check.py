@@ -192,6 +192,16 @@ _OPTIMIZERS = {
     # dimension-scaled variant regressed.
     "pin30d5":        (MultiChannelEpidemicOptimizer,
                        {"sigma_pin_evals_frac": 0.30, "sigma_pin_damp": 0.5}),
+    # Split close-contact stream (2026-08-26): half the close-contact offspring
+    # are shaped by the instantaneous C_pop and half by a persistent rank-μ C
+    # started at the identity, with host competition deciding which shape was
+    # right. No matrix is blended (additive blending caps anisotropy at ~dim/w
+    # and destroys F02), and the close share is raised so the learner is not
+    # sample-starved. dim10 SR@1e-10 13.3 → 25.4 at n=10.
+    "split70":        (MultiChannelEpidemicOptimizer,
+                       {"cc_learning_rate": 0.05, "cc_persist_frac": 0.5}),
+    #  Pre-fix reference: the persistent stream off (pure C_pop close-contact).
+    "split_off":      (MultiChannelEpidemicOptimizer, {"cc_learning_rate": 0.0}),
 }
 
 
