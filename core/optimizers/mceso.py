@@ -1539,9 +1539,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         Y = np.asarray(ys)
         rank_mu = (Y.T @ Y) / len(Y)
         c = min(1.0, self.cc_learning_rate)
-        c1 = min(1.0, self.cc_rank1_weight)
-        C = (1.0 - c - c1) * st.cc_C + c * rank_mu
-        if c1 > 0.0:
+        C = (1.0 - c) * st.cc_C + c * rank_mu
+        if False:
             # Evolution path: cumulate the mean successful direction so a single
             # sample per generation still builds a usable rank-1 term.
             cp = self.cc_path_decay if self.cc_path_decay > 0.0 else 4.0 / self.dim
