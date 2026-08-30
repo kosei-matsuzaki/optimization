@@ -200,6 +200,11 @@ _OPTIMIZERS = {
     # sample-starved. dim10 SR@1e-10 13.3 → 25.4 at n=10.
     "split70":        (MultiChannelEpidemicOptimizer,
                        {"cc_learning_rate": 0.05, "cc_persist_frac": 0.5}),
+    #  Pre-fix reference: reset the learned covariance on every spillover.
+    #  Tracing F12-BentCigar showed that reset destroying a covariance that was
+    #  on its way to the extreme elongation the function needs (effective rank
+    #  1.00, condition 2.2e6 in the run that succeeds).
+    "resetC":         (MultiChannelEpidemicOptimizer, {"cc_keep_on_spillover": False}),
     #  Pre-fix reference: the persistent stream off (pure C_pop close-contact).
     "split_off":      (MultiChannelEpidemicOptimizer, {"cc_learning_rate": 0.0}),
 }

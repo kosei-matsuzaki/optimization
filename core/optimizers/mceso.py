@@ -486,6 +486,21 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # at dim 2 — bit-identical — and 1 at cc_dim_ref and above.
         cc_dim_ref: int = 10,
         cc_learning_rate: float = 0.05,
+        # The rank-μ update currently averages the steps of every child that beat
+        # its parent, i.e. it uses a BINARY success signal. CMA-ES instead weights
+        # the selected offspring by their f rank, with most of the mass on the
+        # best. Measured at dim 20 the learned C spans plenty of directions
+        # (effective rank 11.4 of 20, against 2.8 of 10 at dim 10) yet barely
+        # improves the conditioning the algorithm sees (F08: cond_H 8.2e4,
+        # effective 5.5e4, versus 1.8e3 → 44 at dim 10) — it is picking up
+        # directions, but not the right ones. The higher the dimension, the more
+        # mediocre-but-successful directions dilute the signal, which is what
+        # rank weighting suppresses. 0 = uniform over successes (previous
+        # behaviour); > 0 = weight ∝ exp(−this × rank/count).
+        cc_rank_weight: float = 0.0,
+        # Keep the learned covariance across ordinary spillovers (reset only on a
+        # full basin switch). See the note at the reset site.
+        cc_keep_on_spillover: bool = True,
         # How much of the sampling shape comes from the persistent C rather than
         # the instantaneous C_pop. The two are complementary, not alternatives:
         # C_pop is right immediately wherever the population can align with the
@@ -599,6 +614,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.cov_ratio_beta = cov_ratio_beta
         self.cc_dim_ref = cc_dim_ref
         self.cc_learning_rate = cc_learning_rate
+        self.cc_rank_weight = cc_rank_weight
+        self.cc_keep_on_spillover = cc_keep_on_spillover
         self.cc_persist_frac = cc_persist_frac
         self.cc_air_ratio = cc_air_ratio
         self.cc_h2h_ratio = cc_h2h_ratio
@@ -763,7 +780,16 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # A new basin has its own geometry: reset the persistent close-contact
         # covariance so re-adaptation is instant (CMA-ES instead carries its
         # covariance and evolution path across restarts).
-        if self._cc_dim_gate() > 0.0:
+        if self._cc_dim_gate() > 0.0 and (basin_switch or not self.cc_keep_on_spillover):
+            # Only a real basin switch invalidates the learned geometry. An
+            # ordinary spillover keeps the population's best and re-seeds around
+            # it, so the shape it has learned is still the right one — and
+            # resetting it there is fatal on functions whose solution *is* an
+            # extremely elongated C. Traced on F12-BentCigar at dim 10: the run
+            # that succeeds lets the covariance collapse to effective rank 1.00
+            # with condition number 2.2e6; the run that fails has it reset back
+            # to rank 9.08 just as it was getting there, and cycles forever at
+            # median f 37.8.
             st.cc_C = np.eye(self.dim)
             st.cc_path = np.zeros(self.dim)
         # Remember the basin we are about to abandon (its current best location).
@@ -1519,6 +1545,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         parents = np.concatenate(st.gen_parent_x, axis=0)
         sigmas = np.concatenate(st.gen_sigma_used, axis=0)
         ys = []
+        fs = []
         pf = st.gen_parent_f
         for k, child_x, child_f in survived:
             # Only close-contact children are drawn from C; droplet and airborne
@@ -1534,10 +1561,19 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             if sig <= 1e-300:
                 continue
             ys.append((child_x - parents[k]) / sig)
+            fs.append(child_f)
         if not ys:
             return
         Y = np.asarray(ys)
-        rank_mu = (Y.T @ Y) / len(Y)
+        if self.cc_rank_weight > 0.0 and len(fs) == len(Y):
+            # Rank-weighted: best child first, weight decaying exponentially.
+            order = np.argsort(np.asarray(fs))
+            w = np.exp(-self.cc_rank_weight * np.arange(len(Y)) / max(1, len(Y)))
+            w = w / w.sum()
+            Yw = Y[order] * np.sqrt(w)[:, None]
+            rank_mu = Yw.T @ Yw
+        else:
+            rank_mu = (Y.T @ Y) / len(Y)
         c = min(1.0, self.cc_learning_rate)
         C = (1.0 - c) * st.cc_C + c * rank_mu
         if False:
