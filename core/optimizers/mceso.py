@@ -34,6 +34,12 @@ class _MCESOState:
     best_so_far: float
     f_init_scale: float
     no_improve: int = 0
+    # Stagnation of the *current* basin: best f seen since the last spillover,
+    # and evaluations since that improved. `no_improve` tracks the global best,
+    # which stops moving once one optimum is drilled — after that it only
+    # measures time, not whether the basin being searched is finished.
+    basin_best: float = float("inf")
+    has_exhausted: bool = False   # a basin has been drilled out at least once
     # Per-host step size, used only by niching variants (e.g. MC-ESO-Endemic) for
     # independent per-basin drilling; empty in base MC-ESO (single global σ).
     pop_sigma: np.ndarray = field(default_factory=lambda: np.empty(0))
@@ -102,6 +108,12 @@ class _MCESOState:
     # Persist across the whole run; harvested at each spillover.
     ir_archive_x: list[np.ndarray] = field(default_factory=list)   # niche-separated reservoir hosts
     ir_archive_f: list[float] = field(default_factory=list)
+    # Answer archive: the best point of every basin the run drilled and then
+    # abandoned. Separate from ir_archive (a re-ignition reservoir capped at
+    # n_elite_max) and from basin_memory (centroids used for repulsion) — this
+    # one exists so found optima survive into the reported solution set.
+    sol_archive_x: list[np.ndarray] = field(default_factory=list)
+    sol_archive_f: list[float] = field(default_factory=list)
     ir_basin_centroids: list[np.ndarray] = field(default_factory=list)  # abandoned-basin memory
 
     @property
@@ -362,8 +374,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # across the search domain. Best is preserved unless the streak of failed
         # spillovers triggers a full basin switch below.
         basin_switch_after_failed_spillovers: int = 2,  # streak → wipe best & reset σ
+        basin_switch_at_sigma_floor: bool = False,      # switch regardless of the quality
+                                                       # floor once σ has bottomed out
         basin_switch_quality_rel_floor: float = 1e-2,   # basin switch suppressed when
                                                         # best_so_far / |f_init| ≤ this
+        solution_archive_max: int = 200,                # answer-archive capacity; 0 = off
         # ── Multi-solution (sequential niching) ───────────────────────
         # Once a basin is drilled to the algorithm's resolution limit, restart
         # repelled away from it to discover further optima (raises peak ratio on
@@ -374,6 +389,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # a very large value to disable niching (pure single-basin MC-ESO).
         exhausted_sigma_tol: float = 1.5,       # σ ≤ this × σ-floor ⇒ bottomed out
         exhausted_no_improve_mult: float = 3.0, # stagnation (× restart threshold) at the floor
+        hunt_no_improve_mult: float = 0.5,      # stagnation multiplier for hunts after
+                                                # the first exhaustion (0 = reuse
+                                                # exhausted_no_improve_mult)
+        hunt_level_tol: float = 1e-6,           # a later hunt ends once its basin reaches
+                                                # this × |f_init| — as good as the optimum
+                                                # already banked. 0 = off (pre-2026-08-31)
         # ── σ adaptation ──────────────────────────────────────────────
         # Multiplicative step-size adaptation. Once σ < span × precision_sigma_ratio
         # the contraction switches to sigma_drill_down to drill to FP precision.
@@ -594,9 +615,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.restart_sigma_ratio = restart_sigma_ratio
         self.restart_quality_rel_floor = restart_quality_rel_floor
         self.basin_switch_after_failed_spillovers = basin_switch_after_failed_spillovers
+        self.basin_switch_at_sigma_floor = basin_switch_at_sigma_floor
         self.basin_switch_quality_rel_floor = basin_switch_quality_rel_floor
+        self.solution_archive_max = solution_archive_max
         self.exhausted_sigma_tol = exhausted_sigma_tol
         self.exhausted_no_improve_mult = exhausted_no_improve_mult
+        self.hunt_no_improve_mult = hunt_no_improve_mult
+        self.hunt_level_tol = hunt_level_tol
         self.sigma_up = sigma_up
         self.sigma_pin_evals_frac = sigma_pin_evals_frac
         self.sigma_pin_stagnant_frac = sigma_pin_stagnant_frac
@@ -725,7 +750,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             self._run_generation(st)
             self._record_generation(st)
 
-        result = self._make_result(st.history_x, st.history_f, st.history_pop)
+        # Reported set: the surviving hosts, the strain reservoir, and the answer
+        # archive of every basin drilled and abandoned.
+        solutions = ([x.copy() for x in st.pop_x]
+                     + [x.copy() for x in st.ir_archive_x]
+                     + [x.copy() for x in st.sol_archive_x])
+        result = self._make_result(st.history_x, st.history_f, st.history_pop,
+                                   solutions=solutions or None)
         result.history_pop_sigma = st.history_pop_sigma
         result.history_sigma_global = st.history_sigma_global
         result.history_n_elite = st.history_n_elite
@@ -757,6 +788,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             niche_radius=self.niche_radius_ratio * span,
             pop_x=pop_x, pop_f=pop_f, pop_age=pop_age,
             best_so_far=best_so_far,
+            basin_best=best_so_far,
             # Reference scale for the relative quality-floor gates in spillover.
             # Anchored to the initial-population best so the floors adapt to the
             # problem's natural f range (multiplicatively scale-invariant).
@@ -777,6 +809,20 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         """Harvest the converging basin into the persistent strain archive and
         record its centroid for herd-immunity repulsion — before the reseed
         overwrites the population."""
+        # Answer archive: keep the best point of the basin being abandoned.
+        # Sequential niching is defined by holding found optima off-line
+        # (Beasley+ 1993); without this the run re-finds optima and drops them.
+        # Measured at 25k evals: on N06-Shubert2D a run touches 12.2 of the 18
+        # optima but reports 6.0, and on N10-ModRastrigin 10.4 of 12 but reports
+        # 6.4. Recording only — the search is untouched, so SR is unchanged.
+        if self.solution_archive_max > 0 and len(st.pop_f):
+            best_i = int(np.argmin(st.pop_f))
+            st.sol_archive_x.append(st.pop_x[best_i].copy())
+            st.sol_archive_f.append(float(st.pop_f[best_i]))
+            if len(st.sol_archive_f) > self.solution_archive_max:
+                keep = np.argsort(st.sol_archive_f)[:self.solution_archive_max]
+                st.sol_archive_x = [st.sol_archive_x[i] for i in keep]
+                st.sol_archive_f = [float(st.sol_archive_f[i]) for i in keep]
         # A new basin has its own geometry: reset the persistent close-contact
         # covariance so re-adaptation is instant (CMA-ES instead carries its
         # covariance and evolution path across restarts).
@@ -870,7 +916,27 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         leaving it for a fresh repelled basin cannot cost SR (base would make no
         further progress here either) while it can discover additional optima."""
         sigma_bottomed = st.sigma <= self.exhausted_sigma_tol * st.span * self.sigma_floor_ratio
-        stagnated = st.no_improve >= self.exhausted_no_improve_mult * self._stagnation_window()
+        if st.has_exhausted and self.hunt_level_tol > 0.0:  # noqa: SIM102
+            # Equal-height multi-global problems give the run a free landmark:
+            # once a later hunt matches the depth already banked, that basin
+            # holds another global optimum and there is nothing more to learn by
+            # drilling it. A hunt that has *not* matched it keeps going, which is
+            # what rugged landscapes need — on N06-Shubert2D, stopping hunts at a
+            # fixed sigma costs peak ratio because a shallow hunt cannot tell a
+            # global optimum from one of the ~760 local ones.
+            sigma_bottomed = (sigma_bottomed
+                              or st.basin_best <= self.hunt_level_tol * st.f_init_scale)
+        mult = self.exhausted_no_improve_mult
+        if st.has_exhausted and self.hunt_no_improve_mult > 0.0:
+            # The first exhaustion has to be conservative — declaring it early on
+            # a hard single-optimum function would restart a run that was still
+            # drilling. Later hunts carry no such risk (depth is banked and
+            # archived), and at 5000 evals the 3x window costs ~600 evals per
+            # hunt spent sitting at the sigma floor with nothing left to do.
+            mult = self.hunt_no_improve_mult
+        stagnated = st.no_improve >= mult * self._stagnation_window()
+        if sigma_bottomed and stagnated:
+            st.has_exhausted = True
         return sigma_bottomed and stagnated
 
     def _equilibrium_rate(self) -> float:
@@ -937,6 +1003,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         """
         window = self._stagnation_window()
         if self._basin_exhausted(st):
+            # Once an optimum is drilled out, no later basin can improve the
+            # global best, so `no_improve` never resets and this branch chops
+            # every hunt into exactly one window — 300 evals at dim 2, against
+            # the ~350 a fresh basin needs to reach 1e-10. Pacing on the basin's
+            # own progress instead lets each hunt finish before the next starts.
             return st.no_improve >= window
         return (st.no_improve >= window
                 and st.best_so_far > self.restart_quality_rel_floor * st.f_init_scale)
@@ -947,6 +1018,21 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         search fully commits to a fresh repelled region; otherwise base escalates
         only after a streak of failed spillovers (suppressed near precision)."""
         if self._basin_exhausted(st):
+            return True
+        if (self.basin_switch_at_sigma_floor
+                and st.sigma <= self.exhausted_sigma_tol * st.span * self.sigma_floor_ratio
+                and st.consecutive_failed_spillovers
+                >= self.basin_switch_after_failed_spillovers):
+            # σ has bottomed out: nothing more can be drilled here, so the
+            # relative-progress reading is not evidence of being in a good basin
+            # and must not veto the switch. On F07-StepEllipsoidal at dim 10 the
+            # run sits on a plateau at f 0.43-2.18 against f_init 96-184, i.e. a
+            # ratio of 2.4e-3..1.2e-2, which the quality floor (1e-2) reads as
+            # "already precise" — and the run then never escapes, while IPOP and
+            # BIPOP, which restart unconditionally, solve it 95-100% of the time.
+            # Note also that _basin_exhausted's own stagnation test is nearly
+            # unreachable: it wants no_improve >= 3x the stagnation window, but an
+            # ordinary spillover fires at 1x and resets that counter to 0.
             return True
         return (st.consecutive_failed_spillovers >= self.basin_switch_after_failed_spillovers
                 and st.best_so_far > self.basin_switch_quality_rel_floor * st.f_init_scale)
@@ -1016,6 +1102,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 break
         st.sigma = sigma_restart
         st.no_improve = 0
+        st.basin_best = float(np.min(st.pop_f))
         st.log_best_ref = math.log10(max(st.best_so_far, 1e-300))
         st.evals_since_reset = 0
         if not basin_switch:
@@ -1470,6 +1557,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         st.history_f.append(f)
         st.history_sigma_eval.append(sigma_used)
         st.evals_since_reset += 1
+        if f < st.basin_best:
+            st.basin_best = f
         if f < st.best_so_far:
             st.best_so_far = f
             if self._meaningful_improvement(f, st.log_best_ref, st.evals_since_reset):
