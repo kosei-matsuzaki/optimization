@@ -25,6 +25,7 @@ Usage:
 """
 from __future__ import annotations
 import argparse
+import csv
 import sys
 from collections import deque
 from pathlib import Path
@@ -88,6 +89,9 @@ def main() -> None:
     ap.add_argument("--grid", type=int, default=600)
     ap.add_argument("--suite", choices=["bbob", "niching"], default="niching")
     ap.add_argument("--quantiles", type=str, default="0.001,0.01,0.05,0.10")
+    ap.add_argument("--csv", type=Path, default=None,
+                    help="write one row per (function, quantile) so the counts can "
+                         "be joined against other measurements")
     ap.add_argument("--min-frac", type=float, default=0.01,
                     help="a component counts as real if it holds this fraction "
                          "of the accepted cells")
@@ -100,6 +104,12 @@ def main() -> None:
         benches = [b for n, b in sorted(BENCHMARKS_BY_NAME.items())
                    if n.startswith("F") and b.dim == 2]
 
+    writer = None
+    if args.csv:
+        args.csv.parent.mkdir(parents=True, exist_ok=True)
+        fh = open(args.csv, "w", newline="")
+        writer = csv.writer(fh)
+        writer.writerow(["function", "quantile", "k_all", "k_big", "area", "r_max"])
     print(f"acceptance-set components   suite={args.suite}  grid={args.grid}^2  "
           f"quantiles={qs}  min_frac={args.min_frac}")
     header = "function".ljust(22) + "".join(f"{f'q={q:g}':>18}" for q in qs)
@@ -123,6 +133,9 @@ def main() -> None:
             big = [c for c in comps if len(c) >= args.min_frac * total]
             r = max((_inscribed_radius(mask, c, step) for c in big), default=0.0)
             cells.append(f"{len(comps):>4}/{len(big):<3} r={r:.3f}".rjust(18))
+            if writer is not None:
+                writer.writerow([b.name, q, len(comps), len(big),
+                                 f"{total / mask.size:.5f}", f"{r:.5f}"])
         print(b.name.ljust(22) + "".join(cells))
     print("\ncolumns: K_all/K_big  r=largest inscribed radius (span-relative)")
 

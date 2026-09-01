@@ -25,6 +25,7 @@ Usage:
 """
 from __future__ import annotations
 import argparse
+import csv
 import sys
 from pathlib import Path
 
@@ -36,7 +37,7 @@ from core.benchmarks import BENCHMARKS_BY_NAME                      # noqa: E402
 from core.optimizers import (MultiChannelEpidemicOptimizer,          # noqa: E402
                              NCDEOptimizer, RingPSOOptimizer, NMMSOOptimizer,
                              MultistartNelderMeadOptimizer,
-                             IPOPCMAESOptimizer, DEOptimizer)
+                             IPOPCMAESOptimizer, DEOptimizer, PSOOptimizer)
 
 _METHODS = {
     "MC-ESO":     (MultiChannelEpidemicOptimizer, {}),
@@ -46,6 +47,13 @@ _METHODS = {
     "NM-Restart": (MultistartNelderMeadOptimizer, {}),
     "IPOP-CMA-ES": (IPOPCMAESOptimizer, {}),
     "DE":         (DEOptimizer, {}),
+    # Two controlled contrasts for the attraction hypothesis: methods whose
+    # population is pulled toward an incumbent lose ground as the unmodelled
+    # criterion grows, methods without such a pull do not.
+    #   PSO vs r3pso      global best vs ring neighbourhood best (topology)
+    #   DE vs Crowding-DE parent replacement vs nearest replacement, same mutation
+    "PSO":        (PSOOptimizer, {}),
+    "Crowding-DE": (NCDEOptimizer, {"m": 30}),
 }
 _FUNCS = ["F03-RastriginSep", "F15-RastriginRot", "F21-Gallagher101", "F17-SchafferF7"]
 
@@ -91,11 +99,20 @@ def main() -> None:
                          "a better one before taking the top K. Without it a "
                          "converged population reports K near-duplicates, which is "
                          "not what anyone would present.")
+    ap.add_argument("--csv", type=Path, default=None,
+                    help="write one row per (function, method, seed, scenario) so "
+                         "the comparison can be tested pairwise instead of on means")
     ap.add_argument("--raw", action="store_true",
                     help="also score the un-deduplicated top-K, to show what the "
                          "duplicates cost")
     args = ap.parse_args()
 
+    writer = None
+    if args.csv:
+        args.csv.parent.mkdir(parents=True, exist_ok=True)
+        fh = open(args.csv, "w", newline="")
+        writer = csv.writer(fh)
+        writer.writerow(["function", "method", "seed", "scenario", "regret"])
     print(f"reported sets under an unmodelled criterion   budget={args.budget}  "
           f"K={args.k}  tilt={args.tilt}  train/test={args.n_train}/{args.n_test}  "
           f"seeds={args.seeds}")
@@ -175,8 +192,12 @@ def main() -> None:
                 best_known = np.minimum(best_known, v.min(axis=0))
             te = slice(args.n_train, n_all)
             for m, v in vals.items():
-                r = float(np.mean(np.min(v[:, te], axis=0) - best_known[te]))
-                rows.setdefault(m, []).append(r)
+                per_scen = np.min(v[:, te], axis=0) - best_known[te]
+                rows.setdefault(m, []).append(float(np.mean(per_scen)))
+                if writer is not None:
+                    for j, val in enumerate(per_scen):
+                        writer.writerow([name, m, seed, args.n_train + j,
+                                         f"{float(val):.6g}"])
 
         base = float(np.mean(rows["quality"]))
         order = sorted(rows, key=lambda m: float(np.mean(rows[m])))
@@ -187,6 +208,9 @@ def main() -> None:
             print(f"{name:<20}{m:<13}{n_rep:>9}{r:>10.3f}{ratio:>11.2f}x")
         print()
 
+    if writer is not None:
+        fh.close()
+        print(f"per-scenario rows written to {args.csv}")
     print("regret: mean over held-out scenarios of the best-of-K, against the best "
           "value anything reached (lower is better).")
     print("vs quality: ratio to simply reporting the K best local minima. >1 means "
