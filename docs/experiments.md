@@ -67,6 +67,8 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 | `./run.sh quick --all --custom` | BBOB-24 に Custom 11（C01-C11, 2D 限定）を追加。多峰・多解など**特定目的の参照時のみ**使う |
 | `./run.sh quick --funcs C01-Himmelblau,C02-SixHumpCamel` | Custom 単独に絞り込んだ集中確認 |
 | `./run.sh quick --funcs F08-Rosenbrock,F10-EllipsoidalRot` | 任意関数に絞り込んだ集中検証（デバッグ用） |
+| `./run.sh quick --suite niching --n-runs 20` | **低次元多峰の評価**。CEC2013 niching の 2D/3D サブセット（N04-N10）を各関数の次元で回す（`--dim` は無視）|
+| `./run.sh quick --suite niching --suite-budget` | 同上を**競技の公式予算**（MaxFEs 5e4 / 2e5 / 4e5）で回す。文献値と比べたいときだけ使う |
 | `./run.sh quick --all --dim {2\|3\|5\|10\|20} --max-evals <2500×d>` | **次元スケーリング計測**（BBOB-24 を各次元で）。現状把握のスナップショット用。採否判定は 2D が主対象 |
 | `./run.sh quick --n-runs 5 --max-evals 3000` | パラメータを上書きしてローカル確認 |
 | `./run.sh quick --all --noise gauss_sev` | **ノイズ評価モード**（診断用）。noisy f をアルゴリズムに見せ、指標は真値で再採点（下記） |
@@ -202,6 +204,28 @@ BBOB がカバーしない **多大域最適解**・**deceptive 2-D 多峰** 系
 | C10 | Schaffer N.2 | [-100, 100]² | deceptive-2d | multimodal, rugged | 同心円状の多峰、原点中心 |
 | C11 | De Jong F5 (Shekel's foxholes) | [-65.536, 65.536]² | deceptive-2d | multimodal, plateau, deceptive | 5×5 格子の25局所解 |
 
+### CEC2013 niching（低次元多峰, N04-N10）
+
+多解探索を分野の土俵で測るためのスイート。Li, Engelbrecht & Epitropakis (2013) の CEC'2013 niching competition ベンチマークのうち、**2D/3D の 7 関数**を実装した（`core/benchmarks.py:_NICHING_SPECS`）。式は参照実装 `github.com/mikeagn/CEC2013` の `matlab/niching_func.m`、f_goptima / rho / 大域解数 / MaxFEs は同梱の `get_fgoptima` / `get_rho` / `get_no_goptima` / `get_maxfes` から取った。
+
+公式スイートは**最大化**問題。ここでは `f_goptima - f_raw(x)` として登録するので他スイートと同じく 0 へ最小化し、**`sr_1e-1` 〜 `sr_1e-5` 列がそのまま競技の精度水準 ε に一致する**。
+
+| 名前 | dim | 大域解数 K | rho | 公式 MaxFEs | 探索域 |
+|---|---|---|---|---|---|
+| N04-Himmelblau | 2 | 4 | 0.01 | 5e4 | [-6, 6]² |
+| N05-SixHumpCamel | 2 | 2 | 0.5 | 5e4 | [-1.9, 1.9]²（下記） |
+| N06-Shubert2D | 2 | 18 | 0.5 | 2e5 | [-10, 10]² |
+| N07-Vincent2D | 2 | 36 | 0.2 | 2e5 | [0.25, 10]² |
+| N08-Shubert3D | 3 | 81 | 0.5 | 4e5 | [-10, 10]³ |
+| N09-Vincent3D | 3 | 216 | 0.2 | 4e5 | [0.25, 10]³ |
+| N10-ModRastrigin2D | 2 | 12 | 0.01 | 2e5 | [0, 1]² |
+
+公式スイートからの逸脱は 3 つ。いずれも意図的で、論文に書くときはそのまま明示する。
+
+- **F1-F3（1 次元）は未実装**。この repo は dim=1 を通せない（pycma は N≥2、可視化も 2D/3D 前提）。
+- **F11-F20（合成関数）は未実装**。スイートの shift / rotation データファイルが要る。低次元 2D の難問（F11-F13）が抜けるので、必要になったら次に足すのはここ。
+- **N05 の探索域**は公式が x₁∈[-1.9, 1.9] / x₂∈[-1.1, 1.1] の非対称ボックス。`BenchmarkFunction.bounds` が全軸共通の 1 レンジしか持たないため x₂ を [-1.9, 1.9] に広げた。大域解 2 個は変わらず（公式帯の外では f が増えるので最大値は増えない）、距離も歪まないので rho ベースの計数は保たれるが、**探索体積が公式の 1.7 倍**なので公式 F5 の公表値とは直接比較できない。
+
 ### CEC2022（hold-out）
 
 BBOB とは独立した CEC2022 12 関数（`ioh` 経由、dim=10）を hold-out スイートとして用意。BBOB の変換に対して開発された MC-ESO の機構が汎化するかの検証に使い、**CEC2022 用にハイパーパラメータを再調整しない**。
@@ -239,6 +263,14 @@ MC-ESO（V1）を reference とし、各手法を seed-paired で比較。`wilco
 - **MMO Success Rate (`mmo_sr_1e-2`, `mmo_sr_1e-4`)** — K 個**すべて**を見つけた run の割合。
 - `n_optima` 列に K を記録。`summary.csv` の `mean_optima_found` / `mean_optima_rate` は従来からの `tol=1e-4` 単一値（後方互換）。
 - 注意: 発見は**時間的**（走行中にいずれかの世代で訪れた）で、厳密な「同時保持」ではない。
+
+### 多解報告（CEC2013 ルール, niching スイート）
+
+上の Custom 向け PR は**全評価点** (`history_x`) から後付けで数えるため、密にサンプルするだけの手法（ランダム探索・多点 restart）を過大評価する。niching スイートでは競技の規則どおり、**run が「解」として報告した集合だけ**を採点する（`core/runner.py:niching_peak_metrics`）。
+
+- **報告集合** = 最終集団 ＋ restart 系手法の各 restart の best（`OptimizeResult.final_solutions`）。MC-ESO は生存ホスト＋永続系統アーカイブ、NM-Restart / IPOP / BIPOP / CMA-ES は restart best ＋最終集団、集団を持たない場合は best 1 点。f の良い順に `max(100, 2K)` 点で打ち切る。
+- **計数** (`count_goptima`) は公式 `how_many_goptima` と同じ順序: 報告集合を f 順に並べ、既採用点から rho より遠い点だけを seed として拾い、**その後で**精度 ε 内かを判定する。良いが不正確な点がニッチを塞ぐ挙動まで含めて再現する（冗長な報告を罰するのがこの指標の要点）。
+- 列は `cec_pr_{ε}` / `cec_sr_{ε}`（ε = 1e-1 … 1e-5）、その平均 `cec_pr_mean` / `cec_sr_mean`、報告点数 `n_reported`、`cec_k`。`scripts/analyze_quick.py` が `[1b]` 節で集計する。
 
 > **SR@1e-10 は絶対死守**: 多解探索の改善でも SR@1e-10 を下げる構成は採用しない。最低 1 解は深精度到達を保証する。
 

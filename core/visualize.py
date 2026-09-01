@@ -784,18 +784,26 @@ def save_stats(
     summary_path = output_dir / "summary.csv"
     summary_exists = summary_path.exists()
     from .runner import (_evals_to_target, ecdf_auc, SR_THRESHOLDS,
-                         PEAK_THRESHOLDS, peak_metrics)
+                         PEAK_THRESHOLDS, peak_metrics,
+                         NICHE_ACCURACIES, niching_peak_metrics)
     sr_keys = [f"sr_{thr:.0e}".replace("e-0", "e-") for thr in SR_THRESHOLDS]
     span = benchmark.bounds[1] - benchmark.bounds[0]
     # Multi-modal columns: peak ratio (pr_*) and MMO success rate (mmo_sr_*) per
     # tolerance — the share of the K global optima found / runs finding all K.
     pr_keys = [f"pr_{thr:.0e}".replace("e-0", "e-") for thr in PEAK_THRESHOLDS]
     mmo_keys = [f"mmo_sr_{thr:.0e}".replace("e-0", "e-") for thr in PEAK_THRESHOLDS]
+    # CEC2013-niching columns: peak ratio / success rate over the reported
+    # solution set at the competition's accuracy levels. "N/A" outside the
+    # niching suite (every other benchmark has a single global optimum).
+    cec_pr_keys = [f"cec_pr_{a:.0e}".replace("e-0", "e-") for a in NICHE_ACCURACIES]
+    cec_sr_keys = [f"cec_sr_{a:.0e}".replace("e-0", "e-") for a in NICHE_ACCURACIES]
     fieldnames_s = ["function", "category", "tags", "method", "mean_time_s",
                     "mean_best_f", "median_best_f", *sr_keys,
                     "evals_succ_mean", "evals_succ_med", "ert", "ecdf_auc",
                     "mean_optima_found", "mean_optima_rate", "n_optima",
-                    *pr_keys, *mmo_keys]
+                    *pr_keys, *mmo_keys,
+                    "cec_k", *cec_pr_keys, *cec_sr_keys,
+                    "cec_pr_mean", "cec_sr_mean", "n_reported"]
     with open(summary_path, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames_s)
         if not summary_exists:
@@ -838,4 +846,13 @@ def save_stats(
                 k = f"{thr:.0e}".replace("e-0", "e-")
                 row[pk] = f"{pm.get(f'pr_{k}', 0.0):.2f}" if n_optima_total else "N/A"
                 row[mk] = f"{pm.get(f'mmo_sr_{k}', 0.0):.0%}" if n_optima_total else "N/A"
+            npm = niching_peak_metrics(results, benchmark)
+            has_cec = npm["n_optima"] > 0
+            row["cec_k"] = npm["n_optima"] if has_cec else "N/A"
+            for a, pk, sk in zip(NICHE_ACCURACIES, cec_pr_keys, cec_sr_keys):
+                row[pk] = f"{npm[pk]:.2f}" if has_cec else "N/A"
+                row[sk] = f"{npm[sk]:.0%}" if has_cec else "N/A"
+            row["cec_pr_mean"] = f"{npm['cec_pr_mean']:.2f}" if has_cec else "N/A"
+            row["cec_sr_mean"] = f"{npm['cec_sr_mean']:.0%}" if has_cec else "N/A"
+            row["n_reported"] = f"{npm['n_reported']:.0f}" if has_cec else "N/A"
             writer.writerow(row)

@@ -48,7 +48,12 @@ class MultistartNelderMeadOptimizer(BaseOptimizer):
             history_f.append(f)
             return f
 
+        # Best point of each restart: this method keeps no population, so its
+        # restart bests are what it can report as distinct solutions.
+        restart_bests: list[np.ndarray] = []
+
         while len(history_f) < max_evals:
+            start = len(history_f)
             x0 = rng.uniform(lo, hi, self.dim)
             try:
                 minimize(
@@ -61,6 +66,12 @@ class MultistartNelderMeadOptimizer(BaseOptimizer):
                     },
                 )
             except _BudgetExhausted:
+                pass
+            if len(history_f) > start:
+                local = int(np.argmin(history_f[start:])) + start
+                restart_bests.append(history_x[local].copy())
+            if len(history_f) >= max_evals:
                 break
 
-        return self._make_result(history_x, history_f)
+        return self._make_result(history_x, history_f,
+                                 solutions=restart_bests or None)

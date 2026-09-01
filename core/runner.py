@@ -146,6 +146,125 @@ def peak_metrics(
     return out
 
 
+# ── CEC2013-niching multi-solution metrics ───────────────────────────────
+# The competition's own accuracy levels. Because every niching benchmark is
+# registered as `f_goptima - f_raw(x)`, "within epsilon of a global optimum"
+# is simply `f <= epsilon` here.
+NICHE_ACCURACIES: tuple[float, ...] = (1e-1, 1e-2, 1e-3, 1e-4, 1e-5)
+
+
+def _seed_indices(solutions: np.ndarray, rho: float) -> list[int]:
+    """CEC2013 find_seeds_indices: walk the fitness-sorted reported set and keep
+    a point only when it is further than rho from every point already kept."""
+    seeds: list[np.ndarray] = []
+    idxs: list[int] = []
+    for i, x in enumerate(solutions):
+        if all(float(np.linalg.norm(x - s)) > rho for s in seeds):
+            seeds.append(x)
+            idxs.append(i)
+    return idxs
+
+
+def count_goptima(solutions: np.ndarray, fvals: np.ndarray, k: int,
+                  rho: float, accuracy: float) -> int:
+    """How many distinct global optima the reported set covers (how_many_goptima).
+
+    Seeds are picked from the *whole* sorted set first and only then filtered by
+    accuracy, exactly as in the reference implementation: a good-but-not-accurate
+    point can occupy a niche and block a nearby accurate one, which is what
+    makes the measure punish redundant reporting.
+    """
+    if len(solutions) == 0:
+        return 0
+    order = np.argsort(fvals)                    # our f minimises to 0
+    sx, sf = solutions[order], fvals[order]
+    count = 0
+    for i in _seed_indices(sx, rho):
+        if sf[i] <= accuracy:
+            count += 1
+            if count == k:
+                break
+    return count
+
+
+def _niching_counts(
+    results: list[OptimizeResult],
+    benchmark,
+    accuracies: tuple[float, ...],
+) -> tuple[np.ndarray, list[int]]:
+    """Peaks covered per (run, accuracy), plus the reported-set size per run.
+
+    Scores ``result.final_solutions`` — the final population plus restart
+    archives — never the full evaluation history: a history-based peak ratio
+    rewards dense sampling rather than multi-solution search. The set is capped
+    at ``max(100, 2K)`` best-by-f points so a method cannot win by reporting
+    everything it ever touched.
+    """
+    k = benchmark.n_global_optima
+    rho = benchmark.niche_rho
+    cap = max(100, 2 * k)
+    counts = np.zeros((len(results), len(accuracies)))
+    n_reported: list[int] = []
+    for i, r in enumerate(results):
+        X = np.asarray(r.final_solutions or [r.best_x], dtype=float)
+        F = np.array([float(benchmark.func(x)) for x in X])
+        if len(F) > cap:
+            keep = np.argsort(F)[:cap]
+            X, F = X[keep], F[keep]
+        n_reported.append(len(F))
+        for j, a in enumerate(accuracies):
+            counts[i, j] = count_goptima(X, F, k, rho, a)
+    return counts, n_reported
+
+
+def niching_peak_counts(
+    results: list[OptimizeResult],
+    benchmark,
+    accuracies: tuple[float, ...] = NICHE_ACCURACIES,
+) -> np.ndarray:
+    """Per-run peak count averaged over the accuracy levels — the per-run
+    quantity behind ``cec_pr_mean``, and the one a paired test is run on.
+    Empty array for benchmarks outside the niching suite."""
+    if not getattr(benchmark, "n_global_optima", None):
+        return np.zeros(0)
+    counts, _ = _niching_counts(results, benchmark, accuracies)
+    return counts.mean(axis=1)
+
+
+def niching_peak_metrics(
+    results: list[OptimizeResult],
+    benchmark,
+    accuracies: tuple[float, ...] = NICHE_ACCURACIES,
+) -> dict:
+    """Peak ratio / success rate over the *reported* solution set (CEC2013 rules).
+
+    Scores `result.final_solutions` — the final population plus restart archives
+    — never the full evaluation history: a history-based peak ratio rewards
+    dense sampling rather than multi-solution search. The set is capped at
+    `max(100, 2K)` best-by-f points so a method cannot win by reporting
+    everything it ever touched.
+
+    Returns ``{"n_optima": 0}`` for benchmarks outside the niching suite.
+    """
+    k = getattr(benchmark, "n_global_optima", None)
+    rho = getattr(benchmark, "niche_rho", None)
+    if not k or rho is None:
+        return {"n_optima": 0}
+    out: dict = {"n_optima": k}
+    counts, n_reported = _niching_counts(results, benchmark, accuracies)
+    for j, a in enumerate(accuracies):
+        c = counts[:, j]
+        key = f"{a:.0e}".replace("e-0", "e-")
+        out[f"cec_pr_{key}"] = float(np.mean(c) / k)
+        out[f"cec_sr_{key}"] = float(np.mean(c == k))
+    out["cec_pr_mean"] = float(np.mean([out[f"cec_pr_{a:.0e}".replace("e-0", "e-")]
+                                        for a in accuracies]))
+    out["cec_sr_mean"] = float(np.mean([out[f"cec_sr_{a:.0e}".replace("e-0", "e-")]
+                                        for a in accuracies]))
+    out["n_reported"] = float(np.mean(n_reported))
+    return out
+
+
 def ecdf_auc(
     results: list[OptimizeResult],
     targets: tuple[float, ...] = SR_THRESHOLDS,

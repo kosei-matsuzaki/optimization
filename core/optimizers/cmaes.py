@@ -31,6 +31,7 @@ class CMAESOptimizer(BaseOptimizer):
         x0 = self.x0 if self.x0 is not None else rng.uniform(lo, hi, self.dim)
         sigma = self.sigma0
         restart_seed = self.seed
+        restart_bests: list[np.ndarray] = []
 
         # When CMA-ES converges, restart from best found (not random) with
         # tighter sigma to continue using the full eval budget locally.
@@ -53,8 +54,11 @@ class CMAESOptimizer(BaseOptimizer):
                     history_x.append(np.array(s))
                     history_f.append(f)
 
+            restart_bests.append(np.array(es.result.xbest))
             # Restart from best found with tighter sigma (no random jump)
             x0 = np.array(es.result.xbest)
             sigma = max(es.result.stds.mean() * 0.1, 1e-8)
 
-        return self._make_result(history_x, history_f, history_pop)
+        solutions = restart_bests + (list(history_pop[-1]) if history_pop else [])
+        return self._make_result(history_x, history_f, history_pop,
+                                 solutions=solutions or None)

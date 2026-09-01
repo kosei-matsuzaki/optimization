@@ -11,9 +11,11 @@ Classic / proposed baselines:
   pso / de / savoa  PSOOptimizer, DEOptimizer, SaVOAOptimizer
   nelder_mead     MultistartNelderMeadOptimizer  (multistart local-search floor)
   ncde            NCDEOptimizer                  (niching / multi-solution reference)
+  r3pso           RingPSOOptimizer               (ring-topology lbest PSO, no niche radius)
+  nmmso           NMMSOOptimizer                 (multi-swarm niching, via pynmmso)
 Stronger external-library baselines (formerly optimizers_modern.py):
   lshade          LSHADEOptimizer
-  restart_cmaes   IPOPCMAESOptimizer, BIPOPCMAESOptimizer
+  restart_cmaes   IPOPCMAESOptimizer, BIPOPCMAESOptimizer, RepellingCMAESOptimizer
 """
 from __future__ import annotations
 
@@ -27,8 +29,11 @@ from .de import DEOptimizer
 from .savoa import SaVOAOptimizer
 from .nelder_mead import MultistartNelderMeadOptimizer
 from .ncde import NCDEOptimizer
+from .r3pso import RingPSOOptimizer
+from .nmmso import NMMSOOptimizer
 from .lshade import LSHADEOptimizer
-from .restart_cmaes import IPOPCMAESOptimizer, BIPOPCMAESOptimizer
+from .restart_cmaes import (IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
+                            RepellingCMAESOptimizer)
 
 __all__ = [
     "OptimizeResult", "BaseOptimizer",
@@ -36,5 +41,7 @@ __all__ = [
     "MCESONoSpillover", "MCESORandomRestart", "MCESONoBoundarySnap", "MCESOEndemic",
     "PSOOptimizer", "DEOptimizer", "SaVOAOptimizer",
     "MultistartNelderMeadOptimizer", "NCDEOptimizer",
+    "RingPSOOptimizer", "NMMSOOptimizer",
     "LSHADEOptimizer", "IPOPCMAESOptimizer", "BIPOPCMAESOptimizer",
+    "RepellingCMAESOptimizer",
 ]

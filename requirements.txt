@@ -5,3 +5,4 @@ cma
 ioh
 flask
 mealpy
+pynmmso

@@ -13,10 +13,11 @@ MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマー�
 | [docs/mceso.md](docs/mceso.md) | 提案手法 MC-ESO（`core/optimizers/mceso.py`）のコンセプト・アーキテクチャ・パラメータ・新規性 |
 | [docs/baselines.md](docs/baselines.md) | 比較対象の既存手法（`core/optimizers/` の CMA-ES / IPOP・BIPOP / PSO / DE / L-SHADE / SaVOA） |
 | [docs/experiments.md](docs/experiments.md) | ディレクトリ構造・実行方法（run.sh）・実験条件・ベンチマーク関数（`core/benchmarks.py`）・評価基準・結果の見方 |
+| [docs/related_work.md](docs/related_work.md) | 多峰（niching）分野の関連研究・標準ベンチマーク・指標・先行例の整理 |
 | [docs/history.md](docs/history.md) | 試した工夫・フラグ・ablation 記録（採用 / 不採用とその理由） |
 | [docs/web.md](docs/web.md) | Results UI（Flask アプリの構成・アーキテクチャ・ルート/API） |
 
-- 更新対象の振り分け: 提案手法 MC-ESO の変更 → `docs/mceso.md`、ベースライン手法の変更 → `docs/baselines.md`、ベンチマーク関数・実行・条件・評価基準の変更 → `docs/experiments.md`、試行錯誤・フラグの追加削除 → `docs/history.md`、web 配下の変更 → `docs/web.md`、プロジェクト概要・docs リンク構成の変更 → ルート `README.md`。
+- 更新対象の振り分け: 提案手法 MC-ESO の変更 → `docs/mceso.md`、ベースライン手法の変更 → `docs/baselines.md`、ベンチマーク関数・実行・条件・評価基準の変更 → `docs/experiments.md`、試行錯誤・フラグの追加削除 → `docs/history.md`、関連研究の調査結果 → `docs/related_work.md`、web 配下の変更 → `docs/web.md`、プロジェクト概要・docs リンク構成の変更 → ルート `README.md`。
 
 ## 実行ルール
 

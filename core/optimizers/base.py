@@ -27,6 +27,13 @@ class OptimizeResult:
     # sigma actually used to generate each offspring (one per eval after init pop;
     # nan = random reactivation with no parent sigma)
     history_sigma_eval: list[float] = field(default_factory=list)
+    # Solutions the run *reports* as its answer, in the sense the CEC2013
+    # niching competition means it: the final population plus, for restart-based
+    # methods, the best point of each earlier restart. Multi-solution metrics
+    # (core.runner.niching_peak_metrics) score this set and nothing else —
+    # scoring every visited point instead would hand a perfect peak ratio to any
+    # method that samples densely enough, including pure random search.
+    final_solutions: list[np.ndarray] = field(default_factory=list)
 
 
 class BaseOptimizer(ABC):
@@ -63,6 +70,7 @@ class BaseOptimizer(ABC):
         history_x: list[np.ndarray],
         history_f: list[float],
         history_pop: Optional[list[np.ndarray]] = None,
+        solutions: Optional[list[np.ndarray]] = None,
     ) -> OptimizeResult:
         best_idx = int(np.argmin(history_f))
         history_best: list[float] = []
@@ -71,6 +79,12 @@ class BaseOptimizer(ABC):
             if f < current_best:
                 current_best = f
             history_best.append(current_best)
+        # Default reported set: the last population snapshot for population-based
+        # methods, the single best point for those that keep no population.
+        # `solutions` overrides it where the method has a restart archive.
+        if solutions is None:
+            solutions = (list(history_pop[-1]) if history_pop
+                         else [history_x[best_idx]])
         return OptimizeResult(
             best_x=history_x[best_idx],
             best_f=history_f[best_idx],
@@ -79,4 +93,5 @@ class BaseOptimizer(ABC):
             history_f=history_f,
             history_pop=history_pop or [],
             n_evals=len(history_f),
+            final_solutions=[np.asarray(x, dtype=float) for x in solutions],
         )

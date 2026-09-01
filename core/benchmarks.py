@@ -99,6 +99,12 @@ class BenchmarkFunction:
     dim: int = 2
     optima_pos: list[list[float]] | None = None
     tags: list[str] = field(default_factory=list)
+    # CEC2013-niching metadata; None for every other suite. niche_rho is the
+    # radius the official peak counter uses to tell two reported solutions
+    # apart, n_global_optima is K, suite_max_evals the competition budget.
+    niche_rho: float | None = None
+    n_global_optima: int | None = None
+    suite_max_evals: int | None = None
 
     def __post_init__(self) -> None:
         # Single source of truth: derive shape tags from the name unless a caller
@@ -564,6 +570,96 @@ BENCHMARKS_CEC2022_10D_BY_NAME: dict[str, BenchmarkFunction] = {
 }
 
 
+# ── CEC2013 niching suite (low-dimensional multi-global subset) ──────────
+# Li, Engelbrecht & Epitropakis (2013), "Benchmark Functions for CEC'2013
+# Special Session and Competition on Niching Methods for Multimodal Function
+# Optimization". Formulas transcribed from the reference MATLAB implementation
+# (github.com/mikeagn/CEC2013, matlab/niching_func.m); f_goptima, rho, the
+# number of global optima and MaxFEs come from get_fgoptima / get_rho /
+# get_no_goptima / get_maxfes in the same package.
+#
+# The suite is stated as MAXIMISATION. Each function is registered here as
+# `f_goptima - f_raw(x)`, so it minimises to 0 like everything else in this
+# project and the sr_1e-1 .. sr_1e-5 columns coincide exactly with the
+# competition's accuracy levels epsilon.
+#
+# Only the 2-D/3-D subset (N04-N10) is registered. F1-F3 are 1-D and nothing
+# here supports dim=1 (pycma needs N>=2, the visualisations assume 2-D/3-D);
+# F11-F20 are composition functions that need the suite's shift/rotation data
+# files. Both gaps are deliberate — see docs/experiments.md.
+_NICHING_K = np.array([3.0, 4.0])          # modified Rastrigin peak counts (D=2)
+
+
+def _n_himmelblau(x: np.ndarray) -> float:
+    return 200.0 - (x[0] ** 2 + x[1] - 11.0) ** 2 - (x[0] + x[1] ** 2 - 7.0) ** 2
+
+
+def _n_six_hump(x: np.ndarray) -> float:
+    return -((4.0 - 2.1 * x[0] ** 2 + (x[0] ** 4) / 3.0) * x[0] ** 2
+             + x[0] * x[1] + (4.0 * x[1] ** 2 - 4.0) * x[1] ** 2)
+
+
+def _n_shubert(x: np.ndarray) -> float:
+    j = np.arange(1.0, 6.0)
+    prod = 1.0
+    for xi in x:
+        prod *= float(np.sum(j * np.cos((j + 1.0) * xi + j)))
+    return -prod
+
+
+def _n_vincent(x: np.ndarray) -> float:
+    return float(np.mean(np.sin(10.0 * np.log(x))))
+
+
+def _n_mod_rastrigin(x: np.ndarray) -> float:
+    return -float(np.sum(10.0 + 9.0 * np.cos(2.0 * np.pi * _NICHING_K * x)))
+
+
+# (name, raw maximisation function, bounds, f_goptima, dim, #global optima,
+#  rho, suite MaxFEs, tags). Bounds are the official ones except N05 — see below.
+_NICHING_SPECS: list[tuple] = [
+    ("N04-Himmelblau",    _n_himmelblau,    (-6.0, 6.0),   200.0,
+     2, 4,   0.01,  50_000, ["multi-global", "multimodal", "non-separable", "smooth"]),
+    # Official box is x1 in [-1.9, 1.9], x2 in [-1.1, 1.1]. BenchmarkFunction
+    # carries a single range for every axis, so x2 is widened to [-1.9, 1.9].
+    # The two global optima are unchanged (f grows outside the official strip,
+    # so the extra area adds no maximum) and distances are undistorted, which
+    # keeps rho-based peak counting comparable — but the search volume is 1.7x
+    # the official one, so PR here is not comparable to published F5 numbers.
+    ("N05-SixHumpCamel",  _n_six_hump,      (-1.9, 1.9),   1.031628453489877,
+     2, 2,   0.5,   50_000, ["multi-global", "multimodal", "non-separable", "smooth"]),
+    ("N06-Shubert2D",     _n_shubert,       (-10.0, 10.0), 186.730908831024,
+     2, 18,  0.5,  200_000, ["multi-global", "multimodal", "non-separable", "rugged"]),
+    ("N07-Vincent2D",     _n_vincent,       (0.25, 10.0),  1.0,
+     2, 36,  0.2,  200_000, ["multi-global", "multimodal", "separable", "rugged"]),
+    ("N08-Shubert3D",     _n_shubert,       (-10.0, 10.0), 2709.093505572820,
+     3, 81,  0.5,  400_000, ["multi-global", "multimodal", "non-separable", "rugged"]),
+    ("N09-Vincent3D",     _n_vincent,       (0.25, 10.0),  1.0,
+     3, 216, 0.2,  400_000, ["multi-global", "multimodal", "separable", "rugged"]),
+    ("N10-ModRastrigin2D", _n_mod_rastrigin, (0.0, 1.0),   -2.0,
+     2, 12,  0.01, 200_000, ["multi-global", "multimodal", "separable", "smooth"]),
+]
+
+
+def _make_niching(spec: tuple) -> BenchmarkFunction:
+    name, raw, bounds, f_gopt, dim, n_opt, rho, maxfes, tags = spec
+
+    def func(x: np.ndarray, _raw=raw, _f=f_gopt) -> float:
+        return float(_f - _raw(np.asarray(x, dtype=float)))
+
+    return BenchmarkFunction(
+        name=name, func=func, bounds=bounds, optimum=0.0,
+        category="multi-optima", dim=dim, tags=list(tags),
+        niche_rho=rho, n_global_optima=n_opt, suite_max_evals=maxfes,
+    )
+
+
+NICHING_BENCHMARKS: list[BenchmarkFunction] = [_make_niching(s) for s in _NICHING_SPECS]
+NICHING_BENCHMARKS_BY_NAME: dict[str, BenchmarkFunction] = {
+    b.name: b for b in NICHING_BENCHMARKS
+}
+
+
 def make_benchmark_by_name(name: str, dim: int) -> BenchmarkFunction:
     """Reconstruct a fresh benchmark from its name (for use in worker processes).
 
@@ -578,4 +674,7 @@ def make_benchmark_by_name(name: str, dim: int) -> BenchmarkFunction:
     spec = next((s for s in _CEC2022_SPECS if s[1] == name), None)
     if spec is not None:
         return _make_cec2022(spec[0], spec[1], spec[2], dim)
+    spec = next((s for s in _NICHING_SPECS if s[0] == name), None)
+    if spec is not None:
+        return _make_niching(spec)
     raise ValueError(f"Unknown benchmark: {name}")

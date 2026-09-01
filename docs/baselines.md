@@ -20,6 +20,10 @@ MC-ESO と比較する既存最適化手法の一覧と実装詳細。提案手�
 | SaVOA | ウイルス模倣・既存 | 直接比較対象（同じ生物模倣着想だが単一再生メカニズム） |
 | NM-Restart | multistart 局所探索 | **下限ベースライン**（低次元 BBOB では restart 局所探索が非常に強い＝メタヒューリスティクスの意義を示すための基準線） |
 | NCDE | niching DE | **多解比較対象**（Qu+ 2012。PR / MMOsr で MC-ESO の逐次 niching と比較する専門手法） |
+| **Crowding-DE** | crowding DE | 多解比較対象（Thomsen 2004。NCDE から近傍変異だけを外した対照）|
+| **r3pso** | ring-topology lbest PSO | 多解比較対象（Li 2010。**niche 半径を持たない** niching の古典）|
+| **NMMSO** | 多スウォーム niching | 多解比較対象（Fieldsend 2014、`pynmmso` 経由。**公式実装で動く競技上位級**）|
+| **Repel-CMA-ES** | 斥力付き restart ES | 多解比較対象（de Nobel+ 2024 の近似実装。MC-ESO の情報化リスタートの先行例）|
 
 ---
 
@@ -90,6 +94,28 @@ Neighborhood-based Crowding DE（Qu, Suganthan & Liang, 2012）。DE ベース�
 |---|---|---|
 | `n_pop` / `F` / `CR` | 30 / 0.5 / 0.9 | DE ベースラインと同一 |
 | `m` | 6 | 近傍変異の近傍サイズ。`m ≥ n_pop−1` で素の crowding DE（Thomsen 2004）に戻るが、素の crowding は donor が basin をまたぎ deep 精度が出ない（Himmelblau PR@1e-4 が 0% vs m=6 で 80%+）ため近傍変異版を採用 |
+
+---
+
+## Crowding-DE / r3pso / NMMSO / Repel-CMA-ES（多峰スイート用）
+
+多峰スイート用に追加した 4 手法。うち r3pso / NMMSO / Repel-CMA-ES が `--suite niching` の既定に入り、Crowding-DE は NCDE の ablation なので `--methods` で明示したときだけ回る。選定理由と見送った手法（RS-CMSA / HillVallEA / MOMMOP 等）は [related_work.md](related_work.md) を参照。
+
+**既定の 7 手法**は MC-ESO / NM-Restart / IPOP-CMA-ES / Repel-CMA-ES / NCDE / r3pso / NMMSO。1 行 = 答える問い 1 つで選んであり、より高次元の単一解 black-box 向け手法（CMA-ES 単体・PSO・DE・L-SHADE・SaVOA）は既知の理由で多解に弱いので回さない。BIPOP-CMA-ES も restart ES の枠が IPOP と二重になるため既定から外した（Repel-CMA-ES の対照は IPOP）。浮いた計算は予算軸（低予算 × 多解）に回す。
+
+| 手法 | 実装 | 主要パラメータ | 位置づけ |
+|---|---|---|---|
+| **Crowding-DE** | `ncde.py`（`m = n_pop`）| n_pop 30 / F 0.5 / CR 0.9 | 素の crowding DE。NCDE との差 = 近傍変異の寄与。ドナーが basin をまたぐため深精度が落ちる（実測: N04 で PR@1e-4 0.00 vs NCDE 0.25, 2000 評価）|
+| **r3pso** | `r3pso.py` | n_particles 30 / w 0.729 / c1=c2 1.494 / ring 3 | 慣性・加速係数を PSO ベースラインと完全に揃えてあるので、PSO との差は**近傍トポロジのみ**。MC-ESO の系統共存（半径依存）に対する「半径なし niching」の対照 |
+| **NMMSO** | `nmmso.py`（`pynmmso` ラッパ）| swarm_size 10 | スウォームの分裂・併合でニッチ数を自分で決める。再実装でないので「ベースラインの実装が悪い」という反論を封じられる |
+| **Repel-CMA-ES** | `restart_cmaes.py:RepellingCMAESOptimizer` | repel_coverage 0.2 / repel_gamma 0.9 | restart の best を taboo 点にし、その球内に落ちた候補を引き直す。半径は「taboo 集合が箱の `repel_coverage` を塞ぐ」体積条件から決まり、restart が増えるほど自動で縮む |
+
+実装上の注意:
+
+- **NMMSO は最大化**なので符号を反転して渡す。`Nmmso.run` は反復の切れ目でしか予算を見ずオーバーランするため、`max_evals` に達した後の `fitness` は**関数を呼ばずに `-inf` を返す**。評価回数は厳密に一致し、偽の点がモードとして報告されることもない。
+- **Repel-CMA-ES は de Nobel+ 2024 の近似**。棄却判定を Euclid 距離で行っている（原論文は現在の CMA 計量での Mahalanobis 距離 / σ）。`repel_coverage` も本プロジェクトの選択で、斥力の強さを決める唯一のパラメータなので、これに依存する主張をする前に感度を測ること。
+- 多解指標は `final_solutions` だけを見る（[experiments.md](experiments.md#多解報告cec2013-ルール-niching-スイート)）。報告するのは r3pso が全粒子の pbest、NMMSO がモード集合、Repel-CMA-ES が各 restart の best ＋最終集団、Crowding-DE / NCDE が最終集団。
+- 低予算では集団サイズが効く。NCDE / Crowding-DE / r3pso の既定 `n_pop=30` は 2D・5000 評価で 166 世代しか回らないので、負けが手法のせいか設定のせいかは予算を変えて確かめる必要がある。
 
 ---
 

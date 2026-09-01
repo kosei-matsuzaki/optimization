@@ -63,8 +63,9 @@ def _load_summary(run_dir: Path, dim: int) -> dict[str, dict[str, dict]]:
     return out
 
 
-def _load_wilcoxon(run_dir: Path, dim: int) -> dict[tuple[str, str], dict]:
-    path = run_dir / f"dim{dim}" / "wilcoxon.csv"
+def _load_wilcoxon(run_dir: Path, dim: int,
+                   name: str = "wilcoxon.csv") -> dict[tuple[str, str], dict]:
+    path = run_dir / f"dim{dim}" / name
     out: dict[tuple[str, str], dict] = {}
     if not path.exists():
         return out
@@ -118,6 +119,9 @@ def main() -> None:
     ref = args.ref
     summ = _load_summary(args.run_dir, args.dim)
     wil = _load_wilcoxon(args.run_dir, args.dim)
+    # Multi-solution significance lives in its own file: the best_f test says
+    # nothing about how many optima a method reported.
+    wil_pr = _load_wilcoxon(args.run_dir, args.dim, "wilcoxon_pr.csv")
     meta = _meta(args.run_dir)
 
     funcs = sorted(summ)
@@ -167,6 +171,55 @@ def main() -> None:
               f"{srs['sr_1e-4']:>7.1%} {srs['sr_1e-2']:>7.1%} {ev_str} {wl:>11}")
     print(f"  * Wins/Loss = #functions where {ref} is Wilcoxon-significant "
           f"better/worse (p<0.05, two-sided, by A12 direction).")
+
+    # ── 1b. Niching suite: peak ratio over the reported solution set ─────────
+    # Only fires for --suite niching runs (every other suite writes N/A here).
+    nfuncs = [fn for fn in funcs
+              if any(_num(r.get("cec_k", "")) > 0 for r in summ[fn].values())]
+    if nfuncs:
+        print("\n[1b] NICHING - PR over the reported solution set (CEC2013 rules)")
+        # Wilcoxon on per-run peak counts (reference vs each method).
+        pr_better: dict[str, int] = {}
+        pr_worse: dict[str, int] = {}
+        for (fn, m), w in wil_pr.items():
+            if fn not in nfuncs:
+                continue
+            p = _num(w.get("p_value_two_sided", ""))
+            a12 = _num(w.get("a12", ""))
+            if not math.isnan(p) and p < 0.05:
+                if a12 > 0.5:
+                    pr_better[m] = pr_better.get(m, 0) + 1
+                elif a12 < 0.5:
+                    pr_worse[m] = pr_worse.get(m, 0) + 1
+        print(f"  {'method':<14} {'PRmean':>8} {'PR@1e-2':>8} {'PR@1e-4':>8} "
+              f"{'SRall':>7} {'#reported':>10} {'Wins/Loss*':>11}")
+        print("  " + "-" * 72)
+        for m in methods:
+            rows = [summ[fn][m] for fn in nfuncs if m in summ[fn]]
+            if not rows:
+                continue
+            wl = "" if m == ref else f"{pr_better.get(m, 0)}/{pr_worse.get(m, 0)}"
+            print(f"  {m:<14} "
+                  f"{_mean([_num(r['cec_pr_mean']) for r in rows]):>8.2f} "
+                  f"{_mean([_num(r['cec_pr_1e-2']) for r in rows]):>8.2f} "
+                  f"{_mean([_num(r['cec_pr_1e-4']) for r in rows]):>8.2f} "
+                  f"{_mean([_pct(r['cec_sr_mean']) for r in rows]):>6.0%} "
+                  f"{_mean([_num(r['n_reported']) for r in rows]):>10.0f} "
+                  f"{wl:>11}")
+        if not wil_pr:
+            print(f"  * no wilcoxon_pr.csv in this run (peak-count test added "
+                  f"2026-08-30; older runs only have the best_f test)")
+        else:
+            print(f"  * Wins/Loss = #functions where {ref} reports significantly "
+                  f"more/fewer peaks (paired Wilcoxon on per-run peak counts, p<0.05)")
+        print("\n  per function (PRmean; K = number of global optima)")
+        print("  " + f"{'function':<26}" + "".join(f"{m[:11]:>12}" for m in methods))
+        for fn in nfuncs:
+            k = int(max(_num(r.get("cec_k", "0")) for r in summ[fn].values()))
+            cells = "".join(
+                f"{_num(summ[fn][m]['cec_pr_mean']):>12.2f}" if m in summ[fn]
+                else f"{'---':>12}" for m in methods)
+            print(f"  {fn + f' (K={k})':<26}{cells}")
 
     # ── 2. SR@1e-10 non-regression check (the hard rule) ────────────────────
     # Two modes:

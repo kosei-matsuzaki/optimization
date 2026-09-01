@@ -15,6 +15,7 @@
 | **[docs/mceso.md](docs/mceso.md)** | MC-ESO のコンセプト・3 チャネル / 3 機構・最新アーキテクチャ・パラメータ・既存手法との差別化 |
 | **[docs/baselines.md](docs/baselines.md)** | 比較対象の既存手法（CMA-ES / IPOP・BIPOP / PSO / DE / L-SHADE / SaVOA）の実装詳細 |
 | **[docs/experiments.md](docs/experiments.md)** | ディレクトリ構造・実行方法（run.sh）・実験条件・ベンチマーク関数・評価基準・結果の見方 |
+| **[docs/related_work.md](docs/related_work.md)** | 多峰（niching）分野の関連研究 — 標準ベンチマーク・指標・SOTA と MC-ESO 各機構の先行例 |
 | **[docs/history.md](docs/history.md)** | これまで試した工夫・フラグ・ablation 記録（採用 / 不採用とその理由） |
 | **[docs/web.md](docs/web.md)** | Results UI（Flask アプリの構成・アーキテクチャ・ルート / API） |
 
