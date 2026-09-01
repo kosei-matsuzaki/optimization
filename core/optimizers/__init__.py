@@ -13,6 +13,7 @@ Classic / proposed baselines:
   ncde            NCDEOptimizer                  (niching / multi-solution reference)
   r3pso           RingPSOOptimizer               (ring-topology lbest PSO, no niche radius)
   nmmso           NMMSOOptimizer                 (multi-swarm niching, via pynmmso)
+  map_elites      MAPElitesOptimizer             (quality-diversity baseline)
 Stronger external-library baselines (formerly optimizers_modern.py):
   lshade          LSHADEOptimizer
   restart_cmaes   IPOPCMAESOptimizer, BIPOPCMAESOptimizer, RepellingCMAESOptimizer
@@ -31,6 +32,8 @@ from .nelder_mead import MultistartNelderMeadOptimizer
 from .ncde import NCDEOptimizer
 from .r3pso import RingPSOOptimizer
 from .nmmso import NMMSOOptimizer
+from .map_elites import MAPElitesOptimizer
+from .mceso_crowding import MCESOCrowding
 from .lshade import LSHADEOptimizer
 from .restart_cmaes import (IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
                             RepellingCMAESOptimizer)
@@ -41,7 +44,7 @@ __all__ = [
     "MCESONoSpillover", "MCESORandomRestart", "MCESONoBoundarySnap", "MCESOEndemic",
     "PSOOptimizer", "DEOptimizer", "SaVOAOptimizer",
     "MultistartNelderMeadOptimizer", "NCDEOptimizer",
-    "RingPSOOptimizer", "NMMSOOptimizer",
+    "RingPSOOptimizer", "NMMSOOptimizer", "MAPElitesOptimizer", "MCESOCrowding",
     "LSHADEOptimizer", "IPOPCMAESOptimizer", "BIPOPCMAESOptimizer",
     "RepellingCMAESOptimizer",
 ]

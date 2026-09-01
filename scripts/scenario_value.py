@@ -37,7 +37,8 @@ from core.benchmarks import BENCHMARKS_BY_NAME                      # noqa: E402
 from core.optimizers import (MultiChannelEpidemicOptimizer,          # noqa: E402
                              NCDEOptimizer, RingPSOOptimizer, NMMSOOptimizer,
                              MultistartNelderMeadOptimizer,
-                             IPOPCMAESOptimizer, DEOptimizer, PSOOptimizer)
+                             IPOPCMAESOptimizer, DEOptimizer, PSOOptimizer,
+                             MAPElitesOptimizer, MCESOCrowding)
 
 _METHODS = {
     "MC-ESO":     (MultiChannelEpidemicOptimizer, {}),
@@ -54,6 +55,13 @@ _METHODS = {
     #   DE vs Crowding-DE parent replacement vs nearest replacement, same mutation
     "PSO":        (PSOOptimizer, {}),
     "Crowding-DE": (NCDEOptimizer, {"m": 30}),
+    # Quality-diversity, the framing this study kept invoking without measuring.
+    # Descriptor = first two coordinates (see MAPElitesOptimizer), the standard
+    # convention for continuous test functions.
+    "MAP-Elites": (MAPElitesOptimizer, {}),
+    # The design principle under test: same search, nearest-neighbour
+    # replacement instead of rollback against the host a child replaced.
+    "MC-ESO-crowd": (MCESOCrowding, {}),
 }
 _FUNCS = ["F03-RastriginSep", "F15-RastriginRot", "F21-Gallagher101", "F17-SchafferF7"]
 

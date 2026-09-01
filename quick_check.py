@@ -22,7 +22,7 @@ from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
     DEOptimizer, SaVOAOptimizer,
     MultistartNelderMeadOptimizer, NCDEOptimizer,
-    RingPSOOptimizer, NMMSOOptimizer,
+    RingPSOOptimizer, NMMSOOptimizer, MAPElitesOptimizer,
     LSHADEOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
     RepellingCMAESOptimizer,
 )
@@ -182,7 +182,7 @@ _NICHING_NAMES: list[str] = sorted(NICHING_BENCHMARKS_BY_NAME)
 # neighbourhood mutation, not a competitor) stay selectable via --methods.
 _NICHING_METHODS: list[str] = [
     "MC-ESO", "NM-Restart", "IPOP-CMA-ES", "Repel-CMA-ES",
-    "NCDE", "r3pso", "NMMSO",
+    "NCDE", "r3pso", "NMMSO", "MAP-Elites",
 ]
 
 # BBOB registries keyed by dimension. n = 2, 3, 5, 10, 20 are supported for the
@@ -228,6 +228,8 @@ _OPTIMIZERS = {
     "r3pso":        (RingPSOOptimizer,              {}),
     #  Multi-swarm niching (Fieldsend 2014) through the published pynmmso.
     "NMMSO":        (NMMSOOptimizer,                {}),
+    #  Quality-diversity (Mouret & Clune 2015), descriptor = first two coords.
+    "MAP-Elites":   (MAPElitesOptimizer,            {}),
     #  Repelling restart CMA-ES (de Nobel+ 2024): the published analogue of
     #  MC-ESO's basin-memory spillover.
     "Repel-CMA-ES": (RepellingCMAESOptimizer,       {}),
