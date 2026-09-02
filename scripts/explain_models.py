@@ -71,28 +71,60 @@ def main() -> None:
     print("set property vs performance, per scenario model")
     print("spread = mean pairwise distance of the reported top K (span-relative)")
     print("quality = mean f of the top K, normalised by the spread of local optima")
-    print("(quality is a cost, so a negative correlation means better sets score higher)\n")
-    print(f"{'model':<12}{'n':>5}{'rho(spread)':>13}{'rho(distinct)':>15}"
-          f"{'rho(quality)':>14}")
-    print("-" * 59)
+    print("(quality is a cost, so a negative correlation means better sets score higher)")
+    print("")
+    print("Correlated WITHIN each function, then averaged over functions. Pooling")
+    print("functions instead would mostly measure how the properties differ")
+    print("between functions, whose scales differ by orders of magnitude; the")
+    print("pooled value is printed alongside so that gap stays visible.")
+    print("'agree' counts functions whose rho has the sign of the mean.")
+    print("")
+    print(f"{'model':<11}{'fn':>4}{'spread':>19}{'distinct':>19}{'quality':>19}")
+    print(f"{'':<11}{'':>4}{'mean (agree)  pool':>19}{'mean (agree)  pool':>19}"
+          f"{'mean (agree)  pool':>19}")
+    print("-" * 72)
 
     per_model: dict[str, dict[str, float]] = {}
     for model, path in _MODELS.items():
-        p = Path(path)
-        if not p.exists():
-            print(f"{model:<12}{'(missing ' + path + ')':>48}")
+        mp = Path(path)
+        if not mp.exists():
+            print(f"{model:<11}{'(missing ' + path + ')':>61}")
             continue
-        a12 = _a12_by_method(p)
+        a12 = _a12_by_method(mp)
         keys = [k for k in a12 if k in prop]
         if len(keys) < 10 or spearmanr is None:
-            print(f"{model:<12}{len(keys):>5}   (too few paired rows)")
+            print(f"{model:<11}{len(keys):>4}   (too few paired rows)")
             continue
-        y = np.array([a12[k] for k in keys])
-        X = np.array([prop[k] for k in keys])
-        rhos = [float(spearmanr(X[:, j], y).statistic) for j in range(3)]
-        per_model[model] = dict(zip(("spread", "distinct", "quality"), rhos))
-        print(f"{model:<12}{len(keys):>5}{rhos[0]:>13.2f}{rhos[1]:>15.2f}"
-              f"{rhos[2]:>14.2f}")
+
+        by_fn: dict[str, list[tuple[str, str]]] = collections.defaultdict(list)
+        for k in keys:
+            by_fn[k[0]].append(k)
+
+        cells, means = [], {}
+        for j, prop_name in enumerate(("spread", "distinct", "quality")):
+            rs = []
+            for fn, ks in by_fn.items():
+                if len(ks) < 5:
+                    continue
+                xv = np.array([prop[k][j] for k in ks])
+                yv = np.array([a12[k] for k in ks])
+                if np.ptp(xv) == 0 or np.ptp(yv) == 0:
+                    continue
+                r = float(spearmanr(xv, yv).statistic)
+                if not np.isnan(r):
+                    rs.append(r)
+            pooled = float(spearmanr(np.array([prop[k][j] for k in keys]),
+                                     np.array([a12[k] for k in keys])).statistic)
+            if rs:
+                m = float(np.mean(rs))
+                agree = sum(1 for r in rs if (r > 0) == (m > 0))
+                means[prop_name] = m
+                cells.append(f"{m:>6.2f} ({agree:>2}/{len(rs):<2}){pooled:>6.2f}")
+            else:
+                cells.append("-")
+        per_model[model] = means
+        print(f"{model:<11}{len(by_fn):>4}" + "".join(f"{c:>19}" for c in cells))
+
 
     # Method-level view: average A12 per method under each model, next to the
     # method's average set properties. Correlations pool functions, which can
