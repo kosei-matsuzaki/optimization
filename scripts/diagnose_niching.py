@@ -41,19 +41,36 @@ class _CountingMCESO(MultiChannelEpidemicOptimizer):
         self.n_spillover = 0
         self.n_basin_switch = 0
         self.n_exhausted = 0
+        self._last_exhausted = False
         self.hunts: list[tuple[int, float]] = []   # (eval index, basin best f)
+        # One row per hunt: where it ended, how deep it got, where, and *why* it
+        # was released. `exhausted` is read from the cached value of the last
+        # `_basin_exhausted` call (the spillover path always evaluates it on this
+        # same state just before this hook), so nothing is re-evaluated here.
+        self.hunt_rows: list[dict] = []
         return super().optimize(max_evals)
 
     def _basin_exhausted(self, st) -> bool:
         out = super()._basin_exhausted(st)
         self.n_exhausted += int(bool(out))
+        self._last_exhausted = bool(out)
         return out
 
     def _on_spillover_start(self, st, basin_switch: bool) -> None:
         self.n_spillover += 1
         self.n_basin_switch += int(bool(basin_switch))
         # What the hunt that is ending here achieved, and when.
+        best_i = int(np.argmin(st.pop_f))
         self.hunts.append((len(st.history_f), float(min(st.pop_f))))
+        self.hunt_rows.append({
+            "eval": len(st.history_f),
+            "f": float(st.pop_f[best_i]),
+            "x": np.asarray(st.pop_x[best_i], dtype=float).copy(),
+            "switch": bool(basin_switch),
+            "exhausted": bool(self._last_exhausted),
+            "sigma_span": float(st.sigma) / float(st.span),
+            "no_improve": int(st.no_improve),
+        })
         return super()._on_spillover_start(st, basin_switch)
 
 
@@ -132,6 +149,11 @@ def main() -> None:
                     default="N04-Himmelblau,N06-Shubert2D,N07-Vincent2D,N10-ModRastrigin2D")
     ap.add_argument("--csv", type=str, default=None,
                     help="write the per-(function, seed, eps) rows here")
+    ap.add_argument("--hunt-csv", type=str, default=None,
+                    help="write one row per hunt (spillover event) here: how deep "
+                         "it got, where, and why it was released. Splits 'the "
+                         "search never reaches the basin' from 'it reaches it and "
+                         "is cut off mid-descent'.")
     args = ap.parse_args()
 
     eps_list = [float(s) for s in args.eps.split(",")]
@@ -143,6 +165,7 @@ def main() -> None:
           f"{'blocked':>8}{'|rep|':>7}{'spill':>7}{'hunts':>7}{'best_f':>11}")
     print("-" * 132)
     csv_rows = []
+    hunt_rows: list[list] = []
     for name in [s.strip() for s in args.funcs.split(",")]:
         b = NICHING_BENCHMARKS_BY_NAME[name]
         cap = max(100, 2 * b.n_global_optima)   # core.runner._niching_counts
@@ -166,6 +189,24 @@ def main() -> None:
             # so build it once and score it at every accuracy.
             rx, rf = reselect_from_history(hx, hf, b.niche_rho, cap)
             runs.append((seed, hx, hf, sx, sf, rx, rf, opt, r))
+
+            if args.hunt_csv:
+                # rho-greedy over the hunt endpoints, best-f first: how many
+                # *distinct* basins the hunts actually ended in. Duplication here
+                # is the question's rejection condition (descent is fine, the
+                # hunts keep landing in basins already held).
+                hr = opt.hunt_rows
+                if hr:
+                    hxs = np.array([h["x"] for h in hr], dtype=float)
+                    hfs = np.array([h["f"] for h in hr], dtype=float)
+                    order = np.argsort(hfs)
+                    keep = set(int(order[i]) for i in
+                               _seed_indices(hxs[order], b.niche_rho))
+                    for j, h in enumerate(hr):
+                        hunt_rows.append([name, b.n_global_optima, seed, j,
+                                          h["eval"], h["f"], int(h["switch"]),
+                                          int(h["exhausted"]), h["sigma_span"],
+                                          h["no_improve"], int(j in keep)])
 
         for eps in eps_list:
             rows = []
@@ -207,6 +248,16 @@ def main() -> None:
                         "spillover", "basin_switch", "hunts", "landed", "best_f"])
             w.writerows(csv_rows)
         print(f"\nwrote {args.csv} ({len(csv_rows)} rows)")
+
+    if args.hunt_csv:
+        import csv as _csv
+        Path(args.hunt_csv).parent.mkdir(parents=True, exist_ok=True)
+        with open(args.hunt_csv, "w", newline="") as fh:
+            w = _csv.writer(fh)
+            w.writerow(["function", "K", "seed", "hunt", "eval", "f", "switch",
+                        "exhausted", "sigma_span", "no_improve", "distinct"])
+            w.writerows(hunt_rows)
+        print(f"wrote {args.hunt_csv} ({len(hunt_rows)} hunts)")
 
     print("\nvisited >> reported -> optima are found and then dropped from the "
           "reported set (a recording problem).")
