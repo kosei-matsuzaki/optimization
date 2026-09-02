@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.benchmarks import NICHING_BENCHMARKS_BY_NAME          # noqa: E402
 from core.optimizers import MultiChannelEpidemicOptimizer        # noqa: E402
 from core.optimizers.mceso_adaptive_repel import AdaptiveRepelMCESO  # noqa: E402
+from core.optimizers.mceso_commit_reseed import CommitReseedMCESO    # noqa: E402
 from core.runner import _seed_indices, count_goptima             # noqa: E402
 
 
@@ -84,6 +85,10 @@ class _CountingAdaptiveMCESO(_HuntCounters, AdaptiveRepelMCESO):
     """The adaptive-repel diagnostic variant, instrumented the same way."""
 
 
+class _CountingCommitMCESO(_HuntCounters, CommitReseedMCESO):
+    """The commit-to-one-draw diagnostic variant, instrumented the same way."""
+
+
 # variant name -> (class, constructor kwargs)
 _VARIANTS: dict[str, tuple[type, dict]] = {
     "base": (_CountingMCESO, {}),
@@ -96,7 +101,33 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
     # Identity check: the variant class with its override disabled must
     # reproduce `base` exactly.
     "adaptive_off": (_CountingAdaptiveMCESO, {"repel_mode": "off"}),
+    # The basin switch commits the whole population to a single repelled draw
+    # instead of racing n_pop independent ones. See mceso_commit_reseed.py.
+    "commit": (_CountingCommitMCESO, {"commit_sigma_mode": "place"}),
+    "commit_sigma": (_CountingCommitMCESO, {"commit_sigma_mode": "run"}),
+    # Commitment on top of the basin-scale repel radius (entry 22's draw rule).
+    "commit_adaptive": (_CountingCommitMCESO, {"commit_sigma_mode": "run",
+                                               "repel_mode": "adaptive"}),
+    # How tight the commitment has to be: 0.1 x the local basin spacing instead
+    # of 0.25 x. Separates "commit" from "commit *narrowly*".
+    "commit_tight": (_CountingCommitMCESO, {"commit_sigma_mode": "run",
+                                            "commit_sigma_ratio": 0.1}),
+    # Identity check for the commit class.
+    "commit_off": (_CountingCommitMCESO, {"commit_mode": "off"}),
+    # Control: base restart draws (the best-of-n_pop race is kept) with only the
+    # post-restart sigma taken down to the local basin scale.
+    "sigma_only": (_CountingCommitMCESO, {"commit_mode": "sigma_only",
+                                          "commit_sigma_mode": "run",
+                                          "commit_sigma_ratio": 0.1}),
 }
+# How tight the commitment has to be: the same variant at a sweep of spreads,
+# as a fraction of the locally observed basin spacing. `commit_tight` is r010.
+_VARIANTS.update({
+    f"commit_r{int(round(r * 1000)):03d}": (
+        _CountingCommitMCESO,
+        {"commit_sigma_mode": "run", "commit_sigma_ratio": r})
+    for r in (0.25, 0.10, 0.05, 0.02, 0.01)
+})
 
 
 def _distinct_points(X: np.ndarray, F: np.ndarray, rho: float) -> int:

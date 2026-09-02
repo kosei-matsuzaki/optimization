@@ -37,6 +37,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.benchmarks import NICHING_BENCHMARKS_BY_NAME              # noqa: E402
 from core.optimizers import MultiChannelEpidemicOptimizer           # noqa: E402
 from core.optimizers.mceso_adaptive_repel import AdaptiveRepelMCESO  # noqa: E402
+from core.optimizers.mceso_commit_reseed import CommitReseedMCESO      # noqa: E402
 from scripts.hunt_coverage import vincent_optima                    # noqa: E402
 
 
@@ -69,7 +70,8 @@ def _tracer(base_cls):
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--variant", default="base", choices=["base", "adaptive"])
+    ap.add_argument("--variant", default="base",
+                    choices=["base", "adaptive", "commit_tight"])
     ap.add_argument("--func", default="N07-Vincent2D")
     ap.add_argument("--evals", type=int, default=20000)
     ap.add_argument("--seeds", type=int, default=3)
@@ -87,9 +89,20 @@ def main() -> None:
     width = D.min(axis=1)          # nearest-neighbour spacing per optimum
     assert len(opt_pts) == b.n_global_optima, (len(opt_pts), b.n_global_optima)
 
-    cls = (_tracer(MultiChannelEpidemicOptimizer) if args.variant == "base"
-           else _tracer(AdaptiveRepelMCESO))
-    kw = {} if args.variant == "base" else {"repel_mode": "adaptive"}
+    _CLS = {"base": (MultiChannelEpidemicOptimizer, {}),
+            "adaptive": (AdaptiveRepelMCESO, {"repel_mode": "adaptive"}),
+            # The whole population committed to one draw, spread at 0.1x the
+            # locally observed basin spacing (scripts/diagnose_niching.py's
+            # `commit_tight`). Note the tracer records *every* diversified draw,
+            # so for this variant the "draws" of a hunt are the anchor plus the
+            # cloud placed around it -- `distinct optima drawn near` therefore
+            # measures the committed placement, not an independent draw per slot.
+            "commit_tight": (CommitReseedMCESO,
+                             {"commit_sigma_mode": "run",
+                              "commit_sigma_ratio": 0.1})}
+    base_cls, kw = _CLS[args.variant]
+    cls = _tracer(base_cls)
+    kw = dict(kw)
     if args.sigma is not None:
         kw["sigma"] = args.sigma
 
