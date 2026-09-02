@@ -70,22 +70,31 @@ def main() -> None:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--evals", type=int, default=25000)
     ap.add_argument("--seeds", type=int, default=5)
-    ap.add_argument("--eps", type=float, default=1e-4)
+    ap.add_argument("--eps", type=str, default="1e-4",
+                    help="one accuracy, or a comma list. Several values are all "
+                         "scored off the *same* runs, so relaxing the accuracy "
+                         "costs no extra evaluations.")
     ap.add_argument("--variant", type=str, default="base",
                     help="base | localwin (post-exhaustion pacing on the basin)")
     ap.add_argument("--funcs", type=str,
                     default="N04-Himmelblau,N06-Shubert2D,N07-Vincent2D,N10-ModRastrigin2D")
+    ap.add_argument("--csv", type=str, default=None,
+                    help="write the per-(function, seed, eps) rows here")
     args = ap.parse_args()
 
+    eps_list = [float(s) for s in args.eps.split(",")]
+
     print(f"MC-ESO niching diagnosis   evals={args.evals}  seeds={args.seeds}  "
-          f"eps={args.eps:g}")
-    print(f"{'function':<20}{'K':>4}{'visited':>9}{'reported':>9}{'distinct':>9}"
-          f"{'|rep|':>7}{'spill':>7}{'switch':>7}{'hunts':>7}{'landed':>7}"
-          f"{'yield':>7}{'best_f':>11}")
-    print("-" * 104)
+          f"eps={','.join(f'{e:g}' for e in eps_list)}")
+    print(f"{'function':<20}{'K':>4}{'eps':>8}{'visited':>9}{'reported':>9}"
+          f"{'distinct':>9}{'blocked':>8}{'|rep|':>7}{'spill':>7}{'switch':>7}"
+          f"{'hunts':>7}{'landed':>7}{'yield':>7}{'best_f':>11}")
+    print("-" * 128)
+    csv_rows = []
     for name in [s.strip() for s in args.funcs.split(",")]:
         b = NICHING_BENCHMARKS_BY_NAME[name]
-        rows = []
+        # One run per seed; every accuracy is scored off these same runs.
+        runs = []
         for seed in range(args.seeds):
             kw = {"localwin": {"exhausted_local_window": True},
                   "fast": {"hunt_no_improve_mult": 0.5},
@@ -95,31 +104,54 @@ def main() -> None:
 
             hx = np.asarray(r.history_x, dtype=float)
             hf = np.asarray(r.history_f, dtype=float)
-            visited = count_goptima(hx, hf, b.n_global_optima, b.niche_rho, args.eps)
-
             sx = np.asarray(r.final_solutions or [r.best_x], dtype=float)
             sf = np.array([float(b.func(x)) for x in sx])
-            reported = count_goptima(sx, sf, b.n_global_optima, b.niche_rho, args.eps)
+            runs.append((seed, hx, hf, sx, sf, opt, r))
 
-            # Hunt yield: a hunt "landed" if the basin it abandoned was within
-            # eps of the global value — i.e. the restart cycle actually produced
-            # a solution rather than being cut off mid-descent.
-            hunts = opt.hunts
-            landed = sum(1 for _, f in hunts if f <= args.eps)
-            rows.append((visited, reported, _distinct_points(sx, sf, b.niche_rho),
-                         len(sx), opt.n_spillover, opt.n_basin_switch,
-                         len(hunts), landed, r.best_f))
-        m = np.mean(np.array(rows, dtype=float), axis=0)
-        y = m[7] / m[6] if m[6] else float("nan")
-        print(f"{name:<20}{b.n_global_optima:>4}{m[0]:>9.1f}{m[1]:>9.1f}{m[2]:>9.1f}"
-              f"{m[3]:>7.0f}{m[4]:>7.1f}{m[5]:>7.1f}{m[6]:>7.1f}{m[7]:>7.1f}"
-              f"{y:>7.2f}{m[8]:>11.1e}")
+        for eps in eps_list:
+            rows = []
+            for seed, hx, hf, sx, sf, opt, r in runs:
+                visited = count_goptima(hx, hf, b.n_global_optima, b.niche_rho, eps)
+                reported = count_goptima(sx, sf, b.n_global_optima, b.niche_rho, eps)
+                # rho-separated points in the reported set regardless of accuracy;
+                # `blocked` is how many of those niches are held by a point that
+                # misses eps, which is what count_goptima refuses to score.
+                distinct = _distinct_points(sx, sf, b.niche_rho)
+
+                # Hunt yield: a hunt "landed" if the basin it abandoned was within
+                # eps of the global value — i.e. the restart cycle actually produced
+                # a solution rather than being cut off mid-descent.
+                hunts = opt.hunts
+                landed = sum(1 for _, f in hunts if f <= eps)
+                rows.append((visited, reported, distinct, distinct - reported,
+                             len(sx), opt.n_spillover, opt.n_basin_switch,
+                             len(hunts), landed, r.best_f))
+                csv_rows.append([name, b.n_global_optima, eps, seed, args.evals,
+                                 *rows[-1]])
+            m = np.mean(np.array(rows, dtype=float), axis=0)
+            y = m[8] / m[7] if m[7] else float("nan")
+            print(f"{name:<20}{b.n_global_optima:>4}{eps:>8.0e}{m[0]:>9.1f}"
+                  f"{m[1]:>9.1f}{m[2]:>9.1f}{m[3]:>8.1f}{m[4]:>7.0f}{m[5]:>7.1f}"
+                  f"{m[6]:>7.1f}{m[7]:>7.1f}{m[8]:>7.1f}{y:>7.2f}{m[9]:>11.1e}")
+
+    if args.csv:
+        import csv as _csv
+        Path(args.csv).parent.mkdir(parents=True, exist_ok=True)
+        with open(args.csv, "w", newline="") as fh:
+            w = _csv.writer(fh)
+            w.writerow(["function", "K", "eps", "seed", "evals", "visited",
+                        "reported", "distinct", "blocked", "n_reported_pts",
+                        "spillover", "basin_switch", "hunts", "landed", "best_f"])
+            w.writerows(csv_rows)
+        print(f"\nwrote {args.csv} ({len(csv_rows)} rows)")
 
     print("\nvisited >> reported -> optima are found and then dropped from the "
           "reported set (a recording problem).")
     print("visited ~= reported -> the search itself stops finding new optima.")
     print("distinct << |rep|   -> the reported set is mostly duplicates of the "
           "same basins.")
+    print("blocked > 0        -> reported niches are held by points that miss "
+          "eps, so they score nothing.")
 
 
 if __name__ == "__main__":

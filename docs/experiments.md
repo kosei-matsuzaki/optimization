@@ -106,6 +106,7 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 |---|---|
 | `scripts/analyze_quick.py <run_dir> [--baseline <dir>] [--baseline-method <name>] [--dim N]` | quick 結果（`summary.csv`/`wilcoxon.csv`）を規定の **3 指標**（SR / `evals_succ_mean` / Wilcoxon）に集計し、SR@1e-10 主指標・関数別の改善/悪化・SR@1e-10 非回帰チェック・判定を出力。SR@1e-10 非回帰チェックは2モード: `--baseline <旧run_dir>`（cross-run, 同名 MC-ESO を run 間で差分） / `--baseline-method <名前>`（within-run, 同一 run 内の元版と差分。**改変 MC-ESO と元 MC-ESO の 2 手法のみ**を `--methods "MC-ESO,<元名>"` で回したとき用）。CSV を手で読む代わりにこれで報告する |
 | サブエージェント `experimenter`（`.claude/agents/`） | 「比較手法設定 → `./run.sh quick` 実行 → monitor → `analyze_quick.py` で分析 → 判定を返す」一連を独立コンテキストで完結。手法ブラッシュアップ中に本会話を汚さず評価を回すためのもの（評価専任・コードは変更しない） |
+| `scripts/diagnose_niching.py [--evals N] [--seeds N] [--eps 1e-1,1e-3,1e-5] [--funcs ...] [--csv PATH]` | CEC2013 niching で MC-ESO の **visited（走行中に触れた大域最適）と reported（報告集合の大域最適）を分けて数える**。`visited ≫ reported` なら記録の問題（追加評価ゼロで直る）、`visited ≈ reported` なら探索の問題。`distinct` は報告集合の rho 分離点数（重複報告の検査）、`blocked` はそのうち eps を外して 0 点になる数。**`--eps` はカンマ列を取り、すべて同じ run から採点する**（精度水準を増やしても再最適化は起きない）。**visited は eps に強く依存するので 1 水準だけで判断しないこと**（2026-08-31 の測定は ε=1e-4 単独で「Vincent は探索が届いていない」と誤結論した） |
 
 ---
 
