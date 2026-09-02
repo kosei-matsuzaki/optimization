@@ -195,6 +195,14 @@ def main() -> None:
                          "the K furthest-apart solutions no worse than tau below "
                          "the best. These cost no extra evaluations, so several "
                          "are scored at once.")
+    ap.add_argument("--postprocess", type=float, default=None,
+                    metavar="TAU",
+                    help="also score, for every method, the set obtained by "
+                         "applying the same distance-within-tolerance rule to "
+                         "that method's own reported solutions (suffix '+s'). "
+                         "This is the rule as a proposal: the search is "
+                         "untouched and only the choice of what to report "
+                         "changes.")
     ap.add_argument("--cut", type=float, default=0.25,
                     help="constraint only: how far off centre the forbidden "
                          "half-space may be cut, as a fraction of the span. Larger "
@@ -287,6 +295,15 @@ def main() -> None:
                         break
                 sets[m] = np.array(kept)
                 sizes.setdefault(m, []).append(len(rep))
+                if args.postprocess is not None and len(rep) > args.k:
+                    # The same rule applied to what the method itself returned,
+                    # rather than to the offline pool. This is the form a
+                    # proposal would take: leave the search alone and change
+                    # only which of its solutions get reported.
+                    f_rep = np.array([f(x) for x in rep])
+                    idx = _spread_within(rep, f_rep, spread, args.k,
+                                         args.postprocess)
+                    sets[f"{m}+s"] = rep[idx]
 
             # Reference rules from the multistart pool, same budget in spirit.
             sets["quality"] = pool[np.argsort(f_pool)[:args.k]]
