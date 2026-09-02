@@ -93,6 +93,30 @@ def _greedy_complement(vals, opt, k):
     return chosen
 
 
+def _spread_within(pool, f_pool, spread, k, tau):
+    """The K furthest-apart solutions that are still within tau of the best.
+
+    The alternative to reporting the K best. Losses under a forbidden region
+    come entirely from scenarios that delete every reported point, and how often
+    that happens is set by how far apart the points are, so this trades a
+    bounded amount of nominal quality for distance. tau is in units of the
+    pool's own spread of local optima, so tau=0 collapses to the K best.
+    """
+    ok = np.flatnonzero(f_pool <= f_pool.min() + tau * spread)
+    if len(ok) <= k:
+        return list(np.argsort(f_pool)[:k])
+    order = ok[np.argsort(f_pool[ok])]
+    chosen = [int(order[0])]                       # always keep the best one
+    while len(chosen) < k:
+        d = np.min([np.linalg.norm(pool[ok] - pool[c], axis=1) for c in chosen],
+                   axis=0)
+        nxt = int(ok[int(np.argmax(d))])
+        if nxt in chosen:
+            break
+        chosen.append(nxt)
+    return chosen
+
+
 def _make_scenarios(args, name, f, lo, hi, span, dim, spread, rng, n_all):
     """Return q(x, s): the objective as it turns out to be under scenario s.
 
@@ -164,6 +188,13 @@ def main() -> None:
                          "reported, which is the setting the field's justification "
                          "describes.")
     ap.add_argument("--tilt", type=float, default=1.0)
+    ap.add_argument("--tau", type=float, nargs="*",
+                    default=[0.1, 0.25, 0.5, 1.0],
+                    help="quality tolerances, in units of the pool's spread of "
+                         "local optima, for the 'spread@T' reference rule: report "
+                         "the K furthest-apart solutions no worse than tau below "
+                         "the best. These cost no extra evaluations, so several "
+                         "are scored at once.")
     ap.add_argument("--cut", type=float, default=0.25,
                     help="constraint only: how far off centre the forbidden "
                          "half-space may be cut, as a fraction of the span. Larger "
@@ -263,6 +294,9 @@ def main() -> None:
             idx = _greedy_complement(pool_vals[:, tr], pool_vals[:, tr].min(axis=0),
                                      args.k)
             sets["complement"] = pool[idx]
+            for tau in args.tau:
+                sets[f"spread@{tau:g}"] = pool[_spread_within(pool, f_pool, spread,
+                                                              args.k, tau)]
 
             vals = {m: score(P) for m, P in sets.items()}
             for v in vals.values():
