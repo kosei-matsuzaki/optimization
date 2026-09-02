@@ -37,11 +37,15 @@ BASE = "quality"
 
 def _load(path: Path):
     d: dict[tuple[str, str], dict[tuple[int, int], float]] = collections.defaultdict(dict)
+    # Width the adaptive rule chose, one value per (function, method, seed).
+    eff: dict[str, dict[tuple[str, int], float]] = collections.defaultdict(dict)
     with open(path, newline="") as fh:
         for r in csv.DictReader(fh):
             d[(r["function"], r["method"])][(int(r["seed"]), int(r["scenario"]))] = \
                 float(r["regret"])
-    return d
+            if r.get("tau_eff"):
+                eff[r["method"]][(r["function"], int(r["seed"]))] = float(r["tau_eff"])
+    return d, eff
 
 
 def main() -> None:
@@ -52,13 +56,18 @@ def main() -> None:
     args = ap.parse_args()
 
     per_model: dict[str, dict[str, tuple[int, int, int]]] = {}
+    per_model_eff: dict[str, dict[str, dict]] = {}
     taus: list[str] = []
     for path in args.rows:
-        d = _load(path)
+        d, eff = _load(path)
+        per_model_eff[re.sub(r"^tau_|\.csv$", "", path.name)] = eff
         model = re.sub(r"^tau_|\.csv$", "", path.name)
         funcs = sorted({k[0] for k in d})
-        rules = sorted({k[1] for k in d if k[1].startswith("spread@")},
-                       key=lambda m: float(m.split("@")[1]))
+        # 'spread@T' is the fixed-width rule; 'spreadN@N' and 'spreadNc{cap}@N'
+        # are the adaptive ones, which set the number of candidates in the band
+        # instead of its width. Group by family, order by the level inside it.
+        rules = sorted({k[1] for k in d if re.match(r"^spread\w*@", k[1])},
+                       key=lambda m: (m.split("@")[0], float(m.split("@")[1])))
         taus = taus or rules
         out = {}
         for m in rules:
@@ -95,13 +104,13 @@ def main() -> None:
           f"alpha={args.alpha}")
     print("(a tolerance usable without knowing the model must not lose functions "
           "under any of them)\n")
-    head = f"{'tolerance':<12}"
+    head = f"{'tolerance':<18}"
     for mo in models:
         head += f"{mo:>18}"
     print(head + f"{'worst':>8}")
     print("-" * len(head + f"{'worst':>8}"))
     for m in taus:
-        line = f"{m:<12}"
+        line = f"{m:<18}"
         worst = 10 ** 9
         for mo in models:
             b, w, _, _, _ = per_model[mo][m]
@@ -113,18 +122,36 @@ def main() -> None:
 
     print("\ncells where the band held no more than K candidates, so the rule "
           "returned the top K and the comparison is a tie by construction:")
-    head = f"{'tolerance':<12}"
+    head = f"{'tolerance':<18}"
     for mo in models:
         head += f"{mo:>18}"
     print(head)
     for m in taus:
-        line = f"{m:<12}"
+        line = f"{m:<18}"
         for mo in models:
             _, _, _, mf, cl = per_model[mo][m]
             line += f"{f'{mf}/{cl}':>18}"
         print(line)
     print("a tolerance that misfires on most cells is not being tested; give the "
           "pool more starts (--pool-starts) before reading its row above.")
+
+    adaptive = [m for m in taus if not m.startswith("spread@")
+                and any(per_model_eff[mo].get(m) for mo in models)]
+    if adaptive:
+        print("\nwidth the adaptive rule actually chose (median over function x "
+              "seed, and the 10th/90th percentile):")
+        print(f"{'rule':<18}{'median':>10}{'p10':>10}{'p90':>10}{'inf':>8}")
+        for m in adaptive:
+            vals = [v for mo in models for v in per_model_eff[mo].get(m, {}).values()]
+            fin = np.array([v for v in vals if np.isfinite(v)])
+            n_inf = len(vals) - len(fin)
+            if len(fin) == 0:
+                print(f"{m:<18}{'-':>10}{'-':>10}{'-':>10}{n_inf:>8}")
+                continue
+            print(f"{m:<18}{np.median(fin):>10.3f}{np.percentile(fin, 10):>10.3f}"
+                  f"{np.percentile(fin, 90):>10.3f}{n_inf:>8}")
+        print("'inf' counts cells where the pool held fewer candidates than the "
+              "rule asks for, so the band became the whole pool.")
 
 
 if __name__ == "__main__":

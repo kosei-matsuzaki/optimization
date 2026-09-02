@@ -131,6 +131,31 @@ def _spread_within(pool, f_pool, spread, k, tau):
     return chosen
 
 
+def _spread_within_n(pool, f_pool, spread, k, n_min, tau_max=float("inf")):
+    """Widen the tolerance band until it holds n_min candidates, then pick.
+
+    The fixed-tau rule misfires whenever the band holds no more than K
+    candidates: it falls back silently to the top K, so the comparison is a tie
+    by construction. That happened in 78 of 120 cells at dim2 with 50 starts and
+    in 105 of 120 at dim5, i.e. the width that leaves something in the band is a
+    property of how densely the pool samples the local optima, not of the
+    dimension. Fixing the *count* instead of the width is therefore the version
+    that needs no per-dimension retuning. tau_max caps how much nominal quality
+    may be surrendered to reach the count; without a cap the band can widen to
+    the whole pool on a function whose optima are far apart in value.
+
+    Returns (indices, tau_eff) so the caller can record which width was used.
+    """
+    order = np.argsort(f_pool)
+    if len(order) >= n_min:
+        tau_eff = float(f_pool[order[n_min - 1]] - f_pool[order[0]]) / spread
+        tau_eff *= 1.0 + 1e-9          # keep the n_min-th candidate inside <=
+    else:
+        tau_eff = float("inf")         # pool too small; band is everything
+    tau_eff = min(tau_eff, tau_max)
+    return _spread_within(pool, f_pool, spread, k, tau_eff), tau_eff
+
+
 def _make_scenarios(args, name, f, lo, hi, span, dim, spread, rng, n_all):
     """Return q(x, s): the objective as it turns out to be under scenario s.
 
@@ -228,6 +253,20 @@ def main() -> None:
                          "the K furthest-apart solutions no worse than tau below "
                          "the best. These cost no extra evaluations, so several "
                          "are scored at once.")
+    ap.add_argument("--tau-n", type=int, nargs="*", default=[],
+                    metavar="N",
+                    help="adaptive variant of the same rule: instead of a fixed "
+                         "width, widen the band until it holds N candidates, then "
+                         "pick the K furthest apart inside it (rule 'spreadN@N'). "
+                         "N must exceed K or the rule degenerates to the top K. "
+                         "The width needed to hold N candidates is set by the "
+                         "pool, so this needs no per-dimension retuning.")
+    ap.add_argument("--tau-n-caps", type=float, nargs="*", default=[],
+                    metavar="TAU",
+                    help="also score each --tau-n level with the band capped at "
+                         "this width (rule 'spreadNc{TAU}@N'), which bounds the "
+                         "nominal quality the adaptive rule may give away on a "
+                         "function whose optima are far apart in value.")
     ap.add_argument("--postprocess", type=float, default=None,
                     metavar="TAU",
                     help="also score, for every method, the set obtained by "
@@ -277,6 +316,10 @@ def main() -> None:
         cols = ["function", "method", "seed", "scenario", "regret", "spread"]
         if args.scenario == "constraint":
             cols.append("wiped")     # every reported point is inside the region
+        if args.tau_n:
+            # The width the adaptive rule actually chose on this (function,
+            # seed); blank for every rule whose width was fixed in advance.
+            cols.append("tau_eff")
         writer.writerow(cols)
     print(f"reported sets under an unmodelled criterion   budget={args.budget}  "
           f"K={args.k}  scenario={args.scenario}  tilt={args.tilt}  "
@@ -367,6 +410,15 @@ def main() -> None:
             for tau in args.tau:
                 sets[f"spread@{tau:g}"] = pool[_spread_within(pool, f_pool, spread,
                                                               args.k, tau)]
+            tau_eff: dict[str, float] = {}
+            for n_min in args.tau_n:
+                for cap in [float("inf")] + list(args.tau_n_caps):
+                    idx_n, t_eff = _spread_within_n(pool, f_pool, spread, args.k,
+                                                    n_min, cap)
+                    tag = ("spreadN" if cap == float("inf")
+                           else f"spreadNc{cap:g}") + f"@{n_min}"
+                    sets[tag] = pool[idx_n]
+                    tau_eff[tag] = t_eff
 
             vals = {m: score(P) for m, P in sets.items()}
             for v in vals.values():
@@ -389,6 +441,9 @@ def main() -> None:
                         if args.scenario == "constraint":
                             sc = args.n_train + j
                             row.append(int(all(q.violates(x, sc) for x in P)))
+                        if args.tau_n:
+                            t = tau_eff.get(m)
+                            row.append("" if t is None else f"{t:.6g}")
                         writer.writerow(row)
 
         base = float(np.mean(rows["quality"]))
