@@ -206,7 +206,8 @@ def main() -> None:
                         hunt_rows.append([name, b.n_global_optima, seed, j,
                                           h["eval"], h["f"], int(h["switch"]),
                                           int(h["exhausted"]), h["sigma_span"],
-                                          h["no_improve"], int(j in keep)])
+                                          h["no_improve"], int(j in keep),
+                                          *[f"{v:.10g}" for v in h["x"]]])
 
         for eps in eps_list:
             rows = []
@@ -254,8 +255,10 @@ def main() -> None:
         Path(args.hunt_csv).parent.mkdir(parents=True, exist_ok=True)
         with open(args.hunt_csv, "w", newline="") as fh:
             w = _csv.writer(fh)
+            ndim = max((len(r) - 11 for r in hunt_rows), default=0)
             w.writerow(["function", "K", "seed", "hunt", "eval", "f", "switch",
-                        "exhausted", "sigma_span", "no_improve", "distinct"])
+                        "exhausted", "sigma_span", "no_improve", "distinct"]
+                       + [f"x{i}" for i in range(ndim)])
             w.writerows(hunt_rows)
         print(f"wrote {args.hunt_csv} ({len(hunt_rows)} hunts)")
 

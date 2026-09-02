@@ -71,7 +71,7 @@ def main() -> None:
         agg[(name, k)].append(row)
         print(f"{name:<20}{k:>5}{seed:>5}{row[0]:>7.0f}{row[1]:>7.0f}{row[2]:>6.0f}"
               f"{row[3]:>9.0f}" + "".join(f"{d:>11.0f}" for d in deep)
-              + f"{row[8]:>10.1e}")
+              + f"{row[7]:>10.1e}")
 
     # ── the ceiling argument, per function ──────────────────────────────────
     print("\nCeiling: even a perfect descent cannot report more distinct optima "
