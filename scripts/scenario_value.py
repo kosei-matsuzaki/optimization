@@ -26,6 +26,7 @@ Usage:
 from __future__ import annotations
 import argparse
 import csv
+import itertools
 import sys
 from pathlib import Path
 
@@ -229,7 +230,7 @@ def main() -> None:
         args.csv.parent.mkdir(parents=True, exist_ok=True)
         fh = open(args.csv, "w", newline="")
         writer = csv.writer(fh)
-        cols = ["function", "method", "seed", "scenario", "regret"]
+        cols = ["function", "method", "seed", "scenario", "regret", "spread"]
         if args.scenario == "constraint":
             cols.append("wiped")     # every reported point is inside the region
         writer.writerow(cols)
@@ -324,9 +325,15 @@ def main() -> None:
                 rows.setdefault(m, []).append(float(np.mean(per_scen)))
                 if writer is not None:
                     P = sets[m]
+                    # Mean pairwise distance of the reported set, span-relative.
+                    # Constant across scenarios, but carried per row so that any
+                    # slice of the file can be read on its own.
+                    pd = [float(np.linalg.norm(x - y)) / span
+                          for x, y in itertools.combinations(P, 2)]
+                    sp = float(np.mean(pd)) if pd else 0.0
                     for j, val in enumerate(per_scen):
                         row = [name, m, seed, args.n_train + j,
-                               f"{float(val):.6g}"]
+                               f"{float(val):.6g}", f"{sp:.5f}"]
                         if args.scenario == "constraint":
                             sc = args.n_train + j
                             row.append(int(all(q.violates(x, sc) for x in P)))
