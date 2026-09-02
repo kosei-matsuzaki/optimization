@@ -63,11 +63,21 @@ def main() -> None:
         out = {}
         for m in rules:
             better = worse = mean_w = 0
+            misfire = cells = 0
             for fn in funcs:
                 a_d, b_d = d[(fn, m)], d[(fn, BASE)]
                 ks = sorted(set(a_d) & set(b_d))
                 a = np.array([a_d[k] for k in ks])
                 b = np.array([b_d[k] for k in ks])
+                # A (function, seed) cell where the tolerance band holds no more
+                # than K candidates: the rule falls back to the top K, so it is
+                # the base rule and the comparison is a tie by construction, not
+                # a finding. Counting these separates "the rule does not help"
+                # from "the rule never ran".
+                for sd in sorted({k[0] for k in ks}):
+                    kk = [k for k in ks if k[0] == sd]
+                    cells += 1
+                    misfire += all(a_d[k] == b_d[k] for k in kk)
                 mean_w += a.mean() < b.mean()
                 diff = a - b
                 if wilcoxon is None or not np.any(diff != 0):
@@ -76,7 +86,7 @@ def main() -> None:
                 if p < args.alpha:
                     better += a.mean() < b.mean()
                     worse += a.mean() > b.mean()
-            out[m] = (better, worse, mean_w)
+            out[m] = (better, worse, mean_w, misfire, cells)
         per_model[model] = out
 
     models = list(per_model)
@@ -94,12 +104,27 @@ def main() -> None:
         line = f"{m:<12}"
         worst = 10 ** 9
         for mo in models:
-            b, w, _ = per_model[mo][m]
+            b, w, _, _, _ = per_model[mo][m]
             line += f"{f'{b}-{w}':>18}"
             worst = min(worst, b - w)
         print(line + f"{worst:>8}")
     print("\nworst = the smallest (better - worse) across models: the rule's value "
           "when the unknown is chosen adversarially.")
+
+    print("\ncells where the band held no more than K candidates, so the rule "
+          "returned the top K and the comparison is a tie by construction:")
+    head = f"{'tolerance':<12}"
+    for mo in models:
+        head += f"{mo:>18}"
+    print(head)
+    for m in taus:
+        line = f"{m:<12}"
+        for mo in models:
+            _, _, _, mf, cl = per_model[mo][m]
+            line += f"{f'{mf}/{cl}':>18}"
+        print(line)
+    print("a tolerance that misfires on most cells is not being tested; give the "
+          "pool more starts (--pool-starts) before reading its row above.")
 
 
 if __name__ == "__main__":

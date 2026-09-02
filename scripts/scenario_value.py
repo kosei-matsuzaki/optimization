@@ -35,7 +35,7 @@ from scipy.optimize import minimize
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.benchmarks import (BENCHMARKS_BY_NAME, _BBOB_SPECS,        # noqa: E402
-                             _make_bbob)
+                             _make_bbob, make_benchmark_by_name)
 from core.optimizers import (MultiChannelEpidemicOptimizer,          # noqa: E402
                              NCDEOptimizer, RingPSOOptimizer, NMMSOOptimizer,
                              MultistartNelderMeadOptimizer,
@@ -68,10 +68,23 @@ _METHODS = {
 _FUNCS = ["F03-RastriginSep", "F15-RastriginRot", "F21-Gallagher101", "F17-SchafferF7"]
 
 
-def _multistart_pool(f, lo, hi, dim, rng, n_starts, tol):
+_POOL_BASE_STARTS = 50          # the size every earlier measurement used
+
+
+def _multistart_pool(f, lo, hi, dim, rng, n_starts, tol, extra_rng=None):
+    """Local minima found by L-BFGS-B from random starts, deduplicated.
+
+    The first `_POOL_BASE_STARTS` starts come from `rng`, any beyond that from
+    `extra_rng`. That split matters: `rng` goes on to draw the scenarios, so
+    taking the extra starts from a separate stream keeps the scenario set --
+    and the first 50 starts -- identical whatever `--pool-starts` is. A 50 vs
+    150 comparison is then paired on scenarios rather than confounded with a
+    re-draw of them, and the default reproduces the earlier files exactly.
+    """
     found: list[np.ndarray] = []
-    for _ in range(n_starts):
-        r = minimize(f, rng.uniform(lo, hi, dim), method="L-BFGS-B",
+    for i in range(n_starts):
+        src = rng if i < _POOL_BASE_STARTS else extra_rng
+        r = minimize(f, src.uniform(lo, hi, dim), method="L-BFGS-B",
                      bounds=[(lo, hi)] * dim, options={"maxfun": 2000})
         x = np.clip(r.x, lo, hi)
         if all(float(np.linalg.norm(x - y)) > tol for y in found):
@@ -179,6 +192,25 @@ def main() -> None:
     ap.add_argument("--funcs", type=str, default=",".join(_FUNCS))
     ap.add_argument("--budget", type=int, default=5000)
     ap.add_argument("--k", type=int, default=5)
+    ap.add_argument("--dim", type=int, default=2,
+                    help="dimension of the BBOB functions. The scenario models "
+                         "are all defined at any dimension, so this only "
+                         "rebuilds the benchmarks. Custom (C*) benchmarks are "
+                         "2-D only and are rejected here.")
+    ap.add_argument("--methods", type=str, default=None,
+                    metavar="A,B,...",
+                    help="run only these methods ('none' runs none). Comparisons "
+                         "between reference rules are unaffected by this: every "
+                         "regret is measured against the same per-scenario "
+                         "best_known, so dropping methods shifts a scenario's "
+                         "regrets by one common constant and paired differences "
+                         "between rules are unchanged. Use it to sweep tau "
+                         "without paying for the methods.")
+    ap.add_argument("--pool-starts", type=int, default=_POOL_BASE_STARTS,
+                    help="L-BFGS-B restarts behind the reference pool. Raising it "
+                         "gives the rules more candidates to choose from, which "
+                         "is what decides whether a narrow tolerance band has "
+                         "anything in it at all.")
     ap.add_argument("--scenario", choices=["tilt", "instance", "constraint"],
                     default="tilt",
                     help="what the unmodelled criterion looks like. tilt: an unknown "
@@ -225,6 +257,18 @@ def main() -> None:
                          "duplicates cost")
     args = ap.parse_args()
 
+    if args.methods is None:
+        methods = dict(_METHODS)
+    elif args.methods.strip().lower() == "none":
+        methods = {}
+    else:
+        want = [m.strip() for m in args.methods.split(",") if m.strip()]
+        unknown = [m for m in want if m not in _METHODS]
+        if unknown:
+            raise SystemExit(f"unknown method(s): {', '.join(unknown)}. "
+                             f"known: {', '.join(_METHODS)}")
+        methods = {m: _METHODS[m] for m in want}
+
     writer = None
     if args.csv:
         args.csv.parent.mkdir(parents=True, exist_ok=True)
@@ -237,14 +281,20 @@ def main() -> None:
     print(f"reported sets under an unmodelled criterion   budget={args.budget}  "
           f"K={args.k}  scenario={args.scenario}  tilt={args.tilt}  "
           f"train/test={args.n_train}/{args.n_test}  "
-          f"seeds={args.seeds}")
+          f"seeds={args.seeds}  dim={args.dim}  pool-starts={args.pool_starts}  "
+          f"methods={len(methods)}")
     head = (f"{'function':<20}{'method':<13}{'|report|':>9}{'regret':>10}"
             f"{'vs quality':>12}")
     print(head)
     print("-" * len(head))
 
     for name in [s.strip() for s in args.funcs.split(",")]:
-        b = BENCHMARKS_BY_NAME[name]
+        if args.dim == 2:
+            b = BENCHMARKS_BY_NAME[name]
+        elif name.startswith("C"):
+            raise SystemExit(f"{name} is 2-D only; --dim {args.dim} needs a BBOB function")
+        else:
+            b = make_benchmark_by_name(name, args.dim)
         lo, hi = b.bounds
         span, dim = hi - lo, b.dim
 
@@ -255,7 +305,9 @@ def main() -> None:
         sizes: dict[str, list[int]] = {}
         for seed in range(args.seeds):
             rng = np.random.default_rng(seed)
-            pool = _multistart_pool(f, lo, hi, dim, rng, 50, 0.01 * span)
+            pool = _multistart_pool(f, lo, hi, dim, rng, args.pool_starts,
+                                    0.01 * span,
+                                    np.random.default_rng(90000 + seed))
             f_pool = np.array([f(x) for x in pool])
             spread = float(np.percentile(f_pool, 75) - f_pool.min()) or 1.0
             n_all = args.n_train + args.n_test
@@ -275,7 +327,7 @@ def main() -> None:
             best_known = pool_vals.min(axis=0)
 
             sets: dict[str, np.ndarray] = {}
-            for m, (cls, kw) in _METHODS.items():
+            for m, (cls, kw) in methods.items():
                 kwargs = dict(kw)
                 if cls is IPOPCMAESOptimizer:
                     kwargs["sigma0"] = 0.2 * span
