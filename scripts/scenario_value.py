@@ -129,13 +129,22 @@ def _make_scenarios(args, name, f, lo, hi, span, dim, spread, rng, n_all):
     A = rng.normal(size=(n_all, dim))
     A /= np.linalg.norm(A, axis=1, keepdims=True)
     mid = (lo + hi) / 2.0
-    off = rng.uniform(-0.25, 0.25, n_all) * span      # cuts through the middle
+    cut = getattr(args, "cut", 0.25)
+    off = rng.uniform(-cut, cut, n_all) * span        # cuts through the middle
     penalty = args.tilt * 10.0 * max(spread, 1e-12)
+
+    def violates(x, s):
+        z = np.asarray(x, float) - mid
+        return float(np.dot(A[s], z)) - float(off[s]) > 0
 
     def q(x, s):
         z = np.asarray(x, float) - mid
         viol = float(np.dot(A[s], z)) - float(off[s])
         return f(x) + (penalty * (1.0 + viol / span) if viol > 0 else 0.0)
+
+    # Exposed so the caller can record whether a whole reported set landed
+    # inside the forbidden half-space, which is the loss with no ceiling.
+    q.violates = violates
     return q
 
 
@@ -155,6 +164,11 @@ def main() -> None:
                          "reported, which is the setting the field's justification "
                          "describes.")
     ap.add_argument("--tilt", type=float, default=1.0)
+    ap.add_argument("--cut", type=float, default=0.25,
+                    help="constraint only: how far off centre the forbidden "
+                         "half-space may be cut, as a fraction of the span. Larger "
+                         "values let a scenario forbid more of the domain, so a "
+                         "reported set is likelier to be wiped out entirely.")
     ap.add_argument("--n-train", type=int, default=15)
     ap.add_argument("--n-test", type=int, default=30)
     ap.add_argument("--seeds", type=int, default=3)
@@ -176,7 +190,10 @@ def main() -> None:
         args.csv.parent.mkdir(parents=True, exist_ok=True)
         fh = open(args.csv, "w", newline="")
         writer = csv.writer(fh)
-        writer.writerow(["function", "method", "seed", "scenario", "regret"])
+        cols = ["function", "method", "seed", "scenario", "regret"]
+        if args.scenario == "constraint":
+            cols.append("wiped")     # every reported point is inside the region
+        writer.writerow(cols)
     print(f"reported sets under an unmodelled criterion   budget={args.budget}  "
           f"K={args.k}  scenario={args.scenario}  tilt={args.tilt}  "
           f"train/test={args.n_train}/{args.n_test}  "
@@ -255,9 +272,14 @@ def main() -> None:
                 per_scen = np.min(v[:, te], axis=0) - best_known[te]
                 rows.setdefault(m, []).append(float(np.mean(per_scen)))
                 if writer is not None:
+                    P = sets[m]
                     for j, val in enumerate(per_scen):
-                        writer.writerow([name, m, seed, args.n_train + j,
-                                         f"{float(val):.6g}"])
+                        row = [name, m, seed, args.n_train + j,
+                               f"{float(val):.6g}"]
+                        if args.scenario == "constraint":
+                            sc = args.n_train + j
+                            row.append(int(all(q.violates(x, sc) for x in P)))
+                        writer.writerow(row)
 
         base = float(np.mean(rows["quality"]))
         order = sorted(rows, key=lambda m: float(np.mean(rows[m])))
