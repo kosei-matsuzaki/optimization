@@ -30,12 +30,14 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.benchmarks import NICHING_BENCHMARKS_BY_NAME          # noqa: E402
 from core.optimizers import MultiChannelEpidemicOptimizer        # noqa: E402
+from core.optimizers.mceso_adaptive_repel import AdaptiveRepelMCESO  # noqa: E402
 from core.runner import _seed_indices, count_goptima             # noqa: E402
 
 
-class _CountingMCESO(MultiChannelEpidemicOptimizer):
-    """MC-ESO with counters on the restart hooks. Behaviour is unchanged: every
-    override calls super() and only tallies."""
+class _HuntCounters:
+    """Counters on the restart hooks. Behaviour is unchanged: every override
+    calls super() and only tallies. Mixed in front of whichever MC-ESO class a
+    variant selects, so base and variant runs are dumped identically."""
 
     def optimize(self, max_evals: int = 5000):
         self.n_spillover = 0
@@ -72,6 +74,29 @@ class _CountingMCESO(MultiChannelEpidemicOptimizer):
             "no_improve": int(st.no_improve),
         })
         return super()._on_spillover_start(st, basin_switch)
+
+
+class _CountingMCESO(_HuntCounters, MultiChannelEpidemicOptimizer):
+    """The shipped optimiser, instrumented."""
+
+
+class _CountingAdaptiveMCESO(_HuntCounters, AdaptiveRepelMCESO):
+    """The adaptive-repel diagnostic variant, instrumented the same way."""
+
+
+# variant name -> (class, constructor kwargs)
+_VARIANTS: dict[str, tuple[type, dict]] = {
+    "base": (_CountingMCESO, {}),
+    "localwin": (_CountingMCESO, {"exhausted_local_window": True}),
+    "fast": (_CountingMCESO, {"hunt_no_improve_mult": 0.5}),
+    # Restart repulsion scaled by the observed distances between basins already
+    # drilled, instead of a fixed 0.02 * span. See mceso_adaptive_repel.py.
+    "adaptive": (_CountingAdaptiveMCESO, {"repel_mode": "adaptive"}),
+    "adaptive_maxmin": (_CountingAdaptiveMCESO, {"repel_mode": "adaptive_maxmin"}),
+    # Identity check: the variant class with its override disabled must
+    # reproduce `base` exactly.
+    "adaptive_off": (_CountingAdaptiveMCESO, {"repel_mode": "off"}),
+}
 
 
 def _distinct_points(X: np.ndarray, F: np.ndarray, rho: float) -> int:
@@ -144,7 +169,9 @@ def main() -> None:
                          "scored off the *same* runs, so relaxing the accuracy "
                          "costs no extra evaluations.")
     ap.add_argument("--variant", type=str, default="base",
-                    help="base | localwin (post-exhaustion pacing on the basin)")
+                    choices=sorted(_VARIANTS),
+                    help="base | localwin | fast | adaptive | adaptive_maxmin "
+                         "| adaptive_off (identity check of the variant class)")
     ap.add_argument("--funcs", type=str,
                     default="N04-Himmelblau,N06-Shubert2D,N07-Vincent2D,N10-ModRastrigin2D")
     ap.add_argument("--csv", type=str, default=None,
@@ -172,10 +199,8 @@ def main() -> None:
         # One run per seed; every accuracy is scored off these same runs.
         runs = []
         for seed in range(args.seeds):
-            kw = {"localwin": {"exhausted_local_window": True},
-                  "fast": {"hunt_no_improve_mult": 0.5},
-                  "base": {}}[args.variant]
-            opt = _CountingMCESO(b, seed=seed * 100, **kw)
+            cls, kw = _VARIANTS[args.variant]
+            opt = cls(b, seed=seed * 100, **kw)
             r = opt.optimize(args.evals)
 
             hx = np.asarray(r.history_x, dtype=float)
