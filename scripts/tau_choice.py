@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import collections
 import csv
+import gzip
 import re
 from pathlib import Path
 
@@ -39,7 +40,11 @@ def _load(path: Path):
     d: dict[tuple[str, str], dict[tuple[int, int], float]] = collections.defaultdict(dict)
     # Width the adaptive rule chose, one value per (function, method, seed).
     eff: dict[str, dict[tuple[str, int], float]] = collections.defaultdict(dict)
-    with open(path, newline="") as fh:
+    # These sweeps run to ~90k rows per file and compress about 15x, so the ones
+    # kept in the repository are stored gzipped; read either form.
+    opener = (lambda p: gzip.open(p, "rt", newline="")) if path.suffix == ".gz" \
+        else (lambda p: open(p, newline=""))
+    with opener(path) as fh:
         for r in csv.DictReader(fh):
             d[(r["function"], r["method"])][(int(r["seed"]), int(r["scenario"]))] = \
                 float(r["regret"])
@@ -60,13 +65,13 @@ def main() -> None:
     taus: list[str] = []
     for path in args.rows:
         d, eff = _load(path)
-        per_model_eff[re.sub(r"^tau_|\.csv$", "", path.name)] = eff
-        model = re.sub(r"^tau_|\.csv$", "", path.name)
+        per_model_eff[re.sub(r"^tau_|\.csv(\.gz)?$", "", path.name)] = eff
+        model = re.sub(r"^tau_|\.csv(\.gz)?$", "", path.name)
         funcs = sorted({k[0] for k in d})
         # 'spread@T' is the fixed-width rule; 'spreadN@N' and 'spreadNc{cap}@N'
         # are the adaptive ones, which set the number of candidates in the band
         # instead of its width. Group by family, order by the level inside it.
-        rules = sorted({k[1] for k in d if re.match(r"^spread\w*@", k[1])},
+        rules = sorted({k[1] for k in d if re.match(r"^spread[^@]*@", k[1])},
                        key=lambda m: (m.split("@")[0], float(m.split("@")[1])))
         taus = taus or rules
         out = {}
