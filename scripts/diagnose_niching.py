@@ -65,6 +65,58 @@ def _distinct_points(X: np.ndarray, F: np.ndarray, rho: float) -> int:
     return len(_seed_indices(X[order], rho))
 
 
+def _greedy_seeds_capped(X: np.ndarray, rho: float, cap: int) -> np.ndarray:
+    """The first ``cap`` seeds of the CEC rho-greedy rule over ``X`` (already
+    sorted best-f first), vectorised and stopped early.
+
+    Identical to ``_seed_indices(X, rho)[:cap]`` — greedy selection is prefix
+    stable, so stopping once ``cap`` seeds are held cannot change the ones
+    already kept. The early stop is what makes this usable on a 40k-point
+    history: the reference loop keeps every rho-separated point and so grows to
+    thousands of seeds on Vincent3D.
+    """
+    if len(X) == 0 or cap <= 0:
+        return np.zeros(0, dtype=int)
+    kept_idx: list[int] = [0]
+    kept = [X[0]]
+    for i in range(1, len(X)):
+        if len(kept_idx) >= cap:
+            break
+        d = np.linalg.norm(np.asarray(kept) - X[i], axis=1)
+        if d.min() > rho:
+            kept_idx.append(i)
+            kept.append(X[i])
+    return np.asarray(kept_idx[:cap], dtype=int)
+
+
+def reselect_from_history(hx: np.ndarray, hf: np.ndarray, rho: float,
+                          cap: int) -> tuple[np.ndarray, np.ndarray]:
+    """Rebuild a *legal* reported set from the evaluation history, zero extra
+    evaluations.
+
+    Sort every point the run evaluated best-f first, walk it with the same
+    rho-greedy rule the scorer uses, and keep at most ``cap = max(100, 2K)``
+    points — the cap ``core.runner._niching_counts`` enforces. Reporting the
+    whole history is not a legal answer (it would reward dense sampling); this
+    is a selection rule of the size the competition allows, so any method could
+    adopt it as its output rule.
+    """
+    if len(hx) == 0:
+        return hx, hf
+    order = np.argsort(hf)
+    sx, sf = hx[order], hf[order]
+    keep = _greedy_seeds_capped(sx, rho, cap)
+    return sx[keep], sf[keep]
+
+
+def _cap_by_f(X: np.ndarray, F: np.ndarray, cap: int) -> tuple[np.ndarray, np.ndarray]:
+    """The best-f trim ``core.runner._niching_counts`` applies before scoring."""
+    if len(F) <= cap:
+        return X, F
+    keep = np.argsort(F)[:cap]
+    return X[keep], F[keep]
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -87,12 +139,13 @@ def main() -> None:
     print(f"MC-ESO niching diagnosis   evals={args.evals}  seeds={args.seeds}  "
           f"eps={','.join(f'{e:g}' for e in eps_list)}")
     print(f"{'function':<20}{'K':>4}{'eps':>8}{'visited':>9}{'reported':>9}"
-          f"{'distinct':>9}{'blocked':>8}{'|rep|':>7}{'spill':>7}{'switch':>7}"
-          f"{'hunts':>7}{'landed':>7}{'yield':>7}{'best_f':>11}")
-    print("-" * 128)
+          f"{'resel':>8}{'|res|':>8}{'PR_now':>8}{'PR_res':>8}{'distinct':>9}"
+          f"{'blocked':>8}{'|rep|':>7}{'spill':>7}{'hunts':>7}{'best_f':>11}")
+    print("-" * 132)
     csv_rows = []
     for name in [s.strip() for s in args.funcs.split(",")]:
         b = NICHING_BENCHMARKS_BY_NAME[name]
+        cap = max(100, 2 * b.n_global_optima)   # core.runner._niching_counts
         # One run per seed; every accuracy is scored off these same runs.
         runs = []
         for seed in range(args.seeds):
@@ -106,13 +159,21 @@ def main() -> None:
             hf = np.asarray(r.history_f, dtype=float)
             sx = np.asarray(r.final_solutions or [r.best_x], dtype=float)
             sf = np.array([float(b.func(x)) for x in sx])
-            runs.append((seed, hx, hf, sx, sf, opt, r))
+            # The scorer trims the reported set to the cap before counting;
+            # do the same here so `reported` is exactly what PR sees.
+            sx, sf = _cap_by_f(sx, sf, cap)
+            # The reselected set depends only on rho and the cap, not on eps,
+            # so build it once and score it at every accuracy.
+            rx, rf = reselect_from_history(hx, hf, b.niche_rho, cap)
+            runs.append((seed, hx, hf, sx, sf, rx, rf, opt, r))
 
         for eps in eps_list:
             rows = []
-            for seed, hx, hf, sx, sf, opt, r in runs:
+            for seed, hx, hf, sx, sf, rx, rf, opt, r in runs:
                 visited = count_goptima(hx, hf, b.n_global_optima, b.niche_rho, eps)
                 reported = count_goptima(sx, sf, b.n_global_optima, b.niche_rho, eps)
+                # Same scorer, same cap, on the set reselected from history.
+                resel = count_goptima(rx, rf, b.n_global_optima, b.niche_rho, eps)
                 # rho-separated points in the reported set regardless of accuracy;
                 # `blocked` is how many of those niches are held by a point that
                 # misses eps, which is what count_goptima refuses to score.
@@ -123,24 +184,26 @@ def main() -> None:
                 # a solution rather than being cut off mid-descent.
                 hunts = opt.hunts
                 landed = sum(1 for _, f in hunts if f <= eps)
-                rows.append((visited, reported, distinct, distinct - reported,
-                             len(sx), opt.n_spillover, opt.n_basin_switch,
-                             len(hunts), landed, r.best_f))
+                rows.append((visited, reported, resel, len(rx), distinct,
+                             distinct - reported, len(sx), opt.n_spillover,
+                             opt.n_basin_switch, len(hunts), landed, r.best_f))
                 csv_rows.append([name, b.n_global_optima, eps, seed, args.evals,
-                                 *rows[-1]])
+                                 cap, *rows[-1]])
             m = np.mean(np.array(rows, dtype=float), axis=0)
-            y = m[8] / m[7] if m[7] else float("nan")
-            print(f"{name:<20}{b.n_global_optima:>4}{eps:>8.0e}{m[0]:>9.1f}"
-                  f"{m[1]:>9.1f}{m[2]:>9.1f}{m[3]:>8.1f}{m[4]:>7.0f}{m[5]:>7.1f}"
-                  f"{m[6]:>7.1f}{m[7]:>7.1f}{m[8]:>7.1f}{y:>7.2f}{m[9]:>11.1e}")
+            k = b.n_global_optima
+            print(f"{name:<20}{k:>4}{eps:>8.0e}{m[0]:>9.1f}{m[1]:>9.1f}"
+                  f"{m[2]:>8.1f}{m[3]:>8.1f}{m[1]/k:>8.2f}{m[2]/k:>8.2f}"
+                  f"{m[4]:>9.1f}{m[5]:>8.1f}{m[6]:>7.0f}{m[7]:>7.1f}"
+                  f"{m[8]:>7.1f}{m[11]:>11.1e}")
 
     if args.csv:
         import csv as _csv
         Path(args.csv).parent.mkdir(parents=True, exist_ok=True)
         with open(args.csv, "w", newline="") as fh:
             w = _csv.writer(fh)
-            w.writerow(["function", "K", "eps", "seed", "evals", "visited",
-                        "reported", "distinct", "blocked", "n_reported_pts",
+            w.writerow(["function", "K", "eps", "seed", "evals", "cap",
+                        "visited", "reported", "resel", "n_resel_pts",
+                        "distinct", "blocked", "n_reported_pts",
                         "spillover", "basin_switch", "hunts", "landed", "best_f"])
             w.writerows(csv_rows)
         print(f"\nwrote {args.csv} ({len(csv_rows)} rows)")
@@ -152,6 +215,12 @@ def main() -> None:
           "same basins.")
     print("blocked > 0        -> reported niches are held by points that miss "
           "eps, so they score nothing.")
+    print("PR_res >> PR_now   -> the loss is in the reporting rule: the same run, "
+          "rescored off a legal\n                      cap-sized set reselected from "
+          "its own history, is worth this much more.")
+    print("|res| < cap        -> the history held fewer rho-separated points than "
+          "the cap allows, so the\n                      cap is not what limits "
+          "the reselected set.")
 
 
 if __name__ == "__main__":
