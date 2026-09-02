@@ -33,7 +33,8 @@ import numpy as np
 from scipy.optimize import minimize
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from core.benchmarks import BENCHMARKS_BY_NAME                      # noqa: E402
+from core.benchmarks import (BENCHMARKS_BY_NAME, _BBOB_SPECS,        # noqa: E402
+                             _make_bbob)
 from core.optimizers import (MultiChannelEpidemicOptimizer,          # noqa: E402
                              NCDEOptimizer, RingPSOOptimizer, NMMSOOptimizer,
                              MultistartNelderMeadOptimizer,
@@ -92,12 +93,67 @@ def _greedy_complement(vals, opt, k):
     return chosen
 
 
+def _make_scenarios(args, name, f, lo, hi, span, dim, spread, rng, n_all):
+    """Return q(x, s): the objective as it turns out to be under scenario s.
+
+    Three shapes of unmodelled criterion, all revealed only after the solution
+    set is fixed. Strength is scaled to the spread of the local optima, so
+    `--tilt` means the same thing across shapes: how far the criterion can
+    reorder solutions the nominal objective ranks close together.
+    """
+    if args.scenario == "tilt":
+        eps = args.tilt * spread / (span * dim ** 0.5)
+        W = rng.normal(size=(n_all, dim))
+        W /= np.linalg.norm(W, axis=1, keepdims=True)
+
+        def q(x, s):
+            return f(x) + eps * float(np.dot(W[s], np.asarray(x, float)))
+        return q
+
+    if args.scenario == "instance":
+        # The family's own shift and rotation: the problem you face is instance
+        # 2+s, the one you optimised was instance 1. No strength parameter — the
+        # benchmark itself decides how far instances sit from each other.
+        spec = next((sp for sp in _BBOB_SPECS if sp[1] == name), None)
+        if spec is None:
+            raise SystemExit(f"instance scenarios need a BBOB function, got {name}")
+        variants = [_make_bbob(spec[0], spec[1], spec[2], dim, instance=2 + s)
+                    for s in range(n_all)]
+
+        def q(x, s):
+            return float(variants[s].func(np.clip(np.asarray(x, float), lo, hi)))
+        return q
+
+    # constraint: a half-space turns out to be forbidden, priced so that any
+    # solution inside it is worse than any solution outside.
+    A = rng.normal(size=(n_all, dim))
+    A /= np.linalg.norm(A, axis=1, keepdims=True)
+    mid = (lo + hi) / 2.0
+    off = rng.uniform(-0.25, 0.25, n_all) * span      # cuts through the middle
+    penalty = args.tilt * 10.0 * max(spread, 1e-12)
+
+    def q(x, s):
+        z = np.asarray(x, float) - mid
+        viol = float(np.dot(A[s], z)) - float(off[s])
+        return f(x) + (penalty * (1.0 + viol / span) if viol > 0 else 0.0)
+    return q
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--funcs", type=str, default=",".join(_FUNCS))
     ap.add_argument("--budget", type=int, default=5000)
     ap.add_argument("--k", type=int, default=5)
+    ap.add_argument("--scenario", choices=["tilt", "instance", "constraint"],
+                    default="tilt",
+                    help="what the unmodelled criterion looks like. tilt: an unknown "
+                         "linear bias. instance: the problem you face is another "
+                         "instance of the same family (BBOB's own shift/rotation). "
+                         "constraint: a region of the domain turns out to be "
+                         "forbidden. All three are revealed only after the set is "
+                         "reported, which is the setting the field's justification "
+                         "describes.")
     ap.add_argument("--tilt", type=float, default=1.0)
     ap.add_argument("--n-train", type=int, default=15)
     ap.add_argument("--n-test", type=int, default=30)
@@ -122,7 +178,8 @@ def main() -> None:
         writer = csv.writer(fh)
         writer.writerow(["function", "method", "seed", "scenario", "regret"])
     print(f"reported sets under an unmodelled criterion   budget={args.budget}  "
-          f"K={args.k}  tilt={args.tilt}  train/test={args.n_train}/{args.n_test}  "
+          f"K={args.k}  scenario={args.scenario}  tilt={args.tilt}  "
+          f"train/test={args.n_train}/{args.n_test}  "
           f"seeds={args.seeds}")
     head = (f"{'function':<20}{'method':<13}{'|report|':>9}{'regret':>10}"
             f"{'vs quality':>12}")
@@ -144,14 +201,9 @@ def main() -> None:
             pool = _multistart_pool(f, lo, hi, dim, rng, 50, 0.01 * span)
             f_pool = np.array([f(x) for x in pool])
             spread = float(np.percentile(f_pool, 75) - f_pool.min()) or 1.0
-            eps = args.tilt * spread / (span * dim ** 0.5)
-
             n_all = args.n_train + args.n_test
-            W = rng.normal(size=(n_all, dim))
-            W /= np.linalg.norm(W, axis=1, keepdims=True)
-
-            def q(x, s):
-                return f(x) + eps * float(np.dot(W[s], np.asarray(x, float)))
+            q = _make_scenarios(args, name, f, lo, hi, span, dim, spread,
+                                rng, n_all)
 
             def score(points):
                 """Mean held-out regret of the best-of-set, plus its own values."""
