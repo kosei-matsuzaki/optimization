@@ -272,6 +272,11 @@ def main() -> None:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--evals", type=int, default=25000)
     ap.add_argument("--seeds", type=int, default=5)
+    ap.add_argument("--seed-start", type=int, default=0,
+                    help="first seed index (default 0). Seeds run are "
+                         "[seed_start, seed_start + seeds); the RNG seed is "
+                         "index*100 as always, so an earlier run's rows can be "
+                         "extended with more seeds instead of re-measured.")
     ap.add_argument("--eps", type=str, default="1e-4",
                     help="one accuracy, or a comma list. Several values are all "
                          "scored off the *same* runs, so relaxing the accuracy "
@@ -306,7 +311,7 @@ def main() -> None:
         cap = max(100, 2 * b.n_global_optima)   # core.runner._niching_counts
         # One run per seed; every accuracy is scored off these same runs.
         runs = []
-        for seed in range(args.seeds):
+        for seed in range(args.seed_start, args.seed_start + args.seeds):
             cls, kw = _VARIANTS[args.variant]
             opt = cls(b, seed=seed * 100, **kw)
             r = opt.optimize(args.evals)
