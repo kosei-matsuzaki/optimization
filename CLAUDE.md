@@ -34,7 +34,44 @@ MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマー�
 - `./run.sh quick` を使うこと。`python3 quick_check.py` を直接呼ばない。
 - 実験管理は `run.sh` で行う（trigger / download / quick / list / status / ui）。
 - 結果はすべて `results/YYYYMMDD_HHMMSS_<commit>/` にバージョン管理される。
-- **手法の検証・比較・分析の実験は、原則 `experimenter` サブエージェント（`.claude/agents/experimenter.md`）に委譲する。** 「比較手法設定 → `./run.sh quick` 実行 → monitor → `scripts/analyze_quick.py` で 3 指標分析 → 判定」の一連を独立コンテキストで回し、本会話には判定サマリのみ返すため、手法ブラッシュアップ中も会話が汚れない。比較手法は `--methods` で必要分だけに絞る（不要なベースラインを回さない。MC-ESO 単独 + 旧 run を `--baseline`、または改変版/元版の 2 手法のみ等）。詳細は [docs/experiments.md の評価の分析・自動化](docs/experiments.md#評価の分析自動化) を参照。
+- 手法の検証・比較・分析は「比較手法設定 → `./run.sh quick` 実行 → monitor → `scripts/analyze_quick.py` で 3 指標分析 → 判定」の順で行う。比較手法は `--methods` で必要分だけに絞る（不要なベースラインを回さない）。詳細は [docs/experiments.md の評価の分析・自動化](docs/experiments.md#評価の分析自動化) を参照。
+
+## Claude の構成（`.claude/`）
+
+`.claude/agents/` と `.claude/commands/` は**版管理下にある**（`.claude/` 配下の他はローカル状態なので ignore）。エージェントやコマンドを足したら commit すること。
+
+| コマンド | 中身 | 使いどき |
+|---|---|---|
+| `/status` | `./run.sh loop` の要約 | 現況を知りたいとき。判断待ち事項が最初に出る |
+| `/professor` | `professor` エージェント | 方針を決める前、路線に踏み込む前、手が動いているのに前進感がないとき |
+| `/summary` | `librarian` エージェント | 記録が実態からずれた疑いがあるとき。**主張せず条件つきで記述するだけ** |
+| `/tidy` | `curator` エージェント | `scripts/` や `analysis/` が散らかったとき、路線を畳んだ直後、マージ前 |
+| `/docs-check` | `docs-keeper` エージェント | コード変更後、マージ前、記述が古い疑いがあるとき |
+| `/merge-loop` | `research-loop` → `main` | 1 日 1 回を目安 |
+
+エージェントの役割は意図的に分けてある。`professor` は**判断する**（意義・新規性・弱点）、`librarian` は**記述するだけ**（推奨も順位づけもしない）、`curator` は**片付ける**、`docs-keeper` は**記述とコードを一致させる**。判断と記述を同じ担当に混ぜると、記録が主張に寄って読めなくなる。
+
+## 研究ループの役割分担
+
+`research-loop` ブランチ上で自動サイクルが回っている。詳細は [docs/research_loop.md](docs/research_loop.md)、現況は [docs/status.md](docs/status.md)（毎回上書き）。
+
+| 役割 | 担当 | 頻度 | 権限 |
+|---|---|---|---|
+| 決定 | ユーザー | 随時 | `docs/research_loop.md` の「方針」欄。**すべてに優先** |
+| 俯瞰（研究者） | クラウド review ルーチン | 1 日 1 回 | `status.md` を書き直し、問いのキューを書き換える。**実験はしない。ゴールは変えず提案する** |
+| 実行 | クラウド execute ルーチン | 2 時間ごと | キュー先頭を測る。**並べ替え・ゴール変更・status.md 編集は禁止** |
+| 対話 | この Claude Code セッション | 随時 | 報告と方針修正の補助 |
+
+## ファイルを増やすときの規約
+
+自動サイクルが 2 時間ごとに書き込むので、放置すると生データがリポジトリを埋める（実際に差分の 99.7% が機械の吐いた CSV になった）。
+
+- **行単位の生 CSV は `.csv.gz`。** 生のまま置いてよいのは数百行までの集計結果。
+- **数値は必ず `docs/` に書き出してから commit する。** CSV は再解析用の控えであって、結論の置き場ではない。
+- **路線を畳んだら、その生データも消す。** 結論は docs にあり、git 履歴からも取り出せる。
+- `analysis/` はテーマごとにサブディレクトリを切る。**トップレベルには置かない。**
+- 閉じたテーマのスクリプトは `scripts/<theme>/` へ移す。`scripts/` 直下は現行のキューが呼ぶものだけ。
+- `research-loop` は 1 日 1 回を目安に `main` へマージする（`/merge-loop`）。溜めると差分が読めなくなる。
 
 ## Git
 
