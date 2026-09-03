@@ -213,7 +213,7 @@ peak ratio」をゴールに置き直した。監査テーマ（受容集合）�
 [acceptance_topology.md の終了節](acceptance_topology.md#監査テーマの終了2026-09-02--何が残り何がゴールに引き継がれたか)
 に集約済み。報告規則の路線は先行研究に占有されている（上記「占有されている領域」）。
 
-1. **`hunt_level_tol` の採用判断に必要な残りを埋める（BBOB gate の路線は その33 で閉じた）** —
+1. **`hunt_level_tol` の採用判断に必要な残りを埋める（BBOB gate の路線は その33 で閉じた）** (claimed 2026-09-03 10:35 UTC) —
    その32 の (a) 内点の掃引・(b) 3D の符号に続き、**その33 で (c) の安全性 gate が完走し、
    同時に「BBOB gate では原理的に判定できない」ことが機序で確定した**（本文は
    [acceptance_topology.md の該当節](acceptance_topology.md#bbob-gate-は予算でも次元でも開かない--同点は測定結果ではなく構成上の恒等式その33-analysishmgatepowergatetie_dim25csv)）。
