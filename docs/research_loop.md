@@ -125,7 +125,7 @@ peak ratio」をゴールに置き直した。監査テーマ（受容集合）�
 [acceptance_topology.md の終了節](acceptance_topology.md#監査テーマの終了2026-09-02--何が残り何がゴールに引き継がれたか)
 に集約済み。報告規則の路線は先行研究に占有されている（上記「占有されている領域」）。
 
-1. **`sigma_only` を本体に取り込めるか — 残りは N08 と BBOB の 2 つだけ** — 梃子は
+1. **`sigma_only` を本体に取り込めるか — 残りは N08 と BBOB の 2 つだけ** *(claimed 2026-09-03 01:31 UTC)* — 梃子は
    **再起動後の σ を、箱に対する固定比（σ_init = 0.2×span）ではなく、その時点で観測された
    局所盆地間隔 `d_local` に対する比に置くこと**（その23）。
    `sigma_only`（描画は base のまま、σ = 0.1·d_local。`core/optimizers/mceso_commit_reseed.py` の
