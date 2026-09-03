@@ -34,6 +34,7 @@ from core.optimizers.mceso_adaptive_repel import AdaptiveRepelMCESO  # noqa: E40
 from core.optimizers.mceso_commit_reseed import CommitReseedMCESO    # noqa: E402
 from core.optimizers.mceso_phased_accept import PhasedAcceptMCESO    # noqa: E402
 from core.optimizers.mceso_crowding import MCESOCrowding             # noqa: E402
+from core.optimizers.mceso_recover import RecoverMCESO               # noqa: E402
 from core.runner import _seed_indices, count_goptima             # noqa: E402
 
 
@@ -99,6 +100,10 @@ class _CountingCrowdingMCESO(_HuntCounters, MCESOCrowding):
     """Pure crowding replacement, instrumented the same way."""
 
 
+class _CountingRecoverMCESO(_HuntCounters, RecoverMCESO):
+    """The late recovery-phase variant, instrumented the same way."""
+
+
 # variant name -> (class, constructor kwargs)
 _VARIANTS: dict[str, tuple[type, dict]] = {
     "base": (_CountingMCESO, {}),
@@ -155,6 +160,27 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
     "phased_off": (_CountingPhasedMCESO, {"accept_phase": "off"}),
     "phased_always": (_CountingPhasedMCESO, {"accept_phase": "always"}),
     "crowd_always": (_CountingCrowdingMCESO, {}),
+    # Question 1 (allocation side): in the last 20% of the budget an exhausted
+    # basin switch stops repelling away and re-enters a recorded under-drilled
+    # basin instead. See mceso_recover.py.
+    "recover": (_CountingRecoverMCESO, {"recover_mode": "blocked"}),
+    # Control: same phase, same tight sigma, anchored on the ordinary repelled
+    # draw. Separates "return to the blocked basins" from "restart tightly late"
+    # -- entries 23/25 showed the basin-scale sigma alone already buys depth in 2D.
+    "recover_ctrl": (_CountingRecoverMCESO, {"recover_mode": "fresh"}),
+    # Identity check for the recover class: must reproduce `base` exactly.
+    "recover_off": (_CountingRecoverMCESO, {"recover_mode": "off"}),
+    # The release level itself. `blocked_inventory.py` found that on
+    # N06-Shubert2D every abandoned basin stops in (1e-5, 1e-3] -- i.e. at
+    # hunt_level_tol * f_init_scale ~ 1e-4, which passes eps=1e-3 and fails
+    # eps=1e-5. Entry 25 swept the other two release knobs
+    # (hunt_no_improve_mult, exhausted_sigma_tol) and neither moved anything;
+    # this one is the path that actually fires on equal-height multi-global
+    # problems (mceso.py:919-928). Lowering it buys depth per hunt and must cost
+    # hunts, so the coarse levels are the rejection condition.
+    **{f"level_t{int(round(-np.log10(t))):02d}": (_CountingMCESO,
+                                                  {"hunt_level_tol": t})
+       for t in (1e-8, 1e-10)},
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
 # as a fraction of the locally observed basin spacing. `commit_tight` is r010.
