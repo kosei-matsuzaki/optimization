@@ -50,6 +50,23 @@ def main() -> None:
     text = io.open(DOC, encoding="utf-8").read().replace("\r\n", "\n")
     now = datetime.now(timezone.utc)
 
+    st = Path("docs/status.md")
+    if st.exists():
+        snap = io.open(st, encoding="utf-8").read().replace("
+", "
+")
+        print("=" * 78)
+        print("OVERVIEW  (docs/status.md — rewritten daily by the review cycle)")
+        print("=" * 78)
+        for head in ("## ユーザーの判断を仰ぐこと", "## いま論文に書ける主張",
+                     "## ゴールとの距離", "## いちばん弱い環", "## 次に効く一手"):
+            sec = _section(snap, head[3:])
+            if sec:
+                print(sec.rstrip())
+                print()
+        print("(full document: docs/status.md)")
+        print()
+
     steer = _section(text, "方針（ユーザーが書く欄）")
     if steer:
         body = "\n".join(l for l in steer.split("\n")[1:] if l.strip())
