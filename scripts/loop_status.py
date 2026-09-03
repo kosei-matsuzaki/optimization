@@ -52,9 +52,7 @@ def main() -> None:
 
     st = Path("docs/status.md")
     if st.exists():
-        snap = io.open(st, encoding="utf-8").read().replace("
-", "
-")
+        snap = io.open(st, encoding="utf-8").read().replace(chr(13) + chr(10), chr(10))
         print("=" * 78)
         print("OVERVIEW  (docs/status.md — rewritten daily by the review cycle)")
         print("=" * 78)
