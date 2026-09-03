@@ -17,7 +17,7 @@ Refuted if the wipeout rate does not fall as spread rises, or if the losses are
 the same size whether or not the set was wiped out.
 
 Usage:
-  python3 scripts/wipeout.py analysis/wipe_cut*.csv [--props analysis/set_properties.csv]
+  python3 scripts/wipeout.py analysis/wipe_cut*.csv [--props analysis/audit/set_properties.csv]
 """
 from __future__ import annotations
 import argparse
@@ -40,7 +40,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("rows", type=Path, nargs="+")
-    ap.add_argument("--props", type=Path, default=Path("analysis/set_properties.csv"))
+    ap.add_argument("--props", type=Path, default=Path("analysis/audit/set_properties.csv"))
     ap.add_argument("--spread-from-rows", action="store_true",
                     help="take each set's spread from the rows file's own 'spread' "
                          "column instead of --props. The props file is 2-D only, so "

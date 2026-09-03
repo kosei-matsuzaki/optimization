@@ -19,7 +19,7 @@ The split this answers:
   (iii) endpoints duplicate (distinct << hunts) -> the descent is fine and the
         hunts keep re-landing in basins already held.
 
-Usage:  python3 scripts/analyze_hunts.py analysis/hunts_*.csv
+Usage:  python3 scripts/analyze_hunts.py analysis/hm/hunts_*.csv
 """
 from __future__ import annotations
 import csv

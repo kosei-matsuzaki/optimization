@@ -95,7 +95,7 @@ def main() -> None:
                          "history, capped at max(100, 2K), zero extra "
                          "evaluations. 'both' scores each run under both, "
                          "paired, off the same runs.")
-    ap.add_argument("--csv", type=Path, default=Path("analysis/niching_baseline.csv"))
+    ap.add_argument("--csv", type=Path, default=Path("analysis/hm/niching_baseline.csv"))
     args = ap.parse_args()
     rules = (("current", "reselect") if args.report_rule == "both"
              else (args.report_rule,))

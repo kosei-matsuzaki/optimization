@@ -20,7 +20,7 @@ wide basin, so it does not push the draw out of a basin already drilled.
 Shubert's optima are spaced ~0.88 apart throughout, so the same fixed radius
 behaves consistently across the domain — the contrast case.
 
-Usage:  python3 scripts/hunt_coverage.py analysis/hunts_n07_xy.csv
+Usage:  python3 scripts/hunt_coverage.py analysis/hm/hunts_n07_xy.csv
 """
 from __future__ import annotations
 import csv

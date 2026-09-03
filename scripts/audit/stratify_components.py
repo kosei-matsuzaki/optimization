@@ -61,9 +61,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--quantile", default="0.1")
-    ap.add_argument("--props", type=Path, default=Path("analysis/set_properties.csv"))
+    ap.add_argument("--props", type=Path, default=Path("analysis/audit/set_properties.csv"))
     ap.add_argument("--components", type=Path,
-                    default=Path("analysis/components_bbob.csv"))
+                    default=Path("analysis/audit/components_bbob.csv"))
     args = ap.parse_args()
 
     k_big = {}

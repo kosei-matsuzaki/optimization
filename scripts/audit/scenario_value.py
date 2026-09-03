@@ -33,7 +33,7 @@ from pathlib import Path
 import numpy as np
 from scipy.optimize import minimize
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from core.benchmarks import (BENCHMARKS_BY_NAME, _BBOB_SPECS,        # noqa: E402
                              _make_bbob, make_benchmark_by_name)
 from core.optimizers import (MultiChannelEpidemicOptimizer,          # noqa: E402

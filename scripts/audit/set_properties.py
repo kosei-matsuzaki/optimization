@@ -32,9 +32,9 @@ from pathlib import Path
 import numpy as np
 from scipy.optimize import minimize
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from core.benchmarks import BENCHMARKS_BY_NAME                      # noqa: E402
-from scripts.scenario_value import _METHODS                          # noqa: E402
+from scripts.audit.scenario_value import _METHODS                          # noqa: E402
 
 
 def _pool_spread(f, lo, hi, dim, rng, n_starts=30):
@@ -56,7 +56,7 @@ def main() -> None:
     ap.add_argument("--k", type=int, default=5)
     ap.add_argument("--dedup", type=float, default=0.05)
     ap.add_argument("--seeds", type=int, default=3)
-    ap.add_argument("--csv", type=Path, default=Path("analysis/set_properties.csv"))
+    ap.add_argument("--csv", type=Path, default=Path("analysis/audit/set_properties.csv"))
     args = ap.parse_args()
 
     names = ([s.strip() for s in args.funcs.split(",")] if args.funcs

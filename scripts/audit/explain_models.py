@@ -11,7 +11,7 @@ unknown only reorders nearby solutions (a linear bias). Refuted if neither
 property correlates with either model.
 
 Usage:
-  python3 scripts/explain_models.py [--props analysis/set_properties.csv]
+  python3 scripts/explain_models.py [--props analysis/audit/set_properties.csv]
 """
 from __future__ import annotations
 import argparse
@@ -58,7 +58,7 @@ def _a12_by_method(path: Path) -> dict[tuple[str, str], float]:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--props", type=Path, default=Path("analysis/set_properties.csv"))
+    ap.add_argument("--props", type=Path, default=Path("analysis/audit/set_properties.csv"))
     args = ap.parse_args()
 
     props: dict[tuple[str, str], list[list[float]]] = collections.defaultdict(list)

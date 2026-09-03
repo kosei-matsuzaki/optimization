@@ -222,7 +222,7 @@ peak ratio」をゴールに置き直した。監査テーマ（受容集合）�
    1e-10 は行き過ぎ（粗い側の低下が有意、深精度も伸びない）なので**内点に最適がある**。
    **やること（この順で）**:
    **(a) 未測定の内点 1e-7 を N06 で測る**（15 seed / 20000 評価、
-   base は `analysis/commit15_base.csv` を再利用、`--variant` に 1 行足すだけ。既存の
+   base は `analysis/hm/commit15_base.csv` を再利用、`--variant` に 1 行足すだけ。既存の
    `scripts/hunt_confound.py` で対応のある Wilcoxon）。1e-8 が最適か、より緩い側にあるかを決める。
    **(b) 深さ律速の別の関数で符号を確認する** — **N08-Shubert3D**（40000 評価 / 5 seed、
    判定は 1e-1 / 1e-3。その27 より 3D の 1e-5 は base が床に張り付くので使えない）。
@@ -389,7 +389,7 @@ N06 の sol_archive（掘って捨てた盆地の最良点）の f 分布を数�
 
 **分かったこと (2) — N06-Shubert2D の PR@1e-5 が 0.17 → 0.76（15/0/0、p = 0.0006、A12 = 1.00）。**
 `diagnose_niching.py` に `level_t08` / `level_t10` を追加（base クラスに kwarg を渡すだけ、新規ファイル無し）、
-15 seed / 20000 評価、base は `analysis/commit15_base.csv` を再利用したので**再測定は 2 腕のみ**（2 並列で 6 分）。
+15 seed / 20000 評価、base は `analysis/hm/commit15_base.csv` を再利用したので**再測定は 2 腕のみ**（2 並列で 6 分）。
 
 | 構成 | hunts | PR@1e-1 | p | PR@1e-3 | p | **PR@1e-5** | **w/t/l** | **p** |
 |---|---|---|---|---|---|---|---|---|
@@ -442,7 +442,7 @@ crowding の本体は `mceso_crowding.py` のメソッドを呼ぶだけなの�
 **恒等チェック（本測定の前に実施）**: `phased_off` は base と、`phased_always` は `crowd_always` と、
 N06 / 2 seed の**全カラムが数値完全一致**。
 本測定は N06-Shubert2D + N07-Vincent2D、**15 seed / 20000 評価 / eps 1e-1,1e-3,1e-5**、2 プロセス並列で 14 分。
-base は **その23 の `analysis/commit15_base.csv` をそのまま再利用**（同じ seed 列・同じ予算）したので再測定ゼロ。
+base は **その23 の `analysis/hm/commit15_base.csv` をそのまま再利用**（同じ seed 列・同じ予算）したので再測定ゼロ。
 解析は既存の `scripts/hunt_confound.py`。
 
 **判定（事前登録どおり棄却）。** 基準は「PR@1e-5 が上がり、かつ BBOB-24 dim2 の SR@1e-10 を割らない」。

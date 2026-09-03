@@ -1,5 +1,7 @@
 # 受容集合トポロジー（新テーマ、調査中）
 
+> **このテーマは終了している（2026-09-02）。** 本文が参照する `analysis/*.csv` の生データは 2026-09-03 に削除した（約 160 万行がリポジトリの差分を埋めたため）。**数値はすべてこの文書に 書き出してあり、失われていない。** 再現が要る場合は `scripts/audit/` のスクリプトで作り直せる。削除前の実体は git 履歴（`c01588c` 以前）にある。
+
 MC-ESO とは独立に立ち上げた新テーマの調査記録。**「別解とは何か」を距離でなく連結性で定義する**という定式化が成立するかを検証している。MC-ESO 側の記録は [mceso.md](mceso.md) / [history.md](history.md)、多解分野の一般調査は [related_work.md](related_work.md)。
 
 調査開始 2026-09-01。
@@ -66,7 +68,7 @@ MC-ESO とは独立に立ち上げた新テーマの調査記録。**「別解�
 
 ---
 
-## B1 の実測（2026-09-01, `scripts/acceptance_components.py`）
+## B1 の実測（2026-09-01, `scripts/audit/acceptance_components.py`）
 
 2 次元で密グリッド（BBOB は 300²、niching は 400²）を作り、τ を f の分位点に取って受容集合の連結成分を厳密に数えた。`K_all/K_big`（K_big = 受容セルの 1% 以上を占める成分）と、最大成分の内接半径 r（スパン相対）。
 
@@ -99,7 +101,7 @@ MC-ESO とは独立に立ち上げた新テーマの調査記録。**「別解�
 
 ---
 
-## B4 の実測（2026-09-01, `scripts/components_by_dim.py`）
+## B4 の実測（2026-09-01, `scripts/audit/components_by_dim.py`）
 
 グリッドは 3 次元までなので、**アンカー（multistart L-BFGS で得た局所最適解）を τ でふるい、線分が受容集合内に収まるペアを繋いで成分を数える**推定器を作り、dim2 で B1 のグリッド真値と較正した。
 
@@ -159,7 +161,7 @@ B4 の初回は τ を「一様標本の分位点」で決めていたが、**�
 
 ---
 
-## C2 の実測（2026-09-01, `scripts/path_connectivity.py`）
+## C2 の実測（2026-09-01, `scripts/audit/path_connectivity.py`）
 
 B4 の結論「高次元でも受容集合は潰れない」と、「高次元ほど直線判定が失敗する」という測定artefact は同じ方向に効くので、B4 単体では区別できない。そこで**直線判定が「分離」と答えたペアに対し、曲げた経路を探索して救済されるか**を測った。中間点を 1 個（bend1）または 2 個（bend2）置き、経路上の最大 f を Nelder-Mead で最小化する（粗い string method）。救済されたペアは直線判定の偽分離。
 
@@ -196,7 +198,7 @@ B4 の結論「高次元でも受容集合は潰れない」と、「高次元�
 
 → **定式化としての新規性は主張できない**。残るのは (1) 予算制約下のブラックボックス手法、(2) 現代的比較（ROMS は 2015 年で QD も NMMSO も比較相手にいない）、(3) 「幾何的多様性は相補性の代理として機能するか」という未検証の測定。
 
-## kill test の結果（`scripts/complementarity_test.py`）
+## kill test の結果（`scripts/audit/complementarity_test.py`）
 
 候補プール（multistart 局所最適解）を固定し、**選択規則だけを変えて**保留シナリオでの回帰を測る。シナリオは未知の線形バイアス `q_ξ(x) = f(x) + ε·(w_ξ·x)`（どの局所最適が最良かが入れ替わる構造。多目的の凸結合には還元されない）。dim2、50 start、train/test = 15/30、3 seed 平均。
 
@@ -261,7 +263,7 @@ kill test の tilt（未定式化成分の大きさ。局所最適解の値の�
 
 **最大の限界（次に潰す）**: いまの `geometric` は最遠点法による代理であって、NMMSO / MAP-Elites の実際の出力ではない。**実装済みの NMMSO / NCDE / r3pso / MC-ESO の出力集合をそのまま採点する**のが次の実験。道具は揃っている。
 
-## 本物の手法出力で採点する（2026-09-01, `scripts/scenario_value.py`）— 前節の主張を訂正
+## 本物の手法出力で採点する（2026-09-01, `scripts/audit/scenario_value.py`）— 前節の主張を訂正
 
 前節の `geometric` は候補プールからの最遠点法という**代理**で、実際の niching / QD の出力ではなかった。実手法を nominal f 上で走らせ、**その手法が報告した解集合**（`final_solutions`）から上位 K を取って保留シナリオで採点し直した。
 
@@ -370,9 +372,9 @@ kill test の tilt（未定式化成分の大きさ。局所最適解の値の�
 3. **シナリオモデルの多様化** — 線形バイアス以外（instance shift・制約追加・ノイズ）で同じ結論か
 4. **ゲーム応用での検証** — 未定式化基準が実在する設定（プレイヤー層の違い等）
 
-### 対応のある検定（2026-09-01, `scripts/audit_stats.py`）
+### 対応のある検定（2026-09-01, `scripts/audit/audit_stats.py`）
 
-平均だけの比較では 1 seed で結論が反転した経験があるため、**(seed, シナリオ) ごとの生の回帰値**を出力し（`scripts/scenario_value.py --csv`）、`quality`（上位 K 取り）を基準に対応のある Wilcoxon と A12 をかけた。BBOB-24 の 2 次元、5 seed、K=5、tilt=1.0、32,400 行。
+平均だけの比較では 1 seed で結論が反転した経験があるため、**(seed, シナリオ) ごとの生の回帰値**を出力し（`scripts/audit/scenario_value.py --csv`）、`quality`（上位 K 取り）を基準に対応のある Wilcoxon と A12 をかけた。BBOB-24 の 2 次元、5 seed、K=5、tilt=1.0、32,400 行。
 
 | 手法 | 有意に勝ち | 有意に負け | 有意差なし | A12 中央値 | seed 方向一致 |
 |---|---|---|---|---|---|
@@ -540,7 +542,7 @@ QD の欠点として文献が挙げる「BD 設計への全面依存」を測�
 
 ### 条件の言語化（2026-09-02）— 受容集合の形が「多様性が要るか」を決める
 
-監査の結果（tilt=2.0 での A12: シナリオを見た選択 vs 上位 K 取り）を、受容集合の成分数と突き合わせた（`analysis/components_bbob.csv` × `analysis/audit_t2.0.csv`）。成分は 400² グリッドで厳密に数え、`k_big` は受容面積の 1% 以上を占める成分数、`r_max` は最大成分の内接半径。
+監査の結果（tilt=2.0 での A12: シナリオを見た選択 vs 上位 K 取り）を、受容集合の成分数と突き合わせた（`analysis/audit/components_bbob.csv` × `analysis/audit_t2.0.csv`）。成分は 400² グリッドで厳密に数え、`k_big` は受容面積の 1% 以上を占める成分数、`r_max` は最大成分の内接半径。
 
 | 受容集合の形 | 関数 | A12 |
 |---|---|---|
@@ -585,7 +587,7 @@ Spearman(k_big, A12) = **+0.46**、Spearman(r_max, A12) = **−0.53**（いず�
 
 ### シナリオモデルの多様化（2026-09-02）— 結論がモデルで反転する
 
-未定式化基準の「形」を 3 通りにして測り直した（`scripts/scenario_value.py --scenario`）。いずれも解集合を報告した後に判明する。
+未定式化基準の「形」を 3 通りにして測り直した（`scripts/audit/scenario_value.py --scenario`）。いずれも解集合を報告した後に判明する。
 
 - `tilt` 未知の線形バイアス `f(x) + ε·(w·x)` — 近接解の順位を入れ替える
 - `instance` 直面する問題が同族の別インスタンス（BBOB 自身の shift/rotation）— 最適解の位置が大域的に動く
@@ -617,7 +619,7 @@ Spearman(k_big, A12) = **+0.46**、Spearman(r_max, A12) = **−0.53**（いず�
 
 **信頼度の注記**: constraint モデルは seed 方向一致率が 38〜88/120 と低く不安定（instance は 76〜100）。seed を増やした確認が要る。
 
-### 何がシナリオモデルごとに採点されているか（2026-09-02, `scripts/set_properties.py` / `explain_models.py`）
+### 何がシナリオモデルごとに採点されているか（2026-09-02, `scripts/audit/set_properties.py` / `explain_models.py`）
 
 勝者がモデルで入れ替わるのは、手法の優劣が不安定だからではなく、**モデルごとに報告集合の
 別の性質が採点されている**から。BBOB-24 × 11 手法 × 3 seed で報告集合の性質を測り、
@@ -636,7 +638,7 @@ Spearman(k_big, A12) = **+0.46**、Spearman(r_max, A12) = **−0.53**（いず�
 - 関数をまたいでプールしてはいけない。`quality` は関数ごとにスケールが桁で違うので、
   プールすると関数間の差を測る。constraint では符号が反転した（プール −0.14 / 関数内 +0.14）。
 
-### 勝率と期待 regret は別の判定（2026-09-02, `scripts/verdict_split.py`）
+### 勝率と期待 regret は別の判定（2026-09-02, `scripts/audit/verdict_split.py`）
 
 監査の見出しはこれまで A12 だけで書いてきたが、A12 は**何割のシナリオで勝つか**であって
 **平均で安いか**ではない。両者は禁止領域モデルで 288 セル中 154（53%）食い違う。
@@ -665,7 +667,7 @@ tilt と instance は解を再採点するだけなので損失は有界。前�
 一致率が 5 seed で低かったのは標本不足ではなく、この順位と平均のずれそのものだった。
 seed 内で A12 を取り直しても符号の反転は 288 セルで 0 件なので、プーリングは原因ではない。
 
-### 禁止領域で損失に上限がない理由 — 全滅（2026-09-02, `scripts/wipeout.py`）
+### 禁止領域で損失に上限がない理由 — 全滅（2026-09-02, `scripts/audit/wipeout.py`）
 
 報告集合の全点が禁止半空間に入ったかを記録し、禁止領域の大きさを 3 水準（切片の振れ幅
 0.10 / 0.25 / 0.40）で振った。BBOB-24 × 5 seed、各 46.8k 行。
@@ -706,7 +708,7 @@ NM-Restart 24% / NCDE 25% と同水準に、探索を変えずに到達する。
 含意: 報告集合に持たせるべき幾何的な広がりの量は未知の形が決めるのであって、手法が決めるのでは
 ない。残る弱点は、T を選ぶにはどの種類の不確実性に直面するかを知っている必要があること。
 
-### 許容幅は未知の種類を知らずに選べる（2026-09-02, `scripts/tau_choice.py`）
+### 許容幅は未知の種類を知らずに選べる（2026-09-02, `scripts/audit/tau_choice.py`）
 
 どのシナリオモデルに直面するかは未知の側の性質で、地形からは観測できない。よって τ を地形特徴で
 選ぶ筋はなく、問えるのは「全モデルで害にならない τ があるか」だけ。τ 8 水準 × 3 モデル ×
@@ -775,7 +777,7 @@ tilt では品質帯フィルタ分が素直に得になる（帯の中の距離
 > 既存手法の出力を後処理する主張ではない。既に良い報告集合を作っている手法に対しては、
 > 狭い品質帯で絞り直すことは害になる。
 
-### 参照プールの予算（2026-09-02, `scripts/pool_cost.py`）
+### 参照プールの予算（2026-09-02, `scripts/audit/pool_cost.py`）
 
 参照規則が選ぶ multistart プールの評価回数を実測した。手法の予算 5000 に対し中央値 0.61 倍、
 最大 3.02 倍、24 関数中 11 関数が予算超過（F06 3.02 / F13 2.29 / F23 2.10 / F10 1.88 /
@@ -785,12 +787,12 @@ F11 1.85）。低次元では有限差分勾配が主因。
 instance 5-1 / tilt 5-1、τ=1 は tilt で 1-8）。予算内サブセットのほうが負けが少ないので、
 交絡は規則に**不利な**向きに効いていた。残る非対称は予算ではなく探索の種類。
 
-### 断片化は「幾何が効くか」を決めるが「数か距離か」は決めない（2026-09-02, `scripts/stratify_components.py`）
+### 断片化は「幾何が効くか」を決めるが「数か距離か」は決めない（2026-09-02, `scripts/audit/stratify_components.py`）
 
 「instance では distinct（解の数）が効き、constraint では spread（距離）が効く」を受容集合の
 連結成分数で説明できるかを測った。仮説は「成分が多いほど各成分に代表を置くこと＝数が効き、
 単一の塊なら禁止領域は連続的に食い込むので距離が効く」。成立するなら成分数で層別したとき
-モデル間の差が縮むはず。`analysis/components_bbob.csv` × `set_properties.csv` × 3 モデルの A12。
+モデル間の差が縮むはず。`analysis/audit/components_bbob.csv` × `set_properties.csv` × 3 モデルの A12。
 
 gap = ρ(distinct) − ρ(spread) を層ごとに:
 
@@ -817,7 +819,7 @@ gap = ρ(distinct) − ρ(spread) を層ごとに:
 留保: 層の関数数が 12 / 6 / 4 と少ない。k_big=0 の 2 関数（F23 / F24）はこの分位で受容集合が
 取れず除外している。
 
-### 次元と参照プールの解像度（2026-09-02, `scripts/scenario_value.py --dim/--pool-starts`）
+### 次元と参照プールの解像度（2026-09-02, `scripts/audit/scenario_value.py --dim/--pool-starts`）
 
 τ 規則を dim 2 / 3 / 5 で、参照プールの multistart 本数 50 / 150 の両方で測り直した
 （`analysis/dim/tau_{model}_d{D}_p{P}.csv`、8 τ 水準 × 3 モデル × BBOB-24 × 5 seed、
@@ -935,14 +937,14 @@ p90 = 0.100、無制限セロ）、空振り数 106/120 も固定 `spread@0.1` �
 再現手順（1 セルあたり約 30 秒、18 セルで 4 並列 9 分）:
 
 ```
-python3 scripts/scenario_value.py --funcs <BBOB-24> --scenario {tilt,instance,constraint} \
+python3 scripts/audit/scenario_value.py --funcs <BBOB-24> --scenario {tilt,instance,constraint} \
   --methods none --seeds 5 --dim {2,3,5} --pool-starts {50,150} \
   --tau 0.02 0.05 0.1 0.15 0.25 0.5 1.0 2.0 --tau-n 6 8 10 15 25 --tau-n-caps 0.1 0.25 \
   --csv analysis/dim/tau_{model}_d{D}_p{P}_adapt.csv
-python3 scripts/tau_choice.py analysis/dim/tau_*_d{D}_p{P}_adapt.csv.gz
+python3 scripts/audit/tau_choice.py analysis/dim/tau_*_d{D}_p{P}_adapt.csv.gz
 ```
 
-### 全滅の機序は次元不変、ただし全滅の代償は次元とともに膨らむ（2026-09-02, `scripts/wipeout.py --spread-from-rows`）
+### 全滅の機序は次元不変、ただし全滅の代償は次元とともに膨らむ（2026-09-02, `scripts/audit/wipeout.py --spread-from-rows`）
 
 全滅の機序（禁止領域は報告集合を丸ごと消しうる、損失は全滅時にしか出ない、全滅率は spread が
 決める）を dim 2 / 3 / 5 で測り直した。データは `analysis/dim/wipe_cut{C}_d{D}.csv.gz`
@@ -1004,11 +1006,11 @@ span 比、次元順）:
 再現手順（1 セル 24 関数 × 5 seed で約 12 分、7 セルを 4 並列 16 分）:
 
 ```
-python3 scripts/scenario_value.py --funcs <BBOB-24> --scenario constraint \
+python3 scripts/audit/scenario_value.py --funcs <BBOB-24> --scenario constraint \
   --cut {0.10,0.25,0.40} --seeds 5 --dim {2,3,5} --tau \
   --methods MC-ESO,NCDE,NM-Restart,IPOP-CMA-ES,MAP-Elites,Crowding-DE,PSO \
   --csv analysis/dim/wipe_cut{C}_d{D}.csv
-python3 scripts/wipeout.py --spread-from-rows analysis/dim/wipe_*.csv.gz
+python3 scripts/audit/wipeout.py --spread-from-rows analysis/dim/wipe_*.csv.gz
 ```
 
 ---
@@ -1079,7 +1081,7 @@ GECCO の Dynamic F1、persistence-guided basin decoding）。
 （2D 2 万評価 / 3D 4 万評価。正規は 5 万〜40 万評価でローカルでは回せない）。
 狙いを定めるための測定であって、報告する比較ではない（→ [research_loop.md] の問い 6）。
 
-## 出発点の順位表（その15, `analysis/niching_baseline.csv`）
+## 出発点の順位表（その15, `analysis/hm/niching_baseline.csv`）
 
 7 手法 × 3 seed、PR は 5 つの精度水準の平均:
 
@@ -1105,7 +1107,7 @@ Vincent は落差ゼロで水準そのものが低い（そもそも報告して
 Shubert の精度落差の 2 点。NMMSO はローカルでは動くがクラウドの Python 3.11 では落ちる
 （`pynmmso` が set に `random.sample` を呼ぶ）。
 
-## PR は evals/K でも K でも決まらない — 分けているのは予算応答（その17, `analysis/niching_budget_sweep.csv`）
+## PR は evals/K でも K でも決まらない — 分けているのは予算応答（その17, `analysis/hm/niching_budget_sweep.csv`）
 
 **棄却**: 「PR は最適解 1 個あたりの評価回数で決まる」。同じ evals/K の 10 倍幅の中で
 PR は 0.00 から 1.00 まで散る（10^2〜10^3 の帯で n=70、中央値 0.27）。
@@ -1127,7 +1129,7 @@ K を固定しても単調ですらない（evals/K 300-1000 で K=18 が 0.24�
 - **地形族は K より効く。** NM-Restart は Vincent で 0.35-0.57、Shubert では全予算で 0.00
   （→ 実装疑い。[research_loop.md] の問い 4）。
 
-## 報告集合の天井 — 再起動 1 回につき 1 点しか書かない（その19, `analysis/niching_visited_*.csv`）
+## 報告集合の天井 — 再起動 1 回につき 1 点しか書かない（その19, `analysis/hm/niching_visited_*.csv`）
 
 報告集合は `pop_x + ir_archive_x + sol_archive_x`（`mceso.py:754-757`）で、
 `_on_spillover_start`（`mceso.py:818-821`）が **spillover 1 回につき 1 点だけ** append する。
@@ -1151,7 +1153,7 @@ K を固定しても単調ですらない（evals/K 300-1000 で K=18 が 0.24�
 **棄却した対抗仮説**: 内部 niche 半径の粗さ。`niche_radius_ratio = 0.1×span` は CEC の rho に対し
 N10 で 10.0 倍と最も粗いのに PR 0.94 を出す。効いているのは半径ではなく**書き込み回数**。
 
-## 選び直しは visited の天井にぴったり届く。ただし利得は eps=1e-1 だけ（その20, `analysis/niching_resel_*.csv`）
+## 選び直しは visited の天井にぴったり届く。ただし利得は eps=1e-1 だけ（その20, `analysis/hm/niching_resel_*.csv`）
 
 `reselect_from_history`（`diagnose_niching.py`）は run の全評価点を f 昇順に並べ、
 採点側と同じ rho 貪欲で `max(100, 2K)` 点まで取る（追加評価ゼロ）。
@@ -1178,7 +1180,7 @@ N10 で 10.0 倍と最も粗いのに PR 0.94 を出す。効いているのは�
 密なサンプリングを報う」と警告しており、1e-1 の利得はまさにそれ。**同じ規則を与えれば
 他手法も伸びるので、この利得を根拠に NMMSO と比較してはいけない**（→ 問い 2）。
 
-## reported ≈ min(distinct hunts, deep hunts) — Vincent は被覆律速、Shubert は深さ律速（その21, `analysis/hunts_*.csv`）
+## reported ≈ min(distinct hunts, deep hunts) — Vincent は被覆律速、Shubert は深さ律速（その21, `analysis/hm/hunts_*.csv`）
 
 `diagnose_niching.py --hunt-csv` が spillover 1 回 = 1 hunt ごとに到達 f・終端座標・
 `_basin_exhausted`・rho 分離を dump する。4 関数 × 3 seed:
@@ -1217,7 +1219,7 @@ Shubert は最適解がほぼ等間隔（約 0.88）なので同じ固定半径�
 **もう 1 つの天井**: N09 は hunts/K = 0.29 なので、重複がゼロでも **PR@1e-3 の上限は 0.29**。
 N07 は 0.97 まである。**N09 は識別力が無いので判定に使わない。**
 
-## 反発半径を盆地スケールに適応させても動かない — 律速は選抜（その22, `analysis/repel_*.csv`）
+## 反発半径を盆地スケールに適応させても動かない — 律速は選抜（その22, `analysis/hm/repel_*.csv`）
 
 `core/optimizers/mceso_adaptive_repel.py` の `AdaptiveRepelMCESO`（本体は不変）。
 追加評価ゼロで `ir_basin_centroids` を 0.02×span で重複潰しし、centroid ごとの最近傍距離 d_i から
@@ -1244,7 +1246,7 @@ N07 は 0.97 まである。**N09 は識別力が無いので判定に使わな�
 (b) 報告側の distinct は 9.0 → 16.3 と増えたのに `blocked` が 0.3 → 6.7 に増え PR は動かない。
 **新しく報告された niche は eps を満たさない浅い点で埋まっている。**
 
-## 効くつまみ — 再起動後の σ を「箱に対する比」ではなく「局所盆地間隔に対する比」にする（その23, `analysis/commit15_*.csv`）
+## 効くつまみ — 再起動後の σ を「箱に対する比」ではなく「局所盆地間隔に対する比」にする（その23, `analysis/hm/commit15_*.csv`）
 
 **ここが現時点で唯一確定した梃子。** `core/optimizers/mceso_commit_reseed.py` の
 `CommitReseedMCESO`（本体は不変、`commit_off` は base と数値完全一致を確認済み）。
@@ -1576,7 +1578,7 @@ N06-Shubert2D で **sol_archive（掘って捨てた盆地の最良点）の f �
 > 停止規則の水準が 2 つの採点閾値の間に置かれていることの直接の帰結だった。**
 
 **実測（N06-Shubert2D、15 seed / 20000 評価、対応のある Wilcoxon、reference = base、
-base は `analysis/commit15_base.csv` を再利用したので再測定は 2 腕のみ）:**
+base は `analysis/hm/commit15_base.csv` を再利用したので再測定は 2 腕のみ）:**
 
 | 構成 | hunts | PR@1e-1 | w/t/l | p | PR@1e-3 | w/t/l | p | **PR@1e-5** | **w/t/l** | **p** | **A12** |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1660,6 +1662,6 @@ Shubert は**深さ律速**なので同じ梃子が 4.5 倍動く。
 **参照値の食い違い（引用時の注意）。** BBOB-24 dim2 / n=20 の MC-ESO は**この環境で
 SR@1e-10 92.08% / evals_succ_mean 677.7**（その26・その29 で 2 回独立に再現）で、
 `CLAUDE.md` が pin している **93.5% / 798 とは一致しない**。
-同様に **`analysis/niching_baseline.csv`（その15）の MC-ESO 行もこの環境で再現しない**
+同様に **`analysis/hm/niching_baseline.csv`（その15）の MC-ESO 行もこの環境で再現しない**
 （N07 の PR@1e-1 が 0.194 → 0.25）。原因は未特定（`mceso.py` の drift か集計方法の差）。
 **両腕が同一環境の run どうしなら判定に影響しないが、その15 や pin の絶対値を引用するときは注意。**

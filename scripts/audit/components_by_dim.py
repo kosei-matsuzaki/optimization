@@ -30,7 +30,7 @@ from pathlib import Path
 import numpy as np
 from scipy.optimize import minimize
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from core.benchmarks import (BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME,   # noqa: E402
                              BENCHMARKS_5D_BY_NAME, BENCHMARKS_10D_BY_NAME)
 
