@@ -1,0 +1,24 @@
+Quick check → results/20260903_073222_9ef86fc_quick/
+PID 2199  (stop with: ./run.sh stop)
+quick_check  suite=bbob  dim=2  n_runs=20  max_evals=20000  set=all  custom=False  noise=off  funcs=all  methods=['MC-ESO', 'level_t08']
+
+=== dim2 ===
+
+Function               Method               Mean SR@1e-1 SR@1e-2 SR@1e-4 SR@1e-7 SR@1e-10  EvalsSucc
+------------------------------------------------------------------------------------------------------
+F01-Sphere             MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       216
+F01-Sphere             level_t08    0.0000e+00   100%   100%   100%   100%    100%       216
+F02-EllipsoidalSep     MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       476
+F02-EllipsoidalSep     level_t08    0.0000e+00   100%   100%   100%   100%    100%       476
+F03-RastriginSep       MC-ESO       2.8422e-15   100%   100%   100%   100%    100%       831
+F03-RastriginSep       level_t08    2.8422e-15   100%   100%   100%   100%    100%       831
+F04-BucheRastrigin     MC-ESO       5.6843e-15   100%   100%   100%   100%    100%      1984
+F04-BucheRastrigin     level_t08    5.6843e-15   100%   100%   100%   100%    100%      1984
+F05-LinearSlope        MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       394
+F05-LinearSlope        level_t08    0.0000e+00   100%   100%   100%   100%    100%       394
+F06-AttractiveSector   MC-ESO       2.1671e-09   100%   100%   100%   100%     95%       519
+F06-AttractiveSector   level_t08    2.1671e-09   100%   100%   100%   100%     95%       519
+F07-StepEllipsoidal    MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       196
+F07-StepEllipsoidal    level_t08    0.0000e+00   100%   100%   100%   100%    100%       196
+F08-Rosenbrock         MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       475
+F08-Rosenbrock         level_t08    0.0000e+00   100%   100%   100%   100%    100%       475

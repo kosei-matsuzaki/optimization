@@ -324,6 +324,15 @@ _OPTIMIZERS = {
     #  is what has to hold SR@1e-10, so this entry checks the phase boundary is
     #  where it is claimed to be: BBOB-24 dim2 must not lose SR@1e-10.
     "phased":         (PhasedAcceptMCESO, {"accept_phase": "exhausted"}),
+    #  Niching lever under test (research_loop 問い 1c, 2026-09-03): the basin
+    #  release level. `hunt_level_tol` decides how deep an exhausted hunt has to
+    #  get before the basin is abandoned; the default 1e-6 lands the release
+    #  between eps=1e-3 and eps=1e-5 on Shubert (entry 30). This entry exists
+    #  only to gate the lever on BBOB-24 dim2 SR@1e-10 before it goes anywhere
+    #  near mceso.py. NOTE: the path only fires after `has_exhausted`, and entry
+    #  29 proved the default 5000-eval gate is structurally blind to that — run
+    #  this at a raised budget (--max-evals 20000), never at 5000.
+    "level_t08":      (MultiChannelEpidemicOptimizer, {"hunt_level_tol": 1e-8}),
 }
 
 

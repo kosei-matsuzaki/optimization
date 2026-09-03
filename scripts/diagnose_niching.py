@@ -180,7 +180,7 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
     # hunts, so the coarse levels are the rejection condition.
     **{f"level_t{int(round(-np.log10(t))):02d}": (_CountingMCESO,
                                                   {"hunt_level_tol": t})
-       for t in (1e-8, 1e-10)},
+       for t in (1e-7, 1e-8, 1e-10)},
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
 # as a fraction of the locally observed basin spacing. `commit_tight` is r010.
