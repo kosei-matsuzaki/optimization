@@ -32,6 +32,8 @@ from core.benchmarks import NICHING_BENCHMARKS_BY_NAME          # noqa: E402
 from core.optimizers import MultiChannelEpidemicOptimizer        # noqa: E402
 from core.optimizers.mceso_adaptive_repel import AdaptiveRepelMCESO  # noqa: E402
 from core.optimizers.mceso_commit_reseed import CommitReseedMCESO    # noqa: E402
+from core.optimizers.mceso_phased_accept import PhasedAcceptMCESO    # noqa: E402
+from core.optimizers.mceso_crowding import MCESOCrowding             # noqa: E402
 from core.runner import _seed_indices, count_goptima             # noqa: E402
 
 
@@ -89,6 +91,14 @@ class _CountingCommitMCESO(_HuntCounters, CommitReseedMCESO):
     """The commit-to-one-draw diagnostic variant, instrumented the same way."""
 
 
+class _CountingPhasedMCESO(_HuntCounters, PhasedAcceptMCESO):
+    """The phased acceptance-rule variant, instrumented the same way."""
+
+
+class _CountingCrowdingMCESO(_HuntCounters, MCESOCrowding):
+    """Pure crowding replacement, instrumented the same way."""
+
+
 # variant name -> (class, constructor kwargs)
 _VARIANTS: dict[str, tuple[type, dict]] = {
     "base": (_CountingMCESO, {}),
@@ -133,6 +143,18 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
     "sigma_only": (_CountingCommitMCESO, {"commit_mode": "sigma_only",
                                           "commit_sigma_mode": "run",
                                           "commit_sigma_ratio": 0.1}),
+    # Two-phase acceptance rule (question 1): the shipped host competition while
+    # the first basin is being drilled, nearest-neighbour crowding for every
+    # later hunt. Entry 22 showed the restart's coverage is limited by the
+    # best-of-n_pop selection, not by the draw; this removes that pressure
+    # without touching sigma (the lever entries 26/27 closed).
+    "phased": (_CountingPhasedMCESO, {"accept_phase": "exhausted"}),
+    # Controls. `phased_off` must reproduce `base` exactly; `crowd_always` is
+    # the wholesale swap the audit found destroys depth, and `phased_always`
+    # must reproduce it exactly (shared body).
+    "phased_off": (_CountingPhasedMCESO, {"accept_phase": "off"}),
+    "phased_always": (_CountingPhasedMCESO, {"accept_phase": "always"}),
+    "crowd_always": (_CountingCrowdingMCESO, {}),
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
 # as a fraction of the locally observed basin spacing. `commit_tight` is r010.

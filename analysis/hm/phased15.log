@@ -1,0 +1,20 @@
+MC-ESO niching diagnosis   evals=20000  seeds=15  eps=0.1,0.001,1e-05
+function               K     eps  visited reported   resel   |res|  PR_now  PR_res distinct blocked  |rep|  spill  hunts     best_f
+------------------------------------------------------------------------------------------------------------------------------------
+N06-Shubert2D         18   1e-01     16.3     13.5    16.3   100.0    0.75    0.90     31.5    17.9     52   26.1   26.1    1.1e-13
+N06-Shubert2D         18   1e-03     12.5     11.3    12.5   100.0    0.63    0.69     31.5    20.2     52   26.1   26.1    1.1e-13
+N06-Shubert2D         18   1e-05      1.9      1.9     1.9   100.0    0.10    0.11     31.5    29.6     52   26.1   26.1    1.1e-13
+N07-Vincent2D         36   1e-01     36.0     16.3    36.0   100.0    0.45    1.00     26.6    10.3     51   24.9   24.9    0.0e+00
+N07-Vincent2D         36   1e-03     16.0     10.9    16.0   100.0    0.30    0.44     26.6    15.7     51   24.9   24.9    0.0e+00
+N07-Vincent2D         36   1e-05      5.2      5.1     5.2   100.0    0.14    0.14     26.6    21.5     51   24.9   24.9    0.0e+00
+
+wrote analysis/hm/phased15.csv (90 rows)
+
+visited >> reported -> optima are found and then dropped from the reported set (a recording problem).
+visited ~= reported -> the search itself stops finding new optima.
+distinct << |rep|   -> the reported set is mostly duplicates of the same basins.
+blocked > 0        -> reported niches are held by points that miss eps, so they score nothing.
+PR_res >> PR_now   -> the loss is in the reporting rule: the same run, rescored off a legal
+                      cap-sized set reselected from its own history, is worth this much more.
+|res| < cap        -> the history held fewer rho-separated points than the cap allows, so the
+                      cap is not what limits the reselected set.

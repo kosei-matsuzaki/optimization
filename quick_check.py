@@ -30,6 +30,7 @@ from core.optimizers.mceso_ablations import (
     MCESONoSpillover, MCESONoHostCompetition,
 )
 from core.optimizers.mceso_commit_reseed import CommitReseedMCESO
+from core.optimizers.mceso_phased_accept import PhasedAcceptMCESO
 from core.runner import (run_experiment, summarize, wilcoxon_vs_reference,
                          peak_metrics, niching_peak_metrics, niching_peak_counts)
 from core.visualize import (
@@ -317,6 +318,12 @@ _OPTIMIZERS = {
     "sigma_only":     (CommitReseedMCESO, {"commit_mode": "sigma_only",
                                            "commit_sigma_mode": "run",
                                            "commit_sigma_ratio": 0.1}),
+    #  Niching lever under test (research_loop 問い 1, 2026-09-03): the phased
+    #  acceptance rule — the shipped host competition while the first basin is
+    #  drilled, nearest-neighbour crowding for every later hunt. The first phase
+    #  is what has to hold SR@1e-10, so this entry checks the phase boundary is
+    #  where it is claimed to be: BBOB-24 dim2 must not lose SR@1e-10.
+    "phased":         (PhasedAcceptMCESO, {"accept_phase": "exhausted"}),
 }
 
 

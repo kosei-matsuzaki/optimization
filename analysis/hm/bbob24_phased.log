@@ -1,0 +1,57 @@
+Quick check → results/20260903_043320_5b9ee76_quick/
+PID 2317  (stop with: ./run.sh stop)
+quick_check  suite=bbob  dim=2  n_runs=20  max_evals=5000  set=all  custom=False  noise=off  funcs=all  methods=['MC-ESO', 'phased']
+
+=== dim2 ===
+
+Function               Method               Mean SR@1e-1 SR@1e-2 SR@1e-4 SR@1e-7 SR@1e-10  EvalsSucc
+------------------------------------------------------------------------------------------------------
+F01-Sphere             MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       216
+F01-Sphere             phased       0.0000e+00   100%   100%   100%   100%    100%       216
+F02-EllipsoidalSep     MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       476
+F02-EllipsoidalSep     phased       0.0000e+00   100%   100%   100%   100%    100%       476
+F03-RastriginSep       MC-ESO       2.8422e-15   100%   100%   100%   100%    100%       831
+F03-RastriginSep       phased       2.8422e-15   100%   100%   100%   100%    100%       831
+F04-BucheRastrigin     MC-ESO       4.6253e-08   100%   100%   100%    95%     95%      1984
+F04-BucheRastrigin     phased       4.6253e-08   100%   100%   100%    95%     95%      1984
+F05-LinearSlope        MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       394
+F05-LinearSlope        phased       0.0000e+00   100%   100%   100%   100%    100%       394
+F06-AttractiveSector   MC-ESO       2.1671e-09   100%   100%   100%   100%     95%       519
+F06-AttractiveSector   phased       2.1671e-09   100%   100%   100%   100%     95%       519
+F07-StepEllipsoidal    MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       196
+F07-StepEllipsoidal    phased       0.0000e+00   100%   100%   100%   100%    100%       196
+F08-Rosenbrock         MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       475
+F08-Rosenbrock         phased       0.0000e+00   100%   100%   100%   100%    100%       475
+F09-RosenbrockRot      MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       420
+F09-RosenbrockRot      phased       0.0000e+00   100%   100%   100%   100%    100%       420
+F10-EllipsoidalRot     MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       475
+F10-EllipsoidalRot     phased       0.0000e+00   100%   100%   100%   100%    100%       475
+F11-Discus             MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       457
+F11-Discus             phased       0.0000e+00   100%   100%   100%   100%    100%       457
+F12-BentCigar          MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       480
+F12-BentCigar          phased       0.0000e+00   100%   100%   100%   100%    100%       480
+F13-SharpRidge         MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       589
+F13-SharpRidge         phased       0.0000e+00   100%   100%   100%   100%    100%       589
+F14-DiffPowers         MC-ESO       8.1357e-14   100%   100%   100%   100%    100%       314
+F14-DiffPowers         phased       8.1357e-14   100%   100%   100%   100%    100%       314
+F15-RastriginRot       MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       862
+F15-RastriginRot       phased       0.0000e+00   100%   100%   100%   100%    100%       862
+F16-Weierstrass        MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       590
+F16-Weierstrass        phased       0.0000e+00   100%   100%   100%   100%    100%       590
+F17-SchafferF7         MC-ESO       5.2293e-06   100%   100%   100%    80%     60%      1000
+F17-SchafferF7         phased       5.2293e-06   100%   100%   100%    80%     60%      1000
+F18-SchafferF7ill      MC-ESO       1.2905e-05   100%   100%    95%    90%     90%       930
+F18-SchafferF7ill      phased       1.2905e-05   100%   100%    95%    90%     90%       930
+F19-GriewankRosenbrock MC-ESO       0.0000e+00   100%   100%   100%   100%    100%      1029
+F19-GriewankRosenbrock phased       0.0000e+00   100%   100%   100%   100%    100%      1029
+F20-Schwefel           MC-ESO       2.9610e-02    95%    95%    95%    95%     95%      1682
+F20-Schwefel           phased       2.9610e-02    95%    95%    95%    95%     95%      1682
+F21-Gallagher101       MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       352
+F21-Gallagher101       phased       0.0000e+00   100%   100%   100%   100%    100%       352
+F22-Gallagher21        MC-ESO       0.0000e+00   100%   100%   100%   100%    100%       189
+F22-Gallagher21        phased       0.0000e+00   100%   100%   100%   100%    100%       189
+F23-Katsuura           MC-ESO       2.2204e-02    95%    95%    95%    75%     75%      1128
+F23-Katsuura           phased       2.2204e-02    95%    95%    95%    75%     75%      1128
+F24-LunacekRastrigin   MC-ESO       1.1298e+00    35%     0%     0%     0%      0%       ---
+F24-LunacekRastrigin   phased       1.1298e+00    35%     0%     0%     0%      0%       ---
+Saved → /home/user/optimization/results/20260903_043320_5b9ee76_quick/dim2/
