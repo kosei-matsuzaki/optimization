@@ -93,7 +93,21 @@ class _CountingCommitMCESO(_HuntCounters, CommitReseedMCESO):
 _VARIANTS: dict[str, tuple[type, dict]] = {
     "base": (_CountingMCESO, {}),
     "localwin": (_CountingMCESO, {"exhausted_local_window": True}),
+    # NOTE: `fast` is a no-op — mceso.py's default hunt_no_improve_mult is
+    # already 0.5, so this variant reproduces `base` exactly. Kept as an
+    # identity check; use the hunts_* controls below to actually add hunts.
     "fast": (_CountingMCESO, {"hunt_no_improve_mult": 0.5}),
+    # Hunt-count controls for the sigma_only confounder test: release hunts
+    # earlier *without* touching the post-restart sigma, so base can be run at
+    # a matched number of hunts. Two independent release knobs:
+    #   hunt_no_improve_mult  - shorter stagnation window at the sigma floor
+    #   exhausted_sigma_tol   - call the basin bottomed at a larger sigma
+    **{f"hunts_m{int(round(m * 100)):03d}": (_CountingMCESO,
+                                             {"hunt_no_improve_mult": m})
+       for m in (0.35, 0.25, 0.15, 0.05)},
+    **{f"hunts_tol{int(round(t)):02d}": (_CountingMCESO,
+                                         {"exhausted_sigma_tol": t})
+       for t in (3.0, 6.0, 12.0, 25.0)},
     # Restart repulsion scaled by the observed distances between basins already
     # drilled, instead of a fixed 0.02 * span. See mceso_adaptive_repel.py.
     "adaptive": (_CountingAdaptiveMCESO, {"repel_mode": "adaptive"}),
