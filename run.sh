@@ -199,6 +199,14 @@ cmd_ui() {
   "$PY" web/app.py
 }
 
+# 研究ループ（1 時間ごとにクラウドで回っているサイクル）の現況を 1 画面で見る。
+# 先に research-loop を取り込んでから表示する。
+cmd_loop() {
+  git fetch -q origin research-loop 2>/dev/null || true
+  git merge --ff-only origin/research-loop >/dev/null 2>&1 ||     echo "（ローカルが分岐しています。git log origin/research-loop で確認してください）"
+  "$PY" scripts/loop_status.py "$@"
+}
+
 # ── dispatch ──────────────────────────────────────────────────────────────────
 case "${1:-help}" in
   trigger)  shift; cmd_trigger  "$@" ;;
@@ -208,6 +216,7 @@ case "${1:-help}" in
   list)            cmd_list ;;
   status)   shift; cmd_status   "${1:-}" ;;
   ui)       shift; cmd_ui       "${1:-}" ;;
+  loop)     shift; cmd_loop     "$@" ;;
   *)
     cat <<'EOF'
 Usage: ./run.sh <command> [options]
@@ -220,6 +229,12 @@ Usage: ./run.sh <command> [options]
       完了済みワークフローの結果をダウンロード（省略時は最新）
       --label で保存フォルダ名を指定（省略時はコミットハッシュ）
       保存先: results/YYYYMMDD_HHMMSS_<label|commit>/
+
+  loop [--cycles N] [--full]
+      研究ループの現況を表示（方針欄 / ゴール / 未解決の問いと claim 状況 /
+      棄却済みの路線 / 直近サイクルの結論）。表示前に research-loop を取り込む。
+      方向を変えるには docs/research_loop.md の「方針（ユーザーが書く欄）」に書くか、
+      「未解決の問い」を並べ替えて research-loop に push する。
 
   quick [--n-runs N] [--max-evals N] [--dim {2|3|5|10|20}] [--methods LIST]
         [--funcs LIST] [--suite {bbob|cec2022}] [--all] [--custom] [--label NAME]
