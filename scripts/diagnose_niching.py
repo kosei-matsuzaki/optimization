@@ -146,6 +146,14 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
     # of 0.25 x. Separates "commit" from "commit *narrowly*".
     "commit_tight": (_CountingCommitMCESO, {"commit_sigma_mode": "run",
                                             "commit_sigma_ratio": 0.1}),
+    # The other half of `commit_tight`, at the *same* ratio: the population is
+    # committed to one anchor (the best-of-n_pop race is gone) but the
+    # post-restart sigma stays at the base sigma_init, so the hunt still
+    # searches at the box scale. With `sigma_only_r010` and `commit_tight` this
+    # closes a 2x2 -- commit on/off x run-sigma tight/base -- at a matched
+    # ratio, which `commit` (place mode, ratio 0.25) does not (entry 40).
+    "commit_place_r010": (_CountingCommitMCESO, {"commit_sigma_mode": "place",
+                                                 "commit_sigma_ratio": 0.1}),
     # Identity check for the commit class.
     "commit_off": (_CountingCommitMCESO, {"commit_mode": "off"}),
     # Control: base restart draws (the best-of-n_pop race is kept) with only the
