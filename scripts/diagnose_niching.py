@@ -142,6 +142,21 @@ _VARIANTS.update({
         {"commit_sigma_mode": "run", "commit_sigma_ratio": r})
     for r in (0.25, 0.10, 0.05, 0.02, 0.01)
 })
+# Entry 26 rejected `sigma_only` (ratio 0.1) for the body: on N08-Shubert3D the
+# PR@1e-1 sign reverses (0.34 -> 0.20, 0/0/5). The mechanism read off the
+# diagnostics is that a tight sigma makes each hunt short, and in 3D a short
+# hunt does not reach 1e-1 at all (`blocked` 29.0 -> 54.6). If that is the whole
+# story, the ratio is simply mistuned for 3D -- basins there are wider relative
+# to the spacing -- and a looser ratio should recover. These are the same
+# control as `sigma_only` (base draws, best-of-n_pop race kept; only the
+# post-restart sigma moves) at 0.25x and 0.5x the local basin spacing.
+_VARIANTS.update({
+    f"sigma_only_r{int(round(r * 1000)):03d}": (
+        _CountingCommitMCESO,
+        {"commit_mode": "sigma_only", "commit_sigma_mode": "run",
+         "commit_sigma_ratio": r})
+    for r in (0.25, 0.5)
+})
 
 
 def _distinct_points(X: np.ndarray, F: np.ndarray, rho: float) -> int:
