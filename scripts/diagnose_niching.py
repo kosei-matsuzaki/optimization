@@ -35,6 +35,7 @@ from core.optimizers.mceso_commit_reseed import CommitReseedMCESO    # noqa: E40
 from core.optimizers.mceso_phased_accept import PhasedAcceptMCESO    # noqa: E402
 from core.optimizers.mceso_crowding import MCESOCrowding             # noqa: E402
 from core.optimizers.mceso_recover import RecoverMCESO               # noqa: E402
+from core.optimizers.mceso_rel_level import RelLevelMCESO            # noqa: E402
 from core.runner import _seed_indices, count_goptima             # noqa: E402
 
 
@@ -102,6 +103,10 @@ class _CountingCrowdingMCESO(_HuntCounters, MCESOCrowding):
 
 class _CountingRecoverMCESO(_HuntCounters, RecoverMCESO):
     """The late recovery-phase variant, instrumented the same way."""
+
+
+class _CountingRelLevelMCESO(_HuntCounters, RelLevelMCESO):
+    """The eps-relative hunt-release-level variant, instrumented the same way."""
 
 
 # variant name -> (class, constructor kwargs)
@@ -181,6 +186,19 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
     **{f"level_t{int(round(-np.log10(t))):02d}": (_CountingMCESO,
                                                   {"hunt_level_tol": t})
        for t in (1e-7, 1e-8, 1e-10)},
+    # Question 1 (entry 36): the release level made *dimension invariant*. The
+    # fixed level_t* sweep gave two different best values (2D 1e-7, 3D 1e-8)
+    # because the effective release level is `hunt_level_tol * f_init_scale` and
+    # f_init_scale is ~145 in 2D but ~2493 in 3D (entry 35). This variant fixes
+    # the *effective* level L = c * eps_target directly and lets hunt_level_tol
+    # track f_init_scale, so the same c should be best in both dimensions.
+    # eps_target = 1e-5 (the deepest scoring accuracy); c = 0.1 -> L = 1e-6
+    # (matches the 2D win the fixed 1e-8 bought, 1.4e-6) and c = 0.01 -> L = 1e-7.
+    # `level_rel_off` (L=0) must reproduce base exactly (identity check).
+    "level_rel_off": (_CountingRelLevelMCESO, {"rel_level": 0.0}),
+    **{f"level_rel_c{int(round(c * 100)):02d}": (_CountingRelLevelMCESO,
+                                                 {"rel_level": c * 1e-5})
+       for c in (0.1, 0.01)},
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
 # as a fraction of the locally observed basin spacing. `commit_tight` is r010.
