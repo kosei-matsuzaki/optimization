@@ -1,0 +1,4 @@
+function,K,eps,seed,evals,cap,visited,reported,resel,n_resel_pts,distinct,blocked,n_reported_pts,spillover,basin_switch,hunts,landed,best_f
+N07-Vincent2D,36,0.001,0,20000,100,14,9,14,100,9,0,64,38,38,38,38,0.0
+N07-Vincent2D,36,0.001,1,20000,100,16,9,16,100,15,6,62,36,36,36,36,0.0
+N07-Vincent2D,36,0.001,2,20000,100,10,7,10,100,8,1,60,34,34,34,34,0.0

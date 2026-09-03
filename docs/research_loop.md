@@ -65,6 +65,10 @@ K=36 の N07 では最良手法が PR 0.97 に届くのに、K=216 の N09 で�
   独立に反発描画するので描画は全 36 解を覆うが、μ+λ 貪欲の best-of-20 が系統的に広い盆地の
   点を選ぶため着地は 11-15 解に留まる。**描画規則や σ_init（箱に対する固定比）を変えても
   この偏りは動かない。**
+- **`sigma_only` の利得は hunt 数ではない**（その25）。予算を 40% 増やして hunt 数を
+  追い越させた base（51.5 対 49.1）でも N07 の PR@1e-3 は届かず 15 seed 全敗。
+  ただし **σ と予算は別の精度水準に効く**（Shubert の粗い水準は予算律速で σ は動かさない）。
+  **解放規則（`hunt_no_improve_mult` / `exhausted_sigma_tol`）では base の hunt 数は上がらない。**
 - **ただし「σ を局所盆地間隔に合わせる」は別のつまみで、これは効く**（その23）。
   再起動後の σ を `0.1 × d_local`（観測済み盆地重心の最近傍距離、追加評価ゼロ）にすると
   N07 の PR は全 eps で 0.22 → 0.34（15/15 seed）、さらに 20 本の描画を 1 本に commit すると
@@ -121,31 +125,33 @@ peak ratio」をゴールに置き直した。監査テーマ（受容集合）�
 [acceptance_topology.md の終了節](acceptance_topology.md#監査テーマの終了2026-09-02--何が残り何がゴールに引き継がれたか)
 に集約済み。報告規則の路線は先行研究に占有されている（上記「占有されている領域」）。
 
-1. **`sigma_only` の利得が本物か（hunt 数の交絡を潰し、N08 と BBOB で確かめる）** *(claimed 2026-09-03 00:31 UTC)* — その23 で
-   梃子が確定した: **再起動後の σ を、箱に対する固定比（σ_init = 0.2×span）ではなく、
-   その時点で観測された局所盆地間隔 `d_local` に対する比に置く**。
+1. **`sigma_only` を本体に取り込めるか — 残りは N08 と BBOB の 2 つだけ** — 梃子は
+   **再起動後の σ を、箱に対する固定比（σ_init = 0.2×span）ではなく、その時点で観測された
+   局所盆地間隔 `d_local` に対する比に置くこと**（その23）。
    `sigma_only`（描画は base のまま、σ = 0.1·d_local。`core/optimizers/mceso_commit_reseed.py` の
    `commit_mode="sigma_only"`、`scripts/diagnose_niching.py --variant sigma_only`）は 15 seed で
-   **N07 の PR を全 eps 水準で 0.22 → 0.34（15/15 seed、p = 0.0006、A12 = 1.00）**、
-   **N06 の PR@1e-5 を 0.17 → 0.39（13/15、p = 0.0014）**に上げ、
-   **N06 の 1e-1 / 1e-3 は削っていない**（0.82 → 0.82 / 0.81、w/t/l 6/2/7 で無差）。
-   これが本当なら「深さと広さは 1 つのつまみで両立しない」の例外になるので、慎重に潰す。
-   **やること（順に）**:
-   (a) **交絡を潰す。** σ を落とすと σ が底を打つのが早く hunt が N07 で 35.5 → 49.1、
-   N06 で 29.5 → 43.9 に増える。利得が σ の質なのか hunt 数なのかを分ける。
-   対照は「base のまま hunt 数だけを 49 に増やす」構成（`hunt_no_improve_mult` を下げる
-   既存の `--variant fast` が使える。`exhausted_sigma_tol` を上げる手もある）。
-   **hunt 数を揃えた base が N07 で 0.34 に届くなら σ の寄与は無く、届かなければ本物。**
-   (b) **N08-Shubert3D を測る**（その23 は 2D 2 関数しか測っていない）。3D で符号が反転しないこと。
-   (c) **BBOB-24 dim2 / n=20 で SR@1e-10 93.5% / evals_succ_mean 798 を割らないこと**を確認する。
-   ここまで通れば本体（`mceso.py:1058` の `sigma_restart`）に取り込む候補になる。割ったら取り込まない。
-   **判定**: (a) で交絡が晴れ、(b) で N08 が悪化せず、(c) が 93.5% を割らない、の 3 つ全部。
-   どれか 1 つでも落ちたら本体には入れず、診断用の知見として畳む。
+   N07 の PR を 0.22 → 0.34、N06 の PR@1e-5 を 0.17 → 0.39 に上げ、N06 の粗い水準を削らない。
+   **(a) hunt 数の交絡はその25 で晴れた**（予算を 40% 増やして hunt 数を 51.5 対 49.1 と
+   追い越させた base でも N07 の PR@1e-3 は 0.26 止まりで、15 seed 全敗。N06 の 1e-5 も 0/4/11）。
+   **残りは 2 つ**:
+   (b) **N08-Shubert3D で符号が反転しないこと**（その23・その25 とも 2D 2 関数しか測れていない）。
+   `python3 scripts/diagnose_niching.py --evals 40000 --seeds 5 --eps 1e-1,1e-3,1e-5
+   --variant {base,sigma_only} --funcs N08-Shubert3D --csv analysis/hm/n08_<variant>.csv` を
+   **この 2 本だけ並列で**（3D は重く 1 本 15 分前後。他と同時に回さない）。
+   比較は `scripts/hunt_confound.py --func N08-Shubert3D --ref base`。
+   (c) **BBOB-24 dim2 / n=20 で SR@1e-10 93.5% / evals_succ_mean 798 を割らないこと**。
+   `quick_check.py` の `_OPTIMIZERS` に一時エントリ `"sigma_only": (CommitReseedMCESO,
+   {"commit_mode":"sigma_only","commit_sigma_mode":"run","commit_sigma_ratio":0.1})` を足し、
+   `./run.sh quick --all --n-runs 20 --methods MC-ESO,sigma_only`。**本体は触らない。**
+   **判定**: (b) で N08 が悪化せず、(c) が 93.5% を割らなければ、本体
+   （`mceso.py:1058` の `sigma_restart`）に取り込む候補になる。割ったら取り込まない。
    **注意**: σ 比は単調ではない（0.25 / 0.10 / 0.05 / 0.02 / 0.01 で N07 PR@1e-3 は
    0.37 / **0.46** / 0.37 / 0.38 / 0.38）。**0.1 付近以外を既定にしない。**
    **N09 は天井 0.29 で識別力が無いので判定に使わない。**
+   **`--variant fast` は base と同一の no-op**（`hunt_no_improve_mult=0.5` は既定値）。対照に使わない。
    **運用**: N09 を 4 万評価 × 3 seed で回すときは並列を 2 まで（3 並列は OOM で落ちる）。
-   N07/N06 は 2 万評価なら 1 seed 数秒なので、3 seed ではなく **15 seed** で回せる。
+   N07/N06 は 2 万評価なら 1 seed 約 13 秒なので **15 seed** で回せる。4 コアなので
+   **同時に回すのは 3 本まで**（4 本流すと後処理が詰まり、40 分で終わらない）。
 2. **選び直しの報告規則を全手法に与えて測り直す** — その20 で、履歴からの rho 貪欲な選び直し
    （`reselect_from_history`、追加評価ゼロ、cap = max(100, 2K) 厳守）は MC-ESO の
    N07 / N09 の PR@1e-1 を 0.25 / 0.12 → **1.00** に上げた。だが `core/runner.py:198` が
@@ -220,6 +226,88 @@ peak ratio」をゴールに置き直した。監査テーマ（受容集合）�
 
 新しい回ほど上に書く。1 回 1 節、日付・やったこと・分かったこと・次に繋がる問い。
 **8 件を超えたら次の回は統合の回**（手順 2）。
+
+### 2026-09-03 その25（交絡は晴れた — `sigma_only` の利得は hunt 数ではない。予算を 40% 増やし hunt 数を追い越させた base でも届かない）
+
+問い 1 の (a)。**交絡テストは通った**。以下すべて MC-ESO の既定値は不変。
+
+**まず、問いが指定していた対照（`--variant fast`）は使えない。**
+`fast` は `hunt_no_improve_mult=0.5` を渡すが、これは `mceso.py:392` の**既定値そのもの**なので
+`base` と完全に同一の変種だった（その24 が対照として書いたのは誤り）。
+代わりに解放規則の 2 つのつまみを振る変種を `diagnose_niching.py` に足して掃引したが、
+**どちらも hunt 数を動かさなかった**（N07、3 seed、20000 評価）:
+
+| つまみ | 振った範囲 | hunt 数 |
+|---|---|---|
+| `hunt_no_improve_mult` | 0.35 / 0.25 / 0.15 / 0.05 | **35.0 / 35.0 / 35.0 / 35.0**（全行が数値完全一致） |
+| `exhausted_sigma_tol` | 3 / 6 / 12 / 25 | 35.7 / 36.0 / 36.0 / 36.3 |
+
+**機序**: Vincent は大域最適が全て同じ高さなので、hunt は σ 下限ではなく
+**`hunt_level_tol` の経路で終わる**（`mceso.py:919-928`）。σ 下限の判定を緩めても
+level_tol が先に発火するので効かず、停滞窓を縮めても no_improve は既に閾値を越えている。
+**base の hunt 数は解放規則では上げられない。**
+
+**そこで対照を予算に取った。** base に評価回数を渡して hunt 数が `sigma_only` に並ぶまで増やし、
+そこで PR を読む。**base に評価を余分に与えるので帰無仮説に有利な（保守的な）対照**である。
+base @ 28000 評価、15 seed、seed 列は既存の 15 seed 測定と同一（`seed*100`）。
+`analysis/hm/base28k_n0{6,7}.csv`、解析は新規の `scripts/hunt_confound.py`（対応のある Wilcoxon）。
+
+**N07-Vincent2D（15 seed、reference = `sigma_only` @ 20000）— hunt 数で追い越しても届かない:**
+
+| 構成 | 評価 | hunts | PR@1e-1 | PR@1e-3 | PR@1e-5 | 1e-3 の w/t/l | p | A12 |
+|---|---|---|---|---|---|---|---|---|
+| base | 20000 | 35.5 | 0.26 | 0.22 | 0.22 | | | |
+| **`sigma_only`** | 20000 | 49.1 | 0.37 | **0.34** | 0.33 | — | — | — |
+| **base（対照）** | **28000** | **51.5** | 0.32 | **0.26** | 0.26 | **0/0/15** | **0.0006** | **0.00** |
+
+**base は hunt 数で 51.5 対 49.1 と追い越し、評価回数も 40% 多いのに、
+PR@1e-3 は 15 seed 全部で `sigma_only` に負ける**（1e-5 でも 0/1/14、p = 0.0007）。
+**利得は hunt 数では説明されない。**
+
+**N06-Shubert2D（15 seed、hunt 数はほぼ完全一致 43.3 対 43.9）— 精度水準で役割が割れる:**
+
+| 構成 | 評価 | hunts | PR@1e-1 | PR@1e-3 | **PR@1e-5** | 1e-5 の w/t/l（対 `sigma_only`） | p |
+|---|---|---|---|---|---|---|---|
+| base | 20000 | 29.5 | 0.82 | 0.82 | 0.17 | | |
+| **`sigma_only`** | 20000 | 43.9 | 0.82 | 0.81 | **0.39** | — | — |
+| base（対照） | 28000 | 43.3 | **0.92** | **0.91** | 0.22 | **0/4/11** | **0.0017** |
+
+深精度側は N07 と同じ結論で、**hunt 数を揃えた base（しかも予算 40% 増）でも 0.22 止まりで
+`sigma_only` の 0.39 に届かない**（15 seed 中 11 敗 4 分 0 勝）。
+
+**副次的な負の結果（新規、これは `sigma_only` の弱点）。**
+Shubert の**粗い水準（1e-1 / 1e-3）は予算律速**だった。base に 8000 評価足すだけで
+0.82 → 0.92 に上がる（13/2/0、p = 0.0008）のに、`sigma_only` は同じ水準を
+**0.82 → 0.82 と一切動かさない**（6/2/7、p = 0.80）。
+つまり **σ のつまみと予算は別々の水準に効いている**: σ は深精度側だけ、予算は粗い側だけ。
+`sigma_only` は「無償」ではあるが「万能」ではなく、**Shubert の粗い水準には何も足さない**。
+等予算では削らないので採用の障害にはならないが、**σ を予算の代わりに使えると読んではいけない。**
+
+**環境の記録（次の回への注意）。**
+(i) **`pip install -r requirements.txt` は `pynmmso` のビルドで落ちる**（`setup.py` の
+`test_suite='nose.collector'` が setuptools の廃止経路を踏む）。`core/optimizers/__init__.py` が
+無条件に import するので**全スクリプトが動かなくなる**。回避策は sdist を展開して
+`test_suite=` / `tests_require=` の 2 行を消し、`pynmmso` パッケージを site-packages に直接コピーする
+（`pip download --no-deps --no-binary :all: pynmmso` → 展開 → `cp -r pynmmso $(python3 -c
+'import site;print(site.getsitepackages()[0])')`）。他の依存（ioh / cma / numpy / scipy）は
+`pip install ioh cma numpy scipy` で入る。
+(ii) **このコンテナは 4 コア**。5 本並列で流したところ後処理が詰まり、40 分の枠内に
+N08 と 40000 評価の run が終わらなかった。**同時に回すのは 3 本まで。**
+
+**まとめ（問い 1 の 3 条件）**: (a) **通った**（交絡は晴れた、両関数とも）。
+(b) N08-Shubert3D は**未了** — 40000 評価 × 5 seed を回したがコンテナ再起動で落ちた（約 12 分経過時点）。
+(c) BBOB-24 dim2 の SR@1e-10 は**未着手**。
+
+**次の回への正確な続き（問い 1 として書き直した）。** 残りは (b) と (c) だけ。
+(b) は `python3 scripts/diagnose_niching.py --evals 40000 --seeds 5 --eps 1e-1,1e-3,1e-5
+--variant sigma_only --funcs N08-Shubert3D --csv analysis/hm/n08_sigma_only.csv` と
+同じものを `--variant base` で 1 本、**この 2 本だけを並列で**（N08 は 3D で重い。
+1 本あたり 15 分前後を見込む。他の run と同時に回さない）。
+比較は `python3 scripts/hunt_confound.py --func N08-Shubert3D --ref base ...`。
+(c) は `quick_check.py` の `_OPTIMIZERS` に一時エントリ
+`("sigma_only", CommitReseedMCESO, {"commit_mode":"sigma_only", "commit_sigma_mode":"run",
+"commit_sigma_ratio":0.1})` を足し、`./run.sh quick --all --n-runs 20 --methods MC-ESO,sigma_only`。
+**本体（`mceso.py`）は触らない。**
 
 ### 2026-09-02 その24（統合の回 — 多峰テーマの結論を `acceptance_topology.md` に集約し、ログを 3 件に畳んだ）
 
