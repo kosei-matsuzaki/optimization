@@ -1,0 +1,52 @@
+peak ratio on the reported set, 5 seeds, budget = 0.1 x suite
+(reduced budget: this aims the work, it is not the comparison to report)
+(both reporting rules are scored off the same runs: paired, no extra evaluations)
+
+function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
+---------------------------------------------------------------------------------------------------
+N06-Shubert2D       MC-ESO        current    18     1111     56    0.81   0.81   0.81   0.68   0.20    0.662    14
+N06-Shubert2D       MC-ESO        reselect   18     1111    100    0.84   0.82   0.81   0.68   0.20    0.671    14
+N06-Shubert2D       MC-ESO-crowd  current    18     1111     53    0.73   0.61   0.53   0.31   0.09    0.456    13
+N06-Shubert2D       MC-ESO-crowd  reselect   18     1111    100    0.82   0.71   0.58   0.32   0.09    0.504    14
+N06-Shubert2D       NCDE          current    18     1111     30    0.20   0.02   0.00   0.00   0.00    0.044     5
+N06-Shubert2D       NCDE          reselect   18     1111    100    0.22   0.02   0.00   0.00   0.00    0.049     6
+N06-Shubert2D       r3pso         current    18     1111     30    0.33   0.29   0.28   0.27   0.27    0.287     1
+N06-Shubert2D       r3pso         reselect   18     1111    100    0.33   0.29   0.28   0.27   0.27    0.287     2
+N06-Shubert2D       DE            current    18     1111     30    0.06   0.06   0.06   0.06   0.06    0.056     3
+N06-Shubert2D       DE            reselect   18     1111    100    0.21   0.19   0.17   0.13   0.11    0.162     4
+N06-Shubert2D       NM-Restart    current    18     1111      2    0.00   0.00   0.00   0.00   0.00    0.000     3
+N06-Shubert2D       NM-Restart    reselect   18     1111      2    0.00   0.00   0.00   0.00   0.00    0.000     3
+N06-Shubert2D       NMMSO         current    18     1111     69    0.84   0.82   0.78   0.72   0.59    0.751     7
+N06-Shubert2D       NMMSO         reselect   18     1111    100    0.84   0.82   0.78   0.72   0.59    0.751     8
+
+N07-Vincent2D       MC-ESO        current    36      556     61    0.25   0.24   0.24   0.24   0.24    0.242    13
+N07-Vincent2D       MC-ESO        reselect   36      556    100    1.00   0.50   0.33   0.29   0.26    0.476    13
+N07-Vincent2D       MC-ESO-crowd  current    36      556     74    0.26   0.18   0.18   0.17   0.07    0.171    11
+N07-Vincent2D       MC-ESO-crowd  reselect   36      556    100    1.00   0.67   0.41   0.20   0.07    0.470    12
+N07-Vincent2D       NCDE          current    36      556     30    0.44   0.43   0.42   0.38   0.26    0.387     5
+N07-Vincent2D       NCDE          reselect   36      556    100    1.00   0.54   0.51   0.44   0.28    0.554     6
+N07-Vincent2D       r3pso         current    36      556     30    0.15   0.15   0.15   0.13   0.13    0.143     1
+N07-Vincent2D       r3pso         reselect   36      556    100    1.00   0.24   0.19   0.16   0.13    0.346     2
+N07-Vincent2D       DE            current    36      556     30    0.03   0.03   0.03   0.03   0.03    0.028     3
+N07-Vincent2D       DE            reselect   36      556    100    1.00   0.23   0.11   0.08   0.07    0.298     4
+N07-Vincent2D       NM-Restart    current    36      556    100    0.57   0.57   0.57   0.57   0.57    0.572     2
+N07-Vincent2D       NM-Restart    reselect   36      556    100    1.00   0.61   0.61   0.61   0.61    0.689     4
+N07-Vincent2D       NMMSO         current    36      556     36    0.99   0.99   0.99   0.99   0.99    0.994     5
+N07-Vincent2D       NMMSO         reselect   36      556    100    1.00   1.00   0.99   0.99   0.99    0.997     6
+
+N10-ModRastrigin2D  MC-ESO        current    12     1667     58    0.92   0.92   0.92   0.92   0.92    0.917    12
+N10-ModRastrigin2D  MC-ESO        reselect   12     1667    100    1.00   0.98   0.97   0.97   0.93    0.970    13
+N10-ModRastrigin2D  MC-ESO-crowd  current    12     1667     73    0.57   0.53   0.38   0.25   0.15    0.377    12
+N10-ModRastrigin2D  MC-ESO-crowd  reselect   12     1667    100    1.00   0.93   0.48   0.27   0.15    0.567    12
+N10-ModRastrigin2D  NCDE          current    12     1667     30    0.98   0.98   0.98   0.98   0.98    0.983     5
+N10-ModRastrigin2D  NCDE          reselect   12     1667    100    0.98   0.98   0.98   0.98   0.98    0.983     6
+N10-ModRastrigin2D  r3pso         current    12     1667     30    0.52   0.52   0.48   0.45   0.43    0.480     1
+N10-ModRastrigin2D  r3pso         reselect   12     1667    100    0.68   0.58   0.52   0.45   0.43    0.533     2
+N10-ModRastrigin2D  DE            current    12     1667     30    0.08   0.08   0.08   0.08   0.08    0.083     3
+N10-ModRastrigin2D  DE            reselect   12     1667    100    0.87   0.85   0.72   0.62   0.50    0.710     4
+N10-ModRastrigin2D  NM-Restart    current    12     1667    100    1.00   1.00   1.00   1.00   1.00    1.000     2
+N10-ModRastrigin2D  NM-Restart    reselect   12     1667    100    1.00   1.00   1.00   1.00   1.00    1.000     3
+N10-ModRastrigin2D  NMMSO         current    12     1667     12    1.00   1.00   1.00   1.00   1.00    1.000     4
+N10-ModRastrigin2D  NMMSO         reselect   12     1667    100    1.00   1.00   1.00   1.00   1.00    1.000     5
+
+rows written to analysis/hm/resel_2d.csv

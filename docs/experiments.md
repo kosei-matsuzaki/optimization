@@ -108,6 +108,8 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 | サブエージェント `experimenter`（`.claude/agents/`） | 「比較手法設定 → `./run.sh quick` 実行 → monitor → `analyze_quick.py` で分析 → 判定を返す」一連を独立コンテキストで完結。手法ブラッシュアップ中に本会話を汚さず評価を回すためのもの（評価専任・コードは変更しない） |
 | `scripts/diagnose_niching.py [--evals N] [--seeds N] [--eps 1e-1,1e-3,1e-5] [--funcs ...] [--csv PATH]` | CEC2013 niching で MC-ESO の **visited（走行中に触れた大域最適）と reported（報告集合の大域最適）を分けて数える**。`visited ≫ reported` なら記録の問題（追加評価ゼロで直る）、`visited ≈ reported` なら探索の問題。`distinct` は報告集合の rho 分離点数（重複報告の検査）、`blocked` はそのうち eps を外して 0 点になる数。**`--eps` はカンマ列を取り、すべて同じ run から採点する**（精度水準を増やしても再最適化は起きない）。**visited は eps に強く依存するので 1 水準だけで判断しないこと**（2026-08-31 の測定は ε=1e-4 単独で「Vincent は探索が届いていない」と誤結論した）。`--variant` は診断用の変種（`core/optimizers/mceso_*.py`、本体は不変）を選ぶ。**`--variant fast` は既定値を渡すだけの no-op で base と同一**なので対照に使わない |
 | `scripts/hunt_confound.py [--func NAME] [--ref LABEL] LABEL=CSV ...` | `diagnose_niching.py` の CSV を複数取り、**共通 seed で対応のある Wilcoxon**（w/t/l・p・A12）を eps 水準ごとに並べる。PR の隣に **hunt 数と評価回数を必ず表示する**ので、「PR の差が hunt 数や予算の差ではないか」をその場で読める。予算違いの run を並べて hunt 数を揃えるのが本来の用途（2026-09-03 の `sigma_only` 交絡テスト） |
+| `scripts/niching_baseline.py [--funcs ...] [--methods ...] [--seeds N] [--evals-frac F ...] [--report-rule current\|reselect\|both] [--csv PATH]` | CEC2013 niching の**手法横断の順位表**（関数 × 手法 × 精度水準の peak ratio）。`--report-rule` が**報告規則**を切り替える: `current` は各手法の `final_solutions`（従来の表）、`reselect` は**その run 自身の履歴**から rho 貪欲に選び直した集合（cap = max(100, 2K)、**追加評価ゼロ**、`diagnose_niching.reselect_from_history` を共用）。**`both` は同一の run を両方の規則で採点する**ので、ペアリングが厳密で追加コストは採点分だけ。**選び直しは手法非依存の後処理なので、1 手法だけに与えて比較してはいけない**（2026-09-03 その28）。`--evals-frac` が 1.0 未満の run は狙いを定めるための道具で、公表用の比較ではない |
+| `scripts/resel_rule.py CSV [CSV ...]` | `niching_baseline.py --report-rule both` の CSV を読み、**(a) 順位が規則で動くか**（精度水準ごとに両規則の順位を並べ、変化の有無を明示）と **(b) 利得が eps=1e-1 に集中するか**（手法 × 精度水準の対応のある利得、w/t/l・Wilcoxon p・A12。両規則が同一 run を採点しているのでペアは厳密）を出す。**結論（その28）: 利得は全手法で 1e-1 に集中し、eps ≤ 1e-3 では上位 2 位が全関数で不変。以後、手法の判定に PR@1e-1 を使わない** |
 
 ---
 
@@ -273,6 +275,7 @@ MC-ESO（V1）を reference とし、各手法を seed-paired で比較。`wilco
 - **報告集合** = 最終集団 ＋ restart 系手法の各 restart の best（`OptimizeResult.final_solutions`）。MC-ESO は生存ホスト＋永続系統アーカイブ、NM-Restart / IPOP / BIPOP / CMA-ES は restart best ＋最終集団、集団を持たない場合は best 1 点。f の良い順に `max(100, 2K)` 点で打ち切る。
 - **計数** (`count_goptima`) は公式 `how_many_goptima` と同じ順序: 報告集合を f 順に並べ、既採用点から rho より遠い点だけを seed として拾い、**その後で**精度 ε 内かを判定する。良いが不正確な点がニッチを塞ぐ挙動まで含めて再現する（冗長な報告を罰するのがこの指標の要点）。
 - 列は `cec_pr_{ε}` / `cec_sr_{ε}`（ε = 1e-1 … 1e-5）、その平均 `cec_pr_mean` / `cec_sr_mean`、報告点数 `n_reported`、`cec_k`。`scripts/analyze_quick.py` が `[1b]` 節で集計する。
+- **手法の判定に `cec_pr_1e-1` を使わない**（2026-09-03 その28）。報告規則を全手法で揃えると **N07 で 7 手法中 7 手法が PR@1e-1 = 1.00 に張り付く**一方、**eps ≤ 1e-3 では上位 2 位が全 5 関数で一切動かない**。1e-1 は探索の質ではなく**報告規則の質**を測っている。1e-1 / 1e-2 は参考値として併記してよいが、順位の根拠にしない。**判定は ε ≤ 1e-3 で行う。**
 
 > **SR@1e-10 は絶対死守**: 多解探索の改善でも SR@1e-10 を下げる構成は採用しない。最低 1 解は深精度到達を保証する。
 

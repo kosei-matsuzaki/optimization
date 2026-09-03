@@ -1,0 +1,22 @@
+peak ratio on the reported set, 5 seeds, budget = 0.1 x suite
+(reduced budget: this aims the work, it is not the comparison to report)
+(both reporting rules are scored off the same runs: paired, no extra evaluations)
+
+function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
+---------------------------------------------------------------------------------------------------
+N08-Shubert3D       MC-ESO        current    81      494     80    0.34   0.34   0.12   0.02   0.01    0.165    31
+N08-Shubert3D       MC-ESO        reselect   81      494    162    0.34   0.34   0.12   0.02   0.01    0.165    33
+N08-Shubert3D       MC-ESO-crowd  current    81      494     77    0.28   0.24   0.04   0.01   0.01    0.119    28
+N08-Shubert3D       MC-ESO-crowd  reselect   81      494    162    0.29   0.25   0.04   0.01   0.01    0.121    29
+N08-Shubert3D       NCDE          current    81      494     30    0.16   0.15   0.13   0.11   0.07    0.124    12
+N08-Shubert3D       NCDE          reselect   81      494    162    0.17   0.16   0.14   0.11   0.07    0.128    13
+N08-Shubert3D       r3pso         current    81      494     30    0.06   0.06   0.06   0.06   0.06    0.057     4
+N08-Shubert3D       r3pso         reselect   81      494    162    0.06   0.06   0.06   0.06   0.06    0.057     6
+N08-Shubert3D       DE            current    81      494     30    0.01   0.01   0.01   0.01   0.01    0.012     9
+N08-Shubert3D       DE            reselect   81      494    162    0.01   0.01   0.01   0.01   0.01    0.013    11
+N08-Shubert3D       NM-Restart    current    81      494      6    0.00   0.00   0.00   0.00   0.00    0.000     6
+N08-Shubert3D       NM-Restart    reselect   81      494     10    0.00   0.00   0.00   0.00   0.00    0.000     8
+N08-Shubert3D       NMMSO         current    81      494    155    0.23   0.17   0.11   0.07   0.03    0.122    20
+N08-Shubert3D       NMMSO         reselect   81      494    162    0.23   0.17   0.11   0.07   0.03    0.122    22
+
+rows written to analysis/hm/resel_n08.csv

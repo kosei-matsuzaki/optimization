@@ -1,0 +1,22 @@
+peak ratio on the reported set, 5 seeds, budget = 0.1 x suite
+(reduced budget: this aims the work, it is not the comparison to report)
+(both reporting rules are scored off the same runs: paired, no extra evaluations)
+
+function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
+---------------------------------------------------------------------------------------------------
+N09-Vincent3D       MC-ESO        current   216      185     89    0.12   0.11   0.11   0.11   0.11    0.113    30
+N09-Vincent3D       MC-ESO        reselect  216      185    432    1.00   0.16   0.12   0.11   0.11    0.301    35
+N09-Vincent3D       MC-ESO-crowd  current   216      185     67    0.12   0.09   0.06   0.03   0.01    0.060    25
+N09-Vincent3D       MC-ESO-crowd  reselect  216      185    432    1.00   0.21   0.07   0.03   0.01    0.265    31
+N09-Vincent3D       NCDE          current   216      185     30    0.11   0.11   0.11   0.11   0.10    0.110    10
+N09-Vincent3D       NCDE          reselect  216      185    432    1.00   0.25   0.19   0.16   0.14    0.347    15
+N09-Vincent3D       r3pso         current   216      185     30    0.03   0.03   0.03   0.02   0.02    0.025     2
+N09-Vincent3D       r3pso         reselect  216      185    432    0.61   0.05   0.03   0.02   0.02    0.147     7
+N09-Vincent3D       DE            current   216      185     30    0.00   0.00   0.00   0.00   0.00    0.005     7
+N09-Vincent3D       DE            reselect  216      185    432    0.44   0.05   0.02   0.01   0.01    0.107    12
+N09-Vincent3D       NM-Restart    current   216      185    143    0.26   0.26   0.26   0.26   0.26    0.265     5
+N09-Vincent3D       NM-Restart    reselect  216      185    432    1.00   0.26   0.26   0.26   0.26    0.412    12
+N09-Vincent3D       NMMSO         current   216      185    104    0.47   0.47   0.46   0.45   0.44    0.459    15
+N09-Vincent3D       NMMSO         reselect  216      185    432    1.00   0.49   0.46   0.45   0.44    0.570    22
+
+rows written to analysis/hm/resel_n09.csv
