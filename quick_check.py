@@ -29,6 +29,7 @@ from core.optimizers import (
 from core.optimizers.mceso_ablations import (
     MCESONoSpillover, MCESONoHostCompetition,
 )
+from core.optimizers.mceso_commit_reseed import CommitReseedMCESO
 from core.runner import (run_experiment, summarize, wilcoxon_vs_reference,
                          peak_metrics, niching_peak_metrics, niching_peak_counts)
 from core.visualize import (
@@ -308,6 +309,14 @@ _OPTIMIZERS = {
     #  Pre-2026-08-31 hunt pacing: every hunt drills back down to the σ floor.
     "hunt_off":       (MultiChannelEpidemicOptimizer, {"hunt_level_tol": 0.0,
                                                        "hunt_no_improve_mult": 0.0}),
+    #  Niching lever under test (research_loop 問い 1c, 2026-09-03): the restart
+    #  sigma taken to a ratio of the *locally observed basin spacing* instead of
+    #  a fixed ratio of the box. Raises N06/N07 peak ratio at the deep accuracy
+    #  levels; this entry exists only to check it does not cost BBOB-24 dim2
+    #  SR@1e-10 (93.5% / evals_succ_mean 798) before it goes into mceso.py.
+    "sigma_only":     (CommitReseedMCESO, {"commit_mode": "sigma_only",
+                                           "commit_sigma_mode": "run",
+                                           "commit_sigma_ratio": 0.1}),
 }
 
 
