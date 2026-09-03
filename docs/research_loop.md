@@ -182,7 +182,7 @@ peak ratio」をゴールに置き直した。監査テーマ（受容集合）�
 [acceptance_topology.md の終了節](acceptance_topology.md#監査テーマの終了2026-09-02--何が残り何がゴールに引き継がれたか)
 に集約済み。報告規則の路線は先行研究に占有されている（上記「占有されている領域」）。
 
-1. **`hunt_level_tol` の掃引と、枯渇後に効く安全性 gate** — その30 で
+1. **`hunt_level_tol` の掃引と、枯渇後に効く安全性 gate** *(claimed 2026-09-03 07:29 UTC)* — その30 で
    **Shubert の深さを止めていたのが `hunt_level_tol` だと判明した**。
    `has_exhausted` 以降の hunt は `basin_best <= hunt_level_tol * f_init_scale` で解放され
    （`mceso.py:919-928`）、既定 1e-6 × `f_init_scale` 79〜156 ＝ **解放水準 8e-5〜1.6e-4** は
