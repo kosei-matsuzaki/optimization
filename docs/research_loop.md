@@ -213,7 +213,7 @@ peak ratio」をゴールに置き直した。監査テーマ（受容集合）�
 [acceptance_topology.md の終了節](acceptance_topology.md#監査テーマの終了2026-09-02--何が残り何がゴールに引き継がれたか)
 に集約済み。報告規則の路線は先行研究に占有されている（上記「占有されている領域」）。
 
-1. **`hunt_level_tol` の安全性 gate を完走させる（採用可否の最後の関門）** — その32 で
+1. **`hunt_level_tol` の安全性 gate を完走させる（採用可否の最後の関門）** (claimed 2026-09-03 08:30 UTC) — その32 で
    **(a) 内点の掃引と (b) 3D の符号は両方とも通った**（本文は
    [acceptance_topology.md の該当節](acceptance_topology.md#hunt_level_tol-は-3d-で符号が反転しない--σ-の路線と決定的に違う点その32-analysishmlevel_level_t07_n06n08_level_t08csv)）。
    **残っているのは (c) の安全性だけ**で、これが採用可否を決める。
