@@ -333,6 +333,10 @@ _OPTIMIZERS = {
     #  29 proved the default 5000-eval gate is structurally blind to that — run
     #  this at a raised budget (--max-evals 20000), never at 5000.
     "level_t08":      (MultiChannelEpidemicOptimizer, {"hunt_level_tol": 1e-8}),
+    #  The value entry 32 actually recommends for adoption: 1e-7 keeps 4/5 of the
+    #  depth gain on N06 while costing nothing at the eps <= 1e-3 decision levels,
+    #  so the gate has to clear this arm too, not only the more extreme 1e-8.
+    "level_t07":      (MultiChannelEpidemicOptimizer, {"hunt_level_tol": 1e-7}),
 }
 
 

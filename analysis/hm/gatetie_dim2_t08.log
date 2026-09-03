@@ -1,0 +1,9 @@
+function                  runs  differ  bank<div  med_bank  med_div  same_best_f
+----------------------------------------------------------------------------------
+F17-SchafferF7              10       5         5      2431     7916           10
+F18-SchafferF7ill           10       4         4      2896     6445           10
+F20-Schwefel                10      10        10      2460     4276           10
+F23-Katsuura                10       0         0      2431      nan           10
+F24-LunacekRastrigin        10       1         1     11914    13420           10
+
+wrote analysis/hm/gatetie_dim2_t08.csv (50 rows)

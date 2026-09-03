@@ -1,0 +1,9 @@
+function                  exh post_gain>0  lvl_rel  div_1e-7  div_1e-8  power_t07  power_t08
+--------------------------------------------------------------------------------------------
+F17-SchafferF7              8           0     33.0      33.0      33.0          0          0
+F18-SchafferF7ill          10           0     88.0      88.0      88.0          0          0
+F20-Schwefel               10           0    250.8     231.0     250.8          0          0
+F23-Katsuura                7           0      0.0       0.0       0.0          0          0
+F24-LunacekRastrigin        5           0      2.2       2.2       2.2          0          0
+
+wrote analysis/hm/gatepower_dim2.csv (50 rows)

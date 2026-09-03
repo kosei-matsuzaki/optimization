@@ -1,0 +1,13 @@
+quick_check  suite=bbob  dim=2  n_runs=20  max_evals=20000  set=quick  custom=False  noise=off  funcs=['F17-SchafferF7', 'F18-SchafferF7ill', 'F20-Schwefel', 'F23-Katsuura', 'F24-LunacekRastrigin']  methods=['MC-ESO', 'level_t08']
+
+=== dim2 ===
+
+Function               Method               Mean SR@1e-1 SR@1e-2 SR@1e-4 SR@1e-7 SR@1e-10  EvalsSucc
+------------------------------------------------------------------------------------------------------
+F17-SchafferF7         MC-ESO       2.8789e-06   100%   100%   100%    90%     75%      1000
+F17-SchafferF7         level_t08    2.8789e-06   100%   100%   100%    90%     75%      1000
+F20-Schwefel           MC-ESO       0.0000e+00   100%   100%   100%   100%    100%      1893
+F20-Schwefel           level_t08    0.0000e+00   100%   100%   100%   100%    100%      1893
+F24-LunacekRastrigin   MC-ESO       7.3000e-02    85%    65%    65%    65%     65%     11076
+F24-LunacekRastrigin   level_t08    7.3000e-02    85%    65%    65%    65%     65%     11076
+Saved → /home/user/optimization/results/20260903_083216_gateA_quick/dim2/

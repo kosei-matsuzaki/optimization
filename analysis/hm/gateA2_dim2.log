@@ -1,0 +1,13 @@
+quick_check  suite=bbob  dim=2  n_runs=20  max_evals=20000  set=all  custom=False  noise=off  funcs=['F18-SchafferF7ill', 'F23-Katsuura']  methods=['MC-ESO', 'level_t08', 'level_t07']
+
+=== dim2 ===
+
+Function               Method               Mean SR@1e-1 SR@1e-2 SR@1e-4 SR@1e-7 SR@1e-10  EvalsSucc
+------------------------------------------------------------------------------------------------------
+F18-SchafferF7ill      MC-ESO       1.4306e-06   100%   100%   100%    95%     95%      1687
+F18-SchafferF7ill      level_t08    1.4306e-06   100%   100%   100%    95%     95%      1687
+F18-SchafferF7ill      level_t07    1.4306e-06   100%   100%   100%    95%     95%      1687
+F23-Katsuura           MC-ESO       2.4151e-07   100%   100%   100%    80%     80%      1696
+F23-Katsuura           level_t08    2.4151e-07   100%   100%   100%    80%     80%      1696
+F23-Katsuura           level_t07    2.4151e-07   100%   100%   100%    80%     80%      1696
+Saved → /home/user/optimization/results/20260903_083216_gateA2_quick/dim2/

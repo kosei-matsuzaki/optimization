@@ -1,0 +1,15 @@
+quick_check  suite=bbob  dim=5  n_runs=10  max_evals=20000  set=quick  custom=False  noise=off  funcs=['F17-SchafferF7', 'F18-SchafferF7ill', 'F20-Schwefel', 'F21-Gallagher101', 'F23-Katsuura', 'F24-LunacekRastrigin']  methods=['MC-ESO', 'level_t08']
+
+=== dim5 ===
+
+Function               Method               Mean SR@1e-1 SR@1e-2 SR@1e-4 SR@1e-7 SR@1e-10  EvalsSucc
+------------------------------------------------------------------------------------------------------
+F17-SchafferF7         MC-ESO       4.3124e-02    90%    30%    20%     0%      0%     12644
+F17-SchafferF7         level_t08    4.3124e-02    90%    30%    20%     0%      0%     12644
+F20-Schwefel           MC-ESO       1.0595e+00     0%     0%     0%     0%      0%       ---
+F20-Schwefel           level_t08    1.0595e+00     0%     0%     0%     0%      0%       ---
+F21-Gallagher101       MC-ESO       1.2157e+00    40%    40%    40%    40%     40%      5598
+F21-Gallagher101       level_t08    1.2157e+00    40%    40%    40%    40%     40%      5598
+F24-LunacekRastrigin   MC-ESO       4.8256e+00     0%     0%     0%     0%      0%       ---
+F24-LunacekRastrigin   level_t08    4.8256e+00     0%     0%     0%     0%      0%       ---
+Saved → /home/user/optimization/results/20260903_083216_gateC_quick/dim5/
