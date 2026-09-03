@@ -233,6 +233,32 @@ def _distinct_points(X: np.ndarray, F: np.ndarray, rho: float) -> int:
     return len(_seed_indices(X[order], rho))
 
 
+def visited_fast(hx: np.ndarray, hf: np.ndarray, k: int, rho: float,
+                 eps: float) -> int:
+    """``count_goptima`` over a whole evaluation history, without the O(n^2) walk.
+
+    Exactly equivalent to ``count_goptima(hx, hf, k, rho, eps)``, not an
+    approximation. The reference sorts by f ascending, greedily keeps
+    rho-separated points over the *whole* set, then counts the kept ones with
+    ``f <= eps`` and stops at k. Because the sort is ascending, every point with
+    ``f > eps`` comes after every point with ``f <= eps``, so an inaccurate point
+    can never occupy a niche ahead of an accurate one — the blocking the
+    reference models only bites when the *reported* set is scored, where the cap
+    lets bad points in. Dropping ``f > eps`` first therefore cannot change the
+    count, and the greedy is prefix stable, so it can stop at k seeds.
+
+    Why it matters: ``_seed_indices`` keeps *every* rho-separated point, which on
+    a 40000-point Vincent3D history grows to thousands of seeds and costs
+    minutes per run — 40x the 6 s the optimisation itself takes (entry 39).
+    """
+    m = np.asarray(hf) <= eps
+    if not m.any():
+        return 0
+    X, F = np.asarray(hx)[m], np.asarray(hf)[m]
+    order = np.argsort(F)
+    return len(_greedy_seeds_capped(X[order], rho, k))
+
+
 def _greedy_seeds_capped(X: np.ndarray, rho: float, cap: int) -> np.ndarray:
     """The first ``cap`` seeds of the CEC rho-greedy rule over ``X`` (already
     sorted best-f first), vectorised and stopped early.
@@ -305,6 +331,14 @@ def main() -> None:
                          "| adaptive_off (identity check of the variant class)")
     ap.add_argument("--funcs", type=str,
                     default="N04-Himmelblau,N06-Shubert2D,N07-Vincent2D,N10-ModRastrigin2D")
+    ap.add_argument("--fast-scoring", action="store_true",
+                    help="score `visited` with visited_fast() (exactly "
+                         "equivalent, see its docstring) and skip the "
+                         "reselected-set columns, which are written as -1. On "
+                         "N09-Vincent3D the two skipped walks cost ~4 min per "
+                         "run against 6 s of optimisation; without this flag a "
+                         "paired 2-arm measurement there does not fit a 40 min "
+                         "budget at any useful seed count (entry 39).")
     ap.add_argument("--csv", type=str, default=None,
                     help="write the per-(function, seed, eps) rows here")
     ap.add_argument("--hunt-csv", type=str, default=None,
@@ -343,7 +377,10 @@ def main() -> None:
             sx, sf = _cap_by_f(sx, sf, cap)
             # The reselected set depends only on rho and the cap, not on eps,
             # so build it once and score it at every accuracy.
-            rx, rf = reselect_from_history(hx, hf, b.niche_rho, cap)
+            if args.fast_scoring:
+                rx, rf = np.zeros((0, hx.shape[1])), np.zeros(0)
+            else:
+                rx, rf = reselect_from_history(hx, hf, b.niche_rho, cap)
             runs.append((seed, hx, hf, sx, sf, rx, rf, opt, r))
 
             if args.hunt_csv:
@@ -368,10 +405,17 @@ def main() -> None:
         for eps in eps_list:
             rows = []
             for seed, hx, hf, sx, sf, rx, rf, opt, r in runs:
-                visited = count_goptima(hx, hf, b.n_global_optima, b.niche_rho, eps)
+                if args.fast_scoring:
+                    visited = visited_fast(hx, hf, b.n_global_optima,
+                                           b.niche_rho, eps)
+                    resel = -1
+                else:
+                    visited = count_goptima(hx, hf, b.n_global_optima,
+                                            b.niche_rho, eps)
+                    # Same scorer, same cap, on the set reselected from history.
+                    resel = count_goptima(rx, rf, b.n_global_optima,
+                                          b.niche_rho, eps)
                 reported = count_goptima(sx, sf, b.n_global_optima, b.niche_rho, eps)
-                # Same scorer, same cap, on the set reselected from history.
-                resel = count_goptima(rx, rf, b.n_global_optima, b.niche_rho, eps)
                 # rho-separated points in the reported set regardless of accuracy;
                 # `blocked` is how many of those niches are held by a point that
                 # misses eps, which is what count_goptima refuses to score.
@@ -382,7 +426,8 @@ def main() -> None:
                 # a solution rather than being cut off mid-descent.
                 hunts = opt.hunts
                 landed = sum(1 for _, f in hunts if f <= eps)
-                rows.append((visited, reported, resel, len(rx), distinct,
+                rows.append((visited, reported, resel,
+                             -1 if args.fast_scoring else len(rx), distinct,
                              distinct - reported, len(sx), opt.n_spillover,
                              opt.n_basin_switch, len(hunts), landed, r.best_f))
                 csv_rows.append([name, b.n_global_optima, eps, seed, args.evals,
