@@ -45,6 +45,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.benchmarks import (BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME,     # noqa: E402
                              BENCHMARKS_5D_BY_NAME, BENCHMARKS_10D_BY_NAME)
 from core.optimizers import MultiChannelEpidemicOptimizer                    # noqa: E402
+from core.optimizers.mceso_rel_level import RelLevelMCESO                    # noqa: E402
 
 _REG = {2: BENCHMARKS_BY_NAME, 3: BENCHMARKS_3D_BY_NAME,
         5: BENCHMARKS_5D_BY_NAME, 10: BENCHMARKS_10D_BY_NAME}
@@ -53,14 +54,17 @@ _REG = {2: BENCHMARKS_BY_NAME, 3: BENCHMARKS_3D_BY_NAME,
 _TIGHT = (1e-7, 1e-8)
 
 
-class _GateProbe(MultiChannelEpidemicOptimizer):
-    """Base MC-ESO with a read-only tap on the basin-release decision.
+class _ProbeMixin:
+    """A read-only tap on the basin-release decision.
 
     `_basin_exhausted` is re-implemented rather than wrapped because the two
     clauses it ORs together have to be told apart: only a release that the level
     clause *decided on its own* can be flipped by changing `hunt_level_tol`.
     The logic below is `mceso.py:910-940` with the shipped defaults, plus
-    counters; it returns the same value, so the search is unchanged.
+    counters; it returns the same value, so the search is unchanged. It reads
+    `self.hunt_level_tol` rather than the shipped constant, so mixing it into
+    `RelLevelMCESO` (whose `_init_state` rewrites that attribute from the run's
+    own `f_init_scale`) probes the eps-relative arm with the same code.
     """
 
     def _init_state(self, max_evals):
@@ -69,6 +73,7 @@ class _GateProbe(MultiChannelEpidemicOptimizer):
         self.f_at_exh: float | None = None
         self.n_div = dict.fromkeys(_TIGHT, 0)
         self.n_level_release = 0
+        self.f_init_scale = float(st.f_init_scale)
         return st
 
     def _basin_exhausted(self, st) -> bool:
@@ -98,6 +103,14 @@ class _GateProbe(MultiChannelEpidemicOptimizer):
         if not was and st.has_exhausted and self.f_at_exh is None:
             self.f_at_exh = float(st.best_so_far)
         return out
+
+
+class _GateProbe(_ProbeMixin, MultiChannelEpidemicOptimizer):
+    """The shipped optimiser, tapped."""
+
+
+class _RelGateProbe(_ProbeMixin, RelLevelMCESO):
+    """The eps-relative diagnostic variant (entry 36), tapped."""
 
 
 def _compare(reg, names, seeds, evals, tol, csv_path) -> None:
@@ -154,7 +167,13 @@ def main() -> None:
     ap.add_argument("--funcs", required=True, help="comma-separated exact names")
     ap.add_argument("--dim", type=int, default=2, choices=sorted(_REG))
     ap.add_argument("--seeds", type=int, default=10)
+    ap.add_argument("--seed-start", type=int, default=0,
+                    help="first seed index, for splitting a run across workers")
     ap.add_argument("--evals", type=int, default=20000)
+    ap.add_argument("--rel-level", type=float, default=0.0, metavar="L",
+                    help="probe RelLevelMCESO(rel_level=L) instead of the "
+                         "shipped optimiser (entry 36's eps-relative arm; "
+                         "L = c * eps_target, e.g. 1e-6 for c=0.1)")
     ap.add_argument("--csv", default=None)
     ap.add_argument("--compare", type=float, default=None, metavar="TOL",
                     help="instead of probing base, run base against "
@@ -167,21 +186,30 @@ def main() -> None:
                  args.seeds, args.evals, args.compare, args.csv)
         return
     rows = []
+    if args.rel_level > 0.0:
+        print(f"probing RelLevelMCESO(rel_level={args.rel_level:g}) "
+              f"-- effective release level L is fixed, hunt_level_tol = L / f_init_scale")
     print(f"{'function':<24}{'exh':>5}{'post_gain>0':>12}{'lvl_rel':>9}"
           f"{'div_1e-7':>10}{'div_1e-8':>10}{'power_t07':>11}{'power_t08':>11}")
     print("-" * 92)
+    seeds = range(args.seed_start, args.seed_start + args.seeds)
     for name in [s.strip() for s in args.funcs.split(",")]:
         b = reg[name]
         per = []
-        for seed in range(args.seeds):
-            o = _GateProbe(b, seed=seed * 100)
+        for seed in seeds:
+            if args.rel_level > 0.0:
+                o = _RelGateProbe(b, seed=seed * 100, rel_level=args.rel_level)
+            else:
+                o = _GateProbe(b, seed=seed * 100)
             res = o.optimize(args.evals)
             gain = (float("nan") if o.f_at_exh is None
                     else o.f_at_exh - float(res.best_f))
             per.append(dict(seed=seed, exhausted=o.f_at_exh is not None,
                             f_at_exh=o.f_at_exh, best_f=float(res.best_f),
                             post_gain=gain, n_level_release=o.n_level_release,
-                            div_t07=o.n_div[1e-7], div_t08=o.n_div[1e-8]))
+                            div_t07=o.n_div[1e-7], div_t08=o.n_div[1e-8],
+                            f_init_scale=o.f_init_scale,
+                            eff_tol=float(o.hunt_level_tol)))
         n_exh = sum(r["exhausted"] for r in per)
         n_gain = sum(1 for r in per if r["exhausted"] and r["post_gain"] > 0)
         lvl = float(np.mean([r["n_level_release"] for r in per]))
