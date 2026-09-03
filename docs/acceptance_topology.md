@@ -1062,6 +1062,8 @@ GECCO の Dynamic F1、persistence-guided basin decoding）。
   プールの重複除去判定が反転する。dim2/50 本で 3600 セル中 161 = 4.5%。結論は動かない）。
 - `pynmmso` は Debian の setuptools と衝突する（`pip install --ignore-installed setuptools
   wheel` を先に）。入れても **NMMSO は Python 3.11 で落ちる**（set に `random.sample` を呼ぶ）。
+  → **この「落ちる」は後に解消した。手順は
+  [環境の再構築](#環境の再構築コンテナが変わるたびに要再適用その26その28その30)を見ること。**
 
 ---
 
@@ -1622,4 +1624,42 @@ Shubert は**深さ律速**なので同じ梃子が 4.5 倍動く。
 - **N09 を 4 万評価 × 3 seed で回すときは並列を 2 まで**（3 並列は OOM でワーカーごと落ちる）。
   N07 / N06 は 2 万評価なら 1 seed 数秒なので、**3 seed ではなく 15 seed で回せる**（検定力が上がる）。
 - 診断用の変種は本体を書き換えず別ファイルに置き、**「無効化した変種が base と数値完全一致」
-  を毎回確認する**（`repel_mode="off"` / `commit_off`）。
+  を毎回確認する**（`repel_mode="off"` / `commit_off` / `phased_off` / `recover_off`）。
+- **`blocked` のような「未達だが相異なる」カウンタは、成分に分けるまで意味が決まらない**（その30）。
+  進行中の hunt の現在地と、置き去りにされた盆地は、同じカウンタに乗る。
+- **後処理・報告規則のように手法非依存に当てられる介入は、1 手法で測ると必ず「効く」ように見える**
+  （その20 対 その28）。**他手法にも与えてから読む。**
+- **同一 run を 2 通りに採点できる設計にすると、ペアリングが厳密になり追加評価がゼロになる**
+  （その28 の `--report-rule both`）。比較のために run を 2 回回すと seed 差が交絡する。
+
+## 環境の再構築（コンテナが変わるたびに要再適用、その26・その28・その30）
+
+このリポジトリはコンテナが作り直されるたびに以下を再適用しないと**全スクリプトが動かない**
+（`core/optimizers/__init__.py` が `pynmmso` を無条件に import する）。
+**その25〜その30 の 4 回が同じ作業を繰り返して確立した、現時点で通る唯一の手順:**
+
+1. `pip install ioh cma numpy scipy multiprocess matplotlib`。
+   **`pip install -r requirements.txt` は `pynmmso` のビルドで落ちる**
+   （`setup.py` の `test_suite='nose.collector'` が setuptools の廃止経路を踏む）。
+   `matplotlib` も必須（`core/visualize.py` が無条件 import なので無いと `quick_check.py` が動かない）。
+2. `pynmmso` は sdist を site-packages に直接コピーする
+   （`pip download --no-deps --no-binary :all: pynmmso` → 展開 → `cp -r pynmmso $(python3 -c
+   'import site;print(site.getsitepackages()[0])')`）。`setup.py` の編集は不要
+   — 落ちていた真因は依存 `multiprocess` の欠落だった（その26 がその25 の手順を訂正）。
+3. **コピーした `pynmmso/pynmmso.py` の `random.sample(<set>, k)` を 4 箇所**
+   （238 / 414 / 440 / 446 行）**`random.sample(list(...), k)` に書き換える。**
+   Python 3.11 は set を拒否する。**これを忘れると NMMSO は実行時に落ちる**
+   （その26 は NMMSO を実際には走らせていなかったと思われる）。
+
+**副作用として NMMSO は seed を固定しても run 間で完全再現しない**
+（set のイテレーション順が object id 依存）。同一 run を 2 通りに採点する設計なら影響しない。
+
+**このコンテナは 4 コア。同時に回す測定は 3 本まで**（その25 は 5 本並列で 40 分枠に間に合わなかった）。
+**N09 を 40000 評価で回すときは 2 本まで**（3 並列は OOM でワーカーごと落ちる、その22）。
+
+**参照値の食い違い（引用時の注意）。** BBOB-24 dim2 / n=20 の MC-ESO は**この環境で
+SR@1e-10 92.08% / evals_succ_mean 677.7**（その26・その29 で 2 回独立に再現）で、
+`CLAUDE.md` が pin している **93.5% / 798 とは一致しない**。
+同様に **`analysis/niching_baseline.csv`（その15）の MC-ESO 行もこの環境で再現しない**
+（N07 の PR@1e-1 が 0.194 → 0.25）。原因は未特定（`mceso.py` の drift か集計方法の差）。
+**両腕が同一環境の run どうしなら判定に影響しないが、その15 や pin の絶対値を引用するときは注意。**
