@@ -221,7 +221,7 @@ peak ratio」をゴールに置き直した。監査テーマ（受容集合）�
 [acceptance_topology.md の終了節](acceptance_topology.md#監査テーマの終了2026-09-02--何が残り何がゴールに引き継がれたか)
 に集約済み。報告規則の路線は先行研究に占有されている（上記「占有されている領域」）。
 
-1. **`hunt_level_tol` の採用値を 1e-7 に決めるなら、3D の証拠が 1 本足りない** —
+1. **`hunt_level_tol` の採用値を 1e-7 に決めるなら、3D の証拠が 1 本足りない** *(claimed 2026-09-03 12:30 UTC)* —
    **安全性の側は閉じた**（その33 の機序 ＋ その34 の全 24 関数直接測定。
    `post_gain>0` は 120 run 中 0、水準節の解放は 97,538 回発火しているのに常に best_f 確定後。
    本文は [acceptance_topology.md の該当節](acceptance_topology.md#bbob-24-全-24-関数で枯渇後に-best_f-は動かないを確認した--外挿が消えて直接証拠になったその34-analysishmgatepower24_dim2csv)）。
