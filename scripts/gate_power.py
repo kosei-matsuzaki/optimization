@@ -174,6 +174,15 @@ def main() -> None:
                     help="probe RelLevelMCESO(rel_level=L) instead of the "
                          "shipped optimiser (entry 36's eps-relative arm; "
                          "L = c * eps_target, e.g. 1e-6 for c=0.1)")
+    ap.add_argument("--fis-floor", type=float, default=0.0, metavar="S",
+                    help="clamp shape (a), entry 44: lower-bound f_init_scale "
+                         "at S before dividing, so the endpoint f_init_scale "
+                         "-> 1e-300 cannot blow the quotient up. No-op at 0.")
+    ap.add_argument("--tol-cap", type=float, default=float("inf"), metavar="T",
+                    help="clamp shape (b), entry 44: upper-bound the resulting "
+                         "hunt_level_tol at T. Entry 37 wrote T = the shipped "
+                         "default 1e-6, which entry 43 showed returns the "
+                         "variant to base wherever f_init_scale < 1.")
     ap.add_argument("--csv", default=None)
     ap.add_argument("--compare", type=float, default=None, metavar="TOL",
                     help="instead of probing base, run base against "
@@ -187,7 +196,8 @@ def main() -> None:
         return
     rows = []
     if args.rel_level > 0.0:
-        print(f"probing RelLevelMCESO(rel_level={args.rel_level:g}) "
+        print(f"probing RelLevelMCESO(rel_level={args.rel_level:g}, "
+              f"fis_floor={args.fis_floor:g}, tol_cap={args.tol_cap:g}) "
               f"-- effective release level L is fixed, hunt_level_tol = L / f_init_scale")
     print(f"{'function':<24}{'exh':>5}{'post_gain>0':>12}{'lvl_rel':>9}"
           f"{'div_1e-7':>10}{'div_1e-8':>10}{'power_t07':>11}{'power_t08':>11}")
@@ -198,7 +208,8 @@ def main() -> None:
         per = []
         for seed in seeds:
             if args.rel_level > 0.0:
-                o = _RelGateProbe(b, seed=seed * 100, rel_level=args.rel_level)
+                o = _RelGateProbe(b, seed=seed * 100, rel_level=args.rel_level,
+                                  fis_floor=args.fis_floor, tol_cap=args.tol_cap)
             else:
                 o = _GateProbe(b, seed=seed * 100)
             res = o.optimize(args.evals)

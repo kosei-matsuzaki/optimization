@@ -207,6 +207,20 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
     **{f"level_rel_c{int(round(c * 100)):02d}": (_CountingRelLevelMCESO,
                                                  {"rel_level": c * 1e-5})
        for c in (0.1, 0.01)},
+    # Entry 44: the three shapes of the clamp entry 37 required, at c = 0.1.
+    # `_dflt` is the shape entry 37 wrote down (cap at the shipped default
+    # 1e-6); on any function with f_init_scale < 1 it returns the variant to
+    # base, so on N05 / N07 / N09 it must reproduce base row for row -- that is
+    # the measurement, not an identity check. `_fis` and `_cap` are the two
+    # shapes that touch only the endpoint (f_init_scale pinned at 1e-300); on
+    # every niching function here (f_init_scale 0.17 .. 2511) neither binds, so
+    # both must reproduce `level_rel_c10` row for row.
+    "level_rel_c10_dflt": (_CountingRelLevelMCESO,
+                           {"rel_level": 1e-6, "tol_cap": 1e-6}),
+    "level_rel_c10_fis": (_CountingRelLevelMCESO,
+                          {"rel_level": 1e-6, "fis_floor": 1e-12}),
+    "level_rel_c10_cap": (_CountingRelLevelMCESO,
+                          {"rel_level": 1e-6, "tol_cap": 1e-2}),
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
 # as a fraction of the locally observed basin spacing. The suffix is the ratio
