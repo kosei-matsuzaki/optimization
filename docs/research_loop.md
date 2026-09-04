@@ -349,7 +349,7 @@ peak ratio」をゴールに置き直した。監査テーマ（受容集合）�
    **係数は c = 1.0（`rel_level = 1e-5`）に確定した**（その46 が角と特定 → その47 が BBOB 960 セル →
    その48 が niching 7 関数）。**証拠側の穴はもう無い。**
 
-2. **正規予算の run はもう走っている。その成果物を読んで判定する**（`status.md` のいちばん弱い環 1）。
+2. **正規予算の run はもう走っている。その成果物を読んで判定する**（`status.md` のいちばん弱い環 1）。**(claimed 2026-09-04 18:30 UTC)**
    **ワークフロー側はその49 で通した**（`run.yml` の `mode: niching`、N04-N10 × 7 手法 × 15 seed ×
    正規予算、関数ごとに 1 ジョブ）。dispatch 済みの実行は
    **[run 33896207804](https://github.com/kosei-matsuzaki/optimization/actions/runs/33896207804)**
