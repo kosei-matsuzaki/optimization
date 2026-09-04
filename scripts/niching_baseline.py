@@ -47,9 +47,17 @@ from core.optimizers import (MultiChannelEpidemicOptimizer, NCDEOptimizer,
                              RingPSOOptimizer, DEOptimizer,
                              MultistartNelderMeadOptimizer)         # noqa: E402
 from core.optimizers.mceso_crowding import MCESOCrowding            # noqa: E402
+from core.optimizers.mceso_rel_level import RelLevelMCESO           # noqa: E402
 
 _METHODS: dict = {
     "MC-ESO": (MultiChannelEpidemicOptimizer, {}),
+    # The adoption candidate: the hunt-release level made relative to the
+    # scoring accuracy, L = c * eps_target with c = 1.0 (entry 46 located the
+    # corner there) and the endpoint clamp on f_init_scale (entry 44). This is
+    # a *diagnostic arm*, not a default change -- core/optimizers/mceso.py is
+    # untouched. It exists here so the candidate can be scored by the same
+    # driver, at the same budget, as the baselines it is compared against.
+    "MC-ESO-rel": (RelLevelMCESO, {"rel_level": 1e-5, "fis_floor": 1e-12}),
     "MC-ESO-crowd": (MCESOCrowding, {}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),

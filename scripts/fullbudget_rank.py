@@ -26,8 +26,15 @@ because _XATOL=1e-12 stops the simplex from converging). They are dropped here
 and the drop is printed -- silently dropping cells has changed a ranking in this
 project before.
 
+``--pair A,B`` swaps the contrasted pair. It defaults to MC-ESO,NMMSO (the
+question this script was written for); entry 51 uses ``MC-ESO-rel,MC-ESO`` to
+put the adoption candidate against base at the same budget, off CSVs written by
+the same driver. The 1/10-budget reference block below only applies to the
+NMMSO pair and is printed for that pair only.
+
 Usage:
   python3 scripts/fullbudget_rank.py analysis/hm/fullbudget_*.csv
+  python3 scripts/fullbudget_rank.py --pair MC-ESO-rel,MC-ESO analysis/hm/e51/*.csv
 """
 from __future__ import annotations
 import csv
@@ -67,7 +74,13 @@ def paired(x: np.ndarray, y: np.ndarray) -> tuple[int, int, int, float, float]:
 
 
 def main() -> None:
-    paths = [Path(p) for p in sys.argv[1:]]
+    argv = sys.argv[1:]
+    lhs, rhs = "MC-ESO", "NMMSO"
+    if "--pair" in argv:
+        i = argv.index("--pair")
+        lhs, rhs = (s.strip() for s in argv[i + 1].split(","))
+        argv = argv[:i] + argv[i + 2:]
+    paths = [Path(p) for p in argv]
     if not paths:
         raise SystemExit(__doc__)
 
@@ -102,14 +115,14 @@ def main() -> None:
                             for lvl in JUDGEMENT)
             print(f"{m:<14}{cells}")
 
-        if "NMMSO" in methods and "MC-ESO" in methods:
-            print(f"  {'MC-ESO vs NMMSO':<20}{'w/t/l':>10}{'p':>10}{'A12':>8}")
+        if lhs in methods and rhs in methods:
+            print(f"  {f'{lhs} vs {rhs}':<20}{'w/t/l':>10}{'p':>10}{'A12':>8}")
             for lvl in JUDGEMENT:
-                x = np.array(methods["MC-ESO"][lvl])
-                y = np.array(methods["NMMSO"][lvl])
+                x = np.array(methods[lhs][lvl])
+                y = np.array(methods[rhs][lvl])
                 w, t, lo, p, a = paired(x, y)
                 print(f"  {lvl:<20}{f'{w}/{t}/{lo}':>10}{p:>10.4f}{a:>8.2f}")
-            ref = REFERENCE_1E3.get(fn)
+            ref = REFERENCE_1E3.get(fn) if (lhs, rhs) == ("MC-ESO", "NMMSO") else None
             if ref:
                 exp = "MC-ESO>=NMMSO" if ref[0] >= ref[1] else "MC-ESO<NMMSO"
                 got_v = (np.mean(methods["MC-ESO"]["pr_1e-3"])
