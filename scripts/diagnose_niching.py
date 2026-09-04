@@ -204,9 +204,15 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
     # (matches the 2D win the fixed 1e-8 bought, 1.4e-6) and c = 0.01 -> L = 1e-7.
     # `level_rel_off` (L=0) must reproduce base exactly (identity check).
     "level_rel_off": (_CountingRelLevelMCESO, {"rel_level": 0.0}),
+    # Entry 46 added the loose side. c = 0.1 buys N06's PR@1e-5 (+0.55) but pays
+    # PR@1e-3 (-0.063, p = 0.0062, 30 seeds), and base sits at an effective
+    # c = 1e-6 * f_init_scale / 1e-5 = 14.2 in 2D, so everything between c = 0.1
+    # and base was blank. The sweep asks whether the two move together (one line,
+    # entry 29's finding again) or whether an interior c keeps the deep gain
+    # without the 1e-3 loss.
     **{f"level_rel_c{int(round(c * 100)):02d}": (_CountingRelLevelMCESO,
                                                  {"rel_level": c * 1e-5})
-       for c in (0.1, 0.01)},
+       for c in (0.1, 0.01, 0.3, 1.0, 3.0, 10.0)},
     # Entry 44: the three shapes of the clamp entry 37 required, at c = 0.1.
     # `_dflt` is the shape entry 37 wrote down (cap at the shipped default
     # 1e-6); on any function with f_init_scale < 1 it returns the variant to
