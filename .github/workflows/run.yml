@@ -7,13 +7,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "bbob = main.py (BBOB-24), niching = full-budget CEC2013 niching comparison"
+        description: "bbob = main.py (BBOB-24), niching = full-budget CEC2013 niching comparison, collect = echo a past run's CSVs into the job log"
         required: false
         default: "bbob"
         type: choice
         options:
           - bbob
           - niching
+          - collect
       n_runs:
         description: "bbob only: number of runs per benchmark"
         required: false
@@ -30,6 +31,10 @@ on:
         description: "niching only: budget as a fraction of the suite's own (1.0 = full)"
         required: false
         default: "1.0"
+      collect_run_id:
+        description: "collect only: the workflow run whose niching-fullbudget-* artifacts to echo"
+        required: false
+        default: ""
 
 jobs:
   optimize:
@@ -146,3 +151,42 @@ jobs:
           name: niching-fullbudget-${{ matrix.func }}
           path: analysis/hm/fullbudget_${{ matrix.func }}.csv
           retention-days: 30
+
+  collect:
+    # Artifact bytes live on a blob-storage host that some sandboxes cannot
+    # reach (the download URL redirects off github.com). The CSVs are small, so
+    # this job re-reads a past run's artifacts and prints them to the job log,
+    # which the GitHub API serves directly. No optimisation is re-run.
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'collect'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        func:
+          - N04-Himmelblau
+          - N05-SixHumpCamel
+          - N06-Shubert2D
+          - N07-Vincent2D
+          - N08-Shubert3D
+          - N09-Vincent3D
+          - N10-ModRastrigin2D
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: niching-fullbudget-${{ matrix.func }}
+          run-id: ${{ inputs.collect_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dl
+
+      - name: Echo CSV
+        run: |
+          set -euo pipefail
+          echo "BEGIN_CSV ${{ matrix.func }}"
+          cat "dl/fullbudget_${{ matrix.func }}.csv"
+          echo "END_CSV ${{ matrix.func }}"
+          wc -l "dl/fullbudget_${{ matrix.func }}.csv"
