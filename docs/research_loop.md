@@ -284,7 +284,7 @@ peak ratio」をゴールに置き直した。監査テーマ（受容集合）�
 [acceptance_topology.md の終了節](acceptance_topology.md#監査テーマの終了2026-09-02--何が残り何がゴールに引き継がれたか)
 に集約済み。報告規則の路線は先行研究に占有されている（上記「占有されている領域」）。
 
-1. **commit の効果は run sigma と交互作用するか — `commit_place` を σ 中間値で振る**
+1. **commit の効果は run sigma と交互作用するか — `commit_place` を σ 中間値で振る** (claimed 2026-09-04 02:30 UTC)
    （その41 が残した次の一手。**N06 は 1 run 3 秒、N08 は 7 秒**）。
    **なぜ**: その41 は深さ律速の 2 関数（N06-Shubert2D / N08-Shubert3D、各 30 seed）で
    **`commit_place`（run sigma は base のまま）が全カラム完全な帰無**である一方、
