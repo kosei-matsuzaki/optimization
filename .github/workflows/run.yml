@@ -6,17 +6,35 @@ on:
       - main
   workflow_dispatch:
     inputs:
+      mode:
+        description: "bbob = main.py (BBOB-24), niching = full-budget CEC2013 niching comparison"
+        required: false
+        default: "bbob"
+        type: choice
+        options:
+          - bbob
+          - niching
       n_runs:
-        description: "Number of runs per benchmark"
+        description: "bbob only: number of runs per benchmark"
         required: false
         default: "100"
       max_evals:
-        description: "Max evaluations per run"
+        description: "bbob only: max evaluations per run"
         required: false
         default: "5000"
+      seeds:
+        description: "niching only: seeds per (function, method) cell"
+        required: false
+        default: "15"
+      evals_frac:
+        description: "niching only: budget as a fraction of the suite's own (1.0 = full)"
+        required: false
+        default: "1.0"
 
 jobs:
   optimize:
+    # push to main keeps its historical behaviour; dispatch runs this only in bbob mode.
+    if: github.event_name == 'push' || inputs.mode == 'bbob'
     runs-on: ubuntu-latest
 
     steps:
@@ -43,4 +61,88 @@ jobs:
         with:
           name: results
           path: results/
+          retention-days: 30
+
+  niching:
+    # The full-budget (50k-400k evaluations) CEC2013 niching comparison. Every
+    # judgement in docs/ so far is at 1/10 budget and 5-30 seeds; this is the run
+    # that says whether that ranking survives the real budget. One job per
+    # function so the wall clock is the slowest function, not their sum.
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'niching'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        func:
+          - N04-Himmelblau
+          - N05-SixHumpCamel
+          - N06-Shubert2D
+          - N07-Vincent2D
+          - N08-Shubert3D
+          - N09-Vincent3D
+          - N10-ModRastrigin2D
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: Install dependencies
+        # `pip install -r requirements.txt` cannot be used: pynmmso's setup.py
+        # uses the removed `test_suite='nose.collector'` path and fails to build.
+        # The sdist is copied into site-packages and patched instead -- the same
+        # three steps as docs/acceptance_topology.md "環境の再構築".
+        run: |
+          set -euo pipefail
+          pip install ioh cma numpy scipy multiprocess matplotlib
+          pip download --no-deps --no-binary :all: pynmmso -d /tmp/pn
+          tar xzf /tmp/pn/pynmmso-*.tar.gz -C /tmp/pn
+          SP=$(python3 -c 'import site; print(site.getsitepackages()[0])')
+          cp -r /tmp/pn/pynmmso-*/pynmmso "$SP"/
+          # Python 3.11 rejects random.sample(<set>, k); NMMSO dies at run time
+          # without this. 4 call sites.
+          python3 - <<'PY'
+          import re, site, pathlib
+          p = pathlib.Path(site.getsitepackages()[0]) / "pynmmso" / "pynmmso.py"
+          s = p.read_text()
+          s2 = re.sub(r"random\.sample\((?!list\()([^,]+), ", r"random.sample(list(\1), ", s)
+          assert s2.count("random.sample(list(") == 4, s2.count("random.sample(list(")
+          p.write_text(s2)
+          PY
+          python3 -c "import ioh, cma, numpy, scipy, pynmmso; print('deps ok')"
+
+      - name: Assert NMMSO is available
+        # NMMSO is the leading baseline. niching_baseline.py drops it silently on
+        # ImportError, which would turn a broken install into a quiet comparison
+        # against the wrong field. Fail loudly instead.
+        run: |
+          python3 -c "
+          from scripts.niching_baseline import _METHODS
+          assert 'NMMSO' in _METHODS, 'NMMSO missing: the comparison would be incomplete'
+          print(sorted(_METHODS))"
+
+      - name: Full-budget peak ratio
+        # --report-rule current only: the reselect rule walks the whole evaluation
+        # history in O(n^2) and a full-budget history is 50k-400k points.
+        # Reporting-rule effects are settled anyway (log entry 28: no rank change
+        # at eps <= 1e-3), and the judgement levels here are 1e-3 / 1e-5.
+        run: |
+          python3 scripts/niching_baseline.py \
+            --funcs "${{ matrix.func }}" \
+            --seeds "${{ inputs.seeds }}" \
+            --evals-frac "${{ inputs.evals_frac }}" \
+            --report-rule current \
+            --csv "analysis/hm/fullbudget_${{ matrix.func }}.csv"
+
+      - name: Upload CSV
+        uses: actions/upload-artifact@v4
+        with:
+          name: niching-fullbudget-${{ matrix.func }}
+          path: analysis/hm/fullbudget_${{ matrix.func }}.csv
           retention-days: 30
