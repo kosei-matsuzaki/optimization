@@ -113,7 +113,20 @@ class _RelGateProbe(_ProbeMixin, RelLevelMCESO):
     """The eps-relative diagnostic variant (entry 36), tapped."""
 
 
-def _compare(reg, names, seeds, evals, tol, csv_path) -> None:
+def _succ_ev(hist_best, thresh: float) -> int:
+    """First evaluation index at which best_so_far reaches `thresh`, else -1.
+
+    `evals_succ_mean` is the second pinned number in CLAUDE.md, and `best_f`
+    equality alone does not pin it: two arms can bank the same answer at
+    different evaluations. Entry 47 measures it rather than deriving it.
+    """
+    hb = np.asarray(hist_best)
+    hit = np.nonzero(hb <= thresh)[0]
+    return int(hit[0]) if len(hit) else -1
+
+
+def _compare(reg, names, seeds, evals, tol, csv_path, rel_level=0.0,
+             fis_floor=0.0, thresh=1e-10) -> None:
     """Where does the tie come from -- same search, or same answer?
 
     Runs base and the tightened arm on the same seed and reports the evaluation
@@ -125,32 +138,41 @@ def _compare(reg, names, seeds, evals, tol, csv_path) -> None:
     """
     rows = []
     print(f"{'function':<24}{'runs':>6}{'differ':>8}{'bank<div':>10}"
-          f"{'med_bank':>10}{'med_div':>9}{'same_best_f':>13}")
-    print("-" * 82)
+          f"{'med_bank':>10}{'med_div':>9}{'same_best_f':>13}{'same_succ_ev':>14}")
+    print("-" * 96)
     for name in names:
         b = reg[name]
         per = []
         for seed in range(seeds):
             r0 = MultiChannelEpidemicOptimizer(b, seed=seed * 100).optimize(evals)
-            r1 = MultiChannelEpidemicOptimizer(b, seed=seed * 100,
-                                               hunt_level_tol=tol).optimize(evals)
+            if rel_level > 0.0:
+                v = RelLevelMCESO(b, seed=seed * 100, rel_level=rel_level,
+                                  fis_floor=fis_floor)
+            else:
+                v = MultiChannelEpidemicOptimizer(b, seed=seed * 100,
+                                                  hunt_level_tol=tol)
+            r1 = v.optimize(evals)
             h0, h1 = np.asarray(r0.history_f), np.asarray(r1.history_f)
             n = min(len(h0), len(h1))
             neq = np.nonzero(h0[:n] != h1[:n])[0]
             div = int(neq[0]) if len(neq) else (n if len(h0) != len(h1) else -1)
             hb = np.asarray(r0.history_best)
             bank = int(np.argmax(hb <= float(r0.best_f)))
+            s0 = _succ_ev(r0.history_best, thresh)
+            s1 = _succ_ev(r1.history_best, thresh)
             per.append(dict(function=name, seed=seed, div_ev=div, bank_ev=bank,
                             base_best_f=float(r0.best_f), var_best_f=float(r1.best_f),
+                            base_succ_ev=s0, var_succ_ev=s1,
                             same=float(r0.best_f) == float(r1.best_f)))
         differ = sum(1 for r in per if r["div_ev"] >= 0)
         bank_first = sum(1 for r in per if r["div_ev"] >= 0 and r["bank_ev"] < r["div_ev"])
         same = sum(1 for r in per if r["same"])
+        same_succ = sum(1 for r in per if r["base_succ_ev"] == r["var_succ_ev"])
         med_b = float(np.median([r["bank_ev"] for r in per]))
         dv = [r["div_ev"] for r in per if r["div_ev"] >= 0]
         med_d = float(np.median(dv)) if dv else float("nan")
         print(f"{name:<24}{seeds:>6}{differ:>8}{bank_first:>10}"
-              f"{med_b:>10.0f}{med_d:>9.0f}{same:>13}")
+              f"{med_b:>10.0f}{med_d:>9.0f}{same:>13}{same_succ:>14}")
         rows.extend(per)
     if csv_path:
         Path(csv_path).parent.mkdir(parents=True, exist_ok=True)
@@ -186,13 +208,20 @@ def main() -> None:
     ap.add_argument("--csv", default=None)
     ap.add_argument("--compare", type=float, default=None, metavar="TOL",
                     help="instead of probing base, run base against "
-                         "hunt_level_tol=TOL and locate the tie")
+                         "hunt_level_tol=TOL and locate the tie. With "
+                         "--rel-level L the variant arm is RelLevelMCESO(L) "
+                         "instead, and TOL is ignored (entry 47).")
+    ap.add_argument("--succ-thresh", type=float, default=1e-10, metavar="T",
+                    help="threshold for the evals-to-success column (default "
+                         "1e-10, the number CLAUDE.md pins alongside SR)")
     args = ap.parse_args()
 
     reg = _REG[args.dim]
     if args.compare is not None:
         _compare(reg, [s.strip() for s in args.funcs.split(",")],
-                 args.seeds, args.evals, args.compare, args.csv)
+                 args.seeds, args.evals, args.compare, args.csv,
+                 rel_level=args.rel_level, fis_floor=args.fis_floor,
+                 thresh=args.succ_thresh)
         return
     rows = []
     if args.rel_level > 0.0:
