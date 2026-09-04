@@ -44,6 +44,12 @@ def load(path: str, func: str) -> dict[float, dict[int, dict]]:
                 "visited": float(r["visited"]) / float(r["K"]),
                 "hunts": float(r["hunts"]),
                 "evals": float(r["evals"]),
+                # Entry 40 read the *mechanism* off these three (a sigma arm
+                # moves hunts/landed, a commit arm moves distinct alone), so
+                # carry them here rather than re-parsing the same CSV elsewhere.
+                "distinct": float(r["distinct"]),
+                "landed": float(r["landed"]),
+                "blocked": float(r["blocked"]),
             }
     return out
 
@@ -84,7 +90,8 @@ def main() -> None:
           f"(paired Wilcoxon over shared seeds, A12 = share of seeds the row wins)")
     for eps in sorted(next(iter(data.values())), reverse=True):
         print(f"\n  eps = {eps:g}")
-        print(f"    {'config':<14}{'evals':>8}{'hunts':>8}{'PR':>7}{'visited':>9}"
+        print(f"    {'config':<18}{'hunts':>7}{'PR':>7}{'visited':>8}"
+              f"{'dist':>7}{'land':>7}{'blk':>7}"
               f"{'w/t/l':>10}{'p':>9}{'A12':>7}{'seeds':>7}")
         for label, d in data.items():
             if eps not in d:
@@ -93,14 +100,16 @@ def main() -> None:
             pr = np.array([d[eps][s]["pr"] for s in seeds])
             rp = np.array([data[ref][eps][s]["pr"] for s in seeds])
             hunts = np.mean([d[eps][s]["hunts"] for s in seeds])
-            ev = np.mean([d[eps][s]["evals"] for s in seeds])
             vis = np.mean([d[eps][s]["visited"] for s in seeds])
+            dis = np.mean([d[eps][s]["distinct"] for s in seeds])
+            lan = np.mean([d[eps][s]["landed"] for s in seeds])
+            blk = np.mean([d[eps][s]["blocked"] for s in seeds])
             if label == ref:
                 wtl, p, a = "--", "--", float("nan")
             else:
                 wtl, p, a = paired(pr, rp)
-            print(f"    {label:<14}{ev:>8.0f}{hunts:>8.1f}{np.mean(pr):>7.2f}"
-                  f"{vis:>9.2f}{wtl:>10}{p:>9}"
+            print(f"    {label:<18}{hunts:>7.1f}{np.mean(pr):>7.3f}"
+                  f"{vis:>8.2f}{dis:>7.1f}{lan:>7.1f}{blk:>7.1f}{wtl:>10}{p:>9}"
                   f"{'' if label == ref else f'{a:>7.2f}'}{len(seeds):>7}")
 
 

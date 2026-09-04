@@ -209,12 +209,18 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
        for c in (0.1, 0.01)},
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
-# as a fraction of the locally observed basin spacing. `commit_tight` is r010.
+# as a fraction of the locally observed basin spacing. The suffix is the ratio
+# x1000, so `commit_tight` (ratio 0.1) is r100, not r010.
+# Entry 42 added 0.5: paired against `sigma_only_r500` it is the loose end of
+# the commit-increment ladder, whose other end is `commit_place_r010` (run sigma
+# left at base). The mechanism entry 41 proposed -- commit only binds once the
+# run sigma is tight enough to keep the population near the anchor -- predicts
+# that increment shrinks monotonically to zero as the ratio grows.
 _VARIANTS.update({
     f"commit_r{int(round(r * 1000)):03d}": (
         _CountingCommitMCESO,
         {"commit_sigma_mode": "run", "commit_sigma_ratio": r})
-    for r in (0.25, 0.10, 0.05, 0.02, 0.01)
+    for r in (0.5, 0.25, 0.10, 0.05, 0.02, 0.01)
 })
 # Entry 26 rejected `sigma_only` (ratio 0.1) for the body: on N08-Shubert3D the
 # PR@1e-1 sign reverses (0.34 -> 0.20, 0/0/5). The mechanism read off the
@@ -229,6 +235,17 @@ _VARIANTS.update({
         _CountingCommitMCESO,
         {"commit_mode": "sigma_only", "commit_sigma_mode": "run",
          "commit_sigma_ratio": r})
+    for r in (0.25, 0.5)
+})
+# Entry 42: the commit arms move the placement spread and the run sigma with the
+# *same* ratio, so `commit_r500 - commit_r100` is not a sigma dial on its own.
+# These hold the run sigma at base while the placement spread takes the same
+# ratios, which makes the sigma effect readable at a fixed placement:
+# `commit_r{r} - commit_place_r{r}`. `commit_place_r010` is the r=0.1 member.
+_VARIANTS.update({
+    f"commit_place_r{int(round(r * 1000)):03d}": (
+        _CountingCommitMCESO,
+        {"commit_sigma_mode": "place", "commit_sigma_ratio": r})
     for r in (0.25, 0.5)
 })
 
