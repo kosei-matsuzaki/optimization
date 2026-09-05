@@ -32,9 +32,18 @@ put the adoption candidate against base at the same budget, off CSVs written by
 the same driver. The 1/10-budget reference block below only applies to the
 NMMSO pair and is printed for that pair only.
 
+``--levels`` widens the reported accuracies past the two judgement levels. The
+default stays ``pr_1e-3,pr_1e-5`` (entry 28's rule: do not rank on 1e-1), but a
+question about the *shape* of the profile -- entry 53 asks whether the last step
+1e-4 -> 1e-5 is still there -- needs the whole ladder printed, and printing it is
+not the same as ranking on it. The 1/10-budget reference block is skipped unless
+pr_1e-3 is among the levels.
+
 Usage:
   python3 scripts/fullbudget_rank.py analysis/hm/fullbudget_*.csv
   python3 scripts/fullbudget_rank.py --pair MC-ESO-rel,MC-ESO analysis/hm/e51/*.csv
+  python3 scripts/fullbudget_rank.py --pair MC-ESO-rel6,MC-ESO-rel \
+      --levels pr_1e-1,pr_1e-2,pr_1e-3,pr_1e-4,pr_1e-5 analysis/hm/e5{1,3}/N08_*.csv
 """
 from __future__ import annotations
 import csv
@@ -76,9 +85,14 @@ def paired(x: np.ndarray, y: np.ndarray) -> tuple[int, int, int, float, float]:
 def main() -> None:
     argv = sys.argv[1:]
     lhs, rhs = "MC-ESO", "NMMSO"
+    levels = JUDGEMENT
     if "--pair" in argv:
         i = argv.index("--pair")
         lhs, rhs = (s.strip() for s in argv[i + 1].split(","))
+        argv = argv[:i] + argv[i + 2:]
+    if "--levels" in argv:
+        i = argv.index("--levels")
+        levels = tuple(s.strip() for s in argv[i + 1].split(","))
         argv = argv[:i] + argv[i + 2:]
     paths = [Path(p) for p in argv]
     if not paths:
@@ -96,7 +110,7 @@ def main() -> None:
                     dropped.append((m, fn))
                     continue
                 budgets[fn] = int(r["evals"])
-                for lvl in JUDGEMENT:
+                for lvl in levels:
                     rows[fn][m].setdefault(lvl, []).append(float(r[lvl]))
 
     if dropped:
@@ -106,23 +120,25 @@ def main() -> None:
 
     for fn in sorted(rows):
         methods = rows[fn]
-        seeds = len(next(iter(methods.values()))["pr_1e-3"])
+        seeds = len(next(iter(methods.values()))[levels[0]])
         print(f"=== {fn}   budget {budgets[fn]}   {seeds} seeds")
-        print(f"{'method':<14}" + "".join(f"{lvl:>10}" for lvl in JUDGEMENT))
-        order = sorted(methods, key=lambda m: -np.mean(methods[m]["pr_1e-3"]))
+        print(f"{'method':<14}" + "".join(f"{lvl:>10}" for lvl in levels))
+        order = sorted(methods, key=lambda m: -np.mean(methods[m][levels[0]]))
         for m in order:
             cells = "".join(f"{np.mean(methods[m][lvl]):>10.3f}"
-                            for lvl in JUDGEMENT)
+                            for lvl in levels)
             print(f"{m:<14}{cells}")
 
         if lhs in methods and rhs in methods:
             print(f"  {f'{lhs} vs {rhs}':<20}{'w/t/l':>10}{'p':>10}{'A12':>8}")
-            for lvl in JUDGEMENT:
+            for lvl in levels:
                 x = np.array(methods[lhs][lvl])
                 y = np.array(methods[rhs][lvl])
                 w, t, lo, p, a = paired(x, y)
                 print(f"  {lvl:<20}{f'{w}/{t}/{lo}':>10}{p:>10.4f}{a:>8.2f}")
-            ref = REFERENCE_1E3.get(fn) if (lhs, rhs) == ("MC-ESO", "NMMSO") else None
+            ref = (REFERENCE_1E3.get(fn)
+                   if (lhs, rhs) == ("MC-ESO", "NMMSO") and "pr_1e-3" in levels
+                   else None)
             if ref:
                 exp = "MC-ESO>=NMMSO" if ref[0] >= ref[1] else "MC-ESO<NMMSO"
                 got_v = (np.mean(methods["MC-ESO"]["pr_1e-3"])

@@ -58,6 +58,14 @@ _METHODS: dict = {
     # untouched. It exists here so the candidate can be scored by the same
     # driver, at the same budget, as the baselines it is compared against.
     "MC-ESO-rel": (RelLevelMCESO, {"rel_level": 1e-5, "fis_floor": 1e-12}),
+    # Same rule with the *design* target moved one decade down: L = eps_target
+    # with eps_target read as 1e-6 instead of 1e-5. Entry 51 left exactly one
+    # step in the N08 profile (1e-4 -> 1e-5, 0.860 -> 0.754) and the candidate
+    # sits with L *on* the deepest scored threshold, so a basin released at the
+    # boundary need not score at 1e-5. This arm tests that reading; it is not a
+    # re-sweep of c (entry 46 closed that) -- c stays 1.0, only the absolute
+    # level L moves. Diagnostic arm; mceso.py defaults are untouched.
+    "MC-ESO-rel6": (RelLevelMCESO, {"rel_level": 1e-6, "fis_floor": 1e-12}),
     "MC-ESO-crowd": (MCESOCrowding, {}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),
