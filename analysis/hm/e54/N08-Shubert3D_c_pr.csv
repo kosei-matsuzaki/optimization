@@ -1,0 +1,6 @@
+function,method,rule,seed,evals,n_optima,n_reported,pr_1e-1,pr_1e-2,pr_1e-3,pr_1e-4,pr_1e-5
+N08-Shubert3D,MC-ESO-rel-probe,current,10,400000,81,226,0.8272,0.8272,0.8272,0.8272,0.7531
+N08-Shubert3D,MC-ESO-rel-probe,current,11,400000,81,226,0.8642,0.8642,0.8642,0.8642,0.7901
+N08-Shubert3D,MC-ESO-rel-probe,current,12,400000,81,226,0.8519,0.8519,0.8519,0.8519,0.7284
+N08-Shubert3D,MC-ESO-rel-probe,current,13,400000,81,226,0.9012,0.9012,0.9012,0.9012,0.7654
+N08-Shubert3D,MC-ESO-rel-probe,current,14,400000,81,226,0.8765,0.8765,0.8765,0.8765,0.7654
