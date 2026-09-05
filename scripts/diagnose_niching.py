@@ -36,6 +36,7 @@ from core.optimizers.mceso_phased_accept import PhasedAcceptMCESO    # noqa: E40
 from core.optimizers.mceso_crowding import MCESOCrowding             # noqa: E402
 from core.optimizers.mceso_recover import RecoverMCESO               # noqa: E402
 from core.optimizers.mceso_rel_level import RelLevelMCESO            # noqa: E402
+from core.optimizers.mceso_sol_archive import SolArchiveTrimMCESO    # noqa: E402
 from core.runner import _seed_indices, count_goptima             # noqa: E402
 
 
@@ -107,6 +108,10 @@ class _CountingRecoverMCESO(_HuntCounters, RecoverMCESO):
 
 class _CountingRelLevelMCESO(_HuntCounters, RelLevelMCESO):
     """The eps-relative hunt-release-level variant, instrumented the same way."""
+
+
+class _CountingSolArchiveMCESO(_HuntCounters, SolArchiveTrimMCESO):
+    """The niche-greedy answer-archive trim variant, instrumented the same way."""
 
 
 # variant name -> (class, constructor kwargs)
@@ -247,6 +252,25 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
                              {"rel_level": 1e-5, "exhausted_sigma_tol": 1.0}),
     "level_rel_c100_fl08": (_CountingRelLevelMCESO,
                             {"rel_level": 1e-5, "sigma_floor_ratio": 1e-8}),
+    # Entry 58 / question 2: the answer archive's f-only trim
+    # (`np.argsort(sol_archive_f)[:200]`, mceso.py:822) is blind to niches, and
+    # on N09-Vincent3D it drops 59.20 rho-separated endpoints to 37.33 (PR@1e-5
+    # 0.274 -> 0.173). `sol_archive` is read only when the reported set is
+    # assembled and never re-enters the search, so all three arms below run the
+    # *same* trajectory: `best_f`, `hunts` and every diagnostic except the
+    # reported-set columns must match base seed for seed. That equality is the
+    # measurement's built-in identity check, not an assumption.
+    #   solcap2000  the ceiling: capacity raised past the hunt count (676 at the
+    #               suite budget) so the trim never fires. No new code — it is a
+    #               constructor argument of the shipped class.
+    #   soltrim_rho capacity left at 200, selection made niche-greedy at
+    #               0.02 x span (the reseed's own fine repel radius, not the
+    #               scoring rho). Matching solcap2000 here means the fix costs
+    #               no memory, so this is the adoption shape.
+    #   soltrim_off identity check for the variant class: must reproduce base.
+    "solcap2000": (_CountingMCESO, {"solution_archive_max": 2000}),
+    "soltrim_rho": (_CountingSolArchiveMCESO, {"sol_trim_mode": "rho"}),
+    "soltrim_off": (_CountingSolArchiveMCESO, {"sol_trim_mode": "off"}),
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
 # as a fraction of the locally observed basin spacing. The suffix is the ratio
