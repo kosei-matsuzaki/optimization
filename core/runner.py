@@ -293,14 +293,31 @@ def niching_peak_metrics(
         return {"n_optima": 0}
     out: dict = {"n_optima": k}
     counts, n_reported = _niching_counts(results, benchmark, accuracies)
+    n_rep = np.asarray(n_reported, dtype=float)
     for j, a in enumerate(accuracies):
         c = counts[:, j]
         key = f"{a:.0e}".replace("e-0", "e-")
         out[f"cec_pr_{key}"] = float(np.mean(c) / k)
         out[f"cec_sr_{key}"] = float(np.mean(c == k))
+        # Precision / F1 over the reported set. PR is recall alone: it counts
+        # the peaks a run hit and is blind to how many points it reported to
+        # hit them, so under PR a method pays nothing for padding its answer up
+        # to the cap. Precision is the share of reported points that are peaks,
+        # and F1 is the harmonic mean of the two. Averaged per run (mean of
+        # ratios, not ratio of means) so a run reporting many points cannot be
+        # offset by one reporting few.
+        prec = np.divide(c, n_rep, out=np.zeros_like(c), where=n_rep > 0)
+        rec = c / k
+        denom = prec + rec
+        f1 = np.divide(2.0 * prec * rec, denom,
+                       out=np.zeros_like(prec), where=denom > 0)
+        out[f"cec_pre_{key}"] = float(np.mean(prec))
+        out[f"cec_f1_{key}"] = float(np.mean(f1))
     out["cec_pr_mean"] = float(np.mean([out[f"cec_pr_{a:.0e}".replace("e-0", "e-")]
                                         for a in accuracies]))
     out["cec_sr_mean"] = float(np.mean([out[f"cec_sr_{a:.0e}".replace("e-0", "e-")]
+                                        for a in accuracies]))
+    out["cec_f1_mean"] = float(np.mean([out[f"cec_f1_{a:.0e}".replace("e-0", "e-")]
                                         for a in accuracies]))
     out["n_reported"] = float(np.mean(n_reported))
     return out

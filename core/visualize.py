@@ -797,13 +797,18 @@ def save_stats(
     # niching suite (every other benchmark has a single global optimum).
     cec_pr_keys = [f"cec_pr_{a:.0e}".replace("e-0", "e-") for a in NICHE_ACCURACIES]
     cec_sr_keys = [f"cec_sr_{a:.0e}".replace("e-0", "e-") for a in NICHE_ACCURACIES]
+    # Precision and F1 over the same reported set. PR is recall only, so it
+    # cannot see a method that pads its answer up to the cap; these can.
+    cec_pre_keys = [f"cec_pre_{a:.0e}".replace("e-0", "e-") for a in NICHE_ACCURACIES]
+    cec_f1_keys = [f"cec_f1_{a:.0e}".replace("e-0", "e-") for a in NICHE_ACCURACIES]
     fieldnames_s = ["function", "category", "tags", "method", "mean_time_s",
                     "mean_best_f", "median_best_f", *sr_keys,
                     "evals_succ_mean", "evals_succ_med", "ert", "ecdf_auc",
                     "mean_optima_found", "mean_optima_rate", "n_optima",
                     *pr_keys, *mmo_keys,
                     "cec_k", *cec_pr_keys, *cec_sr_keys,
-                    "cec_pr_mean", "cec_sr_mean", "n_reported"]
+                    "cec_pr_mean", "cec_sr_mean", "n_reported",
+                    *cec_pre_keys, *cec_f1_keys, "cec_f1_mean"]
     with open(summary_path, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames_s)
         if not summary_exists:
@@ -855,4 +860,8 @@ def save_stats(
             row["cec_pr_mean"] = f"{npm['cec_pr_mean']:.2f}" if has_cec else "N/A"
             row["cec_sr_mean"] = f"{npm['cec_sr_mean']:.0%}" if has_cec else "N/A"
             row["n_reported"] = f"{npm['n_reported']:.0f}" if has_cec else "N/A"
+            for a, ek, fk in zip(NICHE_ACCURACIES, cec_pre_keys, cec_f1_keys):
+                row[ek] = f"{npm[ek]:.2f}" if has_cec else "N/A"
+                row[fk] = f"{npm[fk]:.2f}" if has_cec else "N/A"
+            row["cec_f1_mean"] = f"{npm['cec_f1_mean']:.2f}" if has_cec else "N/A"
             writer.writerow(row)

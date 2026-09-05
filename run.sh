@@ -13,11 +13,22 @@ set -euo pipefail
 WORKFLOW="Run Optimization"
 RESULTS_ROOT="results"
 
-# Prefer project-local .venv (uv) over system python3 for local commands.
+# The docs and the status output are Japanese; a Windows console defaults to
+# cp932 and every print of a non-cp932 character raises UnicodeEncodeError.
+export PYTHONIOENCODING=utf-8
+
+# Prefer project-local .venv (uv) over a system interpreter for local commands.
+# The Windows venv layout puts the interpreter in Scripts/, and there `python3`
+# resolves to the Microsoft Store stub, which exits silently and takes every
+# subcommand down with it under `set -e`.
 if [[ -x ".venv/bin/python3" ]]; then
   PY=".venv/bin/python3"
-else
+elif [[ -x ".venv/Scripts/python.exe" ]]; then
+  PY=".venv/Scripts/python.exe"
+elif command -v python3 >/dev/null 2>&1 && python3 -c '' >/dev/null 2>&1; then
   PY="python3"
+else
+  PY="python"
 fi
 
 # ── trigger ──────────────────────────────────────────────────────────────────
