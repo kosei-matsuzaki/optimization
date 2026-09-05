@@ -227,6 +227,26 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
                           {"rel_level": 1e-6, "fis_floor": 1e-12}),
     "level_rel_c10_cap": (_CountingRelLevelMCESO,
                           {"rel_level": 1e-6, "tol_cap": 1e-2}),
+    # Entry 55 (question 1): the *other* release clause, on top of the adoption
+    # candidate (c = 1.0, `level_rel_c100`). Entry 54 counted the clause that
+    # ends the hunts behind N08-Shubert3D's residual step (PR 0.860 at 1e-4
+    # against 0.754 at 1e-5) and found it is always the sigma-floor clause
+    # (129/129 reported step points, level clause 0/129), with sigma stopped at
+    # 1.449x its floor -- i.e. released with 0.45 floor-units of step size still
+    # unspent. These two arms give the hunt that room, in the two ways it can be
+    # given, and are paired against `level_rel_c100` on the same seeds:
+    #   _sig10  the clause itself, at the one point the queue pre-registered:
+    #           released only once sigma is *at* the floor (tol 1.5 -> 1.0).
+    #           This is the arm the rejection condition is written against.
+    #   _fl08   diagnostic only: the floor moved down two decades (1e-6 ->
+    #           1e-8) with the clause left at its default. `_sig10` can only
+    #           buy the 0.45 floor-units that exist; if it comes back null,
+    #           this arm separates "depth is not sigma-limited" from "the room
+    #           `_sig10` could give was too small to see".
+    "level_rel_c100_sig10": (_CountingRelLevelMCESO,
+                             {"rel_level": 1e-5, "exhausted_sigma_tol": 1.0}),
+    "level_rel_c100_fl08": (_CountingRelLevelMCESO,
+                            {"rel_level": 1e-5, "sigma_floor_ratio": 1e-8}),
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
 # as a fraction of the locally observed basin spacing. The suffix is the ratio

@@ -126,7 +126,7 @@ def _succ_ev(hist_best, thresh: float) -> int:
 
 
 def _compare(reg, names, seeds, evals, tol, csv_path, rel_level=0.0,
-             fis_floor=0.0, thresh=1e-10) -> None:
+             fis_floor=0.0, thresh=1e-10, extra=None) -> None:
     """Where does the tie come from -- same search, or same answer?
 
     Runs base and the tightened arm on the same seed and reports the evaluation
@@ -136,6 +136,7 @@ def _compare(reg, names, seeds, evals, tol, csv_path, rel_level=0.0,
     already fixed before the two searches part company, so an identical
     SR@1e-10 is a tie by construction, not a safety measurement.
     """
+    extra = dict(extra or {})   # entry 55: sigma-side kwargs, variant arm only
     rows = []
     print(f"{'function':<24}{'runs':>6}{'differ':>8}{'bank<div':>10}"
           f"{'med_bank':>10}{'med_div':>9}{'same_best_f':>13}{'same_succ_ev':>14}")
@@ -147,10 +148,10 @@ def _compare(reg, names, seeds, evals, tol, csv_path, rel_level=0.0,
             r0 = MultiChannelEpidemicOptimizer(b, seed=seed * 100).optimize(evals)
             if rel_level > 0.0:
                 v = RelLevelMCESO(b, seed=seed * 100, rel_level=rel_level,
-                                  fis_floor=fis_floor)
+                                  fis_floor=fis_floor, **extra)
             else:
                 v = MultiChannelEpidemicOptimizer(b, seed=seed * 100,
-                                                  hunt_level_tol=tol)
+                                                  hunt_level_tol=tol, **extra)
             r1 = v.optimize(evals)
             h0, h1 = np.asarray(r0.history_f), np.asarray(r1.history_f)
             n = min(len(h0), len(h1))
@@ -214,14 +215,29 @@ def main() -> None:
     ap.add_argument("--succ-thresh", type=float, default=1e-10, metavar="T",
                     help="threshold for the evals-to-success column (default "
                          "1e-10, the number CLAUDE.md pins alongside SR)")
+    # Entry 55: the other release clause. Both are shipped defaults, so an arm
+    # that moves them needs this gate (the BBOB-24 dim2 best_f pairing of
+    # entries 34/37/47) before it can be an adoption candidate. Applied to the
+    # *variant* arm only -- base is always the shipped optimiser.
+    ap.add_argument("--exhausted-sigma-tol", type=float, default=None,
+                    metavar="T",
+                    help="variant arm's exhausted_sigma_tol (shipped 1.5). "
+                         "1.0 releases a hunt only once sigma is at its floor.")
+    ap.add_argument("--sigma-floor-ratio", type=float, default=None,
+                    metavar="R",
+                    help="variant arm's sigma_floor_ratio (shipped 1e-6), the "
+                         "absolute sigma floor as a fraction of the span.")
     args = ap.parse_args()
+    extra = {k: v for k, v in
+             (("exhausted_sigma_tol", args.exhausted_sigma_tol),
+              ("sigma_floor_ratio", args.sigma_floor_ratio)) if v is not None}
 
     reg = _REG[args.dim]
     if args.compare is not None:
         _compare(reg, [s.strip() for s in args.funcs.split(",")],
                  args.seeds, args.evals, args.compare, args.csv,
                  rel_level=args.rel_level, fis_floor=args.fis_floor,
-                 thresh=args.succ_thresh)
+                 thresh=args.succ_thresh, extra=extra)
         return
     rows = []
     if args.rel_level > 0.0:
@@ -238,9 +254,10 @@ def main() -> None:
         for seed in seeds:
             if args.rel_level > 0.0:
                 o = _RelGateProbe(b, seed=seed * 100, rel_level=args.rel_level,
-                                  fis_floor=args.fis_floor, tol_cap=args.tol_cap)
+                                  fis_floor=args.fis_floor, tol_cap=args.tol_cap,
+                                  **extra)
             else:
-                o = _GateProbe(b, seed=seed * 100)
+                o = _GateProbe(b, seed=seed * 100, **extra)
             res = o.optimize(args.evals)
             gain = (float("nan") if o.f_at_exh is None
                     else o.f_at_exh - float(res.best_f))
