@@ -46,6 +46,7 @@ from core.benchmarks import (BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME,     # no
                              BENCHMARKS_5D_BY_NAME, BENCHMARKS_10D_BY_NAME)
 from core.optimizers import MultiChannelEpidemicOptimizer                    # noqa: E402
 from core.optimizers.mceso_rel_level import RelLevelMCESO                    # noqa: E402
+from core.optimizers.mceso_sol_archive import SolArchiveTrimMCESO            # noqa: E402
 
 _REG = {2: BENCHMARKS_BY_NAME, 3: BENCHMARKS_3D_BY_NAME,
         5: BENCHMARKS_5D_BY_NAME, 10: BENCHMARKS_10D_BY_NAME}
@@ -126,7 +127,8 @@ def _succ_ev(hist_best, thresh: float) -> int:
 
 
 def _compare(reg, names, seeds, evals, tol, csv_path, rel_level=0.0,
-             fis_floor=0.0, thresh=1e-10, extra=None) -> None:
+             fis_floor=0.0, thresh=1e-10, extra=None, sol_trim_mode=None,
+             seed_start=0) -> None:
     """Where does the tie come from -- same search, or same answer?
 
     Runs base and the tightened arm on the same seed and reports the evaluation
@@ -144,9 +146,18 @@ def _compare(reg, names, seeds, evals, tol, csv_path, rel_level=0.0,
     for name in names:
         b = reg[name]
         per = []
-        for seed in range(seeds):
+        for seed in range(seed_start, seed_start + seeds):
             r0 = MultiChannelEpidemicOptimizer(b, seed=seed * 100).optimize(evals)
-            if rel_level > 0.0:
+            if sol_trim_mode is not None:
+                # Entry 60/61: the answer-archive trim arm. It only re-selects
+                # `sol_archive` after the shipped trim has fired, and that
+                # archive never feeds back into the search, so this arm is the
+                # one case where `same_best_f == seeds` is predicted by the
+                # code rather than hoped for. Entry 56 is why it is measured
+                # anyway: a "formality" gate came back non-identical once.
+                v = SolArchiveTrimMCESO(b, seed=seed * 100,
+                                        sol_trim_mode=sol_trim_mode, **extra)
+            elif rel_level > 0.0:
                 v = RelLevelMCESO(b, seed=seed * 100, rel_level=rel_level,
                                   fis_floor=fis_floor, **extra)
             else:
@@ -223,6 +234,11 @@ def main() -> None:
                     metavar="T",
                     help="variant arm's exhausted_sigma_tol (shipped 1.5). "
                          "1.0 releases a hunt only once sigma is at its floor.")
+    ap.add_argument("--sol-trim-mode", default=None, choices=("rho", "off"),
+                    metavar="M",
+                    help="variant arm is SolArchiveTrimMCESO(sol_trim_mode=M) "
+                         "(entry 60's answer-archive trim). Only meaningful "
+                         "with --compare; takes precedence over --rel-level.")
     ap.add_argument("--sigma-floor-ratio", type=float, default=None,
                     metavar="R",
                     help="variant arm's sigma_floor_ratio (shipped 1e-6), the "
@@ -237,7 +253,8 @@ def main() -> None:
         _compare(reg, [s.strip() for s in args.funcs.split(",")],
                  args.seeds, args.evals, args.compare, args.csv,
                  rel_level=args.rel_level, fis_floor=args.fis_floor,
-                 thresh=args.succ_thresh, extra=extra)
+                 thresh=args.succ_thresh, extra=extra,
+                 sol_trim_mode=args.sol_trim_mode, seed_start=args.seed_start)
         return
     rows = []
     if args.rel_level > 0.0:

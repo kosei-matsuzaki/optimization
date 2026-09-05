@@ -1,0 +1,12 @@
+function                  runs  differ  bank<div  med_bank  med_div  same_best_f  same_succ_ev
+------------------------------------------------------------------------------------------------
+F02-EllipsoidalSep          20       0         0      1411      nan           20            20
+F05-LinearSlope             20       0         0       342      nan           20            20
+F08-Rosenbrock              20       0         0      1314      nan           20            20
+F11-Discus                  20       0         0      1460      nan           20            20
+F14-DiffPowers              20       0         0      2059      nan           20            20
+F17-SchafferF7              20       0         0      2532      nan           20            20
+F20-Schwefel                20       0         0      2726      nan           20            20
+F23-Katsuura                20       0         0      2512      nan           20            20
+
+wrote analysis/hm/e61/bbob_gate_20k_g2.csv (160 rows)

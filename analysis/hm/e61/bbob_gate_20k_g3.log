@@ -1,0 +1,12 @@
+function                  runs  differ  bank<div  med_bank  med_div  same_best_f  same_succ_ev
+------------------------------------------------------------------------------------------------
+F03-RastriginSep            20       0         0      1686      nan           20            20
+F06-AttractiveSector        20       0         0      2571      nan           20            20
+F09-RosenbrockRot           20       0         0      1264      nan           20            20
+F12-BentCigar               20       0         0      1322      nan           20            20
+F15-RastriginRot            20       0         0      1600      nan           20            20
+F18-SchafferF7ill           20       0         0      2903      nan           20            20
+F21-Gallagher101            20       0         0       546      nan           20            20
+F24-LunacekRastrigin        20       0         0     11942      nan           20            20
+
+wrote analysis/hm/e61/bbob_gate_20k_g3.csv (160 rows)
