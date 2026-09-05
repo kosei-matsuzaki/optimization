@@ -114,6 +114,21 @@ class _CountingSolArchiveMCESO(_HuntCounters, SolArchiveTrimMCESO):
     """The niche-greedy answer-archive trim variant, instrumented the same way."""
 
 
+class _CountingCommitSolArchiveMCESO(_HuntCounters, CommitReseedMCESO,
+                                     SolArchiveTrimMCESO):
+    """Both diagnostics at once: the committed restart (entry 62, which raises
+    the *coverage ceiling*) and the niche-greedy answer-archive trim (entry 60,
+    which stops the report from throwing that coverage away).
+
+    The two touch disjoint hooks — ``CommitReseedMCESO`` overrides
+    ``_diversified_reseed`` / ``_maybe_spillover``, ``SolArchiveTrimMCESO``
+    overrides ``_on_spillover_start`` — so the MRO
+    (counters -> commit -> adaptive-repel -> archive trim -> shipped) runs each
+    exactly where it runs on its own; the archive override still snapshots the
+    pre-trim archive before delegating, so its semantics are unchanged.
+    ``commit_mode="off", sol_trim_mode="off"`` is the identity check."""
+
+
 # variant name -> (class, constructor kwargs)
 _VARIANTS: dict[str, tuple[type, dict]] = {
     "base": (_CountingMCESO, {}),
@@ -271,6 +286,18 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
     "solcap2000": (_CountingMCESO, {"solution_archive_max": 2000}),
     "soltrim_rho": (_CountingSolArchiveMCESO, {"sol_trim_mode": "rho"}),
     "soltrim_off": (_CountingSolArchiveMCESO, {"sol_trim_mode": "off"}),
+    # Entry 63 / question 1: entry 62 raised N09's coverage ceiling
+    # (`visited@1e-5` 0.275 -> 0.355) but the report still passes a fixed
+    # fraction of it (`reported / visited` 0.63 vs 0.62), so PR@1e-5 stopped at
+    # 0.221. `soltrim_rho` is the tool that recovered the report up to the
+    # *base* ceiling (entry 60); this arm asks whether it still does once the
+    # ceiling has moved. Only the composite is new — both single arms are on
+    # disk (entries 60 and 62) and pair with this one by seed.
+    "cp_soltrim": (_CountingCommitSolArchiveMCESO,
+                   {"commit_sigma_mode": "place", "commit_sigma_ratio": 0.1,
+                    "sol_trim_mode": "rho"}),
+    "cp_soltrim_off": (_CountingCommitSolArchiveMCESO,
+                       {"commit_mode": "off", "sol_trim_mode": "off"}),
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
 # as a fraction of the locally observed basin spacing. The suffix is the ratio
