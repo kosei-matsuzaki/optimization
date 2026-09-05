@@ -52,7 +52,10 @@ def main() -> None:
 
     rows = []
     for p in sys.argv[1:]:
-        with open(p) as fh:
+        # Row-level dumps are stored gzipped (the repository rule); read both.
+        opener = ((lambda q: __import__("gzip").open(q, "rt", newline=""))
+                  if p.endswith(".gz") else (lambda q: open(q, newline="")))
+        with opener(p) as fh:
             for r in csv.DictReader(fh):
                 xs = [float(r[k]) for k in r if k.startswith("x") and k[1:].isdigit()]
                 rows.append((r["function"], int(r["seed"]), float(r["f"]), np.array(xs)))

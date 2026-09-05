@@ -25,17 +25,26 @@ from __future__ import annotations
 import csv
 import sys
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
 
 LEVELS = (1e-1, 1e-3, 1e-5)
 
 
+def _open(path: str):
+    """Row-level dumps are stored gzipped (the repository rule); read both."""
+    if path.endswith(".gz"):
+        import gzip
+        return gzip.open(path, "rt", newline="")
+    return open(path, newline="")
+
+
 def _load(paths: list[str]) -> dict[tuple[str, int, int], list[dict]]:
     """(function, K, seed) -> its hunts, in order."""
     out: dict[tuple[str, int, int], list[dict]] = defaultdict(list)
     for p in paths:
-        with open(p) as fh:
+        with _open(p) as fh:
             for row in csv.DictReader(fh):
                 out[(row["function"], int(row["K"]), int(row["seed"]))].append({
                     "eval": int(row["eval"]),
@@ -44,16 +53,123 @@ def _load(paths: list[str]) -> dict[tuple[str, int, int], list[dict]]:
                     "exhausted": int(row["exhausted"]),
                     "sigma_span": float(row["sigma_span"]),
                     "distinct": int(row["distinct"]),
+                    # endpoint coordinates, when the dump carries them (the
+                    # timeline mode needs them; the older summaries do not)
+                    **({"x": np.array([float(row[k]) for k in row
+                                       if k.startswith("x") and k[1:].isdigit()])}
+                       if any(k.startswith("x") and k[1:].isdigit() for k in row)
+                       else {}),
                 })
     return out
 
 
+def _rho(name: str) -> float:
+    """The scorer's niche radius for this function."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from core.benchmarks import NICHING_BENCHMARKS_BY_NAME  # noqa: E402
+    return float(NICHING_BENCHMARKS_BY_NAME[name].niche_rho)
+
+
+def _K(name: str) -> int:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from core.benchmarks import NICHING_BENCHMARKS_BY_NAME  # noqa: E402
+    return int(NICHING_BENCHMARKS_BY_NAME[name].n_global_optima)
+
+
+def timeline(runs: dict, budget: int) -> None:
+    """Does the run stop landing in *new* basins before the budget ends?
+
+    The `distinct` column in the dump is an offline, best-f-first greedy over
+    the whole run, so it cannot say *when* a basin was first reached. This walks
+    the hunts in evaluation order instead and applies the same rho-greedy rule
+    incrementally: a hunt opens a new niche if its endpoint is deeper than eps
+    and more than rho away from every endpoint already held. The cumulative
+    count is then the coverage the run has actually built by that point in the
+    budget — an upper bound on what any reporting rule could score from it.
+
+    Read it against the rejection condition: coverage that is still climbing at
+    the end of the budget means the ceiling is not coverage.
+    """
+    fracs = (0.1, 0.25, 0.5, 0.75, 1.0)
+    for name in sorted({n for n, _, _ in runs}):
+        rho, k = _rho(name), _K(name)
+        print(f"\n=== {name}  K={k}  rho={rho}  budget={budget}  "
+              f"({len({s for n, _, s in runs if n == name})} seeds) ===")
+        print("Cumulative distinct basins landed in, by fraction of the budget "
+              "(time-ordered rho-greedy\nover hunt endpoints). 'hunts' is how "
+              "many hunts had ended by then.")
+        for eps in LEVELS:
+            per_seed = {}
+            for (n2, _, seed), hs in sorted(runs.items()):
+                if n2 != name:
+                    continue
+                hs = sorted(hs, key=lambda h: h["eval"])
+                held: list[np.ndarray] = []
+                # (eval at which a new niche opened)
+                opened: list[int] = []
+                nh: list[int] = []
+                for h in hs:
+                    nh.append(h["eval"])
+                    if h["f"] > eps or "x" not in h:
+                        continue
+                    x = h["x"]
+                    if not held or min(float(np.linalg.norm(y - x))
+                                       for y in held) > rho:
+                        held.append(x)
+                        opened.append(h["eval"])
+                per_seed[seed] = (np.array(opened), np.array(nh))
+            print(f"\n  eps = {eps:g}")
+            print(f"    {'seed':>5}" + "".join(f"{f'@{f:.0%}':>9}" for f in fracs)
+                  + f"{'hunts':>8}{'new 2nd half':>14}{'last new @':>12}")
+            rows = []
+            for seed, (opened, nh) in sorted(per_seed.items()):
+                cums = [int((opened <= budget * f).sum()) for f in fracs]
+                half = int((opened <= budget * 0.5).sum())
+                rows.append(cums + [len(nh), cums[-1] - half,
+                                    int(opened.max()) if len(opened) else 0])
+                print(f"    {seed:>5}" + "".join(f"{c:>9d}" for c in cums)
+                      + f"{len(nh):>8d}{cums[-1] - half:>14d}"
+                      + f"{rows[-1][-1]:>12d}")
+            a = np.array(rows, dtype=float)
+            m = a.mean(axis=0)
+            print(f"    {'mean':>5}" + "".join(f"{v:>9.1f}" for v in m[:len(fracs)])
+                  + f"{m[len(fracs)]:>8.1f}{m[len(fracs) + 1]:>14.1f}"
+                  + f"{m[-1]:>12.0f}")
+            first = a[:, 2]                          # opened in the first half
+            second = a[:, len(fracs) - 1] - a[:, 2]  # opened in the second half
+            try:
+                from scipy.stats import wilcoxon
+                w = wilcoxon(first, second)
+                p = float(w.pvalue)
+            except Exception:
+                p = float("nan")
+            wins = int((second < first).sum())
+            print(f"    first half {first.mean():.2f} new basins vs second half "
+                  f"{second.mean():.2f}  "
+                  f"({wins}/{len(first)} seeds slower in the 2nd half, "
+                  f"paired Wilcoxon p = {p:.2g})")
+            print(f"    PR ceiling from coverage = {m[len(fracs) - 1] / k:.3f} "
+                  f"of K = {k}")
+
+
 def main() -> None:
-    paths = sys.argv[1:]
+    args = sys.argv[1:]
+    tl = "--timeline" in args
+    budget = 0
+    if "--budget" in args:
+        budget = int(args[args.index("--budget") + 1])
+        args = [a for i, a in enumerate(args)
+                if a != "--budget" and args[i - 1] != "--budget"]
+    paths = [a for a in args if not a.startswith("--")]
     if not paths:
         print(__doc__)
         raise SystemExit(2)
     runs = _load(paths)
+    if tl:
+        if not budget:
+            budget = max(h["eval"] for hs in runs.values() for h in hs)
+        timeline(runs, budget)
+        return
 
     # ── per (function, seed): the shape of the hunt population ───────────────
     print("Per-run hunt yield.  'deep@e' = hunts whose endpoint reached f <= e.")

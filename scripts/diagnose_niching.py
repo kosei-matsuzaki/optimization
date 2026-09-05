@@ -438,7 +438,13 @@ def main() -> None:
             sx = np.asarray(r.final_solutions or [r.best_x], dtype=float)
             sf = np.array([float(b.func(x)) for x in sx])
             # The scorer trims the reported set to the cap before counting;
-            # do the same here so `reported` is exactly what PR sees.
+            # do the same here so `reported` is exactly what PR sees. Keep the
+            # untrimmed set too: the trim is by f alone, so once the run
+            # reports more than `cap` points it can drop whole niches in favour
+            # of duplicates of the ones it holds many points in. That only
+            # starts to bite at the full suite budget, where the archive
+            # outgrows the cap (entry 57).
+            sx_all, sf_all = sx, sf
             sx, sf = _cap_by_f(sx, sf, cap)
             # The reselected set depends only on rho and the cap, not on eps,
             # so build it once and score it at every accuracy.
@@ -446,7 +452,7 @@ def main() -> None:
                 rx, rf = np.zeros((0, hx.shape[1])), np.zeros(0)
             else:
                 rx, rf = reselect_from_history(hx, hf, b.niche_rho, cap)
-            runs.append((seed, hx, hf, sx, sf, rx, rf, opt, r))
+            runs.append((seed, hx, hf, sx, sf, rx, rf, opt, r, sx_all, sf_all))
 
             if args.hunt_csv:
                 # rho-greedy over the hunt endpoints, best-f first: how many
@@ -469,7 +475,7 @@ def main() -> None:
 
         for eps in eps_list:
             rows = []
-            for seed, hx, hf, sx, sf, rx, rf, opt, r in runs:
+            for seed, hx, hf, sx, sf, rx, rf, opt, r, sx_all, sf_all in runs:
                 if args.fast_scoring:
                     visited = visited_fast(hx, hf, b.n_global_optima,
                                            b.niche_rho, eps)
@@ -491,12 +497,19 @@ def main() -> None:
                 # a solution rather than being cut off mid-descent.
                 hunts = opt.hunts
                 landed = sum(1 for _, f in hunts if f <= eps)
+                # The same two counts on the *untrimmed* reported set. If these
+                # exceed `reported` / `distinct`, the cap's best-f trim is
+                # throwing away niches the run already held.
+                reported_all = count_goptima(sx_all, sf_all, b.n_global_optima,
+                                             b.niche_rho, eps)
+                distinct_all = _distinct_points(sx_all, sf_all, b.niche_rho)
                 rows.append((visited, reported, resel,
                              -1 if args.fast_scoring else len(rx), distinct,
                              distinct - reported, len(sx), opt.n_spillover,
                              opt.n_basin_switch, len(hunts), landed, r.best_f))
                 csv_rows.append([name, b.n_global_optima, eps, seed, args.evals,
-                                 cap, *rows[-1]])
+                                 cap, *rows[-1], reported_all, distinct_all,
+                                 len(sx_all)])
             m = np.mean(np.array(rows, dtype=float), axis=0)
             k = b.n_global_optima
             print(f"{name:<20}{k:>4}{eps:>8.0e}{m[0]:>9.1f}{m[1]:>9.1f}"
@@ -512,7 +525,9 @@ def main() -> None:
             w.writerow(["function", "K", "eps", "seed", "evals", "cap",
                         "visited", "reported", "resel", "n_resel_pts",
                         "distinct", "blocked", "n_reported_pts",
-                        "spillover", "basin_switch", "hunts", "landed", "best_f"])
+                        "spillover", "basin_switch", "hunts", "landed", "best_f",
+                        "reported_uncapped", "distinct_uncapped",
+                        "n_reported_pts_uncapped"])
             w.writerows(csv_rows)
         print(f"\nwrote {args.csv} ({len(csv_rows)} rows)")
 
