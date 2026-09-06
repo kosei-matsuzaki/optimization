@@ -1,0 +1,2 @@
+N14-CF3-3D    base  seed=0 fis=716.3 tol=1e-06 L_eff=0.0007163 level_releases=17466 ever_exhausted=True f_at_exh=0.0 best_f=0 n_rep=226
+N14-CF3-3D    base  seed=1 fis=803.1 tol=1e-06 L_eff=0.0008031 level_releases=16776 ever_exhausted=True f_at_exh=0.0 best_f=0 n_rep=226

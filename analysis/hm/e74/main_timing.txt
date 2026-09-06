@@ -1,0 +1,5 @@
+ident N14 base seed5 130s rc=0
+N18-CF3-10D rel off=6 572s rc=0
+N18-CF3-10D rel off=0 580s rc=0
+N14-CF3-3D rel off=6 613s rc=0
+N14-CF3-3D rel off=0 631s rc=0

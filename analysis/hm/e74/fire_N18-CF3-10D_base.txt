@@ -1,0 +1,2 @@
+N18-CF3-10D   base  seed=0 fis=1600 tol=1e-06 L_eff=0.0016 level_releases=0 ever_exhausted=True f_at_exh=6.228824694984322e-12 best_f=6.22882e-12 n_rep=246
+N18-CF3-10D   base  seed=1 fis=1544 tol=1e-06 L_eff=0.001544 level_releases=20 ever_exhausted=True f_at_exh=3.114419103142867e-12 best_f=3.11442e-12 n_rep=246

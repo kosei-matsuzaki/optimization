@@ -1,0 +1,2 @@
+N14-CF3-3D    rel   seed=0 fis=716.3 tol=1.396e-08 L_eff=1e-05 level_releases=12452 ever_exhausted=True f_at_exh=0.0 best_f=0 n_rep=225
+N14-CF3-3D    rel   seed=1 fis=803.1 tol=1.245e-08 L_eff=1e-05 level_releases=12762 ever_exhausted=True f_at_exh=0.0 best_f=0 n_rep=226
