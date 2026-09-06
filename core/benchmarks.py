@@ -583,10 +583,15 @@ BENCHMARKS_CEC2022_10D_BY_NAME: dict[str, BenchmarkFunction] = {
 # project and the sr_1e-1 .. sr_1e-5 columns coincide exactly with the
 # competition's accuracy levels epsilon.
 #
-# Only the 2-D/3-D subset (N04-N10) is registered. F1-F3 are 1-D and nothing
-# here supports dim=1 (pycma needs N>=2, the visualisations assume 2-D/3-D);
-# F11-F20 are composition functions that need the suite's shift/rotation data
-# files. Both gaps are deliberate — see docs/experiments.md.
+# F1-F3 are 1-D and nothing here supports dim=1 (pycma needs N>=2, the
+# visualisations assume 2-D/3-D) — that gap is deliberate, see
+# docs/experiments.md.
+#
+# F11-F20 (the composition functions, 2-D..20-D) are registered below from
+# `ioh` rather than transcribed: ioh ships the whole CEC2013 niching suite
+# including the shift/rotation data, so no data files are needed (e70). They
+# are DIAGNOSTIC registrations — the evaluation scope in docs/experiments.md is
+# unchanged and mceso.py's defaults are untouched.
 _NICHING_K = np.array([3.0, 4.0])          # modified Rastrigin peak counts (D=2)
 
 
@@ -654,7 +659,59 @@ def _make_niching(spec: tuple) -> BenchmarkFunction:
     )
 
 
-NICHING_BENCHMARKS: list[BenchmarkFunction] = [_make_niching(s) for s in _NICHING_SPECS]
+# ── CEC2013 niching F11-F20 (composition functions), via ioh ─────────────
+# ioh.ProblemClass.CEC2013 carries the full suite as problem ids 1101-1120, so
+# F11-F20 need no data files (e70). Registered diagnostically only.
+#
+# The suite is a MAXIMISATION problem with f_goptima = 0 for all ten, so
+# `func = -prob(x)` minimises to 0 and sr_1e-1 .. sr_1e-5 coincide with the
+# competition's accuracy levels, exactly as for N04-N10 above.
+#
+# rho / MaxFEs / #global optima are hardcoded from the official table
+# (get_rho / get_maxfes / get_no_goptima). Do NOT read `prob.rho`: ioh returns
+# 0.19 for Vincent where the official value is 0.2 (e70).
+#
+# (name, ioh problem id, dim, #global optima, rho, suite MaxFEs)
+_NICHING_IOH_SPECS: list[tuple] = [
+    ("N11-CF1-2D",  1111,  2, 6, 0.01, 200_000),
+    ("N12-CF2-2D",  1112,  2, 8, 0.01, 200_000),
+    ("N13-CF3-2D",  1113,  2, 6, 0.01, 200_000),
+    ("N14-CF3-3D",  1114,  3, 6, 0.01, 400_000),
+    ("N15-CF4-3D",  1115,  3, 8, 0.01, 400_000),
+    ("N16-CF3-5D",  1116,  5, 6, 0.01, 400_000),
+    ("N17-CF4-5D",  1117,  5, 8, 0.01, 400_000),
+    ("N18-CF3-10D", 1118, 10, 6, 0.01, 400_000),
+    ("N19-CF4-10D", 1119, 10, 8, 0.01, 400_000),
+    ("N20-CF4-20D", 1120, 20, 8, 0.01, 400_000),
+]
+
+_NICHING_IOH_TAGS = ["multi-global", "multimodal", "non-separable", "rugged",
+                     "composition"]
+
+
+def _make_niching_ioh(spec: tuple) -> BenchmarkFunction:
+    name, fid, dim, n_opt, rho, maxfes = spec
+    prob = ioh.get_problem(fid, instance=1, dimension=dim,
+                           problem_class=ioh.ProblemClass.CEC2013)
+    lo = float(prob.bounds.lb[0])
+    hi = float(prob.bounds.ub[0])
+    f_gopt = float(prob.optimum.y)          # 0.0 for the whole suite
+
+    def func(x: np.ndarray, _p=prob, _f=f_gopt) -> float:
+        return float(_f - _p(np.asarray(x, dtype=float).tolist()))
+
+    return BenchmarkFunction(
+        name=name, func=func, bounds=(lo, hi), optimum=0.0,
+        category="multi-optima", dim=dim, tags=list(_NICHING_IOH_TAGS),
+        niche_rho=rho, n_global_optima=n_opt, suite_max_evals=maxfes,
+        optima_pos=[list(s.x) for s in prob.optima],
+    )
+
+
+NICHING_BENCHMARKS: list[BenchmarkFunction] = (
+    [_make_niching(s) for s in _NICHING_SPECS]
+    + [_make_niching_ioh(s) for s in _NICHING_IOH_SPECS]
+)
 NICHING_BENCHMARKS_BY_NAME: dict[str, BenchmarkFunction] = {
     b.name: b for b in NICHING_BENCHMARKS
 }
@@ -677,4 +734,7 @@ def make_benchmark_by_name(name: str, dim: int) -> BenchmarkFunction:
     spec = next((s for s in _NICHING_SPECS if s[0] == name), None)
     if spec is not None:
         return _make_niching(spec)
+    spec = next((s for s in _NICHING_IOH_SPECS if s[0] == name), None)
+    if spec is not None:
+        return _make_niching_ioh(spec)
     raise ValueError(f"Unknown benchmark: {name}")

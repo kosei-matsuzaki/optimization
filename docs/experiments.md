@@ -210,9 +210,9 @@ BBOB がカバーしない **多大域最適解**・**deceptive 2-D 多峰** 系
 | C10 | Schaffer N.2 | [-100, 100]² | deceptive-2d | multimodal, rugged | 同心円状の多峰、原点中心 |
 | C11 | De Jong F5 (Shekel's foxholes) | [-65.536, 65.536]² | deceptive-2d | multimodal, plateau, deceptive | 5×5 格子の25局所解 |
 
-### CEC2013 niching（低次元多峰, N04-N10）
+### CEC2013 niching（N04-N10 ＋ 合成関数 N11-N20）
 
-多解探索を分野の土俵で測るためのスイート。Li, Engelbrecht & Epitropakis (2013) の CEC'2013 niching competition ベンチマークのうち、**2D/3D の 7 関数**を実装した（`core/benchmarks.py:_NICHING_SPECS`）。式は参照実装 `github.com/mikeagn/CEC2013` の `matlab/niching_func.m`、f_goptima / rho / 大域解数 / MaxFEs は同梱の `get_fgoptima` / `get_rho` / `get_no_goptima` / `get_maxfes` から取った。
+多解探索を分野の土俵で測るためのスイート。Li, Engelbrecht & Epitropakis (2013) の CEC'2013 niching competition ベンチマークのうち、**2D/3D の 7 関数（F4-F10）を自前で実装**した（`core/benchmarks.py:_NICHING_SPECS`）。**合成関数 F11-F20 は `ioh` 経由で診断用に登録している**（下記）。式は参照実装 `github.com/mikeagn/CEC2013` の `matlab/niching_func.m`、f_goptima / rho / 大域解数 / MaxFEs は同梱の `get_fgoptima` / `get_rho` / `get_no_goptima` / `get_maxfes` から取った。
 
 公式スイートは**最大化**問題。ここでは `f_goptima - f_raw(x)` として登録するので他スイートと同じく 0 へ最小化し、**`sr_1e-1` 〜 `sr_1e-5` 列がそのまま競技の精度水準 ε に一致する**。
 
@@ -229,7 +229,27 @@ BBOB がカバーしない **多大域最適解**・**deceptive 2-D 多峰** 系
 公式スイートからの逸脱は 3 つ。いずれも意図的で、論文に書くときはそのまま明示する。
 
 - **F1-F3（1 次元）は未実装**。この repo は dim=1 を通せない（pycma は N≥2、可視化も 2D/3D 前提）。
-- **F11-F20（合成関数）は未実装**。スイートの shift / rotation データファイルが要る。低次元 2D の難問（F11-F13）が抜けるので、必要になったら次に足すのはここ。
+- **F11-F20（合成関数）は 2026-09-06 に登録した（診断用）**。「shift / rotation データファイルが要る」という以前の記述は誤りで、**既存依存の `ioh` が CEC2013 niching 20 問すべてを持っている**（`ioh.ProblemClass.CEC2013`、id 1101-1120。その70 で 5 通り照合済み）。下表のとおり `_NICHING_IOH_SPECS` として登録され、`NICHING_BENCHMARKS_BY_NAME` から `scripts/` の全スクリプトが引ける。**評価範囲の規則は変えていない** —— 本文の評価基準（BBOB-24 dim2 での判定、niching は N04-N10）はそのままで、これらは**ゴールの対象集合を替えるかの判断材料を測るための診断登録**。
+**合成関数 F11-F20（`core/benchmarks.py:_NICHING_IOH_SPECS`、`ioh` 経由。診断用）。**
+すべて箱 [-5, 5]^D、f_goptima = 0、rho = 0.01。**rho / MaxFEs / K は公式表からハードコードする**
+（`prob.rho` を読まないこと —— ioh は Vincent で 0.19 を返すが公式は 0.2、その70）。
+
+| 名前 | ioh id | dim | K | 公式 MaxFEs | 公式番号 |
+|---|---|---|---|---|---|
+| N11-CF1-2D | 1111 | 2 | 6 | 2e5 | F11 |
+| N12-CF2-2D | 1112 | 2 | 8 | 2e5 | F12 |
+| N13-CF3-2D | 1113 | 2 | 6 | 2e5 | F13 |
+| N14-CF3-3D | 1114 | 3 | 6 | 4e5 | F14 |
+| N15-CF4-3D | 1115 | 3 | 8 | 4e5 | F15 |
+| N16-CF3-5D | 1116 | 5 | 6 | 4e5 | F16 |
+| N17-CF4-5D | 1117 | 5 | 8 | 4e5 | F17 |
+| N18-CF3-10D | 1118 | 10 | 6 | 4e5 | F18 |
+| N19-CF4-10D | 1119 | 10 | 8 | 4e5 | F19 |
+| N20-CF4-20D | 1120 | 20 | 8 | 4e5 | F20 |
+
+**可視化は D≠2/3 で自動的に抜ける**（`core/visualize.py` の 7 か所が早期 return）ので、
+5D 以上を回しても図は出ない。`core/runner.py` の PR 採点は距離と rho だけなので次元非依存。
+
 - **N05 の探索域**は公式が x₁∈[-1.9, 1.9] / x₂∈[-1.1, 1.1] の非対称ボックス。`BenchmarkFunction.bounds` が全軸共通の 1 レンジしか持たないため x₂ を [-1.9, 1.9] に広げた。大域解 2 個は変わらず（公式帯の外では f が増えるので最大値は増えない）、距離も歪まないので rho ベースの計数は保たれるが、**探索体積が公式の 1.7 倍**なので公式 F5 の公表値とは直接比較できない。
 
 ### CEC2022（hold-out）
