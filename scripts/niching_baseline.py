@@ -103,6 +103,13 @@ def main() -> None:
                          "value. Several values sweep the budget so peak ratio "
                          "can be read against evaluations per optimum.")
     ap.add_argument("--seeds", type=int, default=3)
+    ap.add_argument("--seed-offset", type=int, default=0,
+                    help="first seed index (default 0). Seeds stay numbered "
+                         "globally -- seed index i always means optimiser seed "
+                         "i*100 and is written as `seed=i` -- so one function "
+                         "can be sharded across processes and the shards "
+                         "concatenated, or paired seed-by-seed against a stored "
+                         "CSV from an earlier cycle.")
     ap.add_argument("--report-rule", type=str, default="current",
                     choices=("current", "reselect", "both"),
                     help="which reporting rule scores the runs. 'current' = the "
@@ -151,16 +158,17 @@ def main() -> None:
             for m in methods:
                 cls, kw = _METHODS[m]
                 t0 = time.time()
+                seeds = range(args.seed_offset, args.seed_offset + args.seeds)
                 results = [cls(b, seed=s * 100, **kw).optimize(budget)
-                           for s in range(args.seeds)]
+                           for s in seeds]
                 for rule in rules:
                     scored = (results if rule == "current"
                               else _reselected_results(results, b))
                     counts, n_rep = _niching_counts(scored, b, NICHE_ACCURACIES)
                     pr = counts.mean(axis=0) / b.n_global_optima
                     for i in range(len(scored)):
-                        w.writerow([name, m, rule, i, budget, b.n_global_optima,
-                                    n_rep[i]]
+                        w.writerow([name, m, rule, args.seed_offset + i, budget,
+                                    b.n_global_optima, n_rep[i]]
                                    + [f"{c / b.n_global_optima:.4f}"
                                       for c in counts[i]])
                     cells = "  ".join(f"{v:5.2f}" for v in pr)
