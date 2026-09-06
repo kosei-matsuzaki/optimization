@@ -1,0 +1,16 @@
+function,variant,seed,evals,hunts,match,narrow_draw_wide_land,wide_draw_wide_land,secs
+N09-Vincent3D,commit_tight,0,400000,839,521,36,655,54.4
+N09-Vincent3D,commit_tight,100,400000,837,287,68,638,55.8
+N09-Vincent3D,commit_tight,200,400000,838,266,80,649,57.0
+N09-Vincent3D,commit_tight,300,400000,838,519,39,686,58.1
+N09-Vincent3D,commit_tight,400,400000,841,305,73,651,55.7
+N09-Vincent3D,commit_tight,600,400000,839,510,33,660,54.3
+N09-Vincent3D,commit_tight,500,400000,839,491,49,676,56.6
+N09-Vincent3D,commit_tight,700,400000,836,262,73,635,54.9
+N09-Vincent3D,commit_tight,800,400000,838,519,34,681,52.6
+N09-Vincent3D,commit_tight,1000,400000,838,273,79,645,54.8
+N09-Vincent3D,commit_tight,900,400000,840,272,78,632,56.7
+N09-Vincent3D,commit_tight,1100,400000,838,274,78,641,55.6
+N09-Vincent3D,commit_tight,1200,400000,840,288,58,659,54.8
+N09-Vincent3D,commit_tight,1400,400000,837,283,72,648,54.4
+N09-Vincent3D,commit_tight,1300,400000,839,244,74,623,55.2

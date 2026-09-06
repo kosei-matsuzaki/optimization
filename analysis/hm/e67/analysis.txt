@@ -1,0 +1,93 @@
+entry 67 — is the remaining 0.123 of the draw->landing descent the run sigma?
+
+Question (queue 1, left open by entry 65): entry 65 showed the whole +0.150 excess of
+MC-ESO over the volume-proportional null is made between the restart DRAW and the hunt's
+LANDING, and that `commit_place` (commit the placement of the 20 slots to one anchor,
+leave the generation sigma at sigma_init = 0.2*span) returns only 0.027 of it.  The
+geometry pointed at the descent scale: sigma_init = 1.950 against nearest-neighbour
+spacings of 0.291-0.546, so a population dropped in a narrow basin is spread 3.6-6.7x
+the local basin spacing and the mu+lambda greedy keeps whatever rolled into a wide one.
+
+Pre-registered rejection: if `commit_tight`'s paired draw->landing gap does not differ
+from base's at alpha = 0.05 over 15 seeds, then the run sigma is NOT the main component
+of the descent either, the decomposition is closed, and the cycle moves to queue 2.
+
+  => The rejection condition did NOT hold.  The run sigma is the main component:
+     it returns 0.109 of base's +0.151 gap (15/15 seeds, A12 = 1.00), against the
+     0.020 the placement returns.
+
+--------------------------------------------------------------------------------
+Measurement.  N09-Vincent3D, 400,000 evals (full budget), 15 seeds, ONE new arm
+(`commit_tight` = CommitReseedMCESO, commit_sigma_mode="run", commit_sigma_ratio=0.1).
+scripts/reseed_to_landing.py --csv, 4 parallel, 15 runs in ~4 min (1 run 55s -- the
+commit arms are CHEAPER than base's 91s, because base's per-slot repelled rejection
+sampling is replaced by one anchor draw plus gaussians).
+The base and `commit_place` arms are entry 65's stored CSV, paired by seed number
+(seed = s*100 in both), so 3 arms are compared for the cost of 1.
+
+  arm            draw share   landing share   gap     cells drawn / landed in (of 216)
+  base             0.814        0.964        +0.151        205 / 63
+  commit_place     0.808        0.937        +0.127        165 / 81
+  commit_tight     0.811        0.854        +0.044        169 / 123
+  null (uniform)   0.814          --           --
+
+  base - commit_tight          gap  +0.109  p = 6.1e-05  15/15 seeds  A12 = 1.00
+  commit_place - commit_tight  gap  +0.097  p = 6.1e-05  15/15 seeds  A12 = 1.00
+  base - commit_place          gap  +0.020  p = 0.00153  13/15 seeds  A12 = 0.85
+  landing share  base 0.964 vs commit_tight 0.854   p = 6.1e-05   A12 = 1.00
+  cells landed   base 63    vs commit_tight 123     p = 6.5e-04   A12 = 0.00
+
+  Excess over the null (landing share - 0.814):
+    base 0.150   commit_place 0.123 (18% removed)   commit_tight 0.040 (73% removed)
+  The two components are NOT equal partners: placement 0.020, sigma 0.097, ~5x.
+
+Draws are still null.  `commit_tight`'s draw share is 0.811 (p = 0.208 vs the null,
+4/15 seeds above), so the arm does not work by drawing differently -- entry 65's finding
+that the draw distribution is volume-proportional survives.  The sharpest form:
+`commit_tight` draws near FEWER basins than base (169 vs 205) and lands in TWICE as many
+(123 vs 63).
+
+--------------------------------------------------------------------------------
+Confound controlled offline (zero extra runs).  `commit_tight` shortens its hunts and so
+gets more of them: 838 landings/seed vs base's 684 (+23%).  "Distinct cells landed in"
+grows with the number of landings for free (entry 25's confound; the widest-quartile
+*share* is a proportion and is not inflated by it, but the cell count is).  Re-scoring
+the same stored landings at a common budget of 684 landings/seed (subsample without
+replacement, 200 reps/seed, `--analyze` prints it):
+
+    base 63.0    commit_place 81.0    commit_tight 115.0   (unmatched 63 / 81 / 123)
+
+  => 8 of the 60-cell gain is the extra hunts; 52 is the descent.
+
+Engagement check (1 seed, 40,000 evals, printed from the optimiser's own counters):
+`commit_sigma_mode="run"` commits on 75 events with 2 fallbacks (too few distinct basins
+drilled early on), and the committed sigma has median 0.192 (min 0.049, max 0.584) --
+i.e. 10x below sigma_init = 1.950 and at the scale of the 0.291-0.546 basin spacings.
+The variant is doing what it says; the result is not a silent fallback to base.
+
+--------------------------------------------------------------------------------
+Consequence.  The mechanism claim entry 65 left as a conjecture is now measured:
+
+  "As long as the restart sigma is several times the local basin spacing, the
+   mu+lambda greedy pulls the hunt back into a wide basin however widely the draws
+   were spread."  The draw is innocent (null-like in all three arms); the placement is
+   a minor term (13% of the gap); the descent scale carries 72% of it.
+
+  27% of the excess (0.040 of 0.150) survives both interventions and is not explained
+  by placement or descent scale.  That is the residue for the next decomposition.
+
+NOT a default candidate.  Entries 41 and 42 established that the sigma component is
+priced on depth-limited functions (N08-Shubert3D PR@1e-1 0.347 -> 0.194, 30/30 seeds),
+and this cycle measured mechanism only -- no PR, no BBOB gate.  `core/` was not touched.
+
+Next step (one arm, ~10 min): `commit_tight` has never been scored for PR at full budget
+on N09.  Entry 39 measured it only at 1/10 budget (PR@1e-3 0.110 -> 0.148) and entry 63
+put the coverage-limited ceiling for `commit_place` + `soltrim_rho` at 0.355 = exactly
+its reported PR.  If landings in 123 of 216 cells convert, the ceiling moves well above
+0.355; if they do not, the descent gain does not reach the reported set and the residue
+is in the reporting path after all.
+
+Files:  n09_draws_tight.csv.gz      per-(seed, optimum) draw/landing counts, 15 seeds
+        n09_draws_tight_summary.csv per-seed hunts / match / timings
+        analyze_raw.txt             the --analyze output quoted above
+        run.log                     the run trace

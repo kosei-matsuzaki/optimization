@@ -1,0 +1,44 @@
+
+=== base  (15 seeds) ==================================
+  widest-quartile share of DRAWS     0.814   (null 0.814, delta -0.000)
+  widest-quartile share of LANDINGS  0.964   (null 0.814, delta +0.150)
+  distinct cells drawn near / landed in   205 / 63
+  draws vs null           p = 0.679   seed-direction above null 7/15
+  landings vs draws (paired)  p = 6.1e-05   landing>draw 15/15   median gap +0.151
+
+=== commit_place  (15 seeds) ==================================
+  widest-quartile share of DRAWS     0.808   (null 0.814, delta -0.006)
+  widest-quartile share of LANDINGS  0.937   (null 0.814, delta +0.123)
+  distinct cells drawn near / landed in   165 / 81
+  draws vs null           p = 0.847   seed-direction above null 6/15
+  landings vs draws (paired)  p = 6.1e-05   landing>draw 15/15   median gap +0.127
+
+=== commit_tight  (15 seeds) ==================================
+  widest-quartile share of DRAWS     0.811   (null 0.814, delta -0.003)
+  widest-quartile share of LANDINGS  0.854   (null 0.814, delta +0.040)
+  distinct cells drawn near / landed in   169 / 123
+  draws vs null           p = 0.208   seed-direction above null 4/15
+  landings vs draws (paired)  p = 6.1e-05   landing>draw 15/15   median gap +0.044
+
+=== gap (landings - draws) across arms, paired by seed ============
+  base          median gap +0.151  (15 seeds)
+  commit_place  median gap +0.127  (15 seeds)
+  commit_tight  median gap +0.044  (15 seeds)
+  base - commit_place: median +0.020  p = 0.00153  base>commit_place 13/15  A12 = 0.85
+      landing share  0.964 vs 0.937   p = 6.1e-05   A12 = 0.96
+      cells landed in 63 vs 81   p = 0.000652   A12 = 0.02
+  base - commit_tight: median +0.109  p = 6.1e-05  base>commit_tight 15/15  A12 = 1.00
+      landing share  0.964 vs 0.854   p = 6.1e-05   A12 = 1.00
+      cells landed in 63 vs 123   p = 0.000648   A12 = 0.00
+  commit_place - commit_tight: median +0.097  p = 6.1e-05  commit_place>commit_tight 15/15  A12 = 1.00
+      landing share  0.937 vs 0.854   p = 6.1e-05   A12 = 1.00
+      cells landed in 81 vs 123   p = 0.000653   A12 = 0.00
+
+=== distinct cells landed in, matched on number of landings ======
+  base          landings/seed median 684
+  commit_place  landings/seed median 684
+  commit_tight  landings/seed median 838
+  common budget = 684 landings/seed
+  base            63.0 cells (unmatched 63)
+  commit_place    81.0 cells (unmatched 81)
+  commit_tight   115.0 cells (unmatched 123)

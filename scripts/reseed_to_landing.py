@@ -84,6 +84,16 @@ _CLS_SPECS = {
     "base": ("core.optimizers", "MultiChannelEpidemicOptimizer", {}),
     "commit_place": ("core.optimizers.mceso_commit_reseed", "CommitReseedMCESO",
                      {"commit_sigma_mode": "place", "commit_sigma_ratio": 0.1}),
+    # Entry 66's queue-1 arm: the same commitment, but the *run* sigma of the
+    # restarted hunt is taken down to the local basin scale as well, not just the
+    # placement of the slots. `commit_place` returns only 0.027 of base's +0.150
+    # draw->landing gap, and the geometry says the rest should be the descent
+    # scale (sigma_init = 0.2*span = 1.950 against 0.291-0.546 spacings), so this
+    # arm is the direct test of that. Read the same caveat as the aggregate mode:
+    # for both commit arms the tracer records anchor + cloud, so their "draws" are
+    # a committed placement, not 20 independent draws.
+    "commit_tight": ("core.optimizers.mceso_commit_reseed", "CommitReseedMCESO",
+                     {"commit_sigma_mode": "run", "commit_sigma_ratio": 0.1}),
 }
 
 
@@ -177,6 +187,8 @@ def paired_analyze(paths: list[str], null_q4: float = 0.814) -> None:
                   if p.endswith(".gz") else (lambda q: open(q, newline="")))
         with opener(p) as fh:
             rows += list(csv.DictReader(fh))
+    per_arm: dict[str, dict[int, tuple[float, float, int, int]]] = {}
+    land_vec: dict[str, dict[int, np.ndarray]] = {}
     for variant in sorted({r["variant"] for r in rows}):
         sel = [r for r in rows if r["variant"] == variant]
         seeds = sorted({int(r["seed"]) for r in sel})
@@ -208,6 +220,103 @@ def paired_analyze(paths: list[str], null_q4: float = 0.814) -> None:
             print(f"  landings vs draws (paired)  p = {st.pvalue:.3g}   "
                   f"landing>draw {int((ql > qd).sum())}/{len(qd)}   "
                   f"median gap {np.median(ql - qd):+.3f}")
+        per_arm[variant] = {s: (float(qd[i]), float(ql[i]), int(cd[i]),
+                                int(cl[i])) for i, s in enumerate(seeds)}
+        land_vec[variant] = {s: np.array(
+            [float(r["lands"]) for r in sorted(
+                (q for q in sel if int(q["seed"]) == s),
+                key=lambda q: int(q["opt"]))]) for s in seeds}
+    _cross_arm(per_arm)
+    _hunt_matched(land_vec)
+
+
+def _a12(x: np.ndarray, y: np.ndarray) -> float:
+    """P(x > y) + 0.5 P(x == y) -- Vargha-Delaney, same convention as the rest
+    of the analysis scripts."""
+    gt = (x[:, None] > y[None, :]).sum()
+    eq = (x[:, None] == y[None, :]).sum()
+    return float((gt + 0.5 * eq) / (len(x) * len(y)))
+
+
+def _cross_arm(per_arm: dict[str, dict[int, tuple[float, float, int, int]]]) -> None:
+    """Arm-vs-arm comparison of the draw->landing gap, paired by seed number.
+
+    Entry 65 established that the whole widest-quartile excess is made *between*
+    the draw and the landing, and that `commit_place` (placement only) returns
+    only 0.027 of base's +0.151. Whether the rest is the run sigma is a question
+    about the *gap*, not about either occupancy alone, so this pairs the gaps.
+    Seeds are the same integers across arms by construction (`seed = s * 100`),
+    so the pairing is exact and no re-run is needed to compare stored arms.
+    """
+    from scipy.stats import wilcoxon
+    arms = sorted(per_arm)
+    if len(arms) < 2:
+        return
+    print("\n=== gap (landings - draws) across arms, paired by seed " + "=" * 12)
+    for a in arms:
+        g = np.array([v[1] - v[0] for v in per_arm[a].values()])
+        print(f"  {a:<13} median gap {np.median(g):+.3f}  "
+              f"({len(g)} seeds)")
+    for i, a in enumerate(arms):
+        for b in arms[i + 1:]:
+            common = sorted(set(per_arm[a]) & set(per_arm[b]))
+            if len(common) < 5:
+                print(f"  {a} vs {b}: only {len(common)} shared seeds, skipped")
+                continue
+            ga = np.array([per_arm[a][s][1] - per_arm[a][s][0] for s in common])
+            gb = np.array([per_arm[b][s][1] - per_arm[b][s][0] for s in common])
+            st = wilcoxon(ga - gb)
+            print(f"  {a} - {b}: median {np.median(ga - gb):+.3f}  "
+                  f"p = {st.pvalue:.3g}  "
+                  f"{a}>{b} {int((ga > gb).sum())}/{len(common)}  "
+                  f"A12 = {_a12(ga, gb):.2f}")
+            la = np.array([per_arm[a][s][1] for s in common])
+            lb = np.array([per_arm[b][s][1] for s in common])
+            st = wilcoxon(la - lb)
+            print(f"      landing share  {np.median(la):.3f} vs {np.median(lb):.3f}"
+                  f"   p = {st.pvalue:.3g}   A12 = {_a12(la, lb):.2f}")
+            ca = np.array([per_arm[a][s][3] for s in common], dtype=float)
+            cb = np.array([per_arm[b][s][3] for s in common], dtype=float)
+            st = wilcoxon(ca - cb)
+            print(f"      cells landed in {np.median(ca):.0f} vs {np.median(cb):.0f}"
+                  f"   p = {st.pvalue:.3g}   A12 = {_a12(ca, cb):.2f}")
+
+
+def _hunt_matched(land_vec: dict[str, dict[int, np.ndarray]],
+                  reps: int = 200) -> None:
+    """Distinct cells landed in, with the number of landings matched across arms.
+
+    An arm that shortens its hunts gets more of them (entry 25's confound), and
+    "distinct cells landed in" grows with the number of landings for free. The
+    widest-quartile *share* is a proportion and so is not inflated by the count,
+    but the cell count is, so this re-scores the same stored landings: for each
+    seed, draw the smaller arm's number of landings without replacement from the
+    larger arm's landing multiset and count the cells that survive. Zero extra
+    optimisation -- it is the same runs, scored at a common budget of landings.
+    """
+    arms = sorted(land_vec)
+    if len(arms) < 2:
+        return
+    rng = np.random.default_rng(0)
+    print("\n=== distinct cells landed in, matched on number of landings " + "=" * 6)
+    for a in arms:
+        tot = np.array([v.sum() for v in land_vec[a].values()])
+        print(f"  {a:<13} landings/seed median {np.median(tot):.0f}")
+    n_match = int(min(np.median([v.sum() for v in land_vec[a].values()])
+                      for a in arms))
+    print(f"  common budget = {n_match} landings/seed")
+    for a in arms:
+        cells = []
+        for s, ld in land_vec[a].items():
+            pool = np.repeat(np.arange(len(ld)), ld.astype(int))
+            if len(pool) <= n_match:
+                cells.append(int((ld > 0).sum()))
+                continue
+            cells.append(float(np.median([
+                len(np.unique(rng.choice(pool, n_match, replace=False)))
+                for _ in range(reps)])))
+        print(f"  {a:<13} {np.median(cells):6.1f} cells "
+              f"(unmatched {np.median([ (v>0).sum() for v in land_vec[a].values()]):.0f})")
 
 
 def _widths(opts: np.ndarray) -> np.ndarray:

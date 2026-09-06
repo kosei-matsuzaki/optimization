@@ -1,0 +1,17 @@
+commit_tight  seed    0   839 hunts    54.4s  draws in 172 cells, landings in 137
+commit_tight  seed  100   837 hunts    55.8s  draws in 161 cells, landings in 119
+commit_tight  seed  200   838 hunts    57.0s  draws in 172 cells, landings in 122
+commit_tight  seed  300   838 hunts    58.1s  draws in 158 cells, landings in 110
+commit_tight  seed  400   841 hunts    55.7s  draws in 173 cells, landings in 124
+commit_tight  seed  600   839 hunts    54.3s  draws in 173 cells, landings in 125
+commit_tight  seed  500   839 hunts    56.6s  draws in 164 cells, landings in 117
+commit_tight  seed  700   836 hunts    54.9s  draws in 174 cells, landings in 123
+commit_tight  seed  800   838 hunts    52.6s  draws in 169 cells, landings in 114
+commit_tight  seed 1000   838 hunts    54.8s  draws in 169 cells, landings in 116
+commit_tight  seed  900   840 hunts    56.7s  draws in 172 cells, landings in 123
+commit_tight  seed 1100   838 hunts    55.6s  draws in 163 cells, landings in 128
+commit_tight  seed 1200   840 hunts    54.8s  draws in 159 cells, landings in 115
+commit_tight  seed 1400   837 hunts    54.4s  draws in 176 cells, landings in 127
+commit_tight  seed 1300   839 hunts    55.2s  draws in 163 cells, landings in 125
+rows -> analysis/hm/e67/n09_draws_tight.csv
+summary -> analysis/hm/e67/n09_draws_tight_summary.csv
