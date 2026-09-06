@@ -1,0 +1,1 @@
+N16-CF3-5D    base  seed=0 evals=400000 fis=518 L_eff=0.000518 calls=88700 releases=19565 level_only=5235 sig_ok_wait_stag=644 stag_ok_wait_sig=30054 sig_units[min/med/max]=1/1/309.2 basin_at_rel[med]=0.0002204 level_covers=13422 arm_level_covers=1808 sig10_blocks=6343 fl08_blocks=17757 best_f=0 n_rep=226

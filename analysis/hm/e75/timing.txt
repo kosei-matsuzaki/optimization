@@ -1,0 +1,5 @@
+N18 probe s=1 73s
+N18 probe s=0 74s
+N16 probe s=0 74s
+N16 probe s=1 77s
+N16 fire rel 77s

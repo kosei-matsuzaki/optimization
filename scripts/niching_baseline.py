@@ -66,6 +66,19 @@ _METHODS: dict = {
     # re-sweep of c (entry 46 closed that) -- c stays 1.0, only the absolute
     # level L moves. Diagnostic arm; mceso.py defaults are untouched.
     "MC-ESO-rel6": (RelLevelMCESO, {"rel_level": 1e-6, "fis_floor": 1e-12}),
+    # Entry 75 (question 1, second half): the *sigma* release clause, on top of
+    # the same c = 1.0 arm -- which entry 74 showed is bit-identical to base on
+    # N18-CF3-10D, so on that function these two are "base + one sigma knob".
+    # Entry 55 closed both for free on N08-Shubert3D; entry 75's firing probe
+    # says which one can bite on N18: at release sigma sits *at* its floor
+    # (median 1.00 floor units) in 12042 releases per run, so `_sig10` (tol
+    # 1.5 -> 1.0) can only touch the 6% released above the floor, while `_fl08`
+    # (floor 1e-6 -> 1e-8) gives 99.7% of them two more decades to drill.
+    # Diagnostic arms; core/optimizers/mceso.py defaults are untouched.
+    "MC-ESO-rel-sig10": (RelLevelMCESO, {"rel_level": 1e-5, "fis_floor": 1e-12,
+                                         "exhausted_sigma_tol": 1.0}),
+    "MC-ESO-rel-fl08": (RelLevelMCESO, {"rel_level": 1e-5, "fis_floor": 1e-12,
+                                        "sigma_floor_ratio": 1e-8}),
     "MC-ESO-crowd": (MCESOCrowding, {}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),

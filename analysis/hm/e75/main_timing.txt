@@ -1,0 +1,8 @@
+MC-ESO-rel-sig10 off=0 430s rc=0
+MC-ESO-rel-sig10 off=6 430s rc=0
+MC-ESO-rel-fl08 off=0 433s rc=0
+MC-ESO-rel-fl08 off=6 449s rc=0
+N16 rel off=3 224s rc=0
+N16 rel off=6 225s rc=0
+N16 rel off=9 227s rc=0
+N16 rel off=0 227s rc=0

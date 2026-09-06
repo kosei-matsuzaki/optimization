@@ -1,0 +1,1 @@
+N18-CF3-10D   seed=0 evals=400000 fis=1600 L_eff=0.0016 calls=49283 releases=12042 level_only=0 sig_ok_wait_stag=904 stag_ok_wait_sig=17289 sig_units[min/med/max]=1/1/1.449 basin_at_rel[med]=0.1125 level_covers=42 arm_level_covers=42 sig10_blocks=750 fl08_blocks=12000 best_f=6.22882e-12 n_rep=246

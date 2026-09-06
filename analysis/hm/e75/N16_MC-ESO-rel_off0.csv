@@ -1,0 +1,4 @@
+function,method,rule,seed,evals,n_optima,n_reported,pr_1e-1,pr_1e-2,pr_1e-3,pr_1e-4,pr_1e-5
+N16-CF3-5D,MC-ESO-rel,current,0,400000,6,100,0.6667,0.6667,0.6667,0.6667,0.6667
+N16-CF3-5D,MC-ESO-rel,current,1,400000,6,100,0.6667,0.6667,0.6667,0.6667,0.5000
+N16-CF3-5D,MC-ESO-rel,current,2,400000,6,100,0.6667,0.6667,0.6667,0.6667,0.6667

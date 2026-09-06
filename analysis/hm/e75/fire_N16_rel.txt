@@ -1,0 +1,1 @@
+N16-CF3-5D    rel   seed=0 fis=518 tol=1.93e-08 L_eff=1e-05 level_releases=289 ever_exhausted=True f_at_exh=0.0 best_f=0 n_rep=226
