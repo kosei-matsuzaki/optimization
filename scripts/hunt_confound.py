@@ -78,11 +78,13 @@ def main() -> None:
     ap.add_argument("--ref", default=None,
                     help="label to test against (default: the first one given)")
     ap.add_argument("--metric", default="pr",
-                    choices=("pr", "visited", "distinct", "landed", "hunts"),
+                    choices=("pr", "visited", "distinct", "landed", "hunts",
+                             "blocked"),
                     help="which column the paired test is run on (default pr). "
                          "Entry 68's rejection condition is stated on `visited` "
-                         "(the coverage ceiling), so the test has to follow the "
-                         "column the question names, not always PR.")
+                         "(the coverage ceiling) and entry 69's on `blocked` "
+                         "(report points that miss eps), so the test has to "
+                         "follow the column the question names, not always PR.")
     ap.add_argument("specs", nargs="+", metavar="LABEL=CSV")
     args = ap.parse_args()
 

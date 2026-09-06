@@ -129,6 +129,28 @@ class _CountingCommitSolArchiveMCESO(_HuntCounters, CommitReseedMCESO,
     ``commit_mode="off", sol_trim_mode="off"`` is the identity check."""
 
 
+class _CountingRelCommitSolArchiveMCESO(_HuntCounters, RelLevelMCESO,
+                                        CommitReseedMCESO,
+                                        SolArchiveTrimMCESO):
+    """Entry 69: the composite of entry 68 (`ct_soltrim`) with the *depth*
+    tuning underneath it.
+
+    Entry 68 left 122 of `ct_soltrim`'s 195 rho-separated report points short of
+    eps=1e-5: the tight run sigma buys landings and pays for them in descent.
+    The two depth dials that entries 51 and 55 closed for free -- the
+    eps-relative hunt-release level (``rel_level``) and the sigma floor
+    (``sigma_floor_ratio``, a constructor argument of the shipped class) -- have
+    never been measured on top of the descent arm.
+
+    The three overrides are on disjoint hooks (``RelLevelMCESO._init_state``,
+    ``CommitReseedMCESO._diversified_reseed`` / ``_maybe_spillover``,
+    ``SolArchiveTrimMCESO._on_spillover_start``), so the MRO
+    (counters -> rel-level -> commit -> adaptive-repel -> archive trim ->
+    shipped) runs each exactly where it runs on its own. ``rel_level=0.0``
+    disables only the new layer, which is the identity check against
+    ``ct_soltrim``."""
+
+
 # variant name -> (class, constructor kwargs)
 _VARIANTS: dict[str, tuple[type, dict]] = {
     "base": (_CountingMCESO, {}),
@@ -308,6 +330,27 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
     "ct_soltrim": (_CountingCommitSolArchiveMCESO,
                    {"commit_sigma_mode": "run", "commit_sigma_ratio": 0.1,
                     "sol_trim_mode": "rho"}),
+    # Entry 69 / question 1: entry 68 showed the descent doubles the landings
+    # but 122 of the 195 report points miss eps=1e-5, so the coverage ceiling
+    # did not move (0.319 vs `cp_soltrim`'s 0.355). These put the two *free*
+    # depth dials underneath that arm. `rel_level = 1e-5` is c = 1.0 (entry 46's
+    # corner, L = eps_target) with the adoption-shape clamp `fis_floor = 1e-12`
+    # (entry 44); `_fl08` adds entry 55's sigma floor. `ct_soltrim_rel_off`
+    # disables only the new layer and must reproduce `ct_soltrim` exactly.
+    "ct_soltrim_rel": (_CountingRelCommitSolArchiveMCESO,
+                       {"commit_sigma_mode": "run", "commit_sigma_ratio": 0.1,
+                        "sol_trim_mode": "rho",
+                        "rel_level": 1e-5, "fis_floor": 1e-12}),
+    "ct_soltrim_rel_fl08": (_CountingRelCommitSolArchiveMCESO,
+                            {"commit_sigma_mode": "run",
+                             "commit_sigma_ratio": 0.1,
+                             "sol_trim_mode": "rho",
+                             "rel_level": 1e-5, "fis_floor": 1e-12,
+                             "sigma_floor_ratio": 1e-8}),
+    "ct_soltrim_rel_off": (_CountingRelCommitSolArchiveMCESO,
+                           {"commit_sigma_mode": "run",
+                            "commit_sigma_ratio": 0.1,
+                            "sol_trim_mode": "rho", "rel_level": 0.0}),
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
 # as a fraction of the locally observed basin spacing. The suffix is the ratio
