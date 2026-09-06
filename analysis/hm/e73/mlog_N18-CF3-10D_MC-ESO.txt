@@ -2,3 +2,6 @@ peak ratio on the reported set, 12 seeds, budget = 1 x suite
 
 function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
 ---------------------------------------------------------------------------------------------------
+N18-CF3-10D         MC-ESO        current     6    66667    100    1.00   0.40   0.19   0.17   0.17    0.386  1453
+
+rows written to analysis/hm/e73/N18-CF3-10D_MC-ESO.csv
