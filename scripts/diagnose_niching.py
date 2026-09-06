@@ -298,6 +298,16 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
                     "sol_trim_mode": "rho"}),
     "cp_soltrim_off": (_CountingCommitSolArchiveMCESO,
                        {"commit_mode": "off", "sol_trim_mode": "off"}),
+    # Entry 68 / question 1: entry 67 showed the descent (`commit_tight`, run
+    # sigma at 0.1 x the local basin spacing) doubles the *landed* basins
+    # (63 -> 123) where `commit_place` only reaches 81. `ct_soltrim` is the same
+    # composite as `cp_soltrim` with the descent arm underneath, so the pair
+    # asks whether that extra landing survives to the report once the answer
+    # archive's f-only trim is out of the way. Both single arms (`commit_tight`
+    # here, `cp_soltrim` from entry 63) pair with it by seed.
+    "ct_soltrim": (_CountingCommitSolArchiveMCESO,
+                   {"commit_sigma_mode": "run", "commit_sigma_ratio": 0.1,
+                    "sol_trim_mode": "rho"}),
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
 # as a fraction of the locally observed basin spacing. The suffix is the ratio

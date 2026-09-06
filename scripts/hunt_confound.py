@@ -77,6 +77,12 @@ def main() -> None:
     ap.add_argument("--func", default="N07-Vincent2D")
     ap.add_argument("--ref", default=None,
                     help="label to test against (default: the first one given)")
+    ap.add_argument("--metric", default="pr",
+                    choices=("pr", "visited", "distinct", "landed", "hunts"),
+                    help="which column the paired test is run on (default pr). "
+                         "Entry 68's rejection condition is stated on `visited` "
+                         "(the coverage ceiling), so the test has to follow the "
+                         "column the question names, not always PR.")
     ap.add_argument("specs", nargs="+", metavar="LABEL=CSV")
     args = ap.parse_args()
 
@@ -86,7 +92,7 @@ def main() -> None:
         data[label] = load(path, args.func)
     ref = args.ref or args.specs[0].split("=")[0]
 
-    print(f"\n{args.func}   reference = {ref}   "
+    print(f"\n{args.func}   reference = {ref}   tested column = {args.metric}   "
           f"(paired Wilcoxon over shared seeds, A12 = share of seeds the row wins)")
     for eps in sorted(next(iter(data.values())), reverse=True):
         print(f"\n  eps = {eps:g}")
@@ -98,7 +104,8 @@ def main() -> None:
                 continue
             seeds = sorted(set(d[eps]) & set(data[ref][eps]))
             pr = np.array([d[eps][s]["pr"] for s in seeds])
-            rp = np.array([data[ref][eps][s]["pr"] for s in seeds])
+            tst = np.array([d[eps][s][args.metric] for s in seeds])
+            rtst = np.array([data[ref][eps][s][args.metric] for s in seeds])
             hunts = np.mean([d[eps][s]["hunts"] for s in seeds])
             vis = np.mean([d[eps][s]["visited"] for s in seeds])
             dis = np.mean([d[eps][s]["distinct"] for s in seeds])
@@ -107,7 +114,7 @@ def main() -> None:
             if label == ref:
                 wtl, p, a = "--", "--", float("nan")
             else:
-                wtl, p, a = paired(pr, rp)
+                wtl, p, a = paired(tst, rtst)
             print(f"    {label:<18}{hunts:>7.1f}{np.mean(pr):>7.3f}"
                   f"{vis:>8.2f}{dis:>7.1f}{lan:>7.1f}{blk:>7.1f}{wtl:>10}{p:>9}"
                   f"{'' if label == ref else f'{a:>7.2f}'}{len(seeds):>7}")
