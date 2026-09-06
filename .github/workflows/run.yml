@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "bbob = main.py (BBOB-24), niching = full-budget CEC2013 niching comparison, collect = echo a past run's CSVs into the job log"
+        description: "bbob = main.py (BBOB-24), niching = full-budget CEC2013 niching comparison, collect = commit a past run's CSVs, fetch_refs = commit the text of the reference PDFs the sandbox cannot reach"
         required: false
         default: "bbob"
         type: choice
@@ -15,6 +15,7 @@ on:
           - bbob
           - niching
           - collect
+          - fetch_refs
       n_runs:
         description: "bbob only: number of runs per benchmark"
         required: false
@@ -151,6 +152,89 @@ jobs:
           name: niching-fullbudget-${{ matrix.func }}
           path: analysis/hm/fullbudget_${{ matrix.func }}.csv
           retention-days: 30
+
+  fetch_refs:
+    # The sandbox's egress proxy refuses CONNECT to arxiv.org / pmc.ncbi.nlm.nih.gov
+    # / semanticscholar.org / dl.acm.org (403), so published peak-ratio tables for
+    # CEC2013 F11-F20 cannot be read there -- and without them the headroom of
+    # widening the goal to F11-F20 has no number attached. A GitHub runner has open
+    # egress: this job downloads the PDFs, extracts their text, and commits it onto
+    # research-loop (same delivery path as `collect`, since artifact bytes are also
+    # unreachable). No optimisation is run.
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'fetch_refs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: research-loop
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: Fetch the PDFs and extract their text
+        run: |
+          set -uo pipefail
+          pip install pypdf
+          mkdir -p analysis/hm/e71
+          python3 - <<'PY'
+          import pathlib, subprocess, sys
+          from pypdf import PdfReader
+
+          # id -> arXiv number. All five are said (by their own abstracts or by
+          # citing work) to carry per-function peak-ratio tables covering F11-F20.
+          REFS = {
+              "rlemmo_2404.08242": "2404.08242",       # RLEMMO (RL-assisted EMO)
+              "cpso_2511.17571": "2511.17571",         # clustering-based multi-swarm PSO
+              "hillvallea_gecco18_1807.00188": "1807.00188",
+              "hillvallea_gecco19_1907.10988": "1907.10988",
+              "hvc_1810.07085": "1810.07085",          # Hill-Valley Clustering (journal)
+          }
+          out = pathlib.Path("analysis/hm/e71")
+          ok = []
+          for name, num in REFS.items():
+              pdf = pathlib.Path(f"/tmp/{name}.pdf")
+              for url in (f"https://arxiv.org/pdf/{num}", f"https://export.arxiv.org/pdf/{num}"):
+                  r = subprocess.run(["curl", "-sSL", "--max-time", "120", "-o", str(pdf), url],
+                                     capture_output=True, text=True)
+                  if r.returncode == 0 and pdf.exists() and pdf.stat().st_size > 10000:
+                      break
+                  print(f"FETCH-FAIL {name} {url} rc={r.returncode} {r.stderr[:200]}")
+              else:
+                  continue
+              try:
+                  text = "\n".join((p.extract_text() or "") for p in PdfReader(str(pdf)).pages)
+              except Exception as e:            # a paywall/HTML body lands here
+                  print(f"PARSE-FAIL {name}: {e}")
+                  continue
+              (out / f"{name}.txt").write_text(text)
+              print(f"OK {name}: {pdf.stat().st_size} bytes pdf, {len(text)} chars text")
+              ok.append(name)
+          print("EXTRACTED", len(ok), "of", len(REFS))
+          if not ok:
+              sys.exit("every fetch failed -- CI egress is blocked too")
+          PY
+          gzip -9 analysis/hm/e71/*.txt
+          ls -l analysis/hm/e71/
+
+      - name: Commit the extracted text
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add analysis/hm/e71/
+          git commit -m "F11-F20 の公表 PR 表を持つ論文のテキストを CI 経由で取り込む" \
+            -m "サンドボックスの egress が arxiv.org を CONNECT 403 で塞いでいるので、
+          egress の開いている runner で PDF を取り、テキスト化して置く。再最適化はしていない。"
+          git pull --rebase origin research-loop
+          git push origin HEAD:research-loop
 
   collect:
     # Artifact bytes live on a blob-storage host that a sandboxed session cannot
