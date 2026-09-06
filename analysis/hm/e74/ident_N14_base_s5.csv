@@ -1,0 +1,2 @@
+function,method,rule,seed,evals,n_optima,n_reported,pr_1e-1,pr_1e-2,pr_1e-3,pr_1e-4,pr_1e-5
+N14-CF3-3D,MC-ESO,current,5,400000,6,100,0.6667,0.6667,0.6667,0.6667,0.3333
