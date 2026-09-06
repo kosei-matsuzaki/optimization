@@ -24,9 +24,21 @@ lands near the endpoint's optimum by chance, so a low match rate is strong
 evidence and a high one is weak.
 
 Usage:  python3 scripts/reseed_to_landing.py [--variant base|adaptive] [--seeds 3]
+
+Paired draw-vs-landing mode (entry 65).  ``--csv`` runs the seeds in parallel and
+writes per-(seed, optimum) draw/landing counts instead of the aggregate print,
+so the *same* widest-quartile occupancy statistic entry 64 measured on landings
+can be measured on the draws that produced them, against the same
+volume-proportional null.  Draws and landings come from one run each, so the two
+sides are paired within a seed and no extra optimisation is needed to compare them.
+
+  python3 scripts/reseed_to_landing.py --func N09-Vincent3D --evals 400000 \
+      --seeds 15 --procs 4 --csv analysis/hm/e65/n09_draws.csv
+  python3 scripts/reseed_to_landing.py --analyze analysis/hm/e65/n09_draws.csv
 """
 from __future__ import annotations
 import argparse
+import csv
 import sys
 from collections import Counter
 from pathlib import Path
@@ -68,18 +80,166 @@ def _tracer(base_cls):
     return _Traced
 
 
+_CLS_SPECS = {
+    "base": ("core.optimizers", "MultiChannelEpidemicOptimizer", {}),
+    "commit_place": ("core.optimizers.mceso_commit_reseed", "CommitReseedMCESO",
+                     {"commit_sigma_mode": "place", "commit_sigma_ratio": 0.1}),
+}
+
+
+def _paired_one(job):
+    """One traced run -> per-optimum draw/landing counts + hunt-level pairing.
+
+    Runs in a worker process, so it re-imports and re-derives the optima rather
+    than inheriting them.  Returns plain arrays: the parent writes the CSV.
+    """
+    func, variant, seed, evals = job
+    import importlib
+    import time
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from core.benchmarks import NICHING_BENCHMARKS_BY_NAME
+    mod, cls_name, kw = _CLS_SPECS[variant]
+    base_cls = getattr(importlib.import_module(mod), cls_name)
+    b = NICHING_BENCHMARKS_BY_NAME[func]
+    opt_pts = vincent_optima(b.dim)
+    assert len(opt_pts) == b.n_global_optima, (len(opt_pts), b.n_global_optima)
+    K = len(opt_pts)
+    width = _widths(opt_pts)
+    q4 = width >= np.quantile(width, 0.75)      # same split as hunt_coverage.py
+
+    t0 = time.time()
+    o = _tracer(base_cls)(b, seed=seed, **kw)
+    o.optimize(evals)
+
+    draws = np.zeros(K, dtype=np.int64)
+    lands = np.zeros(K, dtype=np.int64)
+    n_hunt = n_match = 0
+    # the paired conversion: a hunt whose draws all sit in narrow cells but
+    # whose endpoint is in a widest-quartile cell.  This is the funnel doing the
+    # concentrating, as opposed to the draw distribution arriving concentrated.
+    narrow_draw_wide_land = wide_draw_wide_land = 0
+    for rec in o.records:
+        if not rec["draws"]:
+            continue
+        n_hunt += 1
+        end_i = int(np.argmin(np.linalg.norm(opt_pts - rec["end"], axis=1)))
+        dr = np.asarray(rec["draws"])
+        draw_i = np.argmin(np.linalg.norm(
+            opt_pts[None, :, :] - dr[:, None, :], axis=-1), axis=1)
+        n_match += int(end_i in set(draw_i.tolist()))
+        lands[end_i] += 1
+        np.add.at(draws, draw_i, 1)
+        if q4[end_i]:
+            if q4[draw_i].any():
+                wide_draw_wide_land += 1
+            else:
+                narrow_draw_wide_land += 1
+    return (func, variant, seed, n_hunt, n_match, narrow_draw_wide_land,
+            wide_draw_wide_land, width, draws, lands, time.time() - t0)
+
+
+def paired_mode(a) -> None:
+    from multiprocess import Pool
+    b = NICHING_BENCHMARKS_BY_NAME[a.func]
+    if "Vincent" not in a.func:
+        raise SystemExit(f"{a.func}: only Vincent's optima are hard-coded here")
+    evals = a.evals if a.evals > 0 else b.suite_max_evals
+    jobs = [(a.func, v, s * 100, evals)
+            for v in a.variant.split(",") for s in range(a.seeds)]
+    a.csv.parent.mkdir(parents=True, exist_ok=True)
+    summ = a.csv.with_name(a.csv.stem + "_summary.csv")
+    with open(a.csv, "w", newline="") as fh, open(summ, "w", newline="") as sh:
+        w = csv.writer(fh)
+        w.writerow(["function", "variant", "seed", "opt", "width",
+                    "draws", "lands"])
+        sw = csv.writer(sh)
+        sw.writerow(["function", "variant", "seed", "evals", "hunts", "match",
+                     "narrow_draw_wide_land", "wide_draw_wide_land", "secs"])
+        with Pool(a.procs) as pool:
+            for (fn, v, sd, nh, nm, ndwl, wdwl, wid, dr, ld,
+                 secs) in pool.imap_unordered(_paired_one, jobs):
+                for j in range(len(wid)):
+                    w.writerow([fn, v, sd, j, f"{wid[j]:.6f}", dr[j], ld[j]])
+                sw.writerow([fn, v, sd, evals, nh, nm, ndwl, wdwl, f"{secs:.1f}"])
+                fh.flush(); sh.flush()
+                print(f"{v:<13} seed {sd:>4}  {nh:>4} hunts  {secs:6.1f}s  "
+                      f"draws in {int((dr > 0).sum()):>3} cells, "
+                      f"landings in {int((ld > 0).sum()):>3}", flush=True)
+    print(f"rows -> {a.csv}\nsummary -> {summ}")
+
+
+def paired_analyze(paths: list[str], null_q4: float = 0.814) -> None:
+    """Widest-quartile occupancy of draws vs landings, paired within seed."""
+    from scipy.stats import wilcoxon
+    rows = []
+    for p in paths:
+        opener = ((lambda q: __import__("gzip").open(q, "rt", newline=""))
+                  if p.endswith(".gz") else (lambda q: open(q, newline="")))
+        with opener(p) as fh:
+            rows += list(csv.DictReader(fh))
+    for variant in sorted({r["variant"] for r in rows}):
+        sel = [r for r in rows if r["variant"] == variant]
+        seeds = sorted({int(r["seed"]) for r in sel})
+        qd, ql, cd, cl = [], [], [], []
+        for s in seeds:
+            sr = sorted((r for r in sel if int(r["seed"]) == s),
+                        key=lambda r: int(r["opt"]))
+            wdt = np.array([float(r["width"]) for r in sr])
+            dr = np.array([float(r["draws"]) for r in sr])
+            ld = np.array([float(r["lands"]) for r in sr])
+            q4 = wdt >= np.quantile(wdt, 0.75)
+            qd.append(dr[q4].sum() / max(dr.sum(), 1))
+            ql.append(ld[q4].sum() / max(ld.sum(), 1))
+            cd.append((dr > 0).sum())
+            cl.append((ld > 0).sum())
+        qd, ql = np.array(qd), np.array(ql)
+        print(f"\n=== {variant}  ({len(seeds)} seeds) " + "=" * 34)
+        print(f"  widest-quartile share of DRAWS     {np.median(qd):.3f}"
+              f"   (null {null_q4:.3f}, delta {np.median(qd) - null_q4:+.3f})")
+        print(f"  widest-quartile share of LANDINGS  {np.median(ql):.3f}"
+              f"   (null {null_q4:.3f}, delta {np.median(ql) - null_q4:+.3f})")
+        print(f"  distinct cells drawn near / landed in   "
+              f"{np.median(cd):.0f} / {np.median(cl):.0f}")
+        if len(seeds) >= 5:
+            st = wilcoxon(qd - null_q4)
+            print(f"  draws vs null           p = {st.pvalue:.3g}   "
+                  f"seed-direction above null {int((qd > null_q4).sum())}/{len(qd)}")
+            st = wilcoxon(ql - qd)
+            print(f"  landings vs draws (paired)  p = {st.pvalue:.3g}   "
+                  f"landing>draw {int((ql > qd).sum())}/{len(qd)}   "
+                  f"median gap {np.median(ql - qd):+.3f}")
+
+
+def _widths(opts: np.ndarray) -> np.ndarray:
+    d = np.linalg.norm(opts[:, None, :] - opts[None, :, :], axis=-1)
+    np.fill_diagonal(d, np.inf)
+    return d.min(axis=1)
+
+
 def main() -> None:
+    if len(sys.argv) > 2 and sys.argv[1] == "--analyze":
+        return paired_analyze(sys.argv[2:])
     ap = argparse.ArgumentParser()
+    ap.add_argument("--csv", type=Path, default=None,
+                    help="paired per-seed mode (entry 65): write per-optimum "
+                         "draw/landing counts instead of the aggregate print")
+    ap.add_argument("--procs", type=int, default=4)
     ap.add_argument("--variant", default="base",
-                    choices=["base", "adaptive", "commit_tight"])
+                    help="aggregate mode: base|adaptive|commit_tight. "
+                         "--csv mode: comma-separated keys of _CLS_SPECS")
     ap.add_argument("--func", default="N07-Vincent2D")
-    ap.add_argument("--evals", type=int, default=20000)
+    ap.add_argument("--evals", type=int, default=20000,
+                    help="--csv mode: 0 means the suite's full budget")
     ap.add_argument("--seeds", type=int, default=3)
     ap.add_argument("--sigma", type=float, default=None,
                     help="override sigma_init/span (default 0.2). Mechanism probe: "
                          "does shrinking the restart sigma below the basin spacing "
                          "keep the population in the basin it was dropped into?")
     args = ap.parse_args()
+    if args.csv is not None:
+        return paired_mode(args)
+    if args.variant not in ("base", "adaptive", "commit_tight"):
+        raise SystemExit(f"aggregate mode: unknown --variant {args.variant}")
 
     b = NICHING_BENCHMARKS_BY_NAME[args.func]
     dim = b.dim

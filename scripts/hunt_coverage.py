@@ -210,9 +210,17 @@ def analyze_mode(paths: list[str]) -> None:
     methods = sorted({r["method"] for r in rows})
     for eps in eps_vals:
         print(f"\n=== eps = {eps} " + "=" * 52)
+        # `pts/arr` is the residency probe of entry 65: how many evaluations at
+        # the accuracy each entry into an eps-ball consumes.  `q4 pts%` is the
+        # widest-quartile share of that residency, i.e. the same concentration
+        # statistic as `q4 arr%` but weighted by budget spent rather than by
+        # entries.  Read both against the caveat above: methods that interleave
+        # populations in one evaluation stream inflate arrivals, so compare
+        # arms of the same method first and across methods only qualitatively.
         print(f"{'method':<12}{'seeds':>6}{'cov':>7}{'cov%':>7}{'A12 w':>8}"
-              f"{'rho':>7}{'q4 arr%':>9}{'q1 cov%':>9}{'q4 cov%':>9}")
-        print("-" * 74)
+              f"{'rho':>7}{'q4 arr%':>9}{'q1 cov%':>9}{'q4 cov%':>9}"
+              f"{'pts/arr':>9}{'q4 pts%':>9}")
+        print("-" * 92)
         stats: dict[str, dict[str, list[float]]] = {}
         for m in methods:
             sel = [r for r in rows if r["method"] == m and r["eps"] == eps]
@@ -220,7 +228,7 @@ def analyze_mode(paths: list[str]) -> None:
                 continue
             seeds = sorted({int(r["seed"]) for r in sel})
             acc = {"cov": [], "a12": [], "rho": [], "q4arr": [],
-                   "q1cov": [], "q4cov": []}
+                   "q1cov": [], "q4cov": [], "ppa": [], "q4pts": []}
             for s in seeds:
                 sr = [r for r in sel if int(r["seed"]) == s]
                 sr.sort(key=lambda r: int(r["opt"]))
@@ -241,13 +249,16 @@ def analyze_mode(paths: list[str]) -> None:
                 acc["q4arr"].append(arr[q4].sum() / max(arr.sum(), 1))
                 acc["q1cov"].append(hit[q1].mean())
                 acc["q4cov"].append(hit[q4].mean())
+                acc["ppa"].append(pts.sum() / max(arr.sum(), 1))
+                acc["q4pts"].append(pts[q4].sum() / max(pts.sum(), 1))
             stats[m] = acc
             K = len({int(r["opt"]) for r in sel})
             md = lambda k: (np.nanmedian(acc[k]) if len(acc[k]) else float("nan"))
             print(f"{m:<12}{len(seeds):>6}{md('cov'):>7.1f}"
                   f"{100 * md('cov') / K:>7.1f}{md('a12'):>8.2f}"
                   f"{md('rho'):>7.2f}{100 * md('q4arr'):>9.1f}"
-                  f"{100 * md('q1cov'):>9.1f}{100 * md('q4cov'):>9.1f}")
+                  f"{100 * md('q1cov'):>9.1f}{100 * md('q4cov'):>9.1f}"
+                  f"{md('ppa'):>9.1f}{100 * md('q4pts'):>9.1f}")
         # across-method: is the width bias the same in every method?
         print("\n  across-method (Mann-Whitney on the per-seed statistic):")
         ms = [m for m in methods if m in stats]
@@ -255,7 +266,9 @@ def analyze_mode(paths: list[str]) -> None:
             for j in range(i + 1, len(ms)):
                 for key, lbl in (("a12", "A12(width|reached)"),
                                  ("rho", "Spearman(width,arrivals)"),
-                                 ("q4arr", "widest-quartile arrival share")):
+                                 ("q4arr", "widest-quartile arrival share"),
+                                 ("ppa", "pts per arrival (residency)"),
+                                 ("q4pts", "widest-quartile pts share")):
                     x = [v for v in stats[ms[i]][key] if np.isfinite(v)]
                     y = [v for v in stats[ms[j]][key] if np.isfinite(v)]
                     if len(x) < 3 or len(y) < 3:

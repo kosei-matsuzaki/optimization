@@ -1,0 +1,97 @@
+entry 65 — where is MC-ESO's +16.6-point excess over the volume-proportional null made?
+
+Question (queue 1, from entry 64): the excess is in the restart DRAW distribution
+(fixed repel radius 0.02*span = 0.195 too small to push a draw out of a wide basin)
+or in POST-LANDING budget residency (hunts burning evaluations in basins already
+reached)?  Pre-registered rejection: draws within +-3 points of the null AND
+pts-per-arrival comparable between MC-ESO and NM-Restart => neither, a third component.
+
+Both named candidates are refuted.  The third component is the draw->landing descent.
+
+--------------------------------------------------------------------------------
+(i) DRAWS  —  N09-Vincent3D, 400,000 evals (full budget), 15 seeds, 2 arms
+    scripts/reseed_to_landing.py --csv  (traces every _diversified_reseed return
+    value and the endpoint of the hunt it started; both mapped to the nearest true
+    optimum, same Voronoi rule as the entry-64 null).  30 runs, 4 parallel, 17 min.
+
+                     widest-quartile share      distinct cells (of 216)
+    arm              draws     landings         drawn near    landed in
+    base             0.814     0.964            205           63
+    commit_place     0.808     0.937            165           81
+    null (uniform)   0.814        --            --            --
+
+    base:         draws vs null   p = 0.679, 7/15 seeds above  => indistinguishable
+                  landings vs draws (paired, within seed) p = 6.1e-05, 15/15 seeds,
+                  median gap +0.151
+    commit_place: draws vs null   p = 0.847, 6/15 seeds above
+                  landings vs draws p = 6.1e-05, 15/15 seeds, median gap +0.127
+
+    => The restart draw is volume-proportional to three decimals.  The fixed repel
+       radius is NOT the culprit.  The whole +0.150 is made between draw and landing.
+    => The clearest form: the draws touch 205 of 216 basins, the landings 63.
+       MC-ESO's restart mechanism already visits essentially the whole landscape;
+       the population descent then discards two thirds of it.
+    => commit_place draws into FEWER cells (165, because 19 of its 20 slots are
+       clones of one anchor) yet lands in MORE (81).  Coverage is not lost at the draw.
+
+    Mechanism, from the geometry: sigma_init = 0.2*span = 1.950 against a
+    nearest-neighbour spacing of 0.291 (narrowest quartile) to 0.546 (q75 boundary).
+    A population dropped on a narrow-basin draw and scattered at sigma 1.95 spans
+    3.6x-6.7x the local basin spacing, and the greedy mu+lambda then keeps whichever
+    member fell in the wider basin.  commit_place fixes only the PLACEMENT
+    (0.1*d_local around one anchor) and leaves run sigma at base -- it recovers
+    0.027 of the 0.150 (18%), consistent with entry 64's 1.9 of 16.6 (11%) measured
+    on arrivals.  The remaining 0.123 is run sigma, which commit_place does not touch.
+
+    Estimator direction (do not over-read): `narrow_draw_wide_land` (hunts landing in
+    the widest quartile although none of their draws was in it) is 0/660 for base and
+    77/641 for commit_place.  This is NOT evidence about base -- with 20 independent
+    draws per hunt and q4 holding 81.4% of the volume, the chance that all 20 miss q4
+    is 0.186^20 ~ 0, so the statistic is structurally near zero for any per-slot-draw
+    arm.  It is informative only for commit_place, whose 20 slots are one draw.
+    The evidence about base is the paired share comparison above, not this counter.
+    Same reason the `match` rate (0.634 base / 0.307 commit_place) is generous.
+
+--------------------------------------------------------------------------------
+(ii) RESIDENCY  —  recomputed from analysis/hm/e64/n09_visits.csv.gz, NO new runs
+     (scripts/hunt_coverage.py --analyze, columns pts/arr and q4 pts% added here).
+     Full table in residency.txt.  eps = 1e-5, N09, 15 seeds:
+
+     method          cov%    q4 arr%    pts/arr    q4 pts%
+     MC-ESO          27.3      98.0        2.6       97.2
+     MC-ESO-place    35.2      96.1        2.6       94.9
+     NM-Restart      64.8      83.0       42.9       83.1
+     NMMSO           98.6      41.9        1.0       41.9
+
+    => Residency does not explain the excess, and the sign is the wrong way round:
+       NM-Restart consumes 42.9 evaluations per entry into an eps-ball against
+       MC-ESO's 2.6 (16x more lingering, p = 3.4e-06, A12 = 0.00) and is nonetheless
+       15 points LESS concentrated and covers 2.4x more.  For residency to be the
+       cause, MC-ESO would have to be the one lingering.
+    => Residency is width-neutral in every arm: q4 pts% == q4 arr% to within
+       1.2 points in all four (97.2/98.0, 94.9/96.1, 83.1/83.0, 41.9/41.9).
+       Weighting basins by budget spent instead of by entries adds no concentration,
+       so there is no "budget sink in the wide basins" on top of the arrival bias.
+    => MC-ESO vs MC-ESO-place: pts/arr identical (3.86 vs 3.86, p = 0.62) while the
+       q4 shares differ (p = 1e-05).  The within-method manipulation moves the
+       concentration without moving residency at all -- they are separate axes.
+
+--------------------------------------------------------------------------------
+Verdict against the pre-registered conditions
+
+  draws within +-3 points of the null           YES (delta -0.000, p = 0.679)
+  pts/arrival comparable MC-ESO vs NM-Restart   NO (2.6 vs 42.9) -- but the
+      difference refutes residency rather than supporting it, and q4 pts% == q4 arr%
+      shows residency carries no width bias in any arm.
+
+  => Both named candidates are eliminated.  The third component is named and located:
+     the descent from the restart draw to the hunt endpoint, driven by a restart
+     sigma (0.2*span) several times the local basin spacing.
+
+Next step (concrete): commit_place takes the placement down but leaves run sigma at
+base and recovers 18% of the funnel.  `commit_tight` (commit_sigma_mode="run",
+entry 40) takes run sigma down too.  Running the same paired draw/landing measurement
+on that arm at N09 full budget tests whether run sigma is the remaining 0.123 --
+one arm, 15 seeds, ~9 minutes on the wiring above.  Note entries 41/42 established
+commit_tight is priced on depth-limited functions, so this measures the mechanism,
+not a candidate default.

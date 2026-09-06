@@ -1,0 +1,32 @@
+base          seed  200   637 hunts    90.9s  draws in 208 cells, landings in  62
+base          seed  300   684 hunts    91.6s  draws in 202 cells, landings in  65
+base          seed  100   699 hunts    93.4s  draws in 205 cells, landings in  72
+base          seed    0   678 hunts    94.6s  draws in 206 cells, landings in  57
+base          seed  400   699 hunts    87.8s  draws in 206 cells, landings in  62
+base          seed  600   633 hunts    88.1s  draws in 204 cells, landings in  62
+base          seed  700   693 hunts    87.7s  draws in 203 cells, landings in  63
+base          seed  500   719 hunts    95.9s  draws in 206 cells, landings in  63
+base          seed  800   656 hunts    87.5s  draws in 203 cells, landings in  65
+base          seed  900   694 hunts    87.4s  draws in 203 cells, landings in  72
+base          seed 1000   668 hunts    87.6s  draws in 201 cells, landings in  64
+base          seed 1100   684 hunts    96.6s  draws in 206 cells, landings in  61
+base          seed 1200   606 hunts    87.4s  draws in 205 cells, landings in  66
+base          seed 1300   685 hunts    87.6s  draws in 207 cells, landings in  63
+base          seed 1400   699 hunts    86.9s  draws in 202 cells, landings in  64
+commit_place  seed    0   674 hunts   102.0s  draws in 157 cells, landings in  71
+commit_place  seed  100   700 hunts    94.1s  draws in 170 cells, landings in  83
+commit_place  seed  300   694 hunts    91.1s  draws in 171 cells, landings in  79
+commit_place  seed  200   648 hunts    93.6s  draws in 147 cells, landings in  84
+commit_place  seed  400   703 hunts   102.9s  draws in 172 cells, landings in  78
+commit_place  seed  600   634 hunts    92.2s  draws in 159 cells, landings in  71
+commit_place  seed  500   715 hunts    92.9s  draws in 171 cells, landings in  88
+commit_place  seed  700   692 hunts    94.0s  draws in 178 cells, landings in  91
+commit_place  seed  800   651 hunts   102.1s  draws in 171 cells, landings in  85
+commit_place  seed  900   692 hunts    92.8s  draws in 160 cells, landings in  82
+commit_place  seed 1000   665 hunts    93.2s  draws in 154 cells, landings in  81
+commit_place  seed 1100   680 hunts    92.6s  draws in 159 cells, landings in  77
+commit_place  seed 1200   606 hunts   100.8s  draws in 165 cells, landings in  78
+commit_place  seed 1300   684 hunts    93.1s  draws in 166 cells, landings in  81
+commit_place  seed 1400   708 hunts    92.8s  draws in 164 cells, landings in  79
+rows -> analysis/hm/e65/n09_draws.csv
+summary -> analysis/hm/e65/n09_draws_summary.csv
