@@ -1,0 +1,7 @@
+Monte-Carlo Voronoi volume share of the K=216 optima (1000000 uniform draws)
+  widest quartile  (n= 64): 81.4% of the box
+  narrowest quartile(n=152): 18.6% of the box
+  Spearman(width, volume share) = 0.71
+
+This is the null a *volume-proportional* lander hits. Any method above it is concentrating
+more than the landscape alone forces; below it is actively counteracting basin volume.
