@@ -1,0 +1,13 @@
+MC-ESO       seed  200  400000 evals    75.8s  covered {'0.1': 4, '0.001': 2}
+MC-ESO       seed    0  400000 evals    76.6s  covered {'0.1': 4, '0.001': 1}
+MC-ESO       seed  100  400000 evals    78.2s  covered {'0.1': 4, '0.001': 1}
+MC-ESO       seed  400  400000 evals    69.8s  covered {'0.1': 4, '0.001': 2}
+MC-ESO       seed  300  400000 evals    70.7s  covered {'0.1': 4, '0.001': 1}
+MC-ESO       seed  500  400000 evals    71.0s  covered {'0.1': 4, '0.001': 1}
+NMMSO        seed    0  400000 evals    47.9s  covered {'0.1': 2, '0.001': 0}
+NMMSO        seed  200  400000 evals    47.7s  covered {'0.1': 4, '0.001': 3}
+NMMSO        seed  100  400000 evals    57.2s  covered {'0.1': 4, '0.001': 3}
+NMMSO        seed  300  400000 evals    47.1s  covered {'0.1': 3, '0.001': 3}
+NMMSO        seed  400  400000 evals    44.7s  covered {'0.1': 4, '0.001': 4}
+NMMSO        seed  500  400000 evals    54.0s  covered {'0.1': 4, '0.001': 4}
+rows written to analysis/hm/e87/visits_n18.csv

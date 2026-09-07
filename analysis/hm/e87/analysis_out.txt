@@ -1,0 +1,137 @@
+
+==========================================================================
+== observed: e76 base arm (MC-ESO default)  (3036 hunts, 12 seeds)
+  per-optimum pooled share: 0:0.0942  1:0.0471  2:0.0000  3:0.0000  4:0.0234  5:0.8353
+  per-seed share on gopt 5: median 0.8313 [0.8142, 0.8538]
+  per-seed distinct optima: median 4.0 [4, 4]  (K = 6)
+  optima never nearest in any seed: [2, 3]
+
+  -- vs null 'geo (Voronoi)' (n=1000000): 0:0.1242  1:0.0922  2:0.0859  3:0.2636  4:0.2446  5:0.1894
+     gopt-5 share   observed 0.8353   null 0.1893 [0.1753, 0.2032]   p = 5e-05   A12 = 1.000
+     max-share      observed 0.8353   null 0.2739 [0.2619, 0.2865]   p = 5e-05
+     distinct/seed  observed 4.000   null 6.000 [6.000, 6.000]   p = 5e-05
+     per-seed G-test vs null: median G = 568.5, seeds with p < 0.05: 12/12
+
+  -- vs null 'desc iso b=1499' (n=2000): 0:0.0815  1:0.0490  2:0.0000  3:0.0000  4:0.1070  5:0.7625
+     gopt-5 share   observed 0.8353   null 0.7625 [0.7470, 0.7777]   p = 5e-05   A12 = 1.000
+     max-share      observed 0.8353   null 0.7625 [0.7470, 0.7777]   p = 5e-05
+     distinct/seed  observed 4.000   null 4.000 [4.000, 4.000]   p = 5e-05
+     per-seed G-test vs null: median G = 28.6, seeds with p < 0.05: 12/12
+
+  -- vs null 'desc iso b=15000' (n=300): 0:0.0633  1:0.0400  2:0.0000  3:0.0000  4:0.1300  5:0.7667
+     gopt-5 share   observed 0.8353   null 0.7666 [0.7513, 0.7817]   p = 5e-05   A12 = 1.000
+     max-share      observed 0.8353   null 0.7666 [0.7513, 0.7817]   p = 5e-05
+     distinct/seed  observed 4.000   null 4.000 [4.000, 4.000]   p = 0.0006
+     per-seed G-test vs null: median G = 40.5, seeds with p < 0.05: 12/12
+
+==========================================================================
+== observed: e77 base arm  (3036 hunts, 12 seeds)
+  per-optimum pooled share: 0:0.0942  1:0.0471  2:0.0000  3:0.0000  4:0.0234  5:0.8353
+  per-seed share on gopt 5: median 0.8313 [0.8142, 0.8538]
+  per-seed distinct optima: median 4.0 [4, 4]  (K = 6)
+  optima never nearest in any seed: [2, 3]
+
+  -- vs null 'geo (Voronoi)' (n=1000000): 0:0.1242  1:0.0922  2:0.0859  3:0.2636  4:0.2446  5:0.1894
+     gopt-5 share   observed 0.8353   null 0.1894 [0.1756, 0.2036]   p = 5e-05   A12 = 1.000
+     max-share      observed 0.8353   null 0.2738 [0.2622, 0.2866]   p = 5e-05
+     distinct/seed  observed 4.000   null 6.000 [6.000, 6.000]   p = 5e-05
+     per-seed G-test vs null: median G = 568.5, seeds with p < 0.05: 12/12
+
+  -- vs null 'desc iso b=1499' (n=2000): 0:0.0815  1:0.0490  2:0.0000  3:0.0000  4:0.1070  5:0.7625
+     gopt-5 share   observed 0.8353   null 0.7624 [0.7473, 0.7774]   p = 5e-05   A12 = 1.000
+     max-share      observed 0.8353   null 0.7624 [0.7473, 0.7774]   p = 5e-05
+     distinct/seed  observed 4.000   null 4.000 [4.000, 4.000]   p = 5e-05
+     per-seed G-test vs null: median G = 28.6, seeds with p < 0.05: 12/12
+
+  -- vs null 'desc iso b=15000' (n=300): 0:0.0633  1:0.0400  2:0.0000  3:0.0000  4:0.1300  5:0.7667
+     gopt-5 share   observed 0.8353   null 0.7666 [0.7516, 0.7816]   p = 5e-05   A12 = 1.000
+     max-share      observed 0.8353   null 0.7666 [0.7516, 0.7816]   p = 5e-05
+     distinct/seed  observed 4.000   null 4.000 [4.000, 4.000]   p = 0.0007
+     per-seed G-test vs null: median G = 40.5, seeds with p < 0.05: 12/12
+
+==========================================================================
+== observed: e77 basin_reset arm  (1431 hunts, 12 seeds)
+  per-optimum pooled share: 0:0.0936  1:0.0517  2:0.0000  3:0.0000  4:0.0217  5:0.8330
+  per-seed share on gopt 5: median 0.8250 [0.7698, 0.8770]
+  per-seed distinct optima: median 4.0 [4, 4]  (K = 6)
+  optima never nearest in any seed: [2, 3]
+
+  -- vs null 'geo (Voronoi)' (n=1000000): 0:0.1242  1:0.0922  2:0.0859  3:0.2636  4:0.2446  5:0.1894
+     gopt-5 share   observed 0.8326   null 0.1895 [0.1693, 0.2101]   p = 5e-05   A12 = 1.000
+     max-share      observed 0.8326   null 0.2825 [0.2659, 0.3005]   p = 5e-05
+     distinct/seed  observed 4.000   null 6.000 [6.000, 6.000]   p = 5e-05
+     per-seed G-test vs null: median G = 277.2, seeds with p < 0.05: 12/12
+
+  -- vs null 'desc iso b=1499' (n=2000): 0:0.0815  1:0.0490  2:0.0000  3:0.0000  4:0.1070  5:0.7625
+     gopt-5 share   observed 0.8326   null 0.7624 [0.7401, 0.7844]   p = 5e-05   A12 = 0.978
+     max-share      observed 0.8326   null 0.7624 [0.7401, 0.7844]   p = 5e-05
+     distinct/seed  observed 4.000   null 3.997 [3.917, 4.000]   p = 0.0672
+     per-seed G-test vs null: median G = 15.7, seeds with p < 0.05: 12/12
+
+  -- vs null 'desc iso b=15000' (n=300): 0:0.0633  1:0.0400  2:0.0000  3:0.0000  4:0.1300  5:0.7667
+     gopt-5 share   observed 0.8326   null 0.7668 [0.7447, 0.7881]   p = 5e-05   A12 = 0.966
+     max-share      observed 0.8326   null 0.7668 [0.7447, 0.7881]   p = 5e-05
+     distinct/seed  observed 4.000   null 3.991 [3.917, 4.000]   p = 0.195
+     per-seed G-test vs null: median G = 23.9, seeds with p < 0.05: 12/12
+
+==========================================================================
+== start -> land, desc iso b=1499 (2000 draws)
+land_opt     0   1  2  3    4    5
+start_opt                         
+0          123   4  0  0    3  115
+1            7  60  0  0    3   85
+2            5   4  0  0   30  119
+3           20  20  0  0   16  488
+4            7   9  0  0  161  359
+5            1   1  0  0    1  359
+
+  row-normalised:
+land_opt       0      1    2    3      4      5
+start_opt                                      
+0          0.502  0.016  0.0  0.0  0.012  0.469
+1          0.045  0.387  0.0  0.0  0.019  0.548
+2          0.032  0.025  0.0  0.0  0.190  0.753
+3          0.037  0.037  0.0  0.0  0.029  0.897
+4          0.013  0.017  0.0  0.0  0.300  0.670
+5          0.003  0.003  0.0  0.0  0.003  0.992
+
+  draws keeping their own start optimum: 0.3515
+
+  endpoint quality by landed optimum:
+             n    med_f  med_dist  frac_le_1e1
+land_opt                                      
+0          163  0.00028   0.00091      0.79141
+1           98  0.00004   0.00037      1.00000
+4          214  0.00002   0.00029      0.98598
+5         1525  0.00012   0.00078      0.99148
+
+==========================================================================
+== start -> land, desc iso b=15000 (300 draws)
+land_opt    0   1  2  3   4   5
+start_opt                      
+0          15   1  0  0   0  16
+1           2  11  0  0   2  15
+2           1   0  0  0   3  20
+3           0   0  0  0   1  73
+4           1   0  0  0  33  52
+5           0   0  0  0   0  54
+
+  row-normalised:
+land_opt       0      1    2    3      4      5
+start_opt                                      
+0          0.469  0.031  0.0  0.0  0.000  0.500
+1          0.067  0.367  0.0  0.0  0.067  0.500
+2          0.042  0.000  0.0  0.0  0.125  0.833
+3          0.000  0.000  0.0  0.0  0.014  0.986
+4          0.012  0.000  0.0  0.0  0.384  0.605
+5          0.000  0.000  0.0  0.0  0.000  1.000
+
+  draws keeping their own start optimum: 0.3767
+
+  endpoint quality by landed optimum:
+            n  med_f  med_dist  frac_le_1e1
+land_opt                                   
+0          19    0.0       0.0      0.73684
+1          12    0.0       0.0      1.00000
+4          39    0.0       0.0      0.97436
+5         230    0.0       0.0      0.99565

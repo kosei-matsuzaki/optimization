@@ -66,6 +66,14 @@ def per_seed_counts(d: pd.DataFrame) -> tuple[np.ndarray, list]:
     return m, seeds
 
 
+def _find(name: str) -> Path | None:
+    """Row-level dumps are stored gzipped (the repository rule); accept both."""
+    for p in (HERE / name, HERE / (name + ".gz")):
+        if p.exists():
+            return p
+    return None
+
+
 def null_from_csv(path: Path) -> np.ndarray:
     t = pd.read_csv(path)
     c = np.zeros(K, dtype=np.int64)
@@ -165,6 +173,32 @@ def report(tag: str, obs: pd.DataFrame, nulls: dict) -> None:
               f"seeds with p < 0.05: {(ps < 0.05).sum()}/{len(seeds)}")
 
 
+def transition(path: Path, tag: str) -> None:
+    """Where does a draw that *starts* nearest optimum j end up?
+
+    The geometric null and the descent null differ only by the descent, so the
+    row-normalised transition matrix is exactly the map "Voronoi cell -> basin
+    of attraction".  A row that does not keep its own mass names an optimum
+    whose geometric neighbourhood drains somewhere else -- which is a property
+    of the landscape, not of any restart rule.
+    """
+    t = pd.read_csv(path)
+    m = pd.crosstab(t.start_opt, t.land_opt).reindex(
+        index=range(K), columns=range(K), fill_value=0)
+    print(f"\n{'=' * 74}\n== start -> land, {tag} ({len(t)} draws)")
+    print(m.to_string())
+    print("\n  row-normalised:")
+    print(m.div(m.sum(axis=1).replace(0, 1), axis=0).round(3).to_string())
+    print(f"\n  draws keeping their own start optimum: "
+          f"{np.trace(m.to_numpy()) / max(1, m.to_numpy().sum()):.4f}")
+    q = t.groupby("land_opt").agg(n=("best_f", "size"),
+                                  med_f=("best_f", "median"),
+                                  med_dist=("dist", "median"),
+                                  frac_le_1e1=("best_f", lambda s: (s <= 0.1).mean()))
+    print("\n  endpoint quality by landed optimum:")
+    print(q.round(5).to_string())
+
+
 def main() -> None:
     nulls = {}
     geo = HERE / "null_geo.csv"
@@ -173,8 +207,9 @@ def main() -> None:
     for f, lab in [("null_iso_b1499.csv", "desc iso b=1499"),
                    ("null_cov_b1499.csv", "desc full-cov b=1499"),
                    ("null_iso_b15000.csv", "desc iso b=15000")]:
-        if (HERE / f).exists():
-            nulls[lab] = null_from_csv(HERE / f)
+        p = _find(f)
+        if p is not None:
+            nulls[lab] = null_from_csv(p)
     if not nulls:
         raise SystemExit("no null CSVs yet")
 
@@ -183,6 +218,12 @@ def main() -> None:
     e77 = "analysis/hm/e77/N18_%s_off*_hunts.csv.gz"
     report("e77 base arm", load_observed(e77 % "base", arm="base"), nulls)
     report("e77 basin_reset arm", load_observed(e77 % "basin", arm="basin"), nulls)
+
+    for f, lab in [("null_iso_b1499.csv", "desc iso b=1499"),
+                   ("null_iso_b15000.csv", "desc iso b=15000")]:
+        p = _find(f)
+        if p is not None:
+            transition(p, lab)
 
 
 if __name__ == "__main__":
