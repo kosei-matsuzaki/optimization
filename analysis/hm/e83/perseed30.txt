@@ -1,0 +1,26 @@
+MC-ESO   pr_1e-1: .11.11111...1.1.1..1..1..1.11.  nonzero=15/30 mean=0.0625 vals=[0.0, 0.125]
+MC-ESO   pr_1e-5: .11.11111...1.1.1..1..1..1.11.  nonzero=15/30 mean=0.0625 vals=[0.0, 0.125]
+  MC-ESO 1e-5 nonzero by block: 0-11=7/12  12-29=8/18
+NMMSO    pr_1e-1: 1111111111111111.1111111111111  nonzero=29/30 mean=0.1750 vals=[0.0, 0.125, 0.25, 0.375]
+NMMSO    pr_1e-5: ....................1..1.....1  nonzero=3/30 mean=0.0125 vals=[0.0, 0.125]
+  NMMSO 1e-5 nonzero by block: 0-11=0/12  12-29=3/18
+
+paired diff 1e-5: w/t/l = 15/12/3, p=0.0047
+MC-ESO 1e-5 hit rate 15/30 = 0.500, Wilson 95% CI [0.332, 0.668]  -> mean PR in [0.0414, 0.0836]
+NMMSO  1e-5 hit rate 3/30 = 0.100
+
+--- per-seed pr_1e-5 hit pattern, seeds 0-11 (1 = found >=1 optimum to 1e-5)
+NCDE        11111.1111.1  hits=10/12 mean=0.1250 max=0.250
+MC-ESO      .11.11111...  hits=7/12 mean=0.0729 max=0.125
+DE          ...1..1..1..  hits=3/12 mean=0.0312 max=0.125
+r3pso       .1..11......  hits=3/12 mean=0.0312 max=0.125
+NMMSO       ............  hits=0/12 mean=0.0000 max=0.000
+NM-Restart  ............  hits=0/12 mean=0.0000 max=0.000
+
+--- reported-set size |rep| (cap = max(100,2K) = 100)
+NCDE        mean |rep| = 30.0
+MC-ESO      mean |rep| = 100.0
+DE          mean |rep| = 30.0
+r3pso       mean |rep| = 30.0
+NMMSO       mean |rep| = 36.9
+NM-Restart  mean |rep| = 1.2
