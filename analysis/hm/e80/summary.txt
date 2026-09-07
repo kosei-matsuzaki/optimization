@@ -1,0 +1,19 @@
+         func  binding     eps  metric  base   arm    wtl      p  A12
+N06-Shubert2D    depth 0.10000      PR 0.996 0.989 1/12/2 0.6506 0.47
+N06-Shubert2D    depth 0.10000 visited 1.000 1.000 0/15/0 1.0000 0.50
+N06-Shubert2D    depth 0.00100      PR 0.996 0.989 1/12/2 0.6506 0.47
+N06-Shubert2D    depth 0.00100 visited 1.000 1.000 0/15/0 1.0000 0.50
+N06-Shubert2D    depth 0.00001      PR 0.719 0.989 15/0/0 0.0006 1.00
+N06-Shubert2D    depth 0.00001 visited 0.719 0.996 15/0/0 0.0006 1.00
+N08-Shubert3D    depth 0.10000      PR 0.841 0.828  7/1/7 0.3178 0.50
+N08-Shubert3D    depth 0.10000 visited 0.977 0.835 0/0/15 0.0006 0.00
+N08-Shubert3D    depth 0.00100      PR 0.689 0.828 15/0/0 0.0007 1.00
+N08-Shubert3D    depth 0.00100 visited 0.689 0.835 15/0/0 0.0007 1.00
+N08-Shubert3D    depth 0.00001      PR 0.013 0.828 15/0/0 0.0006 1.00
+N08-Shubert3D    depth 0.00001 visited 0.013 0.835 15/0/0 0.0006 1.00
+N09-Vincent3D coverage 0.10000      PR 0.185 0.185  7/0/8 0.9320 0.47
+N09-Vincent3D coverage 0.10000 visited 1.000 1.000 0/15/0 1.0000 0.50
+N09-Vincent3D coverage 0.00100      PR 0.173 0.182  9/0/6 0.2206 0.60
+N09-Vincent3D coverage 0.00100 visited 0.306 0.210 0/0/15 0.0007 0.00
+N09-Vincent3D coverage 0.00001      PR 0.173 0.182  9/0/6 0.2206 0.60
+N09-Vincent3D coverage 0.00001 visited 0.275 0.192 0/0/15 0.0007 0.00

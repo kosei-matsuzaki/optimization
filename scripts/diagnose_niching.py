@@ -37,6 +37,7 @@ from core.optimizers.mceso_crowding import MCESOCrowding             # noqa: E40
 from core.optimizers.mceso_recover import RecoverMCESO               # noqa: E402
 from core.optimizers.mceso_rel_level import RelLevelMCESO            # noqa: E402
 from core.optimizers.mceso_sol_archive import SolArchiveTrimMCESO    # noqa: E402
+from core.optimizers.mceso_basin_reset import BasinResetMCESO        # noqa: E402
 from core.runner import _seed_indices, count_goptima             # noqa: E402
 
 
@@ -108,6 +109,21 @@ class _CountingRecoverMCESO(_HuntCounters, RecoverMCESO):
 
 class _CountingRelLevelMCESO(_HuntCounters, RelLevelMCESO):
     """The eps-relative hunt-release-level variant, instrumented the same way."""
+
+
+class _CountingBasinResetMCESO(_HuntCounters, BasinResetMCESO):
+    """Entry 77/78's arm (`no_improve` reset by the basin's own progress),
+    instrumented the same way.
+
+    Entries 78/79 measured its *price* on BBOB-24 dim2 and found an even trade:
+    the aggregate SR@1e-10 does not move at 5000 evaluations, but four cells are
+    won and four lost, and the two directions have different mechanisms (a lost
+    cell forfeits a restart, a won cell drills out a near miss). That reads as
+    the depth<->breadth line, which entry 21's dichotomy turns into a testable
+    prediction on the niching side: a gain where depth is binding
+    (N06/N08-Shubert), a loss where coverage is binding (N09-Vincent).
+    ``basin_reset=False`` disables the override and must reproduce `base`
+    exactly (identity check)."""
 
 
 class _CountingSolArchiveMCESO(_HuntCounters, SolArchiveTrimMCESO):
@@ -198,6 +214,12 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
                                                  "commit_sigma_ratio": 0.1}),
     # Identity check for the commit class.
     "commit_off": (_CountingCommitMCESO, {"commit_mode": "off"}),
+    # Entry 80: entry 77's stagnation-counter arm, on the niching side. The BBOB
+    # gate (entries 78/79) showed it trading depth against breadth, so entry 21's
+    # dichotomy predicts the sign: positive on the depth-bound Shubert pair,
+    # negative on coverage-bound N09-Vincent3D.
+    "basin_reset": (_CountingBasinResetMCESO, {"basin_reset": True}),
+    "basin_reset_off": (_CountingBasinResetMCESO, {"basin_reset": False}),
     # Control: base restart draws (the best-of-n_pop race is kept) with only the
     # post-restart sigma taken down to the local basin scale.
     "sigma_only": (_CountingCommitMCESO, {"commit_mode": "sigma_only",
