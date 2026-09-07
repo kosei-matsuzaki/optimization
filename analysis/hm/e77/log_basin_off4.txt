@@ -1,0 +1,4 @@
+basin seed=4 hunts=114 median_len=2874 best_f=3.11444e-12 n_rep=100 PR@1e-3=0.333 PR@1e-5=0.333 wall=91.2s
+basin seed=5 hunts=105 median_len=2859 best_f=1.55723e-12 n_rep=100 PR@1e-3=0.500 PR@1e-5=0.500 wall=93.3s
+basin seed=6 hunts=120 median_len=2869 best_f=3.11442e-12 n_rep=100 PR@1e-3=0.333 PR@1e-5=0.333 wall=87.8s
+basin seed=7 hunts=126 median_len=2874 best_f=1.55723e-12 n_rep=100 PR@1e-3=0.333 PR@1e-5=0.333 wall=89.7s

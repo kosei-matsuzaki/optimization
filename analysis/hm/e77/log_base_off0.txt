@@ -1,0 +1,4 @@
+base seed=0 hunts=252 median_len=1499 best_f=6.22882e-12 n_rep=100 PR@1e-3=0.167 PR@1e-5=0.167 wall=98.6s
+base seed=1 hunts=254 median_len=1499 best_f=3.11442e-12 n_rep=100 PR@1e-3=0.167 PR@1e-5=0.167 wall=94.4s
+base seed=2 hunts=253 median_len=1499 best_f=2.25159e-12 n_rep=100 PR@1e-3=0.333 PR@1e-5=0.167 wall=88.6s
+base seed=3 hunts=253 median_len=1499 best_f=1.55721e-12 n_rep=100 PR@1e-3=0.167 PR@1e-5=0.167 wall=88.2s

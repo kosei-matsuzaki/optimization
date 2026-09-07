@@ -1,0 +1,38 @@
+== 12 paired seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+== official PR (core.runner scorer)
+PR@1e-1          base 1.0000  basin 1.0000  delta +0.0000  0/12/0  p=1  A12=0.500
+PR@1e-2          base 0.4028  basin 0.4028  delta -0.0000  4/4/4  p=0.9922  A12=0.507
+PR@1e-3          base 0.1944  basin 0.3056  delta +0.1111  6/6/0  p=0.03125  A12=0.722
+PR@1e-4          base 0.1667  basin 0.3056  delta +0.1389  7/5/0  p=0.01562  A12=0.792
+PR@1e-5          base 0.1667  basin 0.2917  delta +0.1250  7/5/0  p=0.01562  A12=0.792
+
+== PR with the reported points attributed to the six true optima
+PRtrue@1e-1      base 0.6667  basin 0.6111  delta -0.0556  0/8/4  p=0.125  A12=0.333
+PRtrue@1e-2      base 0.4028  basin 0.4028  delta -0.0000  4/4/4  p=0.9922  A12=0.507
+PRtrue@1e-3      base 0.1944  basin 0.3056  delta +0.1111  6/6/0  p=0.03125  A12=0.722
+PRtrue@1e-4      base 0.1667  basin 0.3056  delta +0.1389  7/5/0  p=0.01562  A12=0.792
+PRtrue@1e-5      base 0.1667  basin 0.2917  delta +0.1250  7/5/0  p=0.01562  A12=0.792
+
+== the mechanism (hunt budget)
+n_hunts          base 253.0000  basin 119.2500  delta -133.7500  0/0/12  p=0.0004883  A12=0.000
+median_hunt_len  base 1499.0000  basin 2873.5833  delta +1374.5833  12/0/0  p=0.0004883  A12=1.000
+n_rep            base 100.0000  basin 100.0000  delta +0.0000  0/12/0  p=1  A12=0.500
+best_f           base 0.0000  basin 0.0000  delta -0.0000  0/9/3  p=0.25  A12=0.392
+basin resets / run: median 11776 (min 10860, max 12814)
+
+== hunt length, hunts after the first (evals)
+base   n=3024   median=1499 q25=1499 q75=1499 max=14349
+basin  n=1419   median=2869 q25=2789 q75=2929 max=22859
+
+== hunts reaching a depth, by arm (share of all hunts)
+base   bb_end <= 0.1:  1347 ( 44.4%)
+base   bb_end <= 0.001:    19 (  0.6%)
+base   bb_end <= 1e-05:    12 (  0.4%)
+basin  bb_end <= 0.1:   672 ( 47.0%)
+basin  bb_end <= 0.001:    52 (  3.6%)
+basin  bb_end <= 1e-05:    49 (  3.4%)
+
+== distinct true optima hit by any hunt (per seed, dist <= 0.05)
+base   any-depth median 4.0  hunts reaching 1e-3 cover median 1.0 optima
+basin  any-depth median 4.0  hunts reaching 1e-3 cover median 2.0 optima
