@@ -47,6 +47,7 @@ from core.benchmarks import (BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME,     # no
 from core.optimizers import MultiChannelEpidemicOptimizer                    # noqa: E402
 from core.optimizers.mceso_rel_level import RelLevelMCESO                    # noqa: E402
 from core.optimizers.mceso_sol_archive import SolArchiveTrimMCESO            # noqa: E402
+from core.optimizers.mceso_basin_reset import BasinResetMCESO                # noqa: E402
 
 _REG = {2: BENCHMARKS_BY_NAME, 3: BENCHMARKS_3D_BY_NAME,
         5: BENCHMARKS_5D_BY_NAME, 10: BENCHMARKS_10D_BY_NAME}
@@ -128,7 +129,7 @@ def _succ_ev(hist_best, thresh: float) -> int:
 
 def _compare(reg, names, seeds, evals, tol, csv_path, rel_level=0.0,
              fis_floor=0.0, thresh=1e-10, extra=None, sol_trim_mode=None,
-             seed_start=0) -> None:
+             seed_start=0, basin_reset=False) -> None:
     """Where does the tie come from -- same search, or same answer?
 
     Runs base and the tightened arm on the same seed and reports the evaluation
@@ -148,7 +149,14 @@ def _compare(reg, names, seeds, evals, tol, csv_path, rel_level=0.0,
         per = []
         for seed in range(seed_start, seed_start + seeds):
             r0 = MultiChannelEpidemicOptimizer(b, seed=seed * 100).optimize(evals)
-            if sol_trim_mode is not None:
+            if basin_reset:
+                # Entry 78: entry 77's arm. Unlike the release-clause arms this
+                # one touches `no_improve`, which also drives the restart path,
+                # the sigma control and `_basin_exhausted` -- so `post_gain` is
+                # not admissible as a safety proxy here (entry 56's lesson) and
+                # the pins have to be read directly off the two arms below.
+                v = BasinResetMCESO(b, seed=seed * 100, basin_reset=True, **extra)
+            elif sol_trim_mode is not None:
                 # Entry 60/61: the answer-archive trim arm. It only re-selects
                 # `sol_archive` after the shipped trim has fired, and that
                 # archive never feeds back into the search, so this arm is the
@@ -175,6 +183,7 @@ def _compare(reg, names, seeds, evals, tol, csv_path, rel_level=0.0,
             per.append(dict(function=name, seed=seed, div_ev=div, bank_ev=bank,
                             base_best_f=float(r0.best_f), var_best_f=float(r1.best_f),
                             base_succ_ev=s0, var_succ_ev=s1,
+                            n_fire=int(getattr(v, "_n_basin_resets", -1)),
                             same=float(r0.best_f) == float(r1.best_f)))
         differ = sum(1 for r in per if r["div_ev"] >= 0)
         bank_first = sum(1 for r in per if r["div_ev"] >= 0 and r["bank_ev"] < r["div_ev"])
@@ -239,6 +248,11 @@ def main() -> None:
                     help="variant arm is SolArchiveTrimMCESO(sol_trim_mode=M) "
                          "(entry 60's answer-archive trim). Only meaningful "
                          "with --compare; takes precedence over --rel-level.")
+    ap.add_argument("--basin-reset", action="store_true",
+                    help="variant arm is BasinResetMCESO (entry 77's arm: "
+                         "`no_improve` is also reset when the *basin* best "
+                         "improves). Only meaningful with --compare; takes "
+                         "precedence over --sol-trim-mode and --rel-level.")
     ap.add_argument("--sigma-floor-ratio", type=float, default=None,
                     metavar="R",
                     help="variant arm's sigma_floor_ratio (shipped 1e-6), the "
@@ -254,7 +268,8 @@ def main() -> None:
                  args.seeds, args.evals, args.compare, args.csv,
                  rel_level=args.rel_level, fis_floor=args.fis_floor,
                  thresh=args.succ_thresh, extra=extra,
-                 sol_trim_mode=args.sol_trim_mode, seed_start=args.seed_start)
+                 sol_trim_mode=args.sol_trim_mode, seed_start=args.seed_start,
+                 basin_reset=args.basin_reset)
         return
     rows = []
     if args.rel_level > 0.0:
