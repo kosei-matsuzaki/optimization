@@ -1,0 +1,5 @@
+function                  runs  differ  bank<div  med_bank  med_div  same_best_f  same_succ_ev
+------------------------------------------------------------------------------------------------
+F02-EllipsoidalSep          20      20        20      1411     2662           20            20
+F06-AttractiveSector        20      19        19      2571     4070            8            20
+F10-EllipsoidalRot          20      20        20      1499     2750           20            20

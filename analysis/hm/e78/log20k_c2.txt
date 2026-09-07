@@ -1,0 +1,5 @@
+function                  runs  differ  bank<div  med_bank  med_div  same_best_f  same_succ_ev
+------------------------------------------------------------------------------------------------
+F03-RastriginSep            20      20        20      1686     3404           19            20
+F07-StepEllipsoidal         20      20        20       164     1388           20            20
+F11-Discus                  20      20        20      1460     2695           20            20

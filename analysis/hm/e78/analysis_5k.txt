@@ -1,0 +1,42 @@
+
+=== BBOB-24 dim2, 5000 evals: 480 paired cells (24 functions x 20 seeds) ===
+  firing        : 471/480 cells fire (median 71, max 262) -- a tie here is not an unfired knob
+  gate level (1): histories byte-identical in 40/480 cells
+  gate level (2): best_f byte-identical in 443/480 cells
+  SR@1e-10     : base 0.9208  variant 0.9208   (won 4, lost 4, p = 1.0000)
+  evals_succ_mean: base 1230.4 (n=442)  variant 1243.1 (n=442)
+  paired evals   : 438 cells reached 1e-10 in both; variant - base = +7.8 (median +0.0, faster 6 / slower 8 / tie 424, p = 0.5936)
+
+  function                   SRb   SRv  won  lost     ev_b     ev_v    d_ev   fire  tie_f
+  -----------------------------------------------------------------------------------------
+  F01-Sphere                1.00  1.00    0     0    675.8    675.8    +0.0     92     20
+  F02-EllipsoidalSep        1.00  1.00    0     0    966.1    966.1    +0.0     79     20
+  F03-RastriginSep          1.00  1.00    0     0   1371.3   1371.3    +0.0     52     20
+  F04-BucheRastrigin        0.95  0.80    0     3   2667.3   2447.4  -109.1     41     15
+  F05-LinearSlope           1.00  1.00    0     0    411.9    411.9    +0.0    106     20
+  F06-AttractiveSector      0.95  0.95    0     0   1913.4   1913.4    +0.0     70     15
+  F07-StepEllipsoidal       1.00  1.00    0     0    195.2    195.2    +0.0     50     20
+  F08-Rosenbrock            1.00  1.00    0     0    938.5    938.5    +0.0     96     20
+  F09-RosenbrockRot         1.00  1.00    0     0    881.6    881.6    +0.0     92     20
+  F10-EllipsoidalRot        1.00  1.00    0     0   1044.8   1044.8    +0.0     85     20
+  F11-Discus                1.00  1.00    0     0   1011.7   1011.7    +0.0     81     20
+  F12-BentCigar             1.00  1.00    0     0    977.6    977.6    +0.0     79     20
+  F13-SharpRidge            1.00  1.00    0     0   1768.2   1768.2    +0.0     23     20
+  F14-DiffPowers            1.00  1.00    0     0   1106.7   1106.7    +0.0     44     20
+  F15-RastriginRot          1.00  1.00    0     0   1343.0   1343.0    +0.0     71     20
+  F16-Weierstrass           1.00  1.00    0     0    974.9    974.9    +0.0     74     20
+  F17-SchafferF7            0.60  0.75    3     0   1960.1   2457.5    +0.0     44     15
+  F18-SchafferF7ill         0.90  0.90    0     0   2049.3   2049.3    +0.0     33     19
+  F19-GriewankRosenbrock    1.00  1.00    0     0   1349.2   1321.7   -27.5     68     20
+  F20-Schwefel              0.95  0.90    0     1   2280.2   2486.6  +317.3     51     17
+  F21-Gallagher101          1.00  1.00    0     0    518.8    518.8    +0.0     92     20
+  F22-Gallagher21           1.00  1.00    0     0    381.9    381.9    +0.0    104     20
+  F23-Katsuura              0.75  0.80    1     0   2315.5   2353.7    +0.0     39     19
+  F24-LunacekRastrigin      0.00  0.00    0     0      nan      nan    +nan     30      3
+
+  functions where the arm loses cells : ['F04-BucheRastrigin', 'F20-Schwefel']
+  functions where the arm gains cells : ['F17-SchafferF7', 'F23-Katsuura']
+
+  pre-registered verdict: REJECT (SR 0.9208 vs base 0.9208; evals 1243.1 vs 1230.4)
+
+  reference pins (CLAUDE.md / this environment): SR 0.9208, evals_succ_mean 677.7

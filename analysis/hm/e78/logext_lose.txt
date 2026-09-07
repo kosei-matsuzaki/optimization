@@ -1,0 +1,6 @@
+function                  runs  differ  bank<div  med_bank  med_div  same_best_f  same_succ_ev
+------------------------------------------------------------------------------------------------
+F04-BucheRastrigin          40      34        14      3137     1933           28            21
+F20-Schwefel                40      35        25      1540     2914           39            30
+
+wrote analysis/hm/e78/ext5k_lose.csv (80 rows)

@@ -1,0 +1,10 @@
+function                  runs  differ  bank<div  med_bank  med_div  same_best_f  same_succ_ev
+------------------------------------------------------------------------------------------------
+F03-RastriginSep            20      17        17      1686     3319           20            20
+F07-StepEllipsoidal         20      20        20       164     1388           20            20
+F11-Discus                  20      20        20      1460     2695           20            20
+F15-RastriginRot            20      20        20      1600     3292           20            20
+F19-GriewankRosenbrock      20      20        19      1480     2952           20            19
+F23-Katsuura                20      14        13      2512     4130           19            19
+
+wrote analysis/hm/e78/gate5k_c2.csv (120 rows)

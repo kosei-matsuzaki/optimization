@@ -1,0 +1,5 @@
+function                  runs  differ  bank<div  med_bank  med_div  same_best_f  same_succ_ev
+------------------------------------------------------------------------------------------------
+F04-BucheRastrigin          20      20        11      2934     3823           19            11
+F08-Rosenbrock              20      20        20      1314     2638           20            20
+F12-BentCigar               20      20        20      1322     2582           20            20

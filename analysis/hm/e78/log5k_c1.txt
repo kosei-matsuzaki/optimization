@@ -1,0 +1,10 @@
+function                  runs  differ  bank<div  med_bank  med_div  same_best_f  same_succ_ev
+------------------------------------------------------------------------------------------------
+F02-EllipsoidalSep          20      20        20      1411     2662           20            20
+F06-AttractiveSector        20      18        18      2571     3990           15            20
+F10-EllipsoidalRot          20      20        20      1499     2750           20            20
+F14-DiffPowers              20      19        19      2059     3470           20            20
+F18-SchafferF7ill           20      13        13      2680     4220           19            20
+F22-Gallagher21             20      20        20       489     1738           20            20
+
+wrote analysis/hm/e78/gate5k_c1.csv (120 rows)

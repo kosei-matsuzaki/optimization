@@ -1,0 +1,5 @@
+function                  runs  differ  bank<div  med_bank  med_div  same_best_f  same_succ_ev
+------------------------------------------------------------------------------------------------
+F01-Sphere                  20      20        20       948     2205           20            20
+F05-LinearSlope             20      20        20       342     1565           20            20
+F09-RosenbrockRot           20      20        20      1264     2582           20            20

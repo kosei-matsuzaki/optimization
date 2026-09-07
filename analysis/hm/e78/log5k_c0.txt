@@ -1,0 +1,10 @@
+function                  runs  differ  bank<div  med_bank  med_div  same_best_f  same_succ_ev
+------------------------------------------------------------------------------------------------
+F01-Sphere                  20      20        20       948     2205           20            20
+F05-LinearSlope             20      20        20       342     1565           20            20
+F09-RosenbrockRot           20      20        20      1264     2582           20            20
+F13-SharpRidge              20      13        13      3346     4765           20            20
+F17-SchafferF7              20      14        14      2489     3862           15            17
+F21-Gallagher101            20      20        20       546     1865           20            20
+
+wrote analysis/hm/e78/gate5k_c0.csv (120 rows)
