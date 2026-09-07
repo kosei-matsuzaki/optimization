@@ -42,6 +42,12 @@ def load(path: str, func: str) -> dict[float, dict[int, dict]]:
             out[float(r["eps"])][int(r["seed"])] = {
                 "pr": float(r["reported"]) / float(r["K"]),
                 "visited": float(r["visited"]) / float(r["K"]),
+                # Entry 81: PR = visited - loss identically, so PR alone is
+                # blind to an arm that moves both components by the same
+                # amount (entry 80's `basin_reset` on N09). Carry the second
+                # component here so every table can print the decomposition.
+                "loss": (float(r["visited"]) - float(r["reported"]))
+                / float(r["K"]),
                 "hunts": float(r["hunts"]),
                 "evals": float(r["evals"]),
                 # Entry 40 read the *mechanism* off these three (a sigma arm
@@ -78,8 +84,8 @@ def main() -> None:
     ap.add_argument("--ref", default=None,
                     help="label to test against (default: the first one given)")
     ap.add_argument("--metric", default="pr",
-                    choices=("pr", "visited", "distinct", "landed", "hunts",
-                             "blocked"),
+                    choices=("pr", "visited", "loss", "distinct", "landed",
+                             "hunts", "blocked"),
                     help="which column the paired test is run on (default pr). "
                          "Entry 68's rejection condition is stated on `visited` "
                          "(the coverage ceiling) and entry 69's on `blocked` "
@@ -120,6 +126,26 @@ def main() -> None:
             print(f"    {label:<18}{hunts:>7.1f}{np.mean(pr):>7.3f}"
                   f"{vis:>8.2f}{dis:>7.1f}{lan:>7.1f}{blk:>7.1f}{wtl:>10}{p:>9}"
                   f"{'' if label == ref else f'{a:>7.2f}'}{len(seeds):>7}")
+
+        # PR = coverage - report loss, identically. Entry 80 measured an arm
+        # whose two components each moved 15/15 seeds in the same direction,
+        # leaving PR flat, so a table that tests PR alone reports "no effect"
+        # for an arm that paid a real price. Print all three tests, always.
+        print(f"\n    {'component decomposition':<18}"
+              f"{'PR':>21}{'coverage':>21}{'report loss':>21}")
+        print(f"    {'(PR = cov - loss)':<18}"
+              + "".join(f"{'mean':>7}{'w/t/l':>9}{'p':>7}" for _ in range(3)))
+        for label, d in data.items():
+            if eps not in d or label == ref:
+                continue
+            seeds = sorted(set(d[eps]) & set(data[ref][eps]))
+            cells = []
+            for col in ("pr", "visited", "loss"):
+                x = np.array([d[eps][s][col] for s in seeds])
+                y = np.array([data[ref][eps][s][col] for s in seeds])
+                w, p_, _ = paired(x, y)
+                cells.append(f"{np.mean(x):>7.3f}{w:>9}{float(p_):>7.3f}")
+            print(f"    {label:<18}" + "".join(cells))
 
 
 if __name__ == "__main__":
