@@ -3,3 +3,8 @@ function                  runs  differ  bank<div  med_bank  med_div  same_best_f
 F02-EllipsoidalSep          20      20        20      1411     2662           20            20
 F06-AttractiveSector        20      19        19      2571     4070            8            20
 F10-EllipsoidalRot          20      20        20      1499     2750           20            20
+F14-DiffPowers              20      20        20      2059     3502           19            20
+F18-SchafferF7ill           20      19        19      2903     4759           16            20
+F22-Gallagher21             20      20        20       489     1738           20            20
+
+wrote analysis/hm/e78/gate20k_c1.csv (120 rows)
