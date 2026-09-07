@@ -50,6 +50,7 @@ from __future__ import annotations
 import argparse
 import csv
 import sys
+import time
 from collections import Counter
 from pathlib import Path
 
@@ -69,6 +70,23 @@ def vincent_optima(dim: int) -> np.ndarray:
     """The full grid of global optima (6**dim of them)."""
     grids = np.meshgrid(*([_V1D] * dim), indexing="ij")
     return np.stack([g.ravel() for g in grids], axis=1)
+
+
+def true_optima(b) -> np.ndarray:
+    """The benchmark's global optima, for any registered niching function (e87).
+
+    Vincent's grid is generated analytically above because ``optima_pos`` for
+    the hand-written N04-N10 carries only the closed-form list; the CEC2013
+    composition functions registered through ``ioh`` (N11-N20) carry the full
+    ``prob.optima`` positions, so those are read straight off the benchmark.
+    """
+    if "Vincent" in b.name:
+        return vincent_optima(b.dim)
+    if not b.optima_pos:
+        raise SystemExit(f"{b.name}: no optima positions on the benchmark")
+    opts = np.asarray(b.optima_pos, dtype=float)
+    assert len(opts) == b.n_global_optima, (len(opts), b.n_global_optima)
+    return opts
 
 
 def basin_width(opts: np.ndarray) -> np.ndarray:
@@ -142,7 +160,7 @@ def _run_one(args_tuple):
     cls, kw = dict(_METHODS, **_DIAGNOSTIC_ARMS)[method]
     t0 = time.time()
     r = cls(b, seed=seed, **kw).optimize(budget)
-    opts = vincent_optima(b.dim)
+    opts = true_optima(b)
     span = b.bounds[1] - b.bounds[0]
     radius = max(0.5, 0.02 * span)                      # core.runner rule
     out = []
@@ -167,9 +185,7 @@ def run_mode(argv: list[str]) -> None:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from core.benchmarks import NICHING_BENCHMARKS_BY_NAME
     b = NICHING_BENCHMARKS_BY_NAME[a.func]
-    if "Vincent" not in a.func:
-        raise SystemExit(f"{a.func}: only Vincent's optima are hard-coded here")
-    opts = vincent_optima(b.dim)
+    opts = true_optima(b)          # e87: any registered niching function
     assert len(opts) == b.n_global_optima, (len(opts), b.n_global_optima)
     width = basin_width(opts)
     budget = max(1000, int(b.suite_max_evals * a.evals_frac))
@@ -195,6 +211,138 @@ def run_mode(argv: list[str]) -> None:
                 print(f"{m:<12} seed {seed:>4}  {nev} evals  {secs:6.1f}s  "
                       f"covered {cov}", flush=True)
     print(f"rows written to {a.csv}")
+
+
+def _null_descent(args_tuple):
+    """One draw of the *restart-lander* null: uniform start, isotropic descent.
+
+    The null a coverage claim has to beat is not "uniform points" but "uniform
+    points that then descend the way this optimiser descends".  MC-ESO reseeds
+    a hunt at a draw from the box and drills it with an isotropic step
+    (sigma_init = ``sigma`` x span); later hunts are cut at a fixed length
+    (1499 evaluations on N18, e76).  Reproducing exactly that, minus the repel
+    rule and minus the best-of-n_pop race over draws, gives the landing
+    distribution the landscape alone forces.  ``iso=False`` turns the full
+    covariance on as a sensitivity check: if the null moves, the null is a
+    statement about the descent model, not about basin volume.
+    """
+    name, k, budget, sigma0, iso = args_tuple
+    import cma
+    from core.benchmarks import NICHING_BENCHMARKS_BY_NAME
+    b = NICHING_BENCHMARKS_BY_NAME[name]
+    opts = true_optima(b)
+    lo, hi = b.bounds
+    rng = np.random.default_rng(1_000_000 + k)
+    x0 = rng.uniform(lo, hi, size=b.dim)
+    j0 = int(np.argmin(np.linalg.norm(opts - x0, axis=1)))
+    o = {"bounds": [lo, hi], "maxfevals": budget, "seed": k + 1, "verbose": -9,
+         "tolfun": 0, "tolfunhist": 0, "tolx": 0}
+    if iso:
+        o["CMA_on"] = 0                       # step size only, no rotation
+    es = cma.CMAEvolutionStrategy(list(x0), sigma0, o)
+    best_f, best_x, used = float("inf"), x0, 0
+    while not es.stop() and used < budget:
+        xs = es.ask()
+        fs = [float(b.func(np.asarray(x))) for x in xs]
+        used += len(xs)
+        es.tell(xs, fs)
+        i = int(np.argmin(fs))
+        if fs[i] < best_f:
+            best_f, best_x = fs[i], np.asarray(xs[i], dtype=float)
+    d = np.linalg.norm(opts - best_x, axis=1)
+    j = int(np.argmin(d))
+    return k, j0, j, float(d[j]), best_f, used
+
+
+def null_mode(argv: list[str]) -> None:
+    """Volume-proportional nulls for a landing distribution (entry 87).
+
+    ``geo``   -- uniform draws attributed to the nearest optimum (the Voronoi
+                 volume share; this is the null entry 64 used on N09).
+    ``desc``  -- uniform draws *descended* first (see ``_null_descent``).
+    """
+    ap = argparse.ArgumentParser(prog="hunt_coverage.py --null")
+    ap.add_argument("--null", action="store_true")
+    ap.add_argument("--func", default="N18-CF3-10D")
+    ap.add_argument("--geo-draws", type=int, default=1_000_000)
+    ap.add_argument("--descents", type=int, default=0)
+    ap.add_argument("--budget", type=int, default=1499,
+                    help="evaluations per descent (N18 hunt length, e76)")
+    ap.add_argument("--sigma-ratio", type=float, default=0.2,
+                    help="sigma0 / span; MC-ESO's `sigma` default")
+    ap.add_argument("--full-cov", action="store_true",
+                    help="sensitivity: run the descent with covariance on")
+    ap.add_argument("--procs", type=int, default=4)
+    ap.add_argument("--csv", type=Path, default=None)
+    ap.add_argument("--geo-csv", type=Path, default=None)
+    a = ap.parse_args(argv)
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from core.benchmarks import NICHING_BENCHMARKS_BY_NAME
+    b = NICHING_BENCHMARKS_BY_NAME[a.func]
+    opts = true_optima(b)
+    K = len(opts)
+    lo, hi = b.bounds
+    print(f"{a.func}: dim {b.dim}, box [{lo}, {hi}], K = {K}")
+
+    # ── geometric (Voronoi) null ────────────────────────────────────────────
+    rng = np.random.default_rng(0)
+    cnt = np.zeros(K, dtype=np.int64)
+    done = 0
+    while done < a.geo_draws:
+        m = min(20000, a.geo_draws - done)
+        X = rng.uniform(lo, hi, size=(m, b.dim))
+        d = np.linalg.norm(X[:, None, :] - opts[None, :, :], axis=2)
+        np.add.at(cnt, np.argmin(d, axis=1), 1)
+        done += m
+    share = cnt / cnt.sum()
+    se = np.sqrt(share * (1 - share) / a.geo_draws)
+    print(f"\n== geometric (Voronoi) null, {a.geo_draws} uniform draws")
+    for j in range(K):
+        print(f"  opt {j}: share {share[j]:.4f} +- {1.96 * se[j]:.4f} (95% CI)")
+    if a.geo_csv:
+        a.geo_csv.parent.mkdir(parents=True, exist_ok=True)
+        with open(a.geo_csv, "w", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["opt", "cnt", "share"])
+            for j in range(K):
+                w.writerow([j, int(cnt[j]), f"{share[j]:.6f}"])
+        print(f"  counts written to {a.geo_csv}")
+
+    if a.descents <= 0:
+        return
+    # ── restart-lander null: uniform draw, then descend ─────────────────────
+    sigma0 = a.sigma_ratio * (hi - lo)
+    print(f"\n== descent null: {a.descents} draws, {a.budget} evals each, "
+          f"sigma0 = {sigma0:g}, {'full covariance' if a.full_cov else 'isotropic'}")
+    jobs = [(a.func, k, a.budget, sigma0, not a.full_cov)
+            for k in range(a.descents)]
+    from multiprocess import Pool
+    rows = []
+    t0 = time.time()
+    with Pool(a.procs) as pool:
+        for k, j0, j, dist, f, used in pool.imap_unordered(_null_descent, jobs):
+            rows.append((k, j0, j, dist, f, used))
+    print(f"  {len(rows)} descents in {time.time() - t0:.1f}s")
+    if a.csv:
+        a.csv.parent.mkdir(parents=True, exist_ok=True)
+        with open(a.csv, "w", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["draw", "start_opt", "land_opt", "dist", "best_f", "evals"])
+            w.writerows(rows)
+        print(f"  rows written to {a.csv}")
+    land = np.zeros(K, dtype=np.int64)
+    np.add.at(land, np.array([r[2] for r in rows]), 1)
+    ds = np.array([r[3] for r in rows])
+    fsv = np.array([r[4] for r in rows])
+    p = land / land.sum()
+    sed = np.sqrt(p * (1 - p) / len(rows))
+    for j in range(K):
+        print(f"  opt {j}: share {p[j]:.4f} +- {1.96 * sed[j]:.4f}  "
+              f"(geo {share[j]:.4f})")
+    print(f"  descent endpoint: median dist {np.median(ds):.4f}, "
+          f"median f {np.median(fsv):.4g}, frac f <= 0.1 "
+          f"{float((fsv <= 0.1).mean()):.3f}")
 
 
 def analyze_mode(paths: list[str]) -> None:
@@ -282,6 +430,8 @@ def analyze_mode(paths: list[str]) -> None:
 def main() -> None:
     if len(sys.argv) > 1 and sys.argv[1] == "--run":
         return run_mode(sys.argv[1:])
+    if len(sys.argv) > 1 and sys.argv[1] == "--null":
+        return null_mode(sys.argv[1:])
     if len(sys.argv) > 2 and sys.argv[1] == "--analyze":
         return analyze_mode(sys.argv[2:])
     if len(sys.argv) < 2:

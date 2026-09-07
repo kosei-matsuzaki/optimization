@@ -1,0 +1,20 @@
+N18-CF3-10D: dim 10, box [-5.0, 5.0], K = 6
+
+== geometric (Voronoi) null, 1000000 uniform draws
+  opt 0: share 0.1242 +- 0.0006 (95% CI)
+  opt 1: share 0.0922 +- 0.0006 (95% CI)
+  opt 2: share 0.0859 +- 0.0005 (95% CI)
+  opt 3: share 0.2636 +- 0.0009 (95% CI)
+  opt 4: share 0.2446 +- 0.0008 (95% CI)
+  opt 5: share 0.1894 +- 0.0008 (95% CI)
+
+== descent null: 2000 draws, 1499 evals each, sigma0 = 2, isotropic
+  2000 descents in 100.7s
+  rows written to analysis/hm/e87/null_iso_b1499.csv
+  opt 0: share 0.0815 +- 0.0120  (geo 0.1242)
+  opt 1: share 0.0490 +- 0.0095  (geo 0.0922)
+  opt 2: share 0.0000 +- 0.0000  (geo 0.0859)
+  opt 3: share 0.0000 +- 0.0000  (geo 0.2636)
+  opt 4: share 0.1070 +- 0.0135  (geo 0.2446)
+  opt 5: share 0.7625 +- 0.0187  (geo 0.1894)
+  descent endpoint: median dist 0.0007, median f 9.542e-05, frac f <= 0.1 0.975
