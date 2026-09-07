@@ -1,0 +1,5 @@
+seed=2 probe=92s optima_touched=[0, 1, 4, 5]
+  seed=2 gopt=0 d=8.13e-08 f0=2.252e-12 full=0 iso=0
+  seed=2 gopt=1 d=0.0109 f0=0.03716 full=6.992e-13 iso=0
+  seed=2 gopt=4 d=0.00488 f0=0.005681 full=0 iso=0
+  seed=2 gopt=5 d=0.00153 f0=0.0004673 full=0 iso=0
