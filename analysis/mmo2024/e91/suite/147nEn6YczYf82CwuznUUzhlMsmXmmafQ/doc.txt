@@ -1,0 +1,80 @@
+Results for GECCO’2024 Competition 
+on Benchmarking Niching Methods for 
+Multimodal Optimization
+Ali Ahrari, Jonathan E. Fieldsend, Mike Preuss, Xiaodong Li, Michael G. Epitropakis
+
+Multimodal Optimization (MMO)
+• Aim: Find all global minima of the problem
+
+Benchmark Problems
+Group A: Focuses on 
+MMO-specific 
+challenges
+Group: Focuses on 
+both MMO-specific 
+challenges and global 
+optimization (GO) 
+challenges
+Review
+Competition Setup[1]:
+• 16 test problems (PID = 1, 2, ..., . . . , 16)
+• 4 dimensionalities ( = 2, 5, 10, 20)
+• 15 problem instances (PIN = 1, 2, . . . , 15) 
+• one run for each 
+The total number of optimization runs = 16 × 4 × 15 = 960.
+Computer code in Python and MATLAB
+No ad-hoc parameter tuning
+[1] A. Ahrari et al. Experimental Setup for GECCO’2024 Competition on Benchmarking Niching Methods 
+for Multimodal Optimization (To appear), in GECCO 2024, ACM
+Performance Indicators
+• Performance score is the average of two indicators:
+1) Peak ratio (PR): The fraction of detected global minima
+2) Static F1-score: 
+ଵ
+2 × Precision × Recall 
+Precision+Recall
+Precision: Fraction of reported solutions that are distinct global minima
+• ௙ ିଵ ିଶ ିହ
+Score is the average of 9600 calculated values (960 runs, 2 indicators, 5 
+thresholds)
+Participating Methods
+• RR-CMA-ES (CMA-ES with repelling restarts) [2]
+• TRDE-LR (Tabu Restart-Based Niching Differential Evolution Algorithm 
+with Local Refinement) [3]
+• Niching CMA-ES with Dynamic Adaptation Mechanisms [4], which is 
+denoted by N-DAM-CMA-ES in this presentation
+[2] J. de Nobel et al. Avoiding redundant restarts in multimodal global optimization, 2024
+[3] Y . Wang et al. 2024
+[4] W. Karunarathne et al. Modified CMA-ES Algorithm for Multi-Modal Optimization: Incorporating Niching 
+Strategies and Dynamic Adaptation Mechanism, 2024  
+MMO challenges: Severe
+GO challenges: Mild
+Local minima: none to 
+minimal
+MMO challenges: Mild
+GO challenges: Severe
+Local minima: None to 
+minimal
+MMO challenges: Severe
+GO challenges: Mild
+Local minima: Many
+MMO challenges: Mild
+GO challenges: Severe
+Local minima: Many
+
+Results-All Problems
+
+Final Score
+D RR-CMA-ES TRDE-LR Niching CMA-ES
+2 0.958 0.984 0.143
+5 0.844 0.810 0.097
+10 0.651 0.538 0.078
+20 0.476 0.302 0.056
+2 0.803 0.991 0.021
+5 0.585 0.879 0.021
+10 0.495 0.678 0.020
+20 0.413 0.439 0.017
+0.653 0.703 0.057
+MPR
+mean-F1
+Score

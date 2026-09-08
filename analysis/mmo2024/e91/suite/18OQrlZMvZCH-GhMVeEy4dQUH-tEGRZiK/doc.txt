@@ -1,0 +1,233 @@
+Experimental Setup for GECCO’2024
+Competition on Benchmarking Niching
+Methods for Multimodal Optimization
+Ali Ahrari1, Jonathan Fieldsend 2, Mike Preuss3, Xiaodong Li 4, and
+Michael G. Epitropakis 5
+1School of Systems and Computing, University of New South
+Wales, Canberra, Australia (a.ahrari@unsw.edu.au)
+2University of Exeter, United Kingdom (j.e.fieldsend@exeter.ac.uk)
+3Leiden Institute of Advanced Computer Science, Universiteit
+Leiden, The Netherlands (m.preuss@liacs.leidenuniv.nl)
+4School of Computing Technologies, RMIT University, Melbourne,
+Australia (xiaodong.li@rmit.edu.au)
+5 Data Science Institute and the Department of Management
+Science, Lancaster University, UK (m.epitropakis@lancaster.ac.uk)
+Technical Report 2024001
+EvOpt Group (UNSW, Australia), University of Exeter (UK),
+LIACS (Universiteit Leid, The Netherlands), School of Computing
+Technologies (RMIT, Australia), and Data Science Institute and
+the Department of Management Science (Lancaster University,
+UK)
+11 December 2023
+Abstract
+This report presents the experimental setup for the GECCO’2024 com-
+petition on benchmarking niching methods on multimodal optimization.
+1
+1 Introduction
+Multimodal optimization (MMO) aims to detect all high-quality solutions to
+an optimization problem [1]. Without loss of generality, we frame this as a
+minimization problem in this document, so as such this task includes identify-
+ing all global minima (if there are more than one) and also high-quality local
+minima. MMO methods are generally formed by augmenting a global search
+method, commonly an evolutionary algorithm (EA) or swarm-based method,
+with a diversity-enhancing technique [2]. These methods aim to detect a di-
+verse set of high-quality solutions that can be helpful in the decision-making
+process [3].
+2 Test Problems
+Although high-quality local minima, as long as they are diverse, can be desired
+in many practical situations, this competition considers only problems with
+multiple global minima in which an MMO method should ideally detect all
+global minima with a predefined accuracy.
+A set of 8 tunable composite functions are set out in this study. These
+functions have been created by adapting and improving the procedure pro-
+posed in [4], and the idea of grouping MMO challenges into global optimization
+challenges and MMO-specific challenges [5, 6]. These composite functions were
+intended to address some limitations of the widely adopted CEC’2013 test prob-
+lems for MMO [7], including their limited scalability, low dimensionality, and
+limited capability to differentiate MMO methods since many of these problems
+are too easy for today’s competitive MMO methods.
+Each of our eight composite functions is employed with two different settings
+for its tunable parameters, resulting in 16 MMO problems that can be classified
+into two groups:
+ Group A: these MMO problems (PID = 1 , 2,..., 8) focus on evaluating
+the capability of an MMO method in dealing with those challenges that
+are peculiar to MMO, such as the presence of a higher number of global
+minima with non-uniform distribution.
+ Group B: these MMO problems (PID = 9 , 10,..., 16) focus on an MMO
+method’s capability in dealing with both types of challenges, which in-
+cludes challenges shared with global optimization (e.g., deceptive local
+minima, ill-conditioning, and a weak global structure [8]) and MMO-
+specific challenges.
+Table 1 presents the specification of the test problems used in this compe-
+tition. All of them should be treated as black-box problems for optimization
+purposes. They are all deterministic; however, the procedure to create them
+involves some randomness. To moderate the effect of this randomness, we cre-
+ate and store different instances of each MMO benchmark problem, denoted
+2
+Table 1: MMO test problems: problem identity (PID), the basic function used
+in the problem (see the procedure in [4]), the global minimum value ( f ∗), and
+the number of global minima NGM
+Group PID Basic Function f ∗ NGM
+A
+1 High-Conditioned Elliptic -97.8 20
+2 Different Powers 64.1 20
+3 Skewed Schwefel N02 483.1 20
+4 Rosenbrock -96.7 20
+5 Skewed Ackley -395 20
+6 Rastrigin -34.6 20
+7 Penalized Weierstrass 494 20
+8 Penalized Schwefel N26 -402.2 20
+B
+9 High-Conditioned Elliptic -97.8 10
+10 Different Powers 64.1 10
+11 Skewed Schwefel N02 483.1 10
+12 Rosenbrock -96.7 10
+13 Skewed Ackley -395 10
+14 Rastrigin -34.6 10
+15 Penalized Weierstrass 494 10
+16 Penalized Schwefel N26 -402.2 10
+by PIN = 1, 2,..., 15. 3D plots and contour lines of these test problems when
+PIN=1 are provided in the Appendix.
+3 Simulation Settings
+The participating methods should report their results on
+ 16 test problems ( PID = 1, 2,...,..., 16), as presented in Table 1,
+ 4 different problem dimensionalities: D = 2, 5, 10, 20,
+ 15 problem instances per PID and D (PIN = 1, 2,..., 15), and
+ one run for each PID, each PIN, and each D.
+The total number of optimization runs would be 16 × 15 = 960. For all
+problems:
+ Evaluation budget is⌊50, 000D⌋
+ The search space is [−5, 5]D
+Using a single CPU core, the time required for all solution evaluations is
+about 16 hours. A typical MMO solver should take about 30-40 hours to com-
+plete all simulations using one core.
+3
+4 Performance Metric
+A score is calculated for the performance of each participating method on each
+problem. This score is the average of two indicators. The first one is the
+well-known peak ratio (PR), which is defined as the fraction of global minima
+that have been detected given the target accuracy in the objective space ( ϵf =
+f(x)−f ∗). The second indicator is the F1 score:
+F1 = 2× Precision× Recall
+Precision + Recall (1)
+In the context of MMO, recall is the fraction of global minima from the existing
+global minima that have been detected by the algorithm. It is mathematically
+equal to PR. Precision is the ratio of the detected global minima to the number
+of solutions reported/provided by the algorithm [3]. The F− 1 score is cal-
+culated over the final reported/provided solutions by an algorithm, therefore,
+it is identical to the static F1 score used in CEC’2013 competition on niching
+methods for MMO [7].
+Five values forϵf are considered: ϵf = 10−1, 10−2, 10−3, 10−4, 10−5. PR and
+static F1 are calculated for each problem with respect to each value of ϵf. The
+overall score of a method is the average of all these 2× 5× 960 = 9600 numbers.
+5 Parameter Setting for the Participating Meth-
+ods
+Each MMO method has some control parameters that should be set. In this
+competition, ad-hoc parameter tuning is not allowed; however, the following
+features of the problems are assumed to be known a priori, and thus, they can
+be used for parameter setting:
+ Problem dimensionality D
+ Search space bounds
+ The evaluation budget
+ Desired tolerance for approximation of the global minimum ϵtight
+f = 10−5,
+ϵloose
+f = 10−1
+Other information such as the global minimum value, the number of existing
+global minima (NGM), PID, PIN, and random seed number may NOT be used
+for parameter tuning. This information may NOT be used by the algorithm
+for optimization either. The participant should explicitly state what informa-
+tion has been used for parameter setting. They are also encouraged (but not
+required) to elaborate on how such information was used for parameter setting.
+They should also report the total time that all 960 simulations take in their
+report.
+4
+The participants should avoid tuning the random seed number and use a
+reasonable predefined set of seed numbers, e.g., 1 , 2,..., 15 for 15 PINs of each
+PID and each D.
+6 Result Files
+For each PID, each PIN, and each D, one CSV file should be provided. The
+name of the file should be pid** pin** dim**.csv. For example, for PID=5,
+PIN=4, and D = 20, the name of the file should be pid05 pin04 dim20.csv.
+These files should be submitted in a zipped folder.
+Data in each file should be the reported solutions by the MMO method,
+i.e., those solutions deemed by the MMO method to be distinct global minima,
+where each row represents a solution. For the ith row, the firstD columns store
+the decision parameters of the ith reported solution. Column D + 1 stores the
+solution fitness calculated by the method. Columns D + 2 and D + 3 show the
+evaluation and the time (in milliseconds) at which the solution has been found,
+respectively. Columns D + 2 and D + 3 are optional. Notably, only solutions
+(columns 1, 2,...,D ) are used for the calculation of the performance indicator,
+so the participants should make sure that solutions are reported with sufficient
+precision.
+7 Using the Code
+The code of the composite functions is written in a way that it can easily be
+integrated with an MMO method. The following explains the usage of the code:
+ Step 1: The following line creates the problem object and sets the values
+for all tunable parameters of the benchmark problem based on the problem
+ID (PID), problem instance number (PIN), and problem dimensionality
+(D):
+problem=ProblemMM(PID, PIN, D)
+ Step 2: The following command creates and stores all data related to the
+problem.
+problem.form()
+ Step 3: The following command evaluates a solution
+problem.eval(x) calculates the fitness of the solution x
+The object problem has some useful attributes, such as:
+ problem.countEval, which returns the number of solution evaluations
+so far.
+ problem.maxEval returns the evaluation budget
+ problem.globMinX (only for post-processing of the results) returns the
+global minima.
+5
+References
+[1] S. Das, S. Maity, B.-Y. Qu, P. N. Suganthan, Real-parameter evolutionary
+multimodal optimization-a survey of the state-of-the-art, Swarm and Evo-
+lutionary Computation 1 (2) (2011) 71–88.
+[2] X. Li, M. G. Epitropakis, K. Deb, A. Engelbrecht, Seeking multiple solu-
+tions: an updated survey on niching methods and their applications, IEEE
+Transactions on Evolutionary Computation 21 (4) (2016) 518–538.
+[3] M. Preuss, M. Epitropakis, X. Li, J. E. Fieldsend, Multimodal optimization:
+Formulation, heuristics, and a decade of advances, Metaheuristics for finding
+multiple solutions (2021) 1–26.
+[4] B.-Y. Qu, P. N. Suganthan, Novel multimodal problems and differential evo-
+lution with ensemble of restricted tournament selection, in: IEEE Congress
+on Evolutionary Computation, IEEE, 2010, pp. 1–7.
+[5] A. Ahrari, K. Deb, A novel class of test problems for performance evaluation
+of niching methods, IEEE Transactions on Evolutionary Computation 22 (6)
+(2017) 909–919.
+[6] A. Ahrari, S. Elsayed, R. Sarker, D. Essam, C. A. C. Coello, A novel para-
+metric benchmark generator for dynamic multimodal optimization, Swarm
+and Evolutionary Computation 65 (2021) 100924.
+[7] X. Li, A. Engelbrecht, M. G. Epitropakis, Benchmark functions for
+CEC’2013 special session and competition on niching methods for multi-
+modal function optimization, Tech. rep., RMIT University (2013).
+[8] N. Hansen, S. Finck, R. Ros, A. Auger, et al., Real-parameter black-box
+optimization benchmarking 2009: noiseless functions definitions, Tech. Rep.
+RR-6829, INRIA (2009).
+Appendix
+3D plots and contour lines for 16 test problems when PIN=1. Asterisks represent
+the global minima.
+6
+Figure 1: 3D plot and contour lines for PID=1, PIN=1
+Figure 2: 3D plot and contour lines for PID=2, PIN=1
+Figure 3: 3D plot and contour lines for PID=3, PIN=1
+7
+Figure 4: 3D plot and contour lines for PID=4, PIN=1
+Figure 5: 3D plot and contour lines for PID=5, PIN=1
+Figure 6: 3D plot and contour lines for PID=6, PIN=1
+8
+Figure 7: 3D plot and contour lines for PID=7, PIN=1
+Figure 8: 3D plot and contour lines for PID=8, PIN=1
+Figure 9: 3D plot and contour lines for PID=9, PIN=1
+9
+Figure 10: 3D plot and contour lines for PID=10, PIN=1
+Figure 11: 3D plot and contour lines for PID=11, PIN=1
+Figure 12: 3D plot and contour lines for PID=12, PIN=1
+10
+Figure 13: 3D plot and contour lines for PID=13, PIN=1
+Figure 14: 3D plot and contour lines for PID=14, PIN=1
+Figure 15: 3D plot and contour lines for PID=15, PIN=1
+11
+Figure 16: 3D plot and contour lines for PID=16, PIN=1
+12
