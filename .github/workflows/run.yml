@@ -244,7 +244,8 @@ jobs:
           KNOWN = {"ndam_cmaes_2407.00939": "2407.00939"}   # Karunarathne+ 2024
           TITLES = {                                        # looked up by title
               "rrcmaes_denobel2024": "Avoiding redundant restarts in multimodal global optimization",
-              "trde_lr_wang2024": "multimodal optimization differential evolution local restart GECCO 2024 competition",
+              # title as printed in the GECCO'2024 results deck, ref [3]
+              "trde_lr_wang2024": "Tabu Restart-Based Niching Differential Evolution Algorithm with Local Refinement",
           }
 
           def arxiv_search(q):
@@ -413,7 +414,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add analysis/hm/e71/ analysis/mmo2024/e91/
+          git add analysis/hm/e71/ analysis/mmo2024/e91/ analysis/mmo2024/e92/refs/
           git commit -m "F11-F20 の公表 PR 表と GECCO 2024/2025 の新 suite を CI 経由で取り込む" \
             -m "サンドボックスの egress が arxiv.org / sites.google.com / drive.google.com を
           CONNECT 403 で塞いでいるので、egress の開いている runner で取得して置く。再最適化はしていない。"
