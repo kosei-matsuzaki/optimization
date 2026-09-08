@@ -221,18 +221,90 @@ jobs:
           if not ok:
               sys.exit("every fetch failed -- CI egress is blocked too")
           PY
-          gzip -9 analysis/hm/e71/*.txt
+          gzip -9f analysis/hm/e71/*.txt
           ls -l analysis/hm/e71/
+
+      - name: Fetch the GECCO 2024/2025 MMO suite (Ahrari+ 16 problems)
+        # The suite that GECCO 2024/2025 moved to is distributed from a Google
+        # Sites page whose Drive links the sandbox cannot reach (CONNECT 403 on
+        # sites.google.com / drive.google.com). The runner can: fetch the two
+        # competition pages, pull every Drive object they link, and commit
+        # whatever is small enough to read. No optimisation is run.
+        run: |
+          set -uo pipefail
+          pip install gdown
+          mkdir -p analysis/mmo2024/e91
+          python3 - <<'PY'
+          import pathlib, re, subprocess, json
+
+          PAGES = {
+              "gecco2024_mmo": "https://sites.google.com/view/evopt/projects/gecco2024-mmo",
+              "gecco2025_mmo": "https://gecco-2025.sigevo.org/Competition?itemId=2783",
+              "evopt_root":    "https://sites.google.com/view/evopt/home",
+          }
+          out = pathlib.Path("analysis/mmo2024/e91")
+          out.mkdir(parents=True, exist_ok=True)
+          html = {}
+          for name, url in PAGES.items():
+              r = subprocess.run(["curl", "-sSL", "--max-time", "90", url],
+                                 capture_output=True, text=True)
+              print(f"PAGE {name} rc={r.returncode} bytes={len(r.stdout)}")
+              if r.returncode == 0 and r.stdout:
+                  html[name] = r.stdout
+                  (out / f"page_{name}.html").write_text(r.stdout)
+
+          blob = "\n".join(html.values())
+          ids = set()
+          for pat in (r"drive\.google\.com/file/d/([-\w]{20,})",
+                      r"drive\.google\.com/open\?id=([-\w]{20,})",
+                      r"drive\.google\.com/uc\?[^\"']*id=([-\w]{20,})",
+                      r"drive\.google\.com/drive/folders/([-\w]{20,})",
+                      r"docs\.google\.com/[a-z]+/d/([-\w]{20,})"):
+              ids.update(re.findall(pat, blob))
+          folders = set(re.findall(r"drive\.google\.com/drive/folders/([-\w]{20,})", blob))
+          links = sorted(set(re.findall(r"https?://[^\s\"'<>\\]{10,200}", blob)))
+          (out / "links_found.txt").write_text("\n".join(links))
+          print("DRIVE-IDS", sorted(ids))
+          print("FOLDERS", sorted(folders))
+          print("LINKS", len(links))
+
+          dl = pathlib.Path("/tmp/suite"); dl.mkdir(exist_ok=True)
+          got = []
+          for i in sorted(ids):
+              cmd = (["gdown", "--folder", "-O", str(dl / i), f"https://drive.google.com/drive/folders/{i}"]
+                     if i in folders else
+                     ["gdown", "--fuzzy", "-O", str(dl / i), f"https://drive.google.com/uc?id={i}"])
+              r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+              print(f"GDOWN {i} rc={r.returncode} {r.stderr[-300:]}")
+              if r.returncode == 0:
+                  got.append(i)
+          manifest = []
+          for p in sorted(dl.rglob("*")):
+              if p.is_file():
+                  manifest.append({"path": str(p.relative_to(dl)), "bytes": p.stat().st_size})
+          (out / "manifest.json").write_text(json.dumps(manifest, indent=1))
+          print("FILES", len(manifest), "TOTAL", sum(m["bytes"] for m in manifest))
+          PY
+          # keep only what a reader can use: source, docs, archives under 8 MB
+          if [ -d /tmp/suite ]; then
+            mkdir -p analysis/mmo2024/e91/suite
+            find /tmp/suite -type f -size -8M \
+              \( -iname '*.py' -o -iname '*.m' -o -iname '*.txt' -o -iname '*.md' \
+                 -o -iname '*.json' -o -iname '*.csv' -o -iname '*.pdf' -o -iname '*.zip' \) \
+              -exec cp --parents -t analysis/mmo2024/e91/suite {} + || true
+          fi
+          find analysis/mmo2024/e91 -type f | head -50
+          du -sh analysis/mmo2024/e91 || true
 
       - name: Commit the extracted text
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add analysis/hm/e71/
-          git commit -m "F11-F20 の公表 PR 表を持つ論文のテキストを CI 経由で取り込む" \
-            -m "サンドボックスの egress が arxiv.org を CONNECT 403 で塞いでいるので、
-          egress の開いている runner で PDF を取り、テキスト化して置く。再最適化はしていない。"
+          git add analysis/hm/e71/ analysis/mmo2024/e91/
+          git commit -m "F11-F20 の公表 PR 表と GECCO 2024/2025 の新 suite を CI 経由で取り込む" \
+            -m "サンドボックスの egress が arxiv.org / sites.google.com / drive.google.com を
+          CONNECT 403 で塞いでいるので、egress の開いている runner で取得して置く。再最適化はしていない。"
           git pull --rebase origin research-loop
           git push origin HEAD:research-loop
 
