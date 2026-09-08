@@ -1,0 +1,149 @@
+########## N14-CF3-3D
+N14-CF3-3D: dim 3, box [-5.0, 5.0], K = 6
+
+== geometric (Voronoi) null, 1000000 uniform draws
+  opt 0: share 0.1824 +- 0.0008 (95% CI)
+  opt 1: share 0.1895 +- 0.0008 (95% CI)
+  opt 2: share 0.1452 +- 0.0007 (95% CI)
+  opt 3: share 0.2224 +- 0.0008 (95% CI)
+  opt 4: share 0.1828 +- 0.0008 (95% CI)
+  opt 5: share 0.0778 +- 0.0005 (95% CI)
+  counts written to analysis/hm/e88/geo_N14-CF3-3D.csv
+
+== descent null: 2000 draws, 1499 evals each, sigma0 = 2, isotropic
+  2000 descents in 43.7s
+  rows written to analysis/hm/e88/null_iso_b1499_N14-CF3-3D.csv
+  opt 0: share 0.2995 +- 0.0201  (geo 0.1824)
+  opt 1: share 0.1005 +- 0.0132  (geo 0.1895)
+  opt 2: share 0.0015 +- 0.0017  (geo 0.1452)
+  opt 3: share 0.0000 +- 0.0000  (geo 0.2224)
+  opt 4: share 0.2815 +- 0.0197  (geo 0.1828)
+  opt 5: share 0.3170 +- 0.0204  (geo 0.0778)
+  descent endpoint: median dist 0.0000, median f 0, frac f <= 0.1 0.968
+########## N15-CF4-3D
+N15-CF4-3D: dim 3, box [-5.0, 5.0], K = 8
+
+== geometric (Voronoi) null, 1000000 uniform draws
+  opt 0: share 0.1815 +- 0.0008 (95% CI)
+  opt 1: share 0.1756 +- 0.0007 (95% CI)
+  opt 2: share 0.1429 +- 0.0007 (95% CI)
+  opt 3: share 0.1830 +- 0.0008 (95% CI)
+  opt 4: share 0.1501 +- 0.0007 (95% CI)
+  opt 5: share 0.0524 +- 0.0004 (95% CI)
+  opt 6: share 0.0436 +- 0.0004 (95% CI)
+  opt 7: share 0.0708 +- 0.0005 (95% CI)
+  counts written to analysis/hm/e88/geo_N15-CF4-3D.csv
+
+== descent null: 2000 draws, 1499 evals each, sigma0 = 2, isotropic
+  2000 descents in 55.4s
+  rows written to analysis/hm/e88/null_iso_b1499_N15-CF4-3D.csv
+  opt 0: share 0.0035 +- 0.0026  (geo 0.1815)
+  opt 1: share 0.0835 +- 0.0121  (geo 0.1756)
+  opt 2: share 0.2755 +- 0.0196  (geo 0.1429)
+  opt 3: share 0.0240 +- 0.0067  (geo 0.1830)
+  opt 4: share 0.0000 +- 0.0000  (geo 0.1501)
+  opt 5: share 0.0000 +- 0.0000  (geo 0.0524)
+  opt 6: share 0.0450 +- 0.0091  (geo 0.0436)
+  opt 7: share 0.5685 +- 0.0217  (geo 0.0708)
+  descent endpoint: median dist 0.1349, median f 3.397, frac f <= 0.1 0.418
+########## N16-CF3-5D
+N16-CF3-5D: dim 5, box [-5.0, 5.0], K = 6
+
+== geometric (Voronoi) null, 1000000 uniform draws
+  opt 0: share 0.1740 +- 0.0007 (95% CI)
+  opt 1: share 0.1052 +- 0.0006 (95% CI)
+  opt 2: share 0.1327 +- 0.0007 (95% CI)
+  opt 3: share 0.2611 +- 0.0009 (95% CI)
+  opt 4: share 0.2223 +- 0.0008 (95% CI)
+  opt 5: share 0.1047 +- 0.0006 (95% CI)
+  counts written to analysis/hm/e88/geo_N16-CF3-5D.csv
+
+== descent null: 2000 draws, 1499 evals each, sigma0 = 2, isotropic
+  2000 descents in 61.7s
+  rows written to analysis/hm/e88/null_iso_b1499_N16-CF3-5D.csv
+  opt 0: share 0.2095 +- 0.0178  (geo 0.1740)
+  opt 1: share 0.2125 +- 0.0179  (geo 0.1052)
+  opt 2: share 0.0005 +- 0.0010  (geo 0.1327)
+  opt 3: share 0.0005 +- 0.0010  (geo 0.2611)
+  opt 4: share 0.1185 +- 0.0142  (geo 0.2223)
+  opt 5: share 0.4585 +- 0.0218  (geo 0.1047)
+  descent endpoint: median dist 0.0000, median f 4.561e-13, frac f <= 0.1 0.949
+########## N17-CF4-5D
+N17-CF4-5D: dim 5, box [-5.0, 5.0], K = 8
+
+== geometric (Voronoi) null, 1000000 uniform draws
+  opt 0: share 0.1639 +- 0.0007 (95% CI)
+  opt 1: share 0.0774 +- 0.0005 (95% CI)
+  opt 2: share 0.1313 +- 0.0007 (95% CI)
+  opt 3: share 0.2298 +- 0.0008 (95% CI)
+  opt 4: share 0.1823 +- 0.0008 (95% CI)
+  opt 5: share 0.0515 +- 0.0004 (95% CI)
+  opt 6: share 0.1163 +- 0.0006 (95% CI)
+  opt 7: share 0.0475 +- 0.0004 (95% CI)
+  counts written to analysis/hm/e88/geo_N17-CF4-5D.csv
+
+== descent null: 2000 draws, 1499 evals each, sigma0 = 2, isotropic
+  2000 descents in 63.6s
+  rows written to analysis/hm/e88/null_iso_b1499_N17-CF4-5D.csv
+  opt 0: share 0.0080 +- 0.0039  (geo 0.1639)
+  opt 1: share 0.0485 +- 0.0094  (geo 0.0774)
+  opt 2: share 0.1935 +- 0.0173  (geo 0.1313)
+  opt 3: share 0.2665 +- 0.0194  (geo 0.2298)
+  opt 4: share 0.0000 +- 0.0000  (geo 0.1823)
+  opt 5: share 0.0000 +- 0.0000  (geo 0.0515)
+  opt 6: share 0.0675 +- 0.0110  (geo 0.1163)
+  opt 7: share 0.4160 +- 0.0216  (geo 0.0475)
+  descent endpoint: median dist 0.0000, median f 2.786e-10, frac f <= 0.1 0.592
+########## N19-CF4-10D
+N19-CF4-10D: dim 10, box [-5.0, 5.0], K = 8
+
+== geometric (Voronoi) null, 1000000 uniform draws
+  opt 0: share 0.1093 +- 0.0006 (95% CI)
+  opt 1: share 0.0671 +- 0.0005 (95% CI)
+  opt 2: share 0.0829 +- 0.0005 (95% CI)
+  opt 3: share 0.2346 +- 0.0008 (95% CI)
+  opt 4: share 0.1883 +- 0.0008 (95% CI)
+  opt 5: share 0.1438 +- 0.0007 (95% CI)
+  opt 6: share 0.0858 +- 0.0005 (95% CI)
+  opt 7: share 0.0882 +- 0.0006 (95% CI)
+  counts written to analysis/hm/e88/geo_N19-CF4-10D.csv
+
+== descent null: 2000 draws, 1499 evals each, sigma0 = 2, isotropic
+  2000 descents in 74.9s
+  rows written to analysis/hm/e88/null_iso_b1499_N19-CF4-10D.csv
+  opt 0: share 0.0010 +- 0.0014  (geo 0.1093)
+  opt 1: share 0.0000 +- 0.0000  (geo 0.0671)
+  opt 2: share 0.0365 +- 0.0082  (geo 0.0829)
+  opt 3: share 0.0335 +- 0.0079  (geo 0.2346)
+  opt 4: share 0.0000 +- 0.0000  (geo 0.1883)
+  opt 5: share 0.0000 +- 0.0000  (geo 0.1438)
+  opt 6: share 0.2170 +- 0.0181  (geo 0.0858)
+  opt 7: share 0.7120 +- 0.0198  (geo 0.0882)
+  descent endpoint: median dist 0.0022, median f 0.01407, frac f <= 0.1 0.744
+########## N20-CF4-20D
+N20-CF4-20D: dim 20, box [-5.0, 5.0], K = 8
+
+== geometric (Voronoi) null, 1000000 uniform draws
+  opt 0: share 0.1207 +- 0.0006 (95% CI)
+  opt 1: share 0.0564 +- 0.0005 (95% CI)
+  opt 2: share 0.1050 +- 0.0006 (95% CI)
+  opt 3: share 0.2098 +- 0.0008 (95% CI)
+  opt 4: share 0.1693 +- 0.0007 (95% CI)
+  opt 5: share 0.1934 +- 0.0008 (95% CI)
+  opt 6: share 0.0363 +- 0.0004 (95% CI)
+  opt 7: share 0.1090 +- 0.0006 (95% CI)
+  counts written to analysis/hm/e88/geo_N20-CF4-20D.csv
+
+== descent null: 2000 draws, 1499 evals each, sigma0 = 2, isotropic
+  2000 descents in 101.5s
+  rows written to analysis/hm/e88/null_iso_b1499_N20-CF4-20D.csv
+  opt 0: share 0.0000 +- 0.0000  (geo 0.1207)
+  opt 1: share 0.0000 +- 0.0000  (geo 0.0564)
+  opt 2: share 0.0100 +- 0.0044  (geo 0.1050)
+  opt 3: share 0.0170 +- 0.0057  (geo 0.2098)
+  opt 4: share 0.0000 +- 0.0000  (geo 0.1693)
+  opt 5: share 0.0000 +- 0.0000  (geo 0.1934)
+  opt 6: share 0.2540 +- 0.0191  (geo 0.0363)
+  opt 7: share 0.7190 +- 0.0197  (geo 0.1090)
+  descent endpoint: median dist 0.1214, median f 7.66, frac f <= 0.1 0.000
+EXIT=0
