@@ -1,5 +1,0 @@
-seed=0 probe=90s optima_touched=[0, 1, 4, 5]
-  seed=0 gopt=0 d=0.00304 f0=0.003111 full=0 iso=0
-  seed=0 gopt=1 d=0.0109 f0=0.03748 full=0 iso=0
-  seed=0 gopt=4 d=0.0102 f0=0.0256 full=0 iso=0
-  seed=0 gopt=5 d=1.97e-07 f0=6.229e-12 full=0 iso=0

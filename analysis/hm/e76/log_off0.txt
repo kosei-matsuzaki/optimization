@@ -1,4 +1,0 @@
-N18-CF3-10D seed=0 evals=400000 hunts=252 deep(<= 0.1)=120 best_f=6.22882e-12 n_rep=246 wall=91.5s
-N18-CF3-10D seed=1 evals=400000 hunts=254 deep(<= 0.1)=123 best_f=3.11442e-12 n_rep=246 wall=91.0s
-N18-CF3-10D seed=2 evals=400000 hunts=253 deep(<= 0.1)=101 best_f=2.25159e-12 n_rep=246 wall=87.1s
-N18-CF3-10D seed=3 evals=400000 hunts=253 deep(<= 0.1)=115 best_f=1.55721e-12 n_rep=246 wall=88.5s
