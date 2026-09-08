@@ -11,6 +11,7 @@ optimization/
 ├── core/                       # 研究コア（ベンチマーク・最適化手法・実験・可視化）
 │   ├── __init__.py             # 主要クラス/関数の公開API再エクスポート（visualize除く）
 │   ├── benchmarks.py           # BBOB 24関数（ioh 経由、dim 2/3/5/10/20）+ カスタム(2D) + CEC2022(10D)
+│                               #  + CEC2013 niching(N04-N20) + GECCO'2024 MMO suite(M**、external/ を読む)
 │   ├── optimizers/             # 手法ごと1ファイル（__init__.py で全クラス再エクスポート）
 │   │   ├── base.py             # OptimizeResult, BaseOptimizer
 │   │   ├── cmaes.py            # CMA-ES（best-anchored restart）
@@ -25,6 +26,10 @@ optimization/
 ├── quick_check.py              # ローカル軽量確認スクリプト
 ├── run.sh                      # 実験管理 CLI
 ├── docs/                       # ドキュメント（本ディレクトリ）
+├── external/                   # 外部由来のベンチマーク実装（vendored、pip 依存ではない）
+│   └── mmo2024/                #  GECCO'2024/'2025 MMO suite（CC BY-SA 4.0, Ali Ahrari）
+│       ├── python_code/        #   参照実装 ProblemMM.py + data/
+│       └── docs/               #   競技仕様書 TR2024001 と 2024 の結果資料（テキスト）
 └── results/
     └── YYYYMMDD_HHMMSS_<commit>/
         ├── dim2/
@@ -253,6 +258,34 @@ BBOB がカバーしない **多大域最適解**・**deceptive 2-D 多峰** 系
 5D 以上を回しても図は出ない。`core/runner.py` の PR 採点は距離と rho だけなので次元非依存。
 
 - **N05 の探索域**は公式が x₁∈[-1.9, 1.9] / x₂∈[-1.1, 1.1] の非対称ボックス。`BenchmarkFunction.bounds` が全軸共通の 1 レンジしか持たないため x₂ を [-1.9, 1.9] に広げた。大域解 2 個は変わらず（公式帯の外では f が増えるので最大値は増えない）、距離も歪まないので rho ベースの計数は保たれるが、**探索体積が公式の 1.7 倍**なので公式 F5 の公表値とは直接比較できない。
+
+### GECCO'2024 / '2025 MMO suite（Ahrari+、16 問 × D ∈ {2,5,10,20} × PIN 1..15）
+
+**GECCO の niching 競技が CEC2013 から移った先の suite**（CEC2013 が PR 0.85 前後で飽和したため）。
+参照実装を `external/mmo2024/python_code/`（CC BY-SA 4.0, Ali Ahrari）に、仕様書と競技結果を
+`external/mmo2024/docs/` に置いてある。**`requirements.txt` の依存ではなく vendored なコード**で、
+取得経路は `.github/workflows/run.yml` の `mode: fetch_refs`（配布元の Google Drive はサンドボックスから
+到達できない）。到達水準は [related_work.md](related_work.md)、測定は
+[acceptance_topology.md のその91 の節](acceptance_topology.md#gecco20242025-の新-suite-が入った--仕様の-3-点は確定d10-のクラス上限は-16-問中-15-問で公表最良の下m13-だけが上その91-analysismmo2024e91-externalmmo2024)。
+
+| 項目 | 値 |
+|---|---|
+| 問題 | PID 1-16（群 A = 1-8 は MMO 固有の難しさ、群 B = 9-16 は大域最適化の難しさも載せる） |
+| 大域解数 K | 群 A は **20**、群 B は **10** |
+| 次元 | D ∈ {2, 5, 10, 20}（**全問 fully scalable**） |
+| instance | PIN = 1..15（1 組 1 run。競技は 16 × 4 × 15 = 960 run） |
+| 探索域 | [−5, 5]^D |
+| 予算 | **`floor(50000 × D)`**（D=10 で 50 万） |
+| 公表指標 | PR と static F1 を ε_f = 1e-1..1e-5 の **5 水準**で出し、その平均（**MPR** は PR 側の 5 水準平均） |
+
+**呼び方**: `core.benchmarks.niching_by_name("M13-D10-PIN01")` ＝ `M{PID:02d}-D{dim:02d}-PIN{pin:02d}`。
+**960 問を事前構築せず名前から都度作る**（`make_mmo2024(pid, dim, pin)`）。CEC2013 の名前も同じ関数で引ける。
+`scripts/hunt_coverage.py` は `NICHING_BENCHMARKS_BY_NAME` ではなくこの関数を使うので、`--null` は
+そのままこの suite に当たる。**元コードは f\* が非ゼロの最小化**なので wrapper が f\* を引いて
+本リポジトリの「最適値 0」規約に合わせている。**`data/*.csv` を相対パスで読む**ため
+`__init__` と `form()` だけ `contextlib.chdir` で包んである（`func_eval` はファイルを触らない）。
+
+**判定の主対象ではない。** [CLAUDE.md](../CLAUDE.md) の評価基準（BBOB-24 dim2 / quick n=20）は変わらない。
 
 ### CEC2022（hold-out）
 

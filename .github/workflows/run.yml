@@ -230,6 +230,8 @@ jobs:
         # sites.google.com / drive.google.com). The runner can: fetch the two
         # competition pages, pull every Drive object they link, and commit
         # whatever is small enough to read. No optimisation is run.
+        # already vendored by entry 91 -- re-fetch only if it is gone
+        if: hashFiles('external/mmo2024/python_code/ProblemMM.py') == ''
         run: |
           set -uo pipefail
           pip install gdown

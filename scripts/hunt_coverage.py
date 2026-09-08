@@ -154,9 +154,9 @@ _DIAGNOSTIC_ARMS: dict = _diagnostic_arms()
 def _run_one(args_tuple):
     name, method, seed, budget, eps_list = args_tuple
     import time
-    from core.benchmarks import NICHING_BENCHMARKS_BY_NAME
+    from core.benchmarks import niching_by_name
     from scripts.niching_baseline import _METHODS
-    b = NICHING_BENCHMARKS_BY_NAME[name]
+    b = niching_by_name(name)
     cls, kw = dict(_METHODS, **_DIAGNOSTIC_ARMS)[method]
     t0 = time.time()
     r = cls(b, seed=seed, **kw).optimize(budget)
@@ -183,8 +183,8 @@ def run_mode(argv: list[str]) -> None:
     a = ap.parse_args(argv)
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from core.benchmarks import NICHING_BENCHMARKS_BY_NAME
-    b = NICHING_BENCHMARKS_BY_NAME[a.func]
+    from core.benchmarks import niching_by_name
+    b = niching_by_name(a.func)
     opts = true_optima(b)          # e87: any registered niching function
     assert len(opts) == b.n_global_optima, (len(opts), b.n_global_optima)
     width = basin_width(opts)
@@ -228,8 +228,8 @@ def _null_descent(args_tuple):
     """
     name, k, budget, sigma0, iso = args_tuple
     import cma
-    from core.benchmarks import NICHING_BENCHMARKS_BY_NAME
-    b = NICHING_BENCHMARKS_BY_NAME[name]
+    from core.benchmarks import niching_by_name
+    b = niching_by_name(name)
     opts = true_optima(b)
     lo, hi = b.bounds
     rng = np.random.default_rng(1_000_000 + k)
@@ -278,8 +278,8 @@ def null_mode(argv: list[str]) -> None:
     a = ap.parse_args(argv)
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from core.benchmarks import NICHING_BENCHMARKS_BY_NAME
-    b = NICHING_BENCHMARKS_BY_NAME[a.func]
+    from core.benchmarks import niching_by_name
+    b = niching_by_name(a.func)
     opts = true_optima(b)
     K = len(opts)
     lo, hi = b.bounds

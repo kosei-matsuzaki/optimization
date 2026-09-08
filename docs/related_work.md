@@ -39,6 +39,9 @@ DE 系の最近の総説は [Advancements in Multimodal Differential Evolution](
 
 GECCO'17 niching 競技（CEC2013 ベース）の上位は RS-CMSA が平均 PR **0.856**、RLSIS 0.822、NEA2+ 0.810。[HillVallEA](https://arxiv.org/pdf/1907.10988)（AMaLGaM-Univariate 核）は 0.847 で僅差 2 位相当。その後 RS-CMSA-ESII が過年度優勝手法を上回ると報告している。つまり **CEC2013 は上位手法が PR 0.85 前後で飽和**しており、新 suite（GECCO 2024）はこの飽和を解消するために作られた。
 
+**新 suite の到達水準（2026-09-08 に取得した競技結果、`external/mmo2024/docs/gecco2024_results_deck.txt`）。**
+MPR（5 水準 1e-1..1e-5 の平均 PR）を D 別に見ると **D=2 で 0.984（TRDE-LR）、D=5 で 0.844、D=10 で 0.651、D=20 で 0.476（いずれも 3 手法中の最良）** ＝ **飽和解消は効いており、次元が上がるほど headroom が残る。** 総合 Score（PR と static F1 の平均）は TRDE-LR 0.703 / RR-CMA-ES 0.653 / N-DAM-CMA-ES 0.057。**問題ごとの値はこの資料には無い**（上記「未読・未確認」）。
+
 参考として、[Cano+ 2022 "Out of the Niche"](https://www.mdpi.com/2227-7390/10/9/1494)（Mathematics）は multistart 直接探索で複数大域解を狙う路線を示している。本プロジェクトの NM-Restart 下限ベースライン（[baselines.md](baselines.md)）と同じ発想で、低次元では強い比較相手になる。
 
 ### CEC2013 の合成関数 F11-F20（対象集合を広げる案 (A) の実額。その70 で実測）
@@ -202,6 +205,7 @@ suite の仕様は下表（**公式表 = 参照実装 `mikeagn/CEC2013` の `get
 ## 未読・未確認
 
 - CEC2013 tech report 原本（PDF のテキスト抽出に失敗）。関数の式・f_goptima・rho・大域解数・MaxFEs は参照実装 `github.com/mikeagn/CEC2013` の MATLAB ソースから取って実装済みなので、残るのは本文の記述（問題の設計意図・推奨実験手順）のみ
-- GECCO 2024/2025 suite の仕様書と Python 実装（[配布ページ](https://sites.google.com/view/evopt/projects/gecco2024-mmo) の Google Drive 内）
+- ~~GECCO 2024/2025 suite の仕様書と Python 実装~~ → **2026-09-08（その91）に取得済み**。実装は `external/mmo2024/python_code/`（CC BY-SA 4.0, Ali Ahrari）、仕様書と競技結果は `external/mmo2024/docs/`。**予算 `floor(50000×D)`・探索域 [−5,5]^D・D ∈ {2,5,10,20}・PIN 1..15・K は PID 1-8 が 20 / PID 9-16 が 10。公表 PR は 1e-5 単独ではなく 5 水準（1e-1..1e-5）の平均（MPR）で、Score は PR と static F1 の平均。** 数値と読み方は [acceptance_topology.md のその91 の節](acceptance_topology.md#gecco20242025-の新-suite-が入った--仕様の-3-点は確定d10-のクラス上限は-16-問中-15-問で公表最良の下m13-だけが上その91-analysismmo2024e91-externalmmo2024)
+- **GECCO'2024 競技の参加 3 手法の論文**（問題ごとの公表値がこれらにしか無い。競技の結果資料は D 別の平均しか載せない）: RR-CMA-ES = de Nobel+ 2024 *Avoiding redundant restarts in multimodal global optimization*、TRDE-LR = Wang+ 2024、N-DAM-CMA-ES = Karunarathne+ 2024（[arXiv 2407.00939](https://arxiv.org/pdf/2407.00939)）
 - RS-CMSA-ESII 本文（taboo 距離の適応則）、HillVallEA の core search 選択則
 - Robust Peak Ratio の定義

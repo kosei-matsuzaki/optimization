@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable
+import re
 import numpy as np
 import ioh
 
@@ -715,6 +716,74 @@ NICHING_BENCHMARKS: list[BenchmarkFunction] = (
 NICHING_BENCHMARKS_BY_NAME: dict[str, BenchmarkFunction] = {
     b.name: b for b in NICHING_BENCHMARKS
 }
+
+
+# ── GECCO'2024 / '2025 MMO suite (Ahrari+, 16 tunable composite problems) ────
+# The suite GECCO moved to after CEC2013 saturated (docs/related_work.md). The
+# reference implementation is vendored under external/mmo2024/python_code
+# (CC BY-SA 4.0, Ali Ahrari); its spec is external/mmo2024/docs/.
+#
+# Three things about it differ from the CEC2013 wrappers above and are load-
+# bearing when comparing with published values (docs/acceptance_topology.md):
+#   * it MINIMISES to a nonzero f*, so the wrapper subtracts f* to keep this
+#     module's "optimum = 0, smaller is better" convention;
+#   * the budget is floor(50000 * D), not a per-function constant;
+#   * a problem is (PID, D, PIN): 16 x 4 x 15, one run each. K is 20 for
+#     PID 1-8 (group A) and 10 for PID 9-16 (group B).
+# Built on demand rather than eagerly: 16*4*15 = 960 problems, each of which
+# reads a 6 MB table in .form().
+_MMO2024_SRC = "external/mmo2024/python_code"
+
+
+def make_mmo2024(pid: int, dim: int, pin: int = 1) -> BenchmarkFunction:
+    """One problem of the GECCO'2024 suite, as a BenchmarkFunction."""
+    import contextlib
+    import sys
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parents[1] / _MMO2024_SRC
+    if str(src) not in sys.path:
+        sys.path.insert(0, str(src))
+    from ProblemMM import ProblemMM               # vendored, not a dependency
+
+    # The vendored loader reads its tables through relative paths ("data/...")
+    # in __init__ and form(), so both have to run with src as the cwd. Nothing
+    # else in the class touches the filesystem, so func_eval is safe anywhere
+    # (checked: the five np.loadtxt calls are all in those two methods).
+    with contextlib.chdir(src):                   # contextlib.chdir: Python 3.11+
+        prob = ProblemMM(pid, pin, dim)
+        prob.form()
+    opts = np.asarray(prob.globMinX, dtype=float)
+    f_star = float(np.asarray(prob.func_eval(opts)).ravel().min())
+
+    def func(x: np.ndarray, _p=prob, _f=f_star) -> float:
+        v = _p.func_eval(np.atleast_2d(np.asarray(x, dtype=float)))
+        return float(np.asarray(v).ravel()[0]) - _f
+
+    return BenchmarkFunction(
+        name=mmo2024_name(pid, dim, pin), func=func,
+        bounds=(float(prob.lowBound), float(prob.upBound)), optimum=0.0,
+        category="multi-optima", dim=dim, tags=list(_NICHING_IOH_TAGS),
+        n_global_optima=int(opts.shape[0]), suite_max_evals=int(prob.maxEval),
+        optima_pos=[list(o) for o in opts],
+    )
+
+
+def mmo2024_name(pid: int, dim: int, pin: int = 1) -> str:
+    return f"M{pid:02d}-D{dim:02d}-PIN{pin:02d}"
+
+
+_MMO2024_RE = re.compile(r"^M(\d{2})-D(\d{2})-PIN(\d{2})$")
+
+
+def niching_by_name(name: str) -> BenchmarkFunction:
+    """CEC2013 niching benchmark, or a GECCO'2024 problem built on demand."""
+    if name in NICHING_BENCHMARKS_BY_NAME:
+        return NICHING_BENCHMARKS_BY_NAME[name]
+    m = _MMO2024_RE.match(name)
+    if m:
+        return make_mmo2024(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    raise KeyError(name)
 
 
 def make_benchmark_by_name(name: str, dim: int) -> BenchmarkFunction:
