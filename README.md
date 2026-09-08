@@ -18,6 +18,7 @@
 | **[docs/related_work.md](docs/related_work.md)** | 多峰（niching）分野の関連研究 — 標準ベンチマーク・指標・SOTA と MC-ESO 各機構の先行例 |
 | **[docs/history.md](docs/history.md)** | これまで試した工夫・フラグ・ablation 記録（採用 / 不採用とその理由） |
 | **[docs/web.md](docs/web.md)** | Results UI（Flask アプリの構成・アーキテクチャ・ルート / API） |
+| **[docs/report.html](docs/report.html)** | 非専門家向けの現況レポート（予備知識なしで読める説明。Artifact として公開） |
 
 ---
 

@@ -1,0 +1,637 @@
+<title>盆地を掘る、盆地を探す</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F6F7F6; --surface:#FFFFFF; --sunk:#EEF1F0;
+  --ink:#14201E; --ink-2:#3B4A47; --muted:#5C6C68; --faint:#8496921a;
+  --rule:#DDE3E1; --rule-strong:#C6CFCC;
+  --s1:#12876A; --s2:#B4531B; --s3:#3F51A8;
+  --s1-soft:#12876a1f; --ref:#7B8A86;
+  --measure:41rem; --wide:56rem;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1413; --surface:#171F1D; --sunk:#121A18;
+    --ink:#E7EDEA; --ink-2:#BDC8C5; --muted:#93A29E; --faint:#93a29e1f;
+    --rule:#27312E; --rule-strong:#3A4642;
+    --s1:#22A186; --s2:#D07235; --s3:#7484D4;
+    --s1-soft:#22a18626; --ref:#8C9A96;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1413; --surface:#171F1D; --sunk:#121A18;
+  --ink:#E7EDEA; --ink-2:#BDC8C5; --muted:#93A29E; --faint:#93a29e1f;
+  --rule:#27312E; --rule-strong:#3A4642;
+  --s1:#22A186; --s2:#D07235; --s3:#7484D4;
+  --s1-soft:#22a18626; --ref:#8C9A96;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",system-ui,sans-serif;
+  font-size:16px; line-height:1.95; margin:0;
+  -webkit-font-smoothing:antialiased; font-feature-settings:"palt" 1;
+}
+.wrap{max-width:var(--wide); margin:0 auto; padding:0 1.5rem 6rem}
+.col{max-width:var(--measure); margin-inline:auto}
+
+/* ---------- masthead ---------- */
+.mast{max-width:var(--wide); margin:0 auto; padding:4.5rem 1.5rem 0}
+.kicker{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.7rem; font-weight:500;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin:0 0 1.4rem
+}
+h1{
+  font-family:"Zen Old Mincho",serif; font-weight:600; font-size:clamp(2.1rem,5.6vw,3.35rem);
+  line-height:1.28; letter-spacing:.01em; margin:0 0 1.1rem; text-wrap:balance;
+}
+.standfirst{
+  font-size:1.06rem; color:var(--ink-2); max-width:38rem; margin:0 0 2rem; line-height:1.9;
+}
+.byline{
+  display:flex; flex-wrap:wrap; gap:.5rem 1.6rem; padding:1rem 0 0; border-top:1px solid var(--rule);
+  font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--muted); letter-spacing:.04em;
+}
+.mast{margin-bottom:4rem}
+
+/* ---------- sections ---------- */
+section{margin:0 0 4.5rem}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace; font-size:.7rem; font-weight:500; letter-spacing:.14em;
+  color:var(--s1); margin:0 0 .5rem; text-transform:uppercase;
+}
+h2{
+  font-family:"Zen Old Mincho",serif; font-weight:600; font-size:1.6rem; line-height:1.5;
+  margin:0 0 1.4rem; text-wrap:balance; letter-spacing:.01em;
+}
+h3{
+  font-family:"Zen Kaku Gothic New",sans-serif; font-weight:700; font-size:1rem;
+  margin:2.4rem 0 .7rem; letter-spacing:.02em;
+}
+p{margin:0 0 1.3rem}
+strong{font-weight:700}
+.lead{font-size:1.02rem}
+em.term{
+  font-style:normal; font-weight:500; border-bottom:2px solid var(--s1-soft);
+  padding-bottom:.05em; box-decoration-break:clone;
+}
+.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:.94em}
+
+/* ---------- figure ---------- */
+figure{margin:2.6rem 0; max-width:var(--wide)}
+figure.bleed{margin-inline:calc(50% - min(var(--wide),100%)/2); }
+.figbox{
+  background:var(--surface); border:1px solid var(--rule); border-radius:3px;
+  padding:1.5rem 1.25rem 1.1rem; overflow-x:auto;
+}
+figcaption{
+  font-size:.82rem; color:var(--muted); line-height:1.8; margin-top:.85rem; max-width:44rem;
+}
+figcaption b{color:var(--ink-2); font-weight:700}
+svg{display:block; max-width:100%; height:auto}
+.fig-title{
+  font-family:"Zen Kaku Gothic New",sans-serif; font-weight:700; font-size:.92rem;
+  margin:0 0 .2rem;
+}
+.fig-sub{font-family:"IBM Plex Mono",monospace; font-size:.7rem; color:var(--muted); margin:0 0 1.1rem; letter-spacing:.03em}
+
+/* ---------- legend ---------- */
+.legend{display:flex; flex-wrap:wrap; gap:.4rem 1.3rem; margin:0 0 1rem; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-size:.78rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:50%; flex:none}
+.swatch.rule-mark{width:2px; height:13px; border-radius:0; background:var(--ref)}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow-x:auto; margin:1.8rem 0 .6rem}
+table{border-collapse:collapse; width:100%; font-size:.85rem}
+th,td{text-align:right; padding:.5rem .7rem; border-bottom:1px solid var(--rule); white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{
+  font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:.7rem; letter-spacing:.06em;
+  color:var(--muted); text-transform:uppercase; border-bottom:1px solid var(--rule-strong);
+}
+tbody td{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; color:var(--ink-2)}
+tbody th{font-weight:500; font-size:.85rem; color:var(--ink)}
+tr.hi td,tr.hi th{background:var(--s1-soft); color:var(--ink)}
+tr.hi th{font-weight:700}
+td.win{color:var(--s1); font-weight:600}
+
+/* ---------- callouts ---------- */
+.split{display:grid; gap:1.1rem; grid-template-columns:1fr; margin:2rem 0}
+@media(min-width:44rem){.split{grid-template-columns:1fr 1fr}}
+.pane{border:1px solid var(--rule); border-radius:3px; padding:1.15rem 1.25rem; background:var(--surface)}
+.pane h4{
+  font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.12em; text-transform:uppercase;
+  margin:0 0 .8rem; font-weight:600;
+}
+.pane.can h4{color:var(--s1)}
+.pane.cant h4{color:var(--s2)}
+.pane ul{margin:0; padding-left:1.05rem}
+.pane li{margin-bottom:.6rem; font-size:.9rem; line-height:1.8}
+.pane li:last-child{margin-bottom:0}
+
+.note{
+  border-left:2px solid var(--rule-strong); padding:.15rem 0 .15rem 1.15rem;
+  color:var(--ink-2); font-size:.9rem; margin:1.8rem 0;
+}
+.note b{color:var(--ink)}
+
+/* ---------- flow (a real sequence) ---------- */
+ol.flow{counter-reset:step; list-style:none; padding:0; margin:1.8rem 0}
+ol.flow li{
+  counter-increment:step; position:relative; padding:0 0 1.25rem 2.6rem; margin:0;
+  border-left:1px solid var(--rule);
+}
+ol.flow li:last-child{border-left-color:transparent; padding-bottom:0}
+ol.flow li::before{
+  content:counter(step); position:absolute; left:-.72rem; top:.15rem;
+  width:1.45rem; height:1.45rem; border-radius:50%;
+  background:var(--surface); border:1px solid var(--rule-strong); color:var(--muted);
+  font-family:"IBM Plex Mono",monospace; font-size:.68rem; font-weight:600;
+  display:grid; place-items:center;
+}
+ol.flow b{display:block; margin-bottom:.15rem}
+ol.flow p{margin:0; font-size:.92rem; color:var(--ink-2)}
+
+/* ---------- tooltip ---------- */
+#tip{
+  position:fixed; pointer-events:none; opacity:0; transition:opacity .12s;
+  background:var(--ink); color:var(--ground); font-family:"IBM Plex Mono",monospace;
+  font-size:.7rem; line-height:1.6; padding:.4rem .55rem; border-radius:3px; z-index:9; white-space:pre;
+}
+.hit{cursor:crosshair}
+.hit:focus-visible{outline:2px solid var(--s1); outline-offset:2px}
+
+footer{border-top:1px solid var(--rule); padding-top:1.6rem; color:var(--muted); font-size:.8rem}
+footer a{color:var(--s1)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="mast">
+  <p class="kicker">研究の現況 ／ 2026-09-08</p>
+  <h1>盆地を掘る、盆地を探す</h1>
+  <p class="standfirst">
+    地形の底を「深く掘る」力と「たくさん見つける」力は、同じつまみの両端にある ——
+    最適化手法 MC-ESO の 90 回の実験サイクルが示したのは、性能の勝利ではなく、その交換則の正体だった。
+  </p>
+  <div class="byline">
+    <span>対象 ／ MC-ESO ＋ 既存 6 手法</span>
+    <span>ベンチマーク ／ BBOB-24 ・ CEC2013 niching</span>
+    <span>この分野の予備知識は要りません</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section class="col">
+  <p class="eyebrow">何を解こうとしているのか</p>
+  <h2>霧の中で、地形のいちばん低い場所を探す</h2>
+  <p class="lead">
+    ここで扱う「最適化」は、こういう状況だと思ってください。あなたは霧の濃い山岳地帯にいて、
+    <strong>高度計だけ</strong>を持っている。地図は無い。ある地点に立てば標高は分かるが、
+    少し離れた場所がどうなっているかは、そこまで歩いて測るまで分からない。
+    目的は、この地形のいちばん低い場所を見つけること。そして<strong>歩ける回数には上限がある</strong>。
+  </p>
+  <p>
+    これを <em class="term">ブラックボックス最適化</em>と呼びます。「ブラックボックス」とは、
+    関数の中身（数式の形）を使わせてもらえず、点を入れたら値が返ってくることだけが許されている、という意味です。
+    歩数の上限が <em class="term">評価回数</em>で、この研究では 1 回の試行につき 5,000 回から 400,000 回を与えます。
+  </p>
+
+  <h3>ここからが本題 —— 底が 1 つとは限らない</h3>
+  <p>
+    地形によっては、<strong>まったく同じ深さの底がいくつもある</strong>。
+    どれか 1 つを見つければ十分な問題もありますが、実務では
+    「同じ性能を出す設計案を複数ほしい」（1 つが製造上の都合で没になっても代替がある）という要求が普通にあります。
+    そこで問題はこう変わります —— <strong>限られた歩数で、同じ深さの底をできるだけ多く見つけよ。</strong>
+  </p>
+  <p>
+    下の図は、この研究が実際に使っているベンチマーク関数の 1 つ（Vincent 関数）を 1 次元に切った断面です。
+    谷底はすべて<strong>まったく同じ深さ</strong>で、どれも「正解」。
+    ただし<strong>谷の幅が場所によって大きく違う</strong>ところが厄介で、
+    でたらめに点を打つと、幅の広い谷にばかり落ちて、狭い谷は取りこぼします。
+  </p>
+</section>
+
+<figure class="bleed">
+  <div class="figbox">
+    <p class="fig-title">同じ深さの谷が、幅を変えながら並ぶ</p>
+    <p class="fig-sub">Vincent 関数 f(x) = −sin(10 log x) の 1 次元断面, x ∈ [0.25, 10]</p>
+    <svg viewBox="0 0 860 230" role="img" aria-label="Vincent 関数の断面。同じ深さの谷が 4 つあり、右に行くほど谷の幅が広い。">
+      <line x1="46" y1="186" x2="814" y2="186" stroke="var(--rule)" stroke-width="1" stroke-dasharray="3 4"/>
+      <text x="46" y="204" font-family="IBM Plex Mono,monospace" font-size="10" fill="var(--muted)">最小値（すべて同じ深さ ＝ すべて正解）</text>
+      <polyline points="46.0,29.0 47.4,59.3 48.7,106.6 50.1,151.2 51.5,179.4 52.9,185.4 54.2,170.9 55.6,142.0 57.0,106.8 58.3,72.8 59.7,46.1 61.1,30.1 62.5,26.2 63.8,33.5 65.2,50.1 66.6,72.8 67.9,98.6 69.3,124.4 70.7,147.5 72.1,166.1 73.4,178.9 74.8,185.2 76.2,185.2 77.5,179.3 78.9,168.4 80.3,153.6 81.7,136.2 83.0,117.3 84.4,98.3 85.8,80.1 87.1,63.6 88.5,49.7 89.9,38.7 91.3,31.1 92.6,26.9 94.0,26.1 95.4,28.6 96.7,34.1 98.1,42.1 99.5,52.3 100.9,64.1 102.2,77.2 103.6,90.9 105.0,104.9 106.3,118.7 107.7,131.9 109.1,144.1 110.5,155.1 111.8,164.6 113.2,172.5 114.6,178.6 115.9,182.9 117.3,185.4 118.7,186.0 120.1,184.8 121.4,182.1 122.8,177.7 124.2,172.0 125.5,165.1 126.9,157.2 128.3,148.4 129.7,139.0 131.0,129.2 132.4,119.0 133.8,108.8 135.1,98.7 136.5,88.8 137.9,79.3 139.3,70.3 140.6,61.9 142.0,54.3 143.4,47.5 144.7,41.5 146.1,36.5 147.5,32.5 148.9,29.4 150.2,27.3 151.6,26.2 153.0,26.1 154.3,26.8 155.7,28.5 157.1,31.1 158.5,34.4 159.8,38.4 161.2,43.2 162.6,48.5 163.9,54.3 165.3,60.6 166.7,67.3 168.1,74.3 169.4,81.5 170.8,88.8 172.2,96.3 173.5,103.8 174.9,111.2 176.3,118.5 177.7,125.6 179.0,132.5 180.4,139.1 181.8,145.5 183.1,151.4 184.5,157.0 185.9,162.1 187.3,166.8 188.6,170.9 190.0,174.6 191.4,177.8 192.7,180.5 194.1,182.6 195.5,184.2 196.9,185.3 198.2,185.9 199.6,186.0 201.0,185.5 202.3,184.6 203.7,183.2 205.1,181.4 206.5,179.1 207.8,176.4 209.2,173.4 210.6,170.0 211.9,166.2 213.3,162.2 214.7,157.9 216.1,153.3 217.4,148.6 218.8,143.6 220.2,138.5 221.5,133.3 222.9,128.0 224.3,122.6 225.7,117.1 227.0,111.7 228.4,106.2 229.8,100.8 231.1,95.5 232.5,90.2 233.9,85.0 235.3,80.0 236.6,75.1 238.0,70.4 239.4,65.8 240.7,61.5 242.1,57.3 243.5,53.4 244.9,49.7 246.2,46.3 247.6,43.1 249.0,40.2 250.3,37.5 251.7,35.1 253.1,33.0 254.5,31.2 255.8,29.6 257.2,28.3 258.6,27.3 259.9,26.6 261.3,26.2 262.7,26.0 264.1,26.1 265.4,26.5 266.8,27.1 268.2,28.0 269.5,29.1 270.9,30.5 272.3,32.1 273.7,33.9 275.0,35.9 276.4,38.1 277.8,40.5 279.1,43.1 280.5,45.9 281.9,48.8 283.3,51.9 284.6,55.1 286.0,58.4 287.4,61.9 288.7,65.5 290.1,69.1 291.5,72.8 292.9,76.6 294.2,80.5 295.6,84.4 297.0,88.3 298.3,92.3 299.7,96.3 301.1,100.2 302.5,104.2 303.8,108.2 305.2,112.1 306.6,116.0 307.9,119.9 309.3,123.7 310.7,127.5 312.1,131.1 313.4,134.7 314.8,138.3 316.2,141.7 317.5,145.0 318.9,148.3 320.3,151.4 321.7,154.4 323.0,157.3 324.4,160.1 325.8,162.7 327.1,165.3 328.5,167.6 329.9,169.9 331.3,172.0 332.6,173.9 334.0,175.8 335.4,177.4 336.7,179.0 338.1,180.3 339.5,181.6 340.9,182.6 342.2,183.6 343.6,184.3 345.0,185.0 346.3,185.4 347.7,185.8 349.1,186.0 350.5,186.0 351.8,185.9 353.2,185.6 354.6,185.3 355.9,184.7 357.3,184.1 358.7,183.3 360.1,182.4 361.4,181.4 362.8,180.2 364.2,178.9 365.5,177.5 366.9,176.0 368.3,174.4 369.7,172.7 371.0,170.9 372.4,169.0 373.8,167.0 375.1,164.9 376.5,162.7 377.9,160.5 379.3,158.1 380.6,155.8 382.0,153.3 383.4,150.8 384.7,148.2 386.1,145.6 387.5,142.9 388.9,140.2 390.2,137.4 391.6,134.6 393.0,131.8 394.3,129.0 395.7,126.1 397.1,123.2 398.5,120.3 399.8,117.4 401.2,114.5 402.6,111.6 403.9,108.7 405.3,105.8 406.7,102.9 408.1,100.0 409.4,97.2 410.8,94.4 412.2,91.5 413.5,88.8 414.9,86.0 416.3,83.3 417.7,80.6 419.0,78.0 420.4,75.4 421.8,72.8 423.1,70.3 424.5,67.9 425.9,65.5 427.3,63.2 428.6,60.9 430.0,58.7 431.4,56.5 432.7,54.4 434.1,52.4 435.5,50.4 436.9,48.5 438.2,46.7 439.6,44.9 441.0,43.3 442.3,41.7 443.7,40.1 445.1,38.7 446.5,37.3 447.8,36.0 449.2,34.8 450.6,33.6 451.9,32.6 453.3,31.6 454.7,30.7 456.1,29.9 457.4,29.1 458.8,28.5 460.2,27.9 461.5,27.4 462.9,26.9 464.3,26.6 465.7,26.3 467.0,26.1 468.4,26.0 469.8,26.0 471.1,26.0 472.5,26.2 473.9,26.4 475.3,26.6 476.6,27.0 478.0,27.4 479.4,27.9 480.7,28.4 482.1,29.0 483.5,29.7 484.9,30.5 486.2,31.3 487.6,32.2 489.0,33.2 490.3,34.2 491.7,35.2 493.1,36.4 494.5,37.5 495.8,38.8 497.2,40.1 498.6,41.4 499.9,42.8 501.3,44.3 502.7,45.8 504.1,47.3 505.4,48.9 506.8,50.5 508.2,52.2 509.5,53.9 510.9,55.6 512.3,57.4 513.7,59.2 515.0,61.0 516.4,62.9 517.8,64.8 519.1,66.7 520.5,68.7 521.9,70.7 523.3,72.7 524.6,74.7 526.0,76.7 527.4,78.8 528.7,80.8 530.1,82.9 531.5,85.0 532.9,87.1 534.2,89.2 535.6,91.3 537.0,93.4 538.3,95.6 539.7,97.7 541.1,99.8 542.5,101.9 543.8,104.1 545.2,106.2 546.6,108.3 547.9,110.4 549.3,112.5 550.7,114.6 552.1,116.6 553.4,118.7 554.8,120.8 556.2,122.8 557.5,124.8 558.9,126.8 560.3,128.8 561.7,130.7 563.0,132.7 564.4,134.6 565.8,136.5 567.1,138.4 568.5,140.2 569.9,142.0 571.3,143.8 572.6,145.6 574.0,147.3 575.4,149.0 576.7,150.7 578.1,152.3 579.5,153.9 580.9,155.5 582.2,157.0 583.6,158.5 585.0,160.0 586.3,161.4 587.7,162.8 589.1,164.2 590.5,165.5 591.8,166.8 593.2,168.0 594.6,169.2 595.9,170.4 597.3,171.5 598.7,172.6 600.1,173.6 601.4,174.6 602.8,175.6 604.2,176.5 605.5,177.4 606.9,178.2 608.3,179.0 609.7,179.8 611.0,180.5 612.4,181.1 613.8,181.7 615.1,182.3 616.5,182.9 617.9,183.4 619.3,183.8 620.6,184.2 622.0,184.6 623.4,184.9 624.7,185.2 626.1,185.4 627.5,185.6 628.9,185.8 630.2,185.9 631.6,186.0 633.0,186.0 634.3,186.0 635.7,185.9 637.1,185.8 638.5,185.7 639.8,185.5 641.2,185.3 642.6,185.1 643.9,184.8 645.3,184.5 646.7,184.1 648.1,183.7 649.4,183.3 650.8,182.8 652.2,182.3 653.5,181.7 654.9,181.2 656.3,180.5 657.7,179.9 659.0,179.2 660.4,178.5 661.8,177.8 663.1,177.0 664.5,176.2 665.9,175.3 667.3,174.5 668.6,173.6 670.0,172.6 671.4,171.7 672.7,170.7 674.1,169.7 675.5,168.6 676.9,167.6 678.2,166.5 679.6,165.4 681.0,164.2 682.3,163.1 683.7,161.9 685.1,160.7 686.5,159.5 687.8,158.2 689.2,156.9 690.6,155.7 691.9,154.3 693.3,153.0 694.7,151.7 696.1,150.3 697.4,149.0 698.8,147.6 700.2,146.2 701.5,144.8 702.9,143.3 704.3,141.9 705.7,140.4 707.0,139.0 708.4,137.5 709.8,136.0 711.1,134.5 712.5,133.0 713.9,131.5 715.3,130.0 716.6,128.5 718.0,126.9 719.4,125.4 720.7,123.9 722.1,122.3 723.5,120.8 724.9,119.2 726.2,117.7 727.6,116.1 729.0,114.6 730.3,113.0 731.7,111.5 733.1,109.9 734.5,108.4 735.8,106.8 737.2,105.3 738.6,103.8 739.9,102.2 741.3,100.7 742.7,99.2 744.1,97.6 745.4,96.1 746.8,94.6 748.2,93.1 749.5,91.6 750.9,90.1 752.3,88.6 753.7,87.2 755.0,85.7 756.4,84.3 757.8,82.8 759.1,81.4 760.5,80.0 761.9,78.6 763.3,77.2 764.6,75.8 766.0,74.4 767.4,73.1 768.7,71.7 770.1,70.4 771.5,69.1 772.9,67.8 774.2,66.5 775.6,65.2 777.0,64.0 778.3,62.7 779.7,61.5 781.1,60.3 782.5,59.1 783.8,58.0 785.2,56.8 786.6,55.7 787.9,54.6 789.3,53.5 790.7,52.4 792.1,51.3 793.4,50.3 794.8,49.3 796.2,48.3 797.5,47.3 798.9,46.4 800.3,45.4 801.7,44.5 803.0,43.6 804.4,42.7 805.8,41.9 807.1,41.1 808.5,40.2 809.9,39.5 811.3,38.7 812.6,37.9 814.0,37.2" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"/>
+      <g fill="var(--s1)">
+        <circle cx="118.5" cy="186" r="4.5"/><circle cx="199.1" cy="186" r="4.5"/>
+        <circle cx="350.1" cy="186" r="4.5"/><circle cx="633.3" cy="186" r="4.5"/>
+      </g>
+      <g font-family="IBM Plex Mono,monospace" font-size="10" fill="var(--muted)" text-anchor="middle">
+        <text x="158" y="34">狭い谷</text>
+        <text x="633" y="34">広い谷（約 3.5 倍）</text>
+      </g>
+      <path d="M118.5 42 L118.5 168" stroke="var(--ref)" stroke-width="1" stroke-dasharray="2 3"/>
+      <path d="M199.1 42 L199.1 168" stroke="var(--ref)" stroke-width="1" stroke-dasharray="2 3"/>
+      <path d="M633.3 42 L633.3 168" stroke="var(--ref)" stroke-width="1" stroke-dasharray="2 3"/>
+      <path d="M122 38 L195 38" stroke="var(--ref)" stroke-width="1"/>
+      <path d="M355 38 L629 38" stroke="var(--ref)" stroke-width="1"/>
+    </svg>
+  </div>
+  <figcaption>
+    実際に使う問題はこれの 2〜20 次元版です。<b>N09-Vincent3D では正解の谷が 216 個</b>あり、
+    <b>N18-CF3-10D は 10 次元で 6 個</b>。次元が上がると、谷の総数より「谷にたどり着くこと自体」が難しくなります。
+  </figcaption>
+</figure>
+
+<section class="col">
+  <p class="eyebrow">提案手法</p>
+  <h2>MC-ESO —— 3 通りの広がり方を同時に走らせる</h2>
+  <p>
+    この研究が作っている手法が <strong>MC-ESO</strong>（Multi-Channel Epidemic Spread Optimizer）です。
+    名前のとおり<strong>感染症の広がり方</strong>を下敷きにしています。
+    候補となる地点の集団を「宿主」と見なし、良い地点（低い標高）ほど強い感染力を持つとして、
+    次の世代の候補地点を<strong>3 つの経路で同時に</strong>生み出します。
+  </p>
+
+  <div class="split">
+    <div class="pane can">
+      <h4>3 つのチャネル</h4>
+      <ul>
+        <li><b>接触感染</b>（近距離）—— いま良い地点のすぐ周りを、集団の散らばり方に沿った形で探る。細かく詰める役。</li>
+        <li><b>飛沫感染</b>（中距離）—— 離れた良い地点の方向へ跳ぶ。谷から谷へ渡る役。</li>
+        <li><b>空気感染</b>（遠距離）—— 探索範囲全体にランダムに飛ぶ。取りこぼしを拾う役。既定の配分は 3 割。</li>
+      </ul>
+    </div>
+    <div class="pane cant">
+      <h4>なぜ 3 つなのか</h4>
+      <ul>
+        <li>既存の主要手法は、この生成規則を<b>1 つしか持たない</b>（CMA-ES はガウス変異、PSO は速度、DE は差分変異）。</li>
+        <li>MC-ESO の主張は「性質の違う 3 つを同時に走らせ、地形に応じて配分を寄せる」こと。</li>
+        <li>ただし<b>比喩の新しさは主張になりません</b> —— 疫学を模した最適化手法は既に複数あり、この研究自身がそう記録しています。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>もう 1 つの仕掛け ——「掘り切ったら、次の谷へ」</h3>
+  <p>
+    複数の底を見つけるために、MC-ESO は<strong>1 つの谷を掘り切ったことを自分で検知します</strong>。
+    探索の刻み幅が下限まで縮み、かつ改善が止まったら「この谷はもう終わり」と判断し、
+    その谷の底を記録してから別の場所へ移る。この 1 往復を <em class="term">hunt</em>（狩り）と呼びます。
+  </p>
+  <ol class="flow">
+    <li><b>掘る</b><p>1 つの谷を、3 チャネルで底まで掘る。この間は多解探索を一切起動しない。</p></li>
+    <li><b>掘り切りを検知する</b><p>刻み幅が下限に達し、改善が止まったら終了と判定する。</p></li>
+    <li><b>底を記録して離れる</b><p>見つけた底を「解アーカイブ」に保存する。ここが最終的な報告候補になる。</p></li>
+    <li><b>次の谷へ蒔き直す</b><p>すでに掘った谷を避けるように、次の出発点を配置する。1 に戻る。</p></li>
+  </ol>
+  <div class="note">
+    <b>この 2 段構えが、後で効いてきます。</b>「掘り切るまでは 1 つの谷に集中する」設計のおかげで
+    <b>1 つの解を深く掘る性能は非常に高い</b>一方、「次の谷へ蒔き直す」側の性能が全体の足を引っぱる、
+    というのが現在の結論だからです。
+  </div>
+</section>
+
+<section class="col">
+  <p class="eyebrow">測り方</p>
+  <h2>「いくつ見つけたか」を数える —— ただし、どこまで正確に？</h2>
+  <p>
+    主な物差しは <em class="term">peak ratio</em>（PR）です。定義は素直で、
+    <strong>あらかじめ分かっている正解の底が K 個あるうち、いくつを見つけられたかの割合</strong>。
+    K 個ぜんぶなら 1.00、半分なら 0.50 です。
+  </p>
+  <p>
+    問題は「見つけた」の判定基準です。底のすぐ近くまで来たが、ぴったりではない —— これは発見なのか。
+    そこで <strong>ε（イプシロン）</strong>という許容幅を決めます。
+    <span class="num">ε=1e-1</span>（0.1）なら「だいたい合っていれば発見」、
+    <span class="num">ε=1e-5</span>（0.00001）なら「ほぼ厳密に一致していないと発見と認めない」。
+    <strong>ε を厳しくすると PR は必ず下がるか、変わらないか、のどちらか</strong>です。
+  </p>
+
+  <h3>なぜ甘い基準で判定してはいけないのか</h3>
+  <p>
+    この研究は途中で運用規則を 1 つ立てています ——
+    <strong>手法の優劣を <span class="num">ε=1e-1</span> で比べてはいけない。</strong>
+    理由は測定で確かめられました。同じ実験結果を 2 通りの報告ルールで採点し直したところ:
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>ε（許容幅）</th><th>改善したセル<br>（全 35 中）</th><th>平均の伸び</th><th>上位 2 位の順位が動いた関数</th></tr></thead>
+      <tbody>
+        <tr><th>1e-1（甘い）</th><td>25</td><td>+0.315</td><td>4 / 5</td></tr>
+        <tr><th>1e-2</th><td>23</td><td>+0.090</td><td>2 / 5</td></tr>
+        <tr class="hi"><th>1e-3</th><td>20</td><td>+0.048</td><td>0 / 5</td></tr>
+        <tr><th>1e-4</th><td>16</td><td>+0.029</td><td>0 / 5</td></tr>
+        <tr><th>1e-5（厳しい）</th><td>10</td><td>+0.019</td><td>0 / 5</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    <span class="num">ε=1e-1</span> では、報告の仕方を少し変えるだけで順位が入れ替わってしまう。
+    ある関数では<strong>7 手法すべてが PR 1.00 に張り付き</strong>、物差しとして機能しなくなります。
+    <span class="num">1e-3</span> 以下ではそれが起きない。だから<strong>判定は <span class="num">ε ≤ 1e-3</span> で行う</strong>、
+    というのがこの研究の規則です。以降の数字はすべて <span class="num">ε=1e-5</span> のものです。
+  </p>
+</section>
+
+<section class="col">
+  <p class="eyebrow">結果</p>
+  <h2>MC-ESO には、はっきり違う 2 つの顔がある</h2>
+  <p class="lead">
+    結論から書きます。<strong>「1 つの解を深く掘る」課題では既存手法より強く、
+    「多くの解を見つける」課題では既存手法に届いていません。</strong>
+    後者がこの研究の目標なので、<strong>目標に対しては現在ゼロ勝</strong>です。
+  </p>
+
+  <h3>強い方の顔 —— 深く掘る力</h3>
+  <p>
+    標準ベンチマーク BBOB-24（底が 1 つの問題が 24 種類）で、
+    <strong>最高精度 <span class="num">1e-10</span> まで到達できた試行の割合</strong>を見ると、
+    2 次元・3 次元では MC-ESO が <strong>10 手法中 1 位</strong>です。
+    ただし次元が上がると順位を落とします。
+  </p>
+</section>
+
+<figure class="bleed">
+  <div class="figbox">
+    <p class="fig-title">深く掘る力は低次元で最強、高次元で失速する</p>
+    <p class="fig-sub">SR@1e-10 (%) ／ BBOB-24 ／ 20 試行 ／ 評価回数 2500×次元</p>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--s1)"></span>MC-ESO（提案手法）</li>
+      <li><span class="swatch" style="background:var(--s2)"></span>IPOP-CMA-ES</li>
+      <li><span class="swatch" style="background:var(--s3)"></span>CMA-ES</li>
+    </ul>
+    <svg viewBox="0 0 860 340" role="img" aria-label="次元ごとの SR@1e-10。MC-ESO は 2 次元で 93.5% と最も高いが 20 次元では 13.1% まで落ち、CMA-ES 系に逆転される。">
+      <g font-family="IBM Plex Mono,monospace" font-size="10" fill="var(--muted)">
+        <text x="8" y="34">100</text><text x="14" y="94">75</text><text x="14" y="154">50</text><text x="14" y="214">25</text><text x="22" y="274">0</text>
+      </g>
+      <g stroke="var(--rule)" stroke-width="1">
+        <line x1="46" y1="30" x2="828" y2="30"/><line x1="46" y1="90" x2="828" y2="90"/>
+        <line x1="46" y1="150" x2="828" y2="150"/><line x1="46" y1="210" x2="828" y2="210"/>
+      </g>
+      <line x1="46" y1="270" x2="828" y2="270" stroke="var(--rule-strong)" stroke-width="1"/>
+      <g font-family="IBM Plex Mono,monospace" font-size="11" fill="var(--ink-2)" text-anchor="middle">
+        <text x="90" y="292">2 次元</text><text x="274" y="292">3</text><text x="437" y="292">5</text><text x="600" y="292">10</text><text x="784" y="292">20</text>
+      </g>
+      <polyline points="90,115.0 274,141.6 437,163.4 600,167.5 784,172.1" fill="none" stroke="var(--s3)" stroke-width="2" stroke-linejoin="round"/>
+      <polyline points="90,68.9 274,108.5 437,135.6 600,156.9 784,156.5" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"/>
+      <polyline points="90,45.6 274,89.5 437,176.4 600,187.4 784,238.6" fill="none" stroke="var(--s1)" stroke-width="2.6" stroke-linejoin="round"/>
+      <g class="pts">
+        <circle class="hit" cx="90" cy="45.6" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ 2 次元&#10;SR@1e-10  93.5%&#10;10 手法中 1 位"/>
+        <circle class="hit" cx="274" cy="89.5" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ 3 次元&#10;SR@1e-10  75.2%&#10;10 手法中 1 位"/>
+        <circle class="hit" cx="437" cy="176.4" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ 5 次元&#10;SR@1e-10  39.0%&#10;10 手法中 6 位"/>
+        <circle class="hit" cx="600" cy="187.4" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ 10 次元&#10;SR@1e-10  34.4%&#10;10 手法中 4 位"/>
+        <circle class="hit" cx="784" cy="238.6" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ 20 次元&#10;SR@1e-10  13.1%&#10;10 手法中 4 位"/>
+        <circle class="hit" cx="90" cy="68.9" r="4" fill="var(--s2)" stroke="var(--surface)" stroke-width="1.5" data-tip="IPOP-CMA-ES ／ 2 次元&#10;83.8%"/>
+        <circle class="hit" cx="784" cy="156.5" r="4" fill="var(--s2)" stroke="var(--surface)" stroke-width="1.5" data-tip="IPOP-CMA-ES ／ 20 次元&#10;47.3%"/>
+        <circle class="hit" cx="90" cy="115.0" r="4" fill="var(--s3)" stroke="var(--surface)" stroke-width="1.5" data-tip="CMA-ES ／ 2 次元&#10;64.6%"/>
+        <circle class="hit" cx="784" cy="172.1" r="4" fill="var(--s3)" stroke="var(--surface)" stroke-width="1.5" data-tip="CMA-ES ／ 20 次元&#10;40.8%"/>
+      </g>
+      <g font-family="IBM Plex Mono,monospace" font-size="11" font-weight="600">
+        <text x="90" y="34" fill="var(--s1)" text-anchor="middle">93.5</text>
+        <text x="806" y="242" fill="var(--s1)">13.1</text>
+      </g>
+      <text x="46" y="318" font-family="IBM Plex Mono,monospace" font-size="10" fill="var(--muted)">2・3 次元では 1 位。5 次元以降は CMA-ES 系が上回る。</text>
+    </svg>
+  </div>
+  <figcaption>
+    <b>SR@1e-10</b> ＝ 20 回の試行のうち、最高精度（誤差 <span class="num">1e-10</span> 以下）まで到達できた割合。
+    この研究が主に判定に使うのは <b>2 次元</b>の列で、そこでは MC-ESO が <b>93.5%</b> と最上位です。
+  </figcaption>
+</figure>
+
+<section class="col">
+  <h3>届いていない方の顔 —— たくさん見つける力</h3>
+  <p>
+    本題の多解問題です。<strong>CEC2013 niching</strong> という分野標準のベンチマークで、
+    MC-ESO と、この分野で最も強い既存手法 <strong>NMMSO</strong>、そして
+    <strong>論文で報告されている最良値</strong>を並べます。数字は PR@1e-5、12 回の試行の平均です。
+  </p>
+</section>
+
+<figure class="bleed">
+  <div class="figbox">
+    <p class="fig-title">7 つの問題すべてで、公表最良に届いていない</p>
+    <p class="fig-sub">peak ratio @ ε=1e-5 ／ CEC2013 niching 合成関数 ／ 12 試行 ／ 評価回数 400,000</p>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--s1)"></span>MC-ESO（提案手法）</li>
+      <li><span class="swatch" style="background:var(--s2)"></span>NMMSO（最強の既存手法）</li>
+      <li><span class="swatch rule-mark"></span>論文で報告されている最良値</li>
+    </ul>
+    <svg viewBox="0 0 860 330" role="img" aria-label="7 関数の peak ratio。MC-ESO は N16 を除きすべてで NMMSO と公表最良を下回る。">
+      <g font-family="IBM Plex Mono,monospace" font-size="10" fill="var(--muted)" text-anchor="middle">
+        <text x="196" y="300">0</text><text x="352" y="300">0.25</text><text x="508" y="300">0.50</text><text x="664" y="300">0.75</text>
+        <text x="508" y="320">peak ratio（1.00 ＝ 正解をすべて発見）</text>
+      </g>
+      <g stroke="var(--rule)" stroke-width="1">
+        <line x1="352" y1="24" x2="352" y2="286"/><line x1="508" y1="24" x2="508" y2="286"/><line x1="664" y1="24" x2="664" y2="286"/>
+      </g>
+      <line x1="196" y1="24" x2="196" y2="286" stroke="var(--rule-strong)" stroke-width="1"/>
+      <g font-family="IBM Plex Mono,monospace" font-size="11" fill="var(--ink)">
+        <text x="10" y="44">N14-CF3-3D</text><text x="10" y="80">N15-CF4-3D</text><text x="10" y="116">N16-CF3-5D</text>
+        <text x="10" y="152">N17-CF4-5D</text><text x="10" y="188">N18-CF3-10D</text><text x="10" y="224">N19-CF4-10D</text>
+        <text x="10" y="260">N20-CF4-20D</text>
+      </g>
+      <g stroke="var(--rule-strong)" stroke-width="1">
+        <line x1="196" y1="40" x2="691" y2="40"/><line x1="196" y1="76" x2="664" y2="76"/><line x1="196" y1="112" x2="618" y2="112"/>
+        <line x1="196" y1="148" x2="661" y2="148"/><line x1="196" y1="184" x2="612" y2="184"/><line x1="196" y1="220" x2="516" y2="220"/>
+        <line x1="196" y1="256" x2="486" y2="256"/>
+      </g>
+      <g stroke="var(--ref)" stroke-width="2.5">
+        <line x1="691" y1="31" x2="691" y2="49"/><line x1="664" y1="67" x2="664" y2="85"/><line x1="618" y1="103" x2="618" y2="121"/>
+        <line x1="661" y1="139" x2="661" y2="157"/><line x1="612" y1="175" x2="612" y2="193"/><line x1="516" y1="211" x2="516" y2="229"/>
+        <line x1="486" y1="247" x2="486" y2="265"/>
+      </g>
+      <g>
+        <circle class="hit" cx="612" cy="40" r="5.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="NMMSO ／ N14-CF3-3D&#10;PR@1e-5  0.667"/>
+        <circle class="hit" cx="625" cy="76" r="5.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="NMMSO ／ N15-CF4-3D&#10;PR@1e-5  0.688"/>
+        <circle class="hit" cx="612" cy="112" r="5.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="NMMSO ／ N16-CF3-5D&#10;PR@1e-5  0.667"/>
+        <circle class="hit" cx="482" cy="148" r="5.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="NMMSO ／ N17-CF4-5D&#10;PR@1e-5  0.458"/>
+        <circle class="hit" cx="508" cy="184" r="5.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="NMMSO ／ N18-CF3-10D&#10;PR@1e-5  0.500"/>
+        <circle class="hit" cx="261" cy="220" r="5.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="NMMSO ／ N19-CF4-10D&#10;PR@1e-5  0.104"/>
+        <circle class="hit" cx="196" cy="256" r="5.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="NMMSO ／ N20-CF4-20D&#10;PR@1e-5  0.000"/>
+      </g>
+      <g>
+        <circle class="hit" cx="421" cy="40" r="5.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ N14-CF3-3D&#10;PR@1e-5  0.361&#10;NMMSO に有意に負け (p=.0020)"/>
+        <circle class="hit" cx="326" cy="76" r="5.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ N15-CF4-3D&#10;PR@1e-5  0.208&#10;NMMSO に有意に負け (p=.0005)"/>
+        <circle class="hit" cx="604" cy="112" r="5.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ N16-CF3-5D&#10;PR@1e-5  0.653&#10;NMMSO と引き分け (p=1.0)"/>
+        <circle class="hit" cx="300" cy="148" r="5.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ N17-CF4-5D&#10;PR@1e-5  0.167&#10;NMMSO に有意に負け (p=.0010)"/>
+        <circle class="hit" cx="300" cy="184" r="5.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ N18-CF3-10D&#10;PR@1e-5  0.167&#10;NMMSO に有意に負け (p=.0020)"/>
+        <circle class="hit" cx="228" cy="220" r="5.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ N19-CF4-10D&#10;PR@1e-5  0.052&#10;有意差なし (p=.359)"/>
+        <circle class="hit" cx="241" cy="256" r="5.5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" data-tip="MC-ESO ／ N20-CF4-20D&#10;PR@1e-5  0.073&#10;NMMSO に有意に勝ち (p=.0156)&#10;ただし NCDE には負ける"/>
+      </g>
+      <text x="604" y="102" font-family="IBM Plex Mono,monospace" font-size="10" fill="var(--s1)" text-anchor="middle">唯一の引き分け</text>
+    </svg>
+  </div>
+  <figcaption>
+    横線は、その問題での最小値から公表最良までの幅です。<b>MC-ESO（緑）が灰色の目盛りに届いている問題は 1 つもありません。</b>
+    N16 だけが NMMSO と引き分け（<span class="num">0.653</span> 対 <span class="num">0.667</span>、p=1.0）。
+    N20 は MC-ESO が NMMSO に有意に勝ちますが、<b>そこでは別の手法 NCDE が MC-ESO を有意に上回ります</b>
+    （<span class="num">0.113</span> 対 <span class="num">0.0625</span>、p=0.0074、30 試行）。
+  </figcaption>
+</figure>
+
+<section class="col">
+  <div class="note">
+    <b>もう 1 つの対象問題群でも同じです。</b>より低次元の 7 関数（N04–N10）を正規予算で測ると、
+    <b>NMMSO はすべての関数で PR ≥ 0.984 ＝ ほぼ解き切っています</b>。
+    対する MC-ESO は N06 で <span class="num">0.730</span>、N07 で <span class="num">0.304</span>、
+    N08 で <span class="num">0.013</span>、N09 で <span class="num">0.170</span>。
+    <b>伸びしろ以前に、勝てる場所がありません。</b>
+  </div>
+</section>
+
+<section class="col">
+  <p class="eyebrow">90 サイクルの成果</p>
+  <h2>勝てなかった代わりに、何が起きているかは分かった</h2>
+  <p>
+    2026 年 9 月の 1 週間で、この研究は自動化された実験サイクルを <strong>90 回</strong>回しました。
+    性能は上がりませんでしたが、<strong>「なぜ上がらないのか」は機序のレベルで分かりました</strong>。
+    現時点で論文に書ける可能性があるのは、手法ではなくこちら側です。
+  </p>
+
+  <h3>1. peak ratio は 3 つの掛け算に分解できる</h3>
+  <p>
+    見つけた解の数は、独立な 3 つの要素の積として説明できることが分かりました ——
+    <strong>被覆</strong>（いくつの異なる谷にたどり着けたか）×
+    <strong>報告</strong>（たどり着いた谷のうち、答えとして提出できたのはいくつか）×
+    <strong>深さ</strong>（提出した解が ε の精度まで掘れているか）。
+  </p>
+  <p>
+    これは言葉の整理ではなく、<strong>数値予測が当たります</strong>。
+    N09-Vincent3D で 2 つの改良を重ねたときの PR を、この分解から <span class="num">0.3541</span> と予測し、
+    実測は <span class="num">0.3549</span> でした（15 試行、誤差 0.0008）。
+  </p>
+
+  <h3>2. 律速しているのは「谷探し」か「掘り下げ」のどちらか一方</h3>
+  <p>
+    さらに、報告される解の数はおおよそ
+    <strong>min（たどり着いた異なる谷の数, 掘り切った谷の数）</strong>で決まります。
+    つまり<strong>ボトルネックは常にどちらか片方</strong>で、そこを直さない限り他をいくら改良しても効きません。
+  </p>
+  <p>
+    重要なのは、<strong>どちらが効いているかは手法の性質では決まらない</strong>ことです。
+    同じ N18 という問題で、MC-ESO は残差の 100% が「掘り下げ」側なのに、
+    NMMSO は 100% が「谷探し」側でした。<strong>手法 × 問題の組で決まる</strong>のです。
+    これが、この研究の知見が<strong>他の手法にも当てはまる「診断法」</strong>になりうる根拠です。
+  </p>
+
+  <h3>3. そして、この設計の一族には天井があった</h3>
+  <p>
+    最後に決定的な測定がありました。「<strong>ランダムに出発点を蒔いて、そこから坂を下る</strong>」という
+    —— MC-ESO を含む多くの手法が属する —— <strong>設計の一族</strong>について、
+    最適化を 1 回も走らせずに<strong>到達可能な上限</strong>を計算しました。
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>問題</th><th>この一族の上限</th><th>公表最良に必要な値</th><th>超えられるか</th></tr></thead>
+      <tbody>
+        <tr><th>N14-CF3-3D</th><td>4.00</td><td>4.76</td><td>×</td></tr>
+        <tr><th>N15-CF4-3D</th><td>5.58</td><td>6.00</td><td>×</td></tr>
+        <tr><th>N16-CF3-5D</th><td>4.00</td><td>4.06</td><td>×</td></tr>
+        <tr><th>N17-CF4-5D</th><td>5.84</td><td>5.96</td><td>×</td></tr>
+        <tr><th>N18-CF3-10D</th><td>3.98</td><td>4.00</td><td>×</td></tr>
+        <tr><th>N19-CF4-10D</th><td>3.89</td><td>4.10</td><td>×</td></tr>
+        <tr><th>N20-CF4-20D</th><td>2.54</td><td>3.72</td><td>×</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    <strong>7 問すべてで、一族の上限そのものが公表最良に届きません。</strong>
+    原因も特定できています —— これらの問題には、
+    <strong>ランダムに蒔いて坂を下るやり方では原理的に到達しない谷</strong>が含まれている
+    （CF3 では 6 個中 2 個が、どの次元でも、32,000 回の試行で 1 度も引けなかった）。
+    <strong>MC-ESO をどう調整してもこの上限は超えられない</strong>、というのがこの研究の到達点です。
+  </p>
+</section>
+
+<section class="col">
+  <p class="eyebrow">いまの判断</p>
+  <h2>MC-ESO の調律をやめ、この一族の外に出る</h2>
+  <p>
+    上の結論を受けて、2026-09-08 に方針を変更しました。
+    <strong>目標（多峰性の高い問題で既存手法より多くの最適解を見つける）は変えず、
+    手法側の制約を外します。</strong>つまり<strong>今後は MC-ESO の変種を作りません</strong>。
+  </p>
+  <p>
+    理由は上の 3 番です。閉じたのは MC-ESO の 1 つの設定ではなく<strong>一族全体</strong>でした。
+    その中にいる限り、どんな部品を足しても上限の側から勝てない。
+    90 サイクルすべてが MC-ESO の変種だったのは目標が要求したことではなく<strong>惰性</strong>だったので、そこを外します。
+  </p>
+  <div class="note">
+    <b>次の一手は決まっています。</b>公表最良の手法（HillVallEA）が一族の外に出るために使っているのは
+    <b>hill-valley 判定</b> —— 2 点の間を数点調べ、間に山があれば「別の谷だ」と判定する仕組みです。
+    これを参照モデルに組み込んで<b>一族の上限そのものが動くか</b>を、最適化を走らせずに 15 分で確かめます。
+    動けば新しい手法をそこに載せる。動かなければ、機序をもっと遠い分野から持ってくることになります。
+  </div>
+</section>
+
+<section class="col">
+  <p class="eyebrow">留保</p>
+  <h2>この報告の数字を読むときの注意</h2>
+  <p>
+    上の数字には、正直に書いておくべき限界があります。査読者が最初に突くのもここです。
+  </p>
+  <div class="split">
+    <div class="pane cant">
+      <h4>比較の条件</h4>
+      <ul>
+        <li><b>試行回数が 12 回</b>（N20 のみ 30 回）。順位の細部を確定させるには少なめです。</li>
+        <li><b>NMMSO の数字は自分の環境で走らせた値</b>で、論文の公表値ではありません（N18 では実測 0.500 対 公表 0.667）。この差の原因は未特定です。</li>
+        <li><b>「公表最良」の出典が 1 本しかない</b>（HillVallEA の 2018 年の論文の表 1 つ）。より新しい競技結果は未取得です。</li>
+      </ul>
+    </div>
+    <div class="pane cant">
+      <h4>知見の強さ</h4>
+      <ul>
+        <li><b>3 つの掛け算への分解は、主に MC-ESO 1 手法の内部を観察して得たもの</b>です。手法をまたいで確かめられているのは 2 番の二分法だけ。</li>
+        <li>プロジェクトが基準値として固定している <b>SR@1e-10 93.5% がこの環境で再現しません</b>（2 回とも 92.08%）。原因は未特定で、「壊していないこと」の確認が書かれたとおりには行えていません。</li>
+        <li>一族の上限の議論は、<b>MC-ESO がその一族に属するという前提</b>に依存します。直接の検証は 2 関数 12 試行分です。</li>
+      </ul>
+    </div>
+  </div>
+  <p>
+    それでも、この報告のいちばん重要な内容は変わりません ——
+    <strong>90 サイクルを回して、目標に対する勝ちは 1 つも得られていない。</strong>
+    得られたのは、なぜ勝てないかを機序のレベルで説明する道具立てです。
+  </p>
+</section>
+
+<footer class="col">
+  <p>
+    自動実験ループが 2 時間ごとに 1 サイクル、俯瞰の見直しが 1 日 1 回動いています。
+    数値の一次情報は <span class="num">docs/acceptance_topology.md</span>、現況は <span class="num">docs/status.md</span>、
+    キューは <span class="num">docs/research_loop.md</span> にあります。
+  </p>
+</footer>
+
+</div>
+
+<div id="tip" role="status"></div>
+<script>
+(function(){
+  var tip=document.getElementById('tip');
+  function show(e,t){tip.textContent=t;tip.style.opacity='1';move(e);}
+  function move(e){
+    var x=(e.clientX!==undefined?e.clientX:0)+14, y=(e.clientY!==undefined?e.clientY:0)+14;
+    var r=tip.getBoundingClientRect();
+    if(x+r.width>window.innerWidth-8) x=window.innerWidth-r.width-8;
+    if(y+r.height>window.innerHeight-8) y=y-r.height-28;
+    tip.style.left=x+'px'; tip.style.top=y+'px';
+  }
+  function hide(){tip.style.opacity='0';}
+  document.querySelectorAll('.hit').forEach(function(el){
+    var t=el.getAttribute('data-tip');
+    el.setAttribute('tabindex','0');
+    el.addEventListener('mouseenter',function(e){show(e,t);});
+    el.addEventListener('mousemove',move);
+    el.addEventListener('mouseleave',hide);
+    el.addEventListener('focus',function(){
+      var b=el.getBoundingClientRect();
+      show({clientX:b.left+b.width/2,clientY:b.top},t);
+    });
+    el.addEventListener('blur',hide);
+  });
+})();
+</script>

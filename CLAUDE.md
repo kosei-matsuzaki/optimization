@@ -16,8 +16,9 @@ MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマー�
 | [docs/related_work.md](docs/related_work.md) | 多峰（niching）分野の関連研究・標準ベンチマーク・指標・先行例の整理 |
 | [docs/history.md](docs/history.md) | 試した工夫・フラグ・ablation 記録（採用 / 不採用とその理由） |
 | [docs/web.md](docs/web.md) | Results UI（Flask アプリの構成・アーキテクチャ・ルート/API） |
+| [docs/report.html](docs/report.html) | **非専門家向けの現況レポート**（この分野の予備知識なしで読める説明。Artifact として公開してある）。**俯瞰ルーチンが status.md を書き直したあとに同じ内容へ更新する**。数値は必ず status.md か記録に載っているものだけを載せる ＝ レポートは翻訳であって出典ではない |
 
-- 更新対象の振り分け: 提案手法 MC-ESO の変更 → `docs/mceso.md`、ベースライン手法の変更 → `docs/baselines.md`、ベンチマーク関数・実行・条件・評価基準の変更 → `docs/experiments.md`、試行錯誤・フラグの追加削除 → `docs/history.md`、関連研究の調査結果 → `docs/related_work.md`、web 配下の変更 → `docs/web.md`、プロジェクト概要・docs リンク構成の変更 → ルート `README.md`。
+- 更新対象の振り分け: 提案手法 MC-ESO の変更 → `docs/mceso.md`、ベースライン手法の変更 → `docs/baselines.md`、ベンチマーク関数・実行・条件・評価基準の変更 → `docs/experiments.md`、試行錯誤・フラグの追加削除 → `docs/history.md`、関連研究の調査結果 → `docs/related_work.md`、web 配下の変更 → `docs/web.md`、プロジェクト概要・docs リンク構成の変更 → ルート `README.md`。**現況・結果の数字が変わったら `docs/report.html` も更新する**（俯瞰ルーチンの担当。留保の節は読みやすさのために弱めない）。
 
 ## 実行ルール
 
