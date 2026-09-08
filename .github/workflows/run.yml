@@ -310,6 +310,12 @@ jobs:
             find analysis/mmo2024/e91/suite -type f -size +8M -delete || true
             find analysis/mmo2024/e91/suite -type f -name 'maybe-login.html' -delete || true
           fi
+          # the tree is capped at ~400 files, so keep only what is needed to RUN
+          # the suite (python_code) and to READ it (the PDFs, as text).  MATLAB
+          # duplicates the Python, and the sample result files are format
+          # examples: both stay out of the repository.
+          rm -rf analysis/mmo2024/e91/suite/*/matlab_code \
+                 analysis/mmo2024/e91/suite/*/sample_result_files
           # the two PDFs carry the 3 things that must be checked before use:
           # budget, whether PR is the 1e-5 value or a 5-level mean, and D/K per problem
           pip install pypdf
@@ -327,7 +333,10 @@ jobs:
               p.with_suffix(".txt").write_text(t)
               print("TEXT", p, len(t), "chars")
           PY
-          find analysis/mmo2024/e91 -type f | head -50
+          find analysis/mmo2024/e91 -type f -name '*.pdf' -delete
+          find analysis/mmo2024/e91 -type f > /tmp/e91.list || true
+          echo "FILES KEPT: $(wc -l < /tmp/e91.list)"
+          sort /tmp/e91.list
           du -sh analysis/mmo2024/e91 || true
 
       - name: Commit the extracted text
