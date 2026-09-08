@@ -269,6 +269,248 @@ def _null_descent(args_tuple):
             [first[e] for e in _NULL_EPS])
 
 
+# ── hill-valley arm (entry 95) ─────────────────────────────────────────────
+# Question 2 asks for one more tool on the coverage axis: the mechanism the
+# published best (HillVallEA) uses to leave the "uniform restart + local
+# descent" class.  The class ceiling entries 88/89 drew charges every restart
+# to a fresh *uniform* draw, so a basin whose attraction region is small under
+# an isotropic descent is never entered.  Hill-valley clustering breaks that:
+# points that a segment test says sit in different basins are kept as separate
+# search seeds, each descended locally, so a small basin survives on the
+# strength of one population member rather than on its share of the box.
+#
+# Everything below is budget-matched to `_null_descent` at the *replicate*
+# level: an arm gets `T` evaluations and spends them however its rule says.
+# That is the only comparison that answers "does the ceiling move", because
+# the hill-valley test is not free -- it buys partitions with evaluations.
+
+def _hv_same_basin(b, x1, f1, x2, f2, n_test, ctr):
+    """HillVallEA's segment test: are these two points in the same basin?
+
+    Samples ``n_test`` interior points of the segment and returns False the
+    moment one of them rises above both endpoints (a hill between them).  The
+    early break is HillVallEA's own -- it makes the price of a "different
+    basin" verdict cheaper than a "same basin" one, so the test's cost is data
+    rather than a constant, and `hv_ev` in the dump records it.
+    """
+    top = max(f1, f2)
+    for j in range(1, n_test + 1):
+        t = j / (n_test + 1.0)
+        ft = float(b.func(x1 + t * (x2 - x1)))
+        ctr[0] += 1
+        if ft > top:
+            return False
+    return True
+
+
+def _hv_cluster(b, X, F, n_test, max_tests, ctr, always_split=False):
+    """Partition a population into basins, best point first.
+
+    Walking in ascending f means the first point of a cluster is its best, so
+    the leader list doubles as the seed list for the descents.  ``always_split``
+    is the control arm: identical bookkeeping, no test evaluations, every
+    population point becomes its own seed -- it separates "the test earns its
+    keep" from "descending locally from population points earns its keep".
+    """
+    leaders, members = [], []
+    for i in np.argsort(F):
+        i = int(i)
+        if always_split:
+            leaders.append(i)
+            members.append([i])
+            continue
+        if not leaders:
+            leaders.append(i)
+            members.append([i])
+            continue
+        d = np.linalg.norm(X[leaders] - X[i], axis=1)
+        joined = -1
+        for c in np.argsort(d)[:max_tests]:
+            c = int(c)
+            if _hv_same_basin(b, X[i], F[i], X[leaders[c]], F[leaders[c]],
+                              n_test, ctr):
+                joined = c
+                break
+        if joined >= 0:
+            members[joined].append(i)
+        else:
+            leaders.append(i)
+            members.append([i])
+    return leaders, members
+
+
+def _cluster_sigma(X, leaders, members, c, span):
+    """Step size for a cluster's descent, from the cluster itself.
+
+    HillVallEA seeds its core search with the cluster's own mean and
+    covariance.  Keeping that here matters: a seed inherited from a partition
+    but descended with the class's global sigma (0.2 x span) walks straight
+    back into the dominant funnel, which would make the arm a no-op for a
+    reason that has nothing to do with hill-valley.
+    """
+    mem = members[c]
+    if len(mem) >= 2:
+        s = float(np.mean(np.std(X[mem], axis=0)))
+        if s > 0.0:
+            return s
+    if len(leaders) >= 2:
+        d = [float(np.linalg.norm(X[leaders[k]] - X[leaders[c]]))
+             for k in range(len(leaders)) if k != c]
+        m = min(d)
+        if m > 0.0:
+            return 0.5 * m
+    return 0.2 * span
+
+
+def _descend(b, x0, sigma0, cap, seed, lo, hi):
+    """One capped isotropic CMA descent; returns (best_f, best_x, evals)."""
+    import cma
+    o = {"bounds": [lo, hi], "maxfevals": cap, "seed": seed, "verbose": -9,
+         "tolfun": 0, "tolfunhist": 0, "tolx": 0, "CMA_on": 0}
+    es = cma.CMAEvolutionStrategy(list(x0), max(sigma0, 1e-12), o)
+    best_f, best_x, used = float("inf"), np.asarray(x0, dtype=float), 0
+    while not es.stop() and used < cap:
+        xs = es.ask()
+        fs = [float(b.func(np.asarray(x))) for x in xs]
+        used += len(xs)
+        es.tell(xs, fs)
+        i = int(np.argmin(fs))
+        if fs[i] < best_f:
+            best_f, best_x = fs[i], np.asarray(xs[i], dtype=float)
+    return best_f, best_x, used
+
+
+def _null_block(args_tuple):
+    """One budget-matched replicate of one arm.  Returns coverage per eps.
+
+    Arms: ``iso`` is `_null_descent`'s rule (uniform draw, isotropic descent)
+    run until the replicate budget is gone; ``hv`` draws a population, splits
+    it by the segment test and descends each cluster leader locally; ``split``
+    is ``hv`` with the test forced to "different", i.e. the same local descents
+    without paying for -- or being partitioned by -- the test.
+
+    Scoring follows entries 88/89: a descent is credited with an optimum only
+    when its `best_f <= eps`, and then to its nearest optimum.  Attributing by
+    distance alone flips the sign of the answer.
+    """
+    (name, arm, rep, T, cap, sigma_ratio, pop, n_test, max_tests) = args_tuple
+    from core.benchmarks import niching_by_name
+    b = niching_by_name(name)
+    opts = true_optima(b)
+    K = len(opts)
+    lo, hi = b.bounds
+    span = hi - lo
+    rng = np.random.default_rng(5_000_000 + 1000 * rep + hash(arm) % 997)
+    reached = {e: set() for e in _NULL_EPS}
+    used, n_desc, n_units, hv_ev = 0, 0, 0, 0
+    ctr = [0]
+    sd = 7919 * rep + 13
+
+    def credit(bf, bx):
+        d = np.linalg.norm(opts - bx, axis=1)
+        j = int(np.argmin(d))
+        for e in _NULL_EPS:
+            if bf <= e:
+                reached[e].add(j)
+
+    while used < T:
+        n_units += 1
+        if arm == "iso":
+            x0 = rng.uniform(lo, hi, size=b.dim)
+            sd += 1
+            bf, bx, u = _descend(b, x0, sigma_ratio * span,
+                                 min(cap, T - used), sd, lo, hi)
+            used += u
+            n_desc += 1
+            credit(bf, bx)
+            continue
+        # population arms
+        if used + pop >= T:
+            break
+        X = rng.uniform(lo, hi, size=(pop, b.dim))
+        F = np.array([float(b.func(x)) for x in X])
+        used += pop
+        ctr[0] = 0
+        leaders, members = _hv_cluster(b, X, F, n_test, max_tests, ctr,
+                                       always_split=(arm == "split"))
+        used += ctr[0]
+        hv_ev += ctr[0]
+        for c, li in enumerate(leaders):
+            if used >= T:
+                break
+            sd += 1
+            s0 = _cluster_sigma(X, leaders, members, c, span)
+            bf, bx, u = _descend(b, X[li], s0, min(cap, T - used), sd, lo, hi)
+            used += u
+            n_desc += 1
+            credit(bf, bx)
+
+    return (name, arm, rep, used, n_units, n_desc, hv_ev, K,
+            [sorted(reached[e]) for e in _NULL_EPS])
+
+
+def hv_mode(argv: list[str]) -> None:
+    """Budget-matched paired comparison of the three arms (entry 95)."""
+    ap = argparse.ArgumentParser(prog="hunt_coverage.py --hv")
+    ap.add_argument("--hv", action="store_true")
+    ap.add_argument("--funcs", default="N13-CF3-2D,N14-CF3-3D,"
+                                       "N16-CF3-5D,N18-CF3-10D")
+    ap.add_argument("--arms", default="iso,hv,split")
+    ap.add_argument("--reps", type=int, default=12)
+    ap.add_argument("--budget", type=int, default=100_000,
+                    help="evaluations per replicate (same for every arm)")
+    ap.add_argument("--cap", type=int, default=1499,
+                    help="evaluation cap on one descent (N18 hunt length, e76)")
+    ap.add_argument("--sigma-ratio", type=float, default=0.2)
+    ap.add_argument("--pop", type=int, default=0,
+                    help="population per unit; 0 = max(50, 20 x dim)")
+    ap.add_argument("--n-test", type=int, default=3)
+    ap.add_argument("--max-tests", type=int, default=20)
+    ap.add_argument("--procs", type=int, default=4)
+    ap.add_argument("--csv", type=Path, required=True)
+    a = ap.parse_args(argv)
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from core.benchmarks import niching_by_name
+    jobs = []
+    for name in a.funcs.split(","):
+        b = niching_by_name(name)
+        pop = a.pop if a.pop > 0 else max(50, 20 * b.dim)
+        for arm in a.arms.split(","):
+            for rep in range(a.reps):
+                jobs.append((name, arm, rep, a.budget, a.cap, a.sigma_ratio,
+                             pop, a.n_test, a.max_tests))
+    print(f"{len(jobs)} replicates ({a.funcs}) x ({a.arms}) x {a.reps} reps, "
+          f"{a.budget} evals each")
+
+    from multiprocess import Pool
+    rows, t0 = [], time.time()
+    with Pool(a.procs) as pool:
+        for i, r in enumerate(pool.imap_unordered(_null_block, jobs), 1):
+            rows.append(r)
+            if i % 10 == 0:
+                print(f"  {i}/{len(jobs)} in {time.time() - t0:.0f}s",
+                      flush=True)
+    print(f"  {len(rows)} replicates in {time.time() - t0:.1f}s")
+
+    a.csv.parent.mkdir(parents=True, exist_ok=True)
+    opener = ((lambda q: __import__("gzip").open(q, "wt", newline=""))
+              if str(a.csv).endswith(".gz") else
+              (lambda q: open(q, "w", newline="")))
+    with opener(a.csv) as fh:
+        w = csv.writer(fh)
+        cols = ["func", "arm", "rep", "evals", "units", "descents", "hv_ev", "K"]
+        for e in _NULL_EPS:
+            cols += [f"cov_{e:g}", f"set_{e:g}"]
+        w.writerow(cols)
+        for (name, arm, rep, used, nu, nd, hv, K, sets) in rows:
+            out = [name, arm, rep, used, nu, nd, hv, K]
+            for s in sets:
+                out += [len(s), "|".join(str(v) for v in s)]
+            w.writerow(out)
+    print(f"  rows written to {a.csv}")
+
+
 def null_mode(argv: list[str]) -> None:
     """Volume-proportional nulls for a landing distribution (entry 87).
 
@@ -454,6 +696,8 @@ def main() -> None:
         return run_mode(sys.argv[1:])
     if len(sys.argv) > 1 and sys.argv[1] == "--null":
         return null_mode(sys.argv[1:])
+    if len(sys.argv) > 1 and sys.argv[1] == "--hv":
+        return hv_mode(sys.argv[1:])
     if len(sys.argv) > 2 and sys.argv[1] == "--analyze":
         return analyze_mode(sys.argv[2:])
     if len(sys.argv) < 2:
