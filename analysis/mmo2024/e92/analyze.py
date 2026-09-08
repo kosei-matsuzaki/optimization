@@ -50,8 +50,16 @@ BOOT = 2000
 
 
 def load(name: str):
-    """Rows for `name`, preferring the 200-draw dump over the 40-draw screen."""
-    for d in (HERE, E91):
+    """Rows for `name`, preferring the 200-draw dump over the 40-draw screen.
+
+    Entry 94 re-drew group B (M09-M16) to 200 and deleted the 40-draw dumps it
+    supersedes, so `e94/` is on the search path: running this file now
+    reproduces entry 94's D=10 table, not entry 92's.  Entry 92's own numbers
+    are frozen in `ceiling_mpr.csv` beside this script; the estimators here
+    (`ceiling`, `early_stop_ceiling`) are imported by entries 93 and 94 so that
+    every dimension is scored by one code path.
+    """
+    for d in (HERE, HERE.parent / "e94", E91):
         for stem in (f"{name}_desc200", f"{name}_desc"):
             p = d / f"{stem}.csv.gz"
             q = d / f"{stem}.csv"
@@ -127,7 +135,8 @@ def ceiling(best_f, land, evals, K, budget, idx=None) -> tuple[float, list, floa
 
 def main() -> None:
     names = sorted({p.name.split("_desc")[0]
-                    for d in (HERE, E91) for p in d.glob("*_desc*.csv*")})
+                    for d in (HERE, HERE.parent / "e94", E91)
+                    for p in d.glob("*_desc*.csv*")})
     rng = np.random.default_rng(0)
     out = []
     for nm in names:
