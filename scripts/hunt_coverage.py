@@ -213,6 +213,9 @@ def run_mode(argv: list[str]) -> None:
     print(f"rows written to {a.csv}")
 
 
+_NULL_EPS = (1e-1, 1e-2, 1e-3, 1e-4, 1e-5)   # the GECCO'2024 scoring accuracies
+
+
 def _null_descent(args_tuple):
     """One draw of the *restart-lander* null: uniform start, isotropic descent.
 
@@ -241,6 +244,13 @@ def _null_descent(args_tuple):
         o["CMA_on"] = 0                       # step size only, no rotation
     es = cma.CMAEvolutionStrategy(list(x0), sigma0, o)
     best_f, best_x, used = float("inf"), x0, 0
+    # Evaluations spent when this descent first got inside each scoring
+    # accuracy, and where it stood at that moment (entry 92).  A class ceiling
+    # read off `used` alone fixes the price of a restart at what a descent that
+    # runs to convergence costs, so it understates what the class can score at
+    # the loose accuracies -- a member is free to cut the descent the moment it
+    # is inside eps and spend the rest on more restarts.  -1 = never reached.
+    first = {e: (-1, -1) for e in _NULL_EPS}
     while not es.stop() and used < budget:
         xs = es.ask()
         fs = [float(b.func(np.asarray(x))) for x in xs]
@@ -249,9 +259,14 @@ def _null_descent(args_tuple):
         i = int(np.argmin(fs))
         if fs[i] < best_f:
             best_f, best_x = fs[i], np.asarray(xs[i], dtype=float)
+        for e in _NULL_EPS:
+            if first[e][0] < 0 and best_f <= e:
+                dd = np.linalg.norm(opts - best_x, axis=1)
+                first[e] = (used, int(np.argmin(dd)))
     d = np.linalg.norm(opts - best_x, axis=1)
     j = int(np.argmin(d))
-    return k, j0, j, float(d[j]), best_f, used
+    return (k, j0, j, float(d[j]), best_f, used,
+            [first[e] for e in _NULL_EPS])
 
 
 def null_mode(argv: list[str]) -> None:
@@ -321,14 +336,21 @@ def null_mode(argv: list[str]) -> None:
     rows = []
     t0 = time.time()
     with Pool(a.procs) as pool:
-        for k, j0, j, dist, f, used in pool.imap_unordered(_null_descent, jobs):
-            rows.append((k, j0, j, dist, f, used))
+        for k, j0, j, dist, f, used, first in pool.imap_unordered(_null_descent, jobs):
+            rows.append((k, j0, j, dist, f, used)
+                        + tuple(v for pair in first for v in pair))
     print(f"  {len(rows)} descents in {time.time() - t0:.1f}s")
     if a.csv:
         a.csv.parent.mkdir(parents=True, exist_ok=True)
         with open(a.csv, "w", newline="") as fh:
             w = csv.writer(fh)
-            w.writerow(["draw", "start_opt", "land_opt", "dist", "best_f", "evals"])
+            # `ev_<eps>` / `opt_<eps>`: evaluations spent when the descent first
+            # got inside that accuracy, and the optimum it was nearest then
+            # (-1 = never).  Dumps written before entry 92 stop at `evals`.
+            cols = ["draw", "start_opt", "land_opt", "dist", "best_f", "evals"]
+            for e in _NULL_EPS:
+                cols += [f"ev_{e:g}", f"opt_{e:g}"]
+            w.writerow(cols)
             w.writerows(rows)
         print(f"  rows written to {a.csv}")
     land = np.zeros(K, dtype=np.int64)
