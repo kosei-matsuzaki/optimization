@@ -56,6 +56,11 @@ model: inherit
 ./run.sh quick --all --n-runs 20 --max-evals 5000 --label eval_<desc> > /tmp/quick_eval.log 2>&1
 ```
 
+**`--viz` は付けないこと。** 図は既定で描かれない。判定は `summary.csv` / `wilcoxon.csv` の
+3 指標で行うので図は要らず、図は 1 run あたり約 500 MB かかる（`results/` が 5.5 GB まで育った
+原因がこれで、うち数値は 2.8 MB だった）。図が要るのは進捗報告の資料を作るときだけで、
+それはユーザーが明示的に指示する。
+
 このコマンドを **Bash の `run_in_background: true`** で起動する（**コマンド末尾に `&` は
 付けない** — run.sh が内部で python を `&`＋`wait` する。`&` を付けると即デタッチして
 完了通知が届かず、結局ポーリングに陥る）。`--all` でデフォルトが n=20/eval=5000。

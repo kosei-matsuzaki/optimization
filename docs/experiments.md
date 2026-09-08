@@ -71,6 +71,7 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 | `./run.sh quick --suite niching --suite-budget` | 同上を**競技の公式予算**（MaxFEs 5e4 / 2e5 / 4e5）で回す。文献値と比べたいときだけ使う |
 | `./run.sh quick --all --dim {2\|3\|5\|10\|20} --max-evals <2500×d>` | **次元スケーリング計測**（BBOB-24 を各次元で）。現状把握のスナップショット用。採否判定は 2D が主対象 |
 | `./run.sh quick --n-runs 5 --max-evals 3000` | パラメータを上書きしてローカル確認 |
+| `./run.sh quick --all --viz` | 図（landscape / convergence / アニメーション）も描く。**既定では描かない** — 判定は `summary.csv` / `wilcoxon.csv` の 3 指標で行うので図は不要で、図は 1 run あたり約 500 MB かかる（2026-09-08 時点で `results/` は 5.5 GB、うち数値は 2.8 MB だった）。**進捗報告の資料を作るときだけ付ける。** UI は図が無くても `summary.csv` から関数一覧を作る |
 | `./run.sh quick --all --noise gauss_sev` | **ノイズ評価モード**（診断用）。noisy f をアルゴリズムに見せ、指標は真値で再採点（下記） |
 | `./run.sh ui` | Results UI を起動 → http://localhost:8080 |
 | `./run.sh trigger` | GitHub Actions ワークフローをトリガー（**補助実験**, n=100。評価には使わない） |

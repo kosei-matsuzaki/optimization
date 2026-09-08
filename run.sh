@@ -78,6 +78,10 @@ DIR_FILE=".quick.dir"
 
 cmd_quick() {
   local n_runs=20 max_evals=5000 label="" use_all=0 dim=2 methods="" with_custom=0 noise=""
+  # Rendering is off by default: judgement reads summary.csv / wilcoxon.csv, and the
+  # pictures cost ~500 MB per run (results/ reached 5.5 GB, of which 2.8 MB was numbers).
+  # Pass --viz when you actually want them, e.g. when building a progress report.
+  local viz=0
   local pass_args=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -91,6 +95,8 @@ cmd_quick() {
       --suite)     pass_args+=("$1" "$2"); shift 2 ;;
       --noise)     noise="$2";     pass_args+=("$1" "$2"); shift 2 ;;
       --label)     label="$2";     shift 2 ;;
+      --viz)       viz=1;          shift ;;
+      --no-viz)    viz=0;          shift ;;
       *)           pass_args+=("$1"); shift ;;
     esac
   done
@@ -126,6 +132,7 @@ with open(path, "w") as f:
     json.dump(m, f, indent=2)
 PYEOF
   fi
+  if [[ $viz -eq 0 ]]; then pass_args+=("--no-viz"); fi
   "$PY" quick_check.py --output-dir "$dir" "${pass_args[@]+"${pass_args[@]}"}" &
   local pid=$!
   echo "$pid" > "$PID_FILE"
@@ -237,7 +244,7 @@ Usage: ./run.sh <command> [options]
       「未解決の問い」を並べ替えて research-loop に push する。
 
   quick [--n-runs N] [--max-evals N] [--dim {2|3|5|10|20}] [--methods LIST]
-        [--funcs LIST] [--suite {bbob|cec2022}] [--all] [--custom] [--label NAME]
+        [--funcs LIST] [--suite {bbob|cec2022}] [--all] [--custom] [--label NAME] [--viz]
       ローカルで手法を検証・評価する（評価の標準: 2D BBOB-24 のみ / n_runs=20, max_evals=5000, --all）
       デフォルト: --n-runs 20 --max-evals 5000 --dim 2
       --methods は比較する手法のコンマ区切り（空欄=全手法）
@@ -247,6 +254,10 @@ Usage: ./run.sh <command> [options]
       --all で 2D BBOB-24 フルセット（未指定時は quick-12 サブセット）※どちらも BBOB のみ
       --custom で Custom ベンチ（C01-C11, 2D 限定）を追加＝多峰/多解など特定目的の参照用
       --label で保存フォルダ名を指定（省略時はコミットハッシュ）
+      --viz で図（landscape / convergence / アニメーション）も描く。**既定は描かない。**
+        判定は summary.csv / wilcoxon.csv の 3 指標で行うので図は要らず、
+        図は 1 run あたり約 500 MB かかる（results/ が 5.5 GB まで育ち、うち数値は 2.8 MB だった）。
+        進捗報告の資料を作るときだけ付ける。
       保存先: results/YYYYMMDD_HHMMSS_<label|commit>_quick/
 
   stop
