@@ -271,13 +271,22 @@ jobs:
           dl = pathlib.Path("/tmp/suite"); dl.mkdir(exist_ok=True)
           got = []
           for i in sorted(ids):
-              cmd = (["gdown", "--folder", "-O", str(dl / i), f"https://drive.google.com/drive/folders/{i}"]
-                     if i in folders else
-                     ["gdown", "--fuzzy", "-O", str(dl / i), f"https://drive.google.com/uc?id={i}"])
-              r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-              print(f"GDOWN {i} rc={r.returncode} {r.stderr[-300:]}")
-              if r.returncode == 0:
-                  got.append(i)
+              d = dl / i
+              d.mkdir(parents=True, exist_ok=True)
+              # this runner's gdown has no --fuzzy; pass the uc? URL directly.
+              cmds = ([["gdown", "--folder", "-O", str(d),
+                        f"https://drive.google.com/drive/folders/{i}"]]
+                      if i in folders else
+                      [["gdown", "-O", str(d / "dl.bin"),
+                        f"https://drive.google.com/uc?id={i}"],
+                       ["curl", "-sSL", "--max-time", "180", "-o", str(d / "dl.bin"),
+                        f"https://drive.usercontent.google.com/download?id={i}&export=download&confirm=t"]])
+              for cmd in cmds:
+                  r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                  print(f"GET {i} via {cmd[0]} rc={r.returncode} {r.stderr[-200:]}")
+                  if r.returncode == 0 and any(p.stat().st_size > 200 for p in d.rglob("*") if p.is_file()):
+                      got.append(i)
+                      break
           manifest = []
           for p in sorted(dl.rglob("*")):
               if p.is_file():
@@ -285,14 +294,39 @@ jobs:
           (out / "manifest.json").write_text(json.dumps(manifest, indent=1))
           print("FILES", len(manifest), "TOTAL", sum(m["bytes"] for m in manifest))
           PY
-          # keep only what a reader can use: source, docs, archives under 8 MB
+          # name each blob by its real type, unpack archives, drop anything big
           if [ -d /tmp/suite ]; then
             mkdir -p analysis/mmo2024/e91/suite
-            find /tmp/suite -type f -size -8M \
-              \( -iname '*.py' -o -iname '*.m' -o -iname '*.txt' -o -iname '*.md' \
-                 -o -iname '*.json' -o -iname '*.csv' -o -iname '*.pdf' -o -iname '*.zip' \) \
-              -exec cp --parents -t analysis/mmo2024/e91/suite {} + || true
+            for f in /tmp/suite/*/dl.bin; do
+              [ -e "$f" ] || continue
+              d=$(dirname "$f"); t=$(file -b --mime-type "$f")
+              case "$t" in
+                application/zip) (cd "$d" && unzip -qo dl.bin && rm -f dl.bin) || true ;;
+                application/pdf) mv "$f" "$d/doc.pdf" ;;
+                text/html)       mv "$f" "$d/maybe-login.html" ;;
+              esac
+            done
+            cp -r /tmp/suite/. analysis/mmo2024/e91/suite/ || true
+            find analysis/mmo2024/e91/suite -type f -size +8M -delete || true
+            find analysis/mmo2024/e91/suite -type f -name 'maybe-login.html' -delete || true
           fi
+          # the two PDFs carry the 3 things that must be checked before use:
+          # budget, whether PR is the 1e-5 value or a 5-level mean, and D/K per problem
+          pip install pypdf
+          python3 - <<'PY'
+          import pathlib
+          try:
+              from pypdf import PdfReader
+          except Exception as e:
+              print("no pypdf:", e); raise SystemExit(0)
+          for p in sorted(pathlib.Path("analysis/mmo2024/e91/suite").rglob("*.pdf")):
+              try:
+                  t = "\n".join((pg.extract_text() or "") for pg in PdfReader(str(p)).pages)
+              except Exception as e:
+                  print("PARSE-FAIL", p, e); continue
+              p.with_suffix(".txt").write_text(t)
+              print("TEXT", p, len(t), "chars")
+          PY
           find analysis/mmo2024/e91 -type f | head -50
           du -sh analysis/mmo2024/e91 || true
 
