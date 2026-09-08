@@ -31,7 +31,7 @@ DE 系の最近の総説は [Advancements in Multimodal Differential Evolution](
 
 指標側の批判も出ている。[Zhang & Wang 2024](https://pmc.ncbi.nlm.nih.gov/articles/PMC11505590/)（Biomimetics）は「PR は出力の冗長性に無関心」として F 値（precision/recall の調和平均）を推し、さらに**解の抽出そのものに niche 半径やピーク高さの事前知識が要る**点を問題にして hill-valley ベースの peak identification（HVPI）を提案している。Robust Peak Ratio（半径設定を不要にする非二値の成功判定）も提案済み。
 
-**帰結**: 「低次元多峰」を主軸に据えるなら、CEC2013 niching（低次元サブセット）の導入は実装以前に必要。いまの Custom 3 問（C01/C02/C03）では分野の土俵に乗らない。→ 2026-08-30 に 2D/3D サブセット N04-N10 を導入済み（[experiments.md](experiments.md#cec2013-niching低次元多峰-n04-n10)）。一方、予算と精度の設定は分野と真逆で、そこは**あえてずらした設定として主張できる**（下記「空き地」）。
+**帰結**: 「低次元多峰」を主軸に据えるなら、CEC2013 niching（低次元サブセット）の導入は実装以前に必要。いまの Custom 3 問（C01/C02/C03）では分野の土俵に乗らない。→ 2026-08-30 に 2D/3D サブセット N04-N10 を導入済み（[experiments.md](experiments.md#cec2013-nichingn04-n10--合成関数-n11-n20)）。一方、予算と精度の設定は分野と真逆で、そこは**あえてずらした設定として主張できる**（下記「空き地」）。
 
 ---
 

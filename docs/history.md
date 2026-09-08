@@ -113,7 +113,7 @@ MC-ESO に先立つウイルス模倣手法 **VirusOptimizerV2 (VSO V2)** は全
 
 ## 集団レベル3機構の必要性 ablation（n=20, 2026-07）
 
-[mceso.md](mceso.md#集団レベルの-3機構) の「集団レベルの 3 機構（系統共存 / 宿主競合 / スピルオーバー）＋ drilling」を **1 機構ずつ OFF にして全寄与を n=20 標準で定量化**。各 OFF 版を full MC-ESO（reference）と比較（quick n=20 / 5000 / `--all` 2D BBOB-24, base SR@1e-10=92.9%）。ablation 実体は `mceso_ablations.py`（宿主競合＝`MCESONoHostCompetition` で rollback 無効、スピルオーバー＝既存 `MCESONoSpillover`）＋ kwargs（系統共存＝`n_elite_max=1` で単一 best strain に縮退、drilling＝`sigma_drill_down=0.95` で加速収縮除去）。
+[mceso.md](mceso.md#集団レベルの-3-機構) の「集団レベルの 3 機構（系統共存 / 宿主競合 / スピルオーバー）＋ drilling」を **1 機構ずつ OFF にして全寄与を n=20 標準で定量化**。各 OFF 版を full MC-ESO（reference）と比較（quick n=20 / 5000 / `--all` 2D BBOB-24, base SR@1e-10=92.9%）。ablation 実体は `mceso_ablations.py`（宿主競合＝`MCESONoHostCompetition` で rollback 無効、スピルオーバー＝既存 `MCESONoSpillover`）＋ kwargs（系統共存＝`n_elite_max=1` で単一 best strain に縮退、drilling＝`sigma_drill_down=0.95` で加速収縮除去）。
 
 | 機構 OFF | 変種 | SR@1e-10 | Δpt | evals_mean | Wilcoxon 有意悪化(数) | 寄与が集中する関数 |
 |---|---|---|---|---|---|---|
@@ -1051,7 +1051,7 @@ BentCigar は **C が単一方向へ極端に伸びきることが解の条件**
 - 分野の精度水準は ε ≥ 1e-5 で打ち切り、予算は 2D で 5e4 評価（こちらは 5e3）。**精度は深すぎ、予算は 1 桁少ない**という真逆の設定。
 - 到達水準は RS-CMSA が平均 PR 0.856、HillVallEA 0.847 で飽和。新機構で PR を上げに行く路線は後発として分が悪い。
 
-**導入したもの**: CEC2013 niching の 2D/3D サブセット 7 関数（N04-N10、`--suite niching`）。1D の F1-F3（dim=1 が通らない）と合成関数 F11-F20（データファイルが要る）は未実装。仕様・逸脱は [experiments.md](experiments.md#cec2013-niching低次元多峰-n04-n10) に記載。
+**導入したもの**: CEC2013 niching の 2D/3D サブセット 7 関数（N04-N10、`--suite niching`）。1D の F1-F3（dim=1 が通らない）と合成関数 F11-F20（データファイルが要る）は未実装。仕様・逸脱は [experiments.md](experiments.md#cec2013-nichingn04-n10--合成関数-n11-n20) に記載。
 
 **同時に直した測定上の欠陥（重要）**: それまでの PR は `history_x`（全評価点）から数えていたため、密にサンプルする手法を過大評価する — 極端には一様ランダム探索が高 PR を取る。競技規則にならい、**run が報告した解集合だけ**を採点する `niching_peak_metrics` に変更し、`OptimizeResult.final_solutions`（最終集団＋restart 系の各 restart best、上限 `max(100, 2K)`）を全手法に実装した。計数は公式 `how_many_goptima` と同じ「f 順に rho で seed を拾ってから ε 判定」。
 
@@ -1195,7 +1195,7 @@ MC-ESO の報告集合は 23 点（生存ホスト `n_pop`=20 ＋ 系統アー�
 
 - **記録の損失が実在**: N06 は 12.2 個に触れて 6.0 個しか報告していない（半分を捨てている）。N10 は 10.4 → 6.4。
 - **N07 は探索側も不足**: 36 解中 8.6 個しか触れていないので、記録を直しても 0.24 程度が上限。
-  → **この 1 行は 2026-09-02 に訂正された**（[research_loop.md その19](research_loop.md#2026-09-02-その19vincent-は見つけているのに報告していない--確定記録器の容量が原因)）。
+  → **この 1 行は 2026-09-02 に訂正された**（[research_loop.md その19](acceptance_topology.md#報告集合の天井--再起動-1-回につき-1-点しか書かないその19-analysishmniching_visited_csv)）。
   この測定が **ε=1e-4 の 1 水準だけ**で取られていたことによる見かけ。ε=1e-1 で数え直すと
   N07 の visited は **36.0（全解）**、N09-Vincent3D も **216.0（全解）** で、3 seed とも一致する。
   つまり Vincent で探索は届いており、上限を作っているのは記録側。`--eps` を複数取れるように
