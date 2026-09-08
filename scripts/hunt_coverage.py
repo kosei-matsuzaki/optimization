@@ -529,6 +529,11 @@ def null_mode(argv: list[str]) -> None:
                     help="sigma0 / span; MC-ESO's `sigma` default")
     ap.add_argument("--full-cov", action="store_true",
                     help="sensitivity: run the descent with covariance on")
+    ap.add_argument("--pop-sigma", type=int, default=0,
+                    help="entry 95's `split` arm: take sigma0 from a "
+                         "population of this many draws (half the "
+                         "nearest-neighbour distance) instead of "
+                         "--sigma-ratio x span. 0 = off")
     ap.add_argument("--procs", type=int, default=4)
     ap.add_argument("--csv", type=Path, default=None)
     ap.add_argument("--geo-csv", type=Path, default=None)
@@ -570,16 +575,45 @@ def null_mode(argv: list[str]) -> None:
         return
     # ── restart-lander null: uniform draw, then descend ─────────────────────
     sigma0 = a.sigma_ratio * (hi - lo)
+    pop_sig = None
+    if a.pop_sigma > 0:
+        # `split` arm of entry 95, in the per-draw dump form the ceiling
+        # estimators of entries 92/93 read.  The draws are grouped into blocks
+        # of `--pop-sigma` points; a block is one population, and each of its
+        # members is descended from where it stands with the step size the
+        # population itself sets (half the nearest-neighbour distance, the
+        # singleton branch of `_cluster_sigma`).  Start points are the SAME
+        # stream `_null_descent` uses, so this pairs draw-for-draw with a saved
+        # isotropic dump: identical x0, identical CMA seed, sigma0 alone moves.
+        P = a.pop_sigma
+        X0 = np.array([np.random.default_rng(1_000_000 + k).uniform(
+            lo, hi, size=b.dim) for k in range(a.descents)])
+        pop_sig = np.empty(a.descents)
+        for s in range(0, a.descents, P):
+            blk = X0[s:s + P]
+            d = np.linalg.norm(blk[:, None, :] - blk[None, :, :], axis=2)
+            np.fill_diagonal(d, np.inf)
+            pop_sig[s:s + P] = 0.5 * d.min(axis=1)
+        print(f"\n== population-spread sigma0 ({P} draws per population): "
+              f"median {np.median(pop_sig):.4g}, "
+              f"min {pop_sig.min():.4g}, max {pop_sig.max():.4g} "
+              f"(isotropic arm uses {sigma0:g})")
     print(f"\n== descent null: {a.descents} draws, {a.budget} evals each, "
-          f"sigma0 = {sigma0:g}, {'full covariance' if a.full_cov else 'isotropic'}")
-    jobs = [(a.func, k, a.budget, sigma0, not a.full_cov)
+          f"sigma0 = {'population spread' if pop_sig is not None else sigma0}"
+          f", {'full covariance' if a.full_cov else 'isotropic'}")
+    jobs = [(a.func, k, a.budget,
+             sigma0 if pop_sig is None else float(pop_sig[k]),
+             not a.full_cov)
             for k in range(a.descents)]
     from multiprocess import Pool
     rows = []
     t0 = time.time()
+    # evaluating the population is not free: P evaluations per block of P
+    # descents = exactly one per draw, charged so the arms stay budget-matched.
+    pop_charge = 1 if pop_sig is not None else 0
     with Pool(a.procs) as pool:
         for k, j0, j, dist, f, used, first in pool.imap_unordered(_null_descent, jobs):
-            rows.append((k, j0, j, dist, f, used)
+            rows.append((k, j0, j, dist, f, used + pop_charge)
                         + tuple(v for pair in first for v in pair))
     print(f"  {len(rows)} descents in {time.time() - t0:.1f}s")
     if a.csv:

@@ -281,7 +281,10 @@ BBOB がカバーしない **多大域最適解**・**deceptive 2-D 多峰** 系
 **呼び方**: `core.benchmarks.niching_by_name("M13-D10-PIN01")` ＝ `M{PID:02d}-D{dim:02d}-PIN{pin:02d}`。
 **960 問を事前構築せず名前から都度作る**（`make_mmo2024(pid, dim, pin)`）。CEC2013 の名前も同じ関数で引ける。
 `scripts/hunt_coverage.py` は `NICHING_BENCHMARKS_BY_NAME` ではなくこの関数を使うので、`--null` と
-`--hv` はそのままこの suite に当たる（`--funcs M09-D10-PIN01,...` と渡す）。**元コードは f\* が非ゼロの最小化**なので wrapper が f\* を引いて
+`--hv` はそのままこの suite に当たる（`--funcs M09-D10-PIN01,...` と渡す）。
+**`--null --pop-sigma <P>`**（その97）は同じ per-draw ダンプを、σ0 を `--sigma-ratio × span` ではなく
+**P 点 population の最近傍距離の半分**に取って書き出す ＝ その95 の `split` 腕の規則。
+**始点ストリームと CMA seed は `--null` の既定と同一**なので、保存済みの等方ダンプと **draw 番号で厳密に対**にできる。**元コードは f\* が非ゼロの最小化**なので wrapper が f\* を引いて
 本リポジトリの「最適値 0」規約に合わせている。**`data/*.csv` を相対パスで読む**ため
 `__init__` と `form()` だけ `contextlib.chdir` で包んである（`func_eval` はファイルを触らない）。
 
