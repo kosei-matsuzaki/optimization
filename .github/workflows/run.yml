@@ -224,6 +224,73 @@ jobs:
           gzip -9f analysis/hm/e71/*.txt
           ls -l analysis/hm/e71/
 
+      - name: Fetch the GECCO'2024 MMO entrants' papers (per-problem PR tables)
+        # Entry 91 pinned the competition's published MPR, but only as a
+        # 16-problem mean per dimension: the result deck carries no per-problem
+        # value, so "the class ceiling clears the published best on problem X"
+        # cannot be written from it.  The three entrants' own papers are the
+        # only place a per-problem table could live.  Only one arXiv number is
+        # known (N-DAM-CMA-ES); the other two are looked up by title through
+        # the arXiv API, which the sandbox also cannot reach.
+        run: |
+          set -uo pipefail
+          pip install pypdf
+          mkdir -p analysis/mmo2024/e92/refs
+          python3 - <<'PY'
+          import pathlib, re, subprocess, urllib.parse
+          from pypdf import PdfReader
+
+          out = pathlib.Path("analysis/mmo2024/e92/refs")
+          KNOWN = {"ndam_cmaes_2407.00939": "2407.00939"}   # Karunarathne+ 2024
+          TITLES = {                                        # looked up by title
+              "rrcmaes_denobel2024": "Avoiding redundant restarts in multimodal global optimization",
+              "trde_lr_wang2024": "multimodal optimization differential evolution local restart GECCO 2024 competition",
+          }
+
+          def arxiv_search(q):
+              url = ("http://export.arxiv.org/api/query?search_query="
+                     + urllib.parse.quote(f'all:"{q}"' if " " in q else q)
+                     + "&max_results=5")
+              r = subprocess.run(["curl", "-sSL", "--max-time", "60", url],
+                                 capture_output=True, text=True)
+              if r.returncode != 0:
+                  print("SEARCH-FAIL", q, r.returncode); return []
+              hits = re.findall(r"<id>http://arxiv\.org/abs/([^<]+)</id>", r.stdout)
+              tit = [t.strip().replace("\n", " ") for t in
+                     re.findall(r"<title>(.*?)</title>", r.stdout, re.S)][1:]
+              for h, t in zip(hits, tit):
+                  print(f"  HIT {h}  {t[:90]}")
+              return hits
+
+          wanted = dict(KNOWN)
+          for name, q in TITLES.items():
+              hits = arxiv_search(q)
+              if hits:
+                  wanted[name] = hits[0].split("v")[0]
+
+          ok = []
+          for name, num in wanted.items():
+              pdf = pathlib.Path(f"/tmp/{name}.pdf")
+              for url in (f"https://arxiv.org/pdf/{num}", f"https://export.arxiv.org/pdf/{num}"):
+                  r = subprocess.run(["curl", "-sSL", "--max-time", "120", "-o", str(pdf), url],
+                                     capture_output=True, text=True)
+                  if r.returncode == 0 and pdf.exists() and pdf.stat().st_size > 10000:
+                      break
+                  print(f"FETCH-FAIL {name} {url} rc={r.returncode}")
+              else:
+                  continue
+              try:
+                  text = "\n".join((p.extract_text() or "") for p in PdfReader(str(pdf)).pages)
+              except Exception as e:
+                  print(f"PARSE-FAIL {name}: {e}"); continue
+              (out / f"{name}.txt").write_text(text)
+              print(f"OK {name} ({num}): {len(text)} chars")
+              ok.append(name)
+          print("ENTRANTS EXTRACTED", len(ok), "of", len(wanted))
+          PY
+          gzip -9f analysis/mmo2024/e92/refs/*.txt 2>/dev/null
+          ls -l analysis/mmo2024/e92/refs/ || true
+
       - name: Fetch the GECCO 2024/2025 MMO suite (Ahrari+ 16 problems)
         # The suite that GECCO 2024/2025 moved to is distributed from a Google
         # Sites page whose Drive links the sandbox cannot reach (CONNECT 403 on
