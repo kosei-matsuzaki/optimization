@@ -523,6 +523,11 @@ def null_mode(argv: list[str]) -> None:
     ap.add_argument("--func", default="N18-CF3-10D")
     ap.add_argument("--geo-draws", type=int, default=1_000_000)
     ap.add_argument("--descents", type=int, default=0)
+    ap.add_argument("--descent-start", type=int, default=0,
+                    help="first draw index (default 0).  Draw k depends on k "
+                         "alone, so `--descent-start 200 --descents 200` "
+                         "produces exactly draws 200-399 of a 400-draw run and "
+                         "can be concatenated onto a saved 200-draw dump.")
     ap.add_argument("--budget", type=int, default=1499,
                     help="evaluations per descent (N18 hunt length, e76)")
     ap.add_argument("--sigma-ratio", type=float, default=0.2,
@@ -573,6 +578,11 @@ def null_mode(argv: list[str]) -> None:
 
     if a.descents <= 0:
         return
+    if a.descent_start and a.pop_sigma > 0:
+        # `--pop-sigma` sets sigma0 from blocks of consecutive draws, so an
+        # offset would move the block boundaries and the arm would stop pairing
+        # with the saved dumps.  Refuse rather than produce a silent mismatch.
+        raise SystemExit("--descent-start cannot be combined with --pop-sigma")
     # ── restart-lander null: uniform draw, then descend ─────────────────────
     sigma0 = a.sigma_ratio * (hi - lo)
     pop_sig = None
@@ -601,10 +611,17 @@ def null_mode(argv: list[str]) -> None:
     print(f"\n== descent null: {a.descents} draws, {a.budget} evals each, "
           f"sigma0 = {'population spread' if pop_sig is not None else sigma0}"
           f", {'full covariance' if a.full_cov else 'isotropic'}")
+    # `--descent-start` extends a saved dump instead of recomputing it.  Draw k
+    # is a closed form of k alone (start point `default_rng(1_000_000 + k)`, CMA
+    # seed `k + 1`), so draws [S, S+n) are bit-identical whether they are drawn
+    # as part of range(S+n) or of range(S, S+n): entry 100 checked this against
+    # the saved dumps before using it.  It is the only way a draw-count sweep
+    # fits one cycle -- going 200 -> 400 costs the 200 new draws, not 400.
+    ks = range(a.descent_start, a.descent_start + a.descents)
     jobs = [(a.func, k, a.budget,
              sigma0 if pop_sig is None else float(pop_sig[k]),
              not a.full_cov)
-            for k in range(a.descents)]
+            for k in ks]
     from multiprocess import Pool
     rows = []
     t0 = time.time()
