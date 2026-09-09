@@ -5887,8 +5887,12 @@ draw 番号が 0..n-1 に隙間なく一致することも全 16 問で assert �
 （本数を増やし続ける路線に上限を設ける。**この 3 つ目の枝を先に書いておくのが今回の設計の要点**）。
 
 **ファイル**: `analysis/mmo2024/e103/`（`prereg.md` / `run.sh` / `analyze.py` / `scored.txt` /
-`support_vs_draws.csv` ＋ 16 問の `*_sig100_draws400to499.csv.gz`）。
+`support_vs_draws.csv`）。
 `analyze.py` は 4 上限を e92 / e93 から import しており、**このテーマの採点は 1 経路のまま**。
+**行単位ダンプ `*_sig100_draws400to499.csv.gz`（16 問）はその104 で削除した** ——
+**その104 が draw 本数の掃引を打ち切ったため**（下記その104 の節）。**数値はすべて本文と
+`support_vs_draws.csv` / `scored.txt` に残っている。** 再生成は
+`analysis/mmo2024/e103/run.sh 400`（16 問で約 22 分）。
 
 ### 400 → 600 draw の増分は +0.0306 —— 窓を 200 draw に倍にしても不感帯。対で検定すると 6/5/5・p=0.35 で有意でない ＝ **事前登録の停止規則により draw 本数の掃引を打ち切る**。主指標 `mpr` は 200 draw 足しても 0.5509 → 0.5530 でほぼ不動（その104, `analysis/mmo2024/e104/`）
 
@@ -5982,6 +5986,16 @@ draw 番号が 0..n−1 に隙間なく一致することも全 16 問で assert
 **「600 draw で観測された被覆 `mpr_sup` = 0.7119」**と本数を書く。
 主指標は **`mpr` 0.5530・`mpr_earlystop` 0.6146**（どちらも本数に安定）。
 **(c) `mpr_sup_chao1` は比較に出さない**（§6）。
+
+**ファイル**: `analysis/mmo2024/e104/`（`prereg.md` / `paired.py` / `scored.txt` / `paired_support.csv`）。
+`paired.py` は `load` / `check_contiguous` / `chao1_parts` を e103 の `analyze.py` から import しており
+（e103 はさらに 4 上限を e92 / e93 から import）、**このテーマの採点は 1 経路のまま**。
+**行単位ダンプ `*_sig100_draws500to599.csv.gz`（16 問）と、その103 の `*_draws400to499.csv.gz`（16 問）は
+この回で削除した** —— **draw 本数の掃引を打ち切ったので、この 2 つの chunk を延ばす回はもう無い**
+（保持規則「路線を畳んだら、その生データも消す」）。**削除前に本節が全数値を本文に書き出してある**
+（§2 の増分・§3 の検定・§4 の 16 問表・§5 の水準別・§6 の補正項・§7 の主指標）。
+**n ≤ 400 の表は e98 / e99 の 200 draw ダンプ ＋ e100 の 200-399 chunk から今も再現できる**（そちらは残してある）。
+再生成は `analysis/mmo2024/e103/run.sh 400` と `run.sh 500`（各 16 問・約 22 分）。
 
 ## 多峰テーマの測定上の教訓
 
@@ -6541,6 +6555,13 @@ draw 番号が 0..n−1 に隙間なく一致することも全 16 問で assert
    **`pip install -r requirements.txt` は `pynmmso` のビルドで落ちる**
    （`setup.py` の `test_suite='nose.collector'` が setuptools の廃止経路を踏む）。
    `matplotlib` も必須（`core/visualize.py` が無条件 import なので無いと `quick_check.py` が動かない）。
+   **【その104 の罠・要注意】`multiprocess` を入れ忘れると `hunt_coverage.py --null` は
+   `--procs` を使う直前まで正常に進み、幾何 null を出力してから `ModuleNotFoundError` で落ちる。**
+   ところが **`analysis/mmo2024/e103/run.sh` は `2>&1 | grep -E 'descents in|K = '` で stderr を捨てる**ので、
+   **画面には「問題名と K」だけが出て次の問題へ進み、16 問が数十秒で「完走」したように見える。**
+   **`*.csv.gz` が 1 つも生成されていないことでしか気づけない。**
+   **run.sh 系を回したら、まず `ls <出力先>/*.gz | wc -l` で本数を確認すること**
+   （その104 は「チャンク完了」のログ行を信じかけた。**完了判定はログ行ではなくファイル本数で行う**）。
 2. `pynmmso` は sdist を site-packages に直接コピーする
    （`pip download --no-deps --no-binary :all: pynmmso` → 展開 → `cp -r pynmmso $(python3 -c
    'import site;print(site.getsitepackages()[0])')`）。`setup.py` の編集は不要
