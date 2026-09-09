@@ -1,6 +1,0 @@
-36 replicates (N14-CF3-3D) x (iso,hv,split) x 12 reps, 400000 evals each
-  10/36 in 95s
-  20/36 in 160s
-  30/36 in 243s
-  36 replicates in 280.2s
-  rows written to analysis/hm/e95/hv_N14.csv.gz
