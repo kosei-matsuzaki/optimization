@@ -192,6 +192,21 @@ def main():
                 m200[k].append(v)
     print("   16-problem mean at n=200: " + "  ".join(
         f"{k} {np.mean(m200[k]):.4f} (n={len(m200[k])})" for k in KEYS))
+    # Entry 99 reported `mpr_earlystop` over 12 problems, not 16, because it
+    # dropped from BOTH arms every problem whose *isotropic* dump predates entry
+    # 92 and so carries no `ev_<eps>` columns, rather than average different
+    # problem sets.  Entry 99 §2/§5 names those as M01 and M13; checked this
+    # cycle, there are **four** -- M01 and M13 (entry 91) plus M02 and M03
+    # (entry 92) -- which is why its n was 12 and not 14.  The prose was
+    # incomplete; the number was right.  Every sigma0=0.1 dump has the columns,
+    # so the 16-problem figure above is a wider set and is NOT comparable with
+    # entry 99's 0.5692.  Restricting to entry 99's set reproduces it.
+    E99_EARLYSTOP_DROP = ("M01-D10-PIN01", "M02-D10-PIN01",
+                          "M03-D10-PIN01", "M13-D10-PIN01")
+    sub = [per[nm]["cur"][200]["mpr_earlystop"] for nm in per
+           if nm not in E99_EARLYSTOP_DROP]
+    print(f"   mpr_earlystop on entry 99's 12-problem set: {np.mean(sub):.4f} "
+          f"(n={len(sub)})  [entry 99 recorded 0.5692]")
 
     # ── per-problem: 200 vs 400 ──────────────────────────────────────────────
     print("\n== per problem, sigma0 = 0.1: 200 -> 400 draws")
