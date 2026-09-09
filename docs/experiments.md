@@ -284,7 +284,12 @@ BBOB がカバーしない **多大域最適解**・**deceptive 2-D 多峰** 系
 `--hv` はそのままこの suite に当たる（`--funcs M09-D10-PIN01,...` と渡す）。
 **`--null --pop-sigma <P>`**（その97）は同じ per-draw ダンプを、σ0 を `--sigma-ratio × span` ではなく
 **P 点 population の最近傍距離の半分**に取って書き出す ＝ その95 の `split` 腕の規則。
-**始点ストリームと CMA seed は `--null` の既定と同一**なので、保存済みの等方ダンプと **draw 番号で厳密に対**にできる。**元コードは f\* が非ゼロの最小化**なので wrapper が f\* を引いて
+**始点ストリームと CMA seed は `--null` の既定と同一**なので、保存済みの等方ダンプと **draw 番号で厳密に対**にできる。
+**`--null --descent-start <S>`**（その100、既定 0 ＝ 従来と同一）は draw 番号 S から `--descents` 本を引く。
+**draw k は k だけの閉じた形**（始点 `default_rng(1_000_000 + k)`、CMA seed `k + 1`）なので、
+**`--descent-start 200 --descents 200` は 400 draw run の draws 200-399 と完全に同一**になり、
+保存済みの 200 draw ダンプに連結して本数を増やせる（**引き直しは不要 ＝ 費用は増分だけ**）。
+**`--pop-sigma` との併用は拒否する**（block 境界がずれて保存ダンプとの対が壊れるため）。**元コードは f\* が非ゼロの最小化**なので wrapper が f\* を引いて
 本リポジトリの「最適値 0」規約に合わせている。**`data/*.csv` を相対パスで読む**ため
 `__init__` と `form()` だけ `contextlib.chdir` で包んである（`func_eval` はファイルを触らない）。
 
