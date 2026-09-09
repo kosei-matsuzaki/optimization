@@ -1,0 +1,56 @@
+==============================================================================
+entry 104 -- paired 200-draw windows, new suite D=10, sigma0 = 0.1
+==============================================================================
+problems loaded: 16   draw depths: [600]
+
+== identity check (must reproduce the tables already in the record)
+   n=200  mpr 0.5393  mpr_earlystop 0.5864  mpr_sup 0.6287  mpr_sup_chao1 0.6549   OK
+   n=400  mpr 0.5509  mpr_earlystop 0.6093  mpr_sup 0.6813  mpr_sup_chao1 0.7276   OK
+   n=500  mpr 0.5529  mpr_earlystop 0.6133  mpr_sup 0.7006  mpr_sup_chao1 0.7357   OK
+
+== 16-problem mean of S_obs/K (the pre-registered branch quantity)
+   n=200 0.6287    n=400 0.6813    n=600 0.7119
+   Delta(200->400) = +0.0525   (record: +0.0525)
+   Delta(400->600) = +0.0306   <-- the pre-registered quantity
+
+   BRANCH: DEAD BAND (+0.0263 < +0.0306 < +0.0526): neither branch fires.  Per the pre-registered stopping rule the draw-count sweep CLOSES and escalates to the review cycle -- it does not buy another point.
+
+== paired test, per problem: a_i = S(400)-S(200), b_i = S(600)-S(400)
+   slower / faster / tied = 6 / 5 / 5   (of 16)
+   W+ (400->600 slower) = 43.5, W- (faster) = 22.5, n_nonzero = 11
+   Wilcoxon signed-rank W=22.5, p=0.3491, rank-biserial=+0.318, alpha=0.05 two-sided
+   medians: a +0.0000   b +0.0100
+   -> the mean drop is NOT distinguishable from noise
+
+== firing check (f <= 1e-5), 400 -> 600 draws
+   optima bought by the 200 new draws: 8 of 240
+   problems adding none: 11/16
+   (all of these still reach f <= 1e-5, i.e. support saturation, not a dead measurement -- 'reached' column below)
+
+problem           K    S200    S400    S600        a        b  opt400  opt600  new  reached
+M01-D10-PIN01    20   0.720   0.800   0.860  +0.0800  +0.0600      15      17    2      486
+M02-D10-PIN01    20   0.560   0.700   0.740  +0.1400  +0.0400      10      10    0      581
+M03-D10-PIN01    20   0.680   0.730   0.830  +0.0500  +0.1000      13      15    2      524
+M04-D10-PIN01    20   0.750   0.750   0.800  +0.0000  +0.0500      15      16    1      600
+M05-D10-PIN01    20   0.700   0.800   0.800  +0.1000  +0.0000      16      16    0      527
+M06-D10-PIN01    20   0.450   0.600   0.600  +0.1500  +0.0000      12      12    0       77
+M07-D10-PIN01    20   0.600   0.600   0.600  +0.0000  +0.0000      12      12    0      364
+M08-D10-PIN01    20   0.700   0.700   0.800  +0.0000  +0.1000      14      16    2      454
+M09-D10-PIN01    10   0.540   0.540   0.540  +0.0000  +0.0000       5       5    0      379
+M10-D10-PIN01    10   0.820   0.820   0.840  +0.0000  +0.0200       4       4    0      396
+M11-D10-PIN01    10   0.600   0.600   0.600  +0.0000  +0.0000       5       5    0      426
+M12-D10-PIN01    10   0.800   0.800   0.800  +0.0000  +0.0000       7       7    0      568
+M13-D10-PIN01    10   0.800   0.900   0.900  +0.1000  +0.0000       9       9    0      481
+M14-D10-PIN01    10   0.300   0.300   0.300  +0.0000  +0.0000       3       3    0      132
+M15-D10-PIN01    10   0.440   0.660   0.680  +0.2200  +0.0200       6       6    0      455
+M16-D10-PIN01    10   0.600   0.600   0.700  +0.0000  +0.1000       6       7    1      371
+
+== instruments (NOT the quantity under test).  published best = 0.651
+     n               mpr     mpr_earlystop           mpr_sup     mpr_sup_chao1    corr/K
+   200            0.5393            0.5864            0.6287            0.6549    0.0261
+   300            0.5464            0.5993            0.6550            0.6919    0.0369
+   400            0.5509            0.6093            0.6813            0.7276    0.0464
+   500            0.5529            0.6133            0.7006            0.7357    0.0351
+   600            0.5530            0.6146            0.7119            0.7306    0.0187
+
+wrote /home/user/optimization/analysis/mmo2024/e104/paired_support.csv
