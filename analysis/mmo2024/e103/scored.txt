@@ -1,0 +1,96 @@
+==============================================================================
+entry 103 -- sigma0 = 0.1 x span, new suite D=10, past 400 draws
+==============================================================================
+problems loaded: 16   draw depths present: [500]
+homogeneous depth (every problem reaches it): n = 500
+
+== identity check (must reproduce the tables already in the record)
+   n=200  mpr 0.5393  mpr_earlystop 0.5864  mpr_sup 0.6287  mpr_sup_chao1 0.6549   [entry 99/98]
+   n=400  mpr 0.5509  mpr_earlystop 0.6093  mpr_sup 0.6813  mpr_sup_chao1 0.7276   [entry 101]
+   entry 101 recorded at n=400: mpr 0.5509  mpr_earlystop 0.6093  mpr_sup 0.6813  mpr_sup_chao1 0.7276
+
+== PRIMARY (prereg): 16-problem mean of `S_obs/K` and its per-100-draw increment
+     n    S_obs/K   increment   prior (e101)   optima at f<=1e-5
+    50     0.4944                                            107
+   100     0.5788    +0.1688*                                127
+   200     0.6287     +0.0500        +0.0499                 139
+   300     0.6550     +0.0263        +0.0263                 146
+   400     0.6813     +0.0262        +0.0263                 152
+   500     0.7006     +0.0194                                157
+   (* = normalised to 100 draws from a wider window)
+
+   >>> increment 400->500: +0.0194  -> DEAD BAND (0.0132 < x < 0.0263): neither branch fires; the next chunk is needed
+
+== paired test: per-problem increment, window 300->400 vs 400->500 (unit = problem, n=16)
+   mean increment 300->400 +0.0263   400->500 +0.0194   difference -0.0069
+   problems slower / faster / unchanged: 4 / 4 / 8
+   Wilcoxon signed-rank (alpha=0.05): W=16.5, p=0.8332, rank-biserial=+0.083  -> NOT significant
+   (ties are problems that bought nothing in either window; with a support this sparse the test has little power, which is itself the reason one 100-draw window cannot settle the queue's question)
+
+== firing check: which problems bought optima in draws 400-499
+problem           K  opt@1e-5 400   -> at 500  new-only draws  any f<=1e-5
+M01-D10-PIN01    20            15          15               0          408
+M02-D10-PIN01    20            10          10               0          485
+M03-D10-PIN01    20            13          15               2          434
+M04-D10-PIN01    20            15          16               1          500
+M05-D10-PIN01    20            16          16               0          435
+M06-D10-PIN01    20            12          12               0           67
+M07-D10-PIN01    20            12          12               0          309
+M08-D10-PIN01    20            14          16               2          375
+M09-D10-PIN01    10             5           5               0          311
+M10-D10-PIN01    10             4           4               0          327
+M11-D10-PIN01    10             5           5               0          351
+M12-D10-PIN01    10             7           7               0          470
+M13-D10-PIN01    10             9           9               0          403
+M14-D10-PIN01    10             3           3               0          109
+M15-D10-PIN01    10             6           6               0          386
+M16-D10-PIN01    10             6           6               0          316
+   optima bought by the 100 new draws: 5 of 240 (a problem buying 0 while 'any f<=1e-5' > 0 is a saturated support, not a dead arm)
+
+== `S_obs/K` per accuracy level (16-problem mean) and its per-100-draw increment
+     n               eps=0.1              eps=0.01             eps=0.001            eps=0.0001             eps=1e-05
+    50       0.5312                0.5188                0.5156                0.4656                0.4406         
+   100       0.6219  +0.1812       0.5969  +0.1562       0.5969  +0.1625       0.5594  +0.1875       0.5188  +0.1563
+   200       0.6719  +0.0500       0.6531  +0.0562       0.6406  +0.0437       0.6125  +0.0531       0.5656  +0.0469
+   300       0.7000  +0.0281       0.6813  +0.0281       0.6687  +0.0281       0.6375  +0.0250       0.5875  +0.0219
+   400       0.7250  +0.0250       0.7031  +0.0219       0.6969  +0.0281       0.6656  +0.0281       0.6156  +0.0281
+   500       0.7437  +0.0187       0.7219  +0.0188       0.7156  +0.0188       0.6906  +0.0250       0.6312  +0.0156
+
+== 16-problem mean of each ceiling along the draw count (published best at D=10 = 0.651)
+     n               mpr    mpr_earlystop          mpr_sup    mpr_sup_chao1   chao1 - 0.651
+    50      0.4725 (n=16)     0.4894 (n=16)     0.4944 (n=16)     0.5355 (n=16)         -0.1155
+   100      0.5235 (n=16)     0.5602 (n=16)     0.5788 (n=16)     0.6111 (n=16)         -0.0399
+   200      0.5393 (n=16)     0.5864 (n=16)     0.6287 (n=16)     0.6549 (n=16)         +0.0039
+   300      0.5464 (n=16)     0.5993 (n=16)     0.6550 (n=16)     0.6919 (n=16)         +0.0409
+   400      0.5509 (n=16)     0.6093 (n=16)     0.6813 (n=16)     0.7276 (n=16)         +0.0766
+   500      0.5529 (n=16)     0.6133 (n=16)     0.7006 (n=16)     0.7357 (n=16)         +0.0847
+
+== `mpr_sup_chao1` split (16-problem mean).  entry 101: the correction/K is a U in n
+     n     S_obs/K   correction/K     total
+    50      0.4944         0.0411    0.5355
+   100      0.5788         0.0323    0.6111
+   200      0.6287         0.0261    0.6549
+   300      0.6550         0.0369    0.6919
+   400      0.6813         0.0464    0.7276
+   500      0.7006         0.0351    0.7357
+
+== per problem, 400 -> 500 draws
+problem           K               mpr               sup             chao1
+M01-D10-PIN01    20  0.6004->0.5898     0.8000->0.8000     0.8067->0.8067   
+M02-D10-PIN01    20  0.4614->0.4615     0.7000->0.7400     0.8200->0.9000   
+M03-D10-PIN01    20  0.5293->0.5296     0.7300->0.8300     0.7300->0.9050   
+M04-D10-PIN01    20  0.6204->0.6333     0.7500->0.8000     0.7500->0.8500   
+M05-D10-PIN01    20  0.6822->0.6742     0.8000->0.8000     0.8000->0.8000   
+M06-D10-PIN01    20  0.3847->0.3823     0.6000->0.6000     1.0000->0.7500   
+M07-D10-PIN01    20  0.4950->0.4959     0.6000->0.6000     0.6450->0.6150   
+M08-D10-PIN01    20  0.6272->0.6421     0.7000->0.8000     0.7000->0.8250   
+M09-D10-PIN01    10  0.4603->0.4593     0.5400->0.5400     0.5400->0.5400   
+M10-D10-PIN01    10  0.6292->0.6309     0.8200->0.8400     0.8200->0.8400   
+M11-D10-PIN01    10  0.5178->0.5188     0.6000->0.6000     0.6000->0.6000   
+M12-D10-PIN01    10  0.7352->0.7464     0.8000->0.8000     0.8000->0.8000   
+M13-D10-PIN01    10  0.7845->0.7975     0.9000->0.9000     0.9000->0.9000   
+M14-D10-PIN01    10  0.2989->0.2979     0.3000->0.3000     0.3000->0.3000   
+M15-D10-PIN01    10  0.4167->0.4185     0.6600->0.6600     0.8300->0.7400   
+M16-D10-PIN01    10  0.5718->0.5692     0.6000->0.6000     0.6000->0.6000   
+
+wrote /home/user/optimization/analysis/mmo2024/e103/support_vs_draws.csv

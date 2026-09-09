@@ -238,6 +238,43 @@ def main():
                        "fires; the next chunk is needed")
         print(f"\n   >>> increment {400}->{n}: {v:+.4f}  -> {verdict}")
 
+    # ── is the drop in the increment distinguishable from noise? ────────────
+    # The means above are 16-problem means, so the honest unit is the problem
+    # and the two windows are paired within it: every problem contributes a
+    # 300->400 increment and a 400->500 increment.  Without this the cycle would
+    # be comparing two point estimates and calling the difference a slowdown --
+    # the failure entry 83 records as the theme's most expensive misreading.
+    if 500 in incs and full_n >= 500:
+        from scipy.stats import wilcoxon
+        a = [chao1_parts(per[nm]["d"], per[nm]["K"], 400)[0]
+             - chao1_parts(per[nm]["d"], per[nm]["K"], 300)[0] for nm in per]
+        b_ = [chao1_parts(per[nm]["d"], per[nm]["K"], 500)[0]
+              - chao1_parts(per[nm]["d"], per[nm]["K"], 400)[0] for nm in per]
+        dif = [y - x for x, y in zip(a, b_)]
+        neg = sum(1 for v in dif if v < -1e-12)
+        pos = sum(1 for v in dif if v > 1e-12)
+        tie = len(dif) - neg - pos
+        print("\n== paired test: per-problem increment, window 300->400 vs "
+              "400->500 (unit = problem, n=16)")
+        print(f"   mean increment 300->400 {np.mean(a):+.4f}   "
+              f"400->500 {np.mean(b_):+.4f}   difference {np.mean(dif):+.4f}")
+        print(f"   problems slower / faster / unchanged: {neg} / {pos} / {tie}")
+        if neg + pos > 0:
+            st, p = wilcoxon(b_, a, zero_method="wilcox")
+            # matched-pairs rank-biserial: the effect size for signed-rank
+            n_nz = neg + pos
+            tot = n_nz * (n_nz + 1) / 2
+            rbc = 1 - 2 * st / tot
+            print(f"   Wilcoxon signed-rank (alpha=0.05): W={st:.1f}, "
+                  f"p={p:.4f}, rank-biserial={rbc:+.3f}  "
+                  f"-> {'significant' if p < 0.05 else 'NOT significant'}")
+        else:
+            print("   every problem is tied; no test is possible")
+        print("   (ties are problems that bought nothing in either window; "
+              "with a support this sparse the test has little power, which is "
+              "itself the reason one 100-draw window cannot settle the queue's "
+              "question)")
+
     # ── firing check (prereg §1) ────────────────────────────────────────────
     if tested:
         n1 = max(tested)
@@ -262,6 +299,38 @@ def main():
         print(f"   optima bought by the {n1 - 400} new draws: {bought} of "
               f"{tot_K} (a problem buying 0 while 'any f<=1e-5' > 0 is a "
               f"saturated support, not a dead arm)")
+
+    # ── which accuracy level is the support still growing at? ───────────────
+    # `S_obs/K` above is the mean over the five accuracies, so a rise can come
+    # from the loose levels alone.  The project judges at eps <= 1e-3 and the
+    # published comparison is 1e-5 single-level (queue item 2's own rule), so
+    # the increment has to be read per level before it means anything about a
+    # ceiling.  Costs no runs: the dumps already carry every level.
+    print("\n== `S_obs/K` per accuracy level (16-problem mean) and its "
+          "per-100-draw increment")
+    print(f"{'n':>6}" + "".join(f"{f'eps={e:g}':>22}" for e in EPS))
+    prev_lvl = None
+    lvl_hist = {}
+    for n in [x for x in NS if x <= full_n]:
+        vals = []
+        for e in EPS:
+            s = []
+            for nm in per:
+                r = per[nm]
+                bf, ld = r["d"]["best_f"][:n], r["d"]["land"][:n]
+                counts = np.bincount(ld[bf <= e], minlength=r["K"])
+                s.append(int((counts > 0).sum()) / r["K"])
+            vals.append(float(np.mean(s)))
+        lvl_hist[n] = vals
+        cells = []
+        for i, v in enumerate(vals):
+            if prev_lvl is None:
+                cells.append(f"{v:>13.4f}{'':>9}")
+            else:
+                step = (v - prev_lvl[i]) * 100.0 / (n - lastn)
+                cells.append(f"{v:>13.4f}{step:>+9.4f}")
+        print(f"{n:>6}" + "".join(cells))
+        prev_lvl, lastn = vals, n
 
     # ── the four ceilings along n, at the homogeneous depth only ────────────
     print(f"\n== 16-problem mean of each ceiling along the draw count "
