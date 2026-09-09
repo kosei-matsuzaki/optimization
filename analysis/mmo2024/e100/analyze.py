@@ -255,6 +255,38 @@ def main():
                                    for k in KEYS)
               + f"{row['mpr_sup_chao1'][0] - PUBLISHED_D10:>+16.4f}")
 
+    # ── the clean paired unit: only problems actually extended to 400 ────────
+    # The 16-problem mean above holds unextended problems at 200 draws, so it
+    # mixes two draw counts.  That is the conservative direction for "did the
+    # excess widen" (a held problem contributes no growth), but it is not a
+    # like-for-like average.  The block below is the honest paired measurement:
+    # every problem in it has both 200 and 400 draws.
+    full = [nm for nm in PROBS if nm in per and per[nm]["have"] >= 400]
+    if full:
+        print(f"\n== paired unit: the {len(full)} problems extended to 400 draws "
+              f"({', '.join(n[:3] for n in full)})")
+        print(f"{'ceiling':>16}{'at 200':>10}{'at 400':>10}{'delta':>10}"
+              f"{'problems moved':>17}")
+        for k in KEYS:
+            a = [per[nm]["cur"][200][k] for nm in full]
+            b_ = [per[nm]["cur"][400][k] for nm in full]
+            moved = sum(1 for x, y in zip(a, b_) if abs(y - x) > 1e-12)
+            print(f"{k:>16}{np.mean(a):>10.4f}{np.mean(b_):>10.4f}"
+                  f"{np.mean(b_) - np.mean(a):>+10.4f}{moved:>12d}/{len(full)}")
+        so2 = [chao1_parts(per[nm]["d"], per[nm]["K"], 200) for nm in full]
+        so4 = [chao1_parts(per[nm]["d"], per[nm]["K"], 400) for nm in full]
+        print(f"{'  S_obs/K':>16}{np.mean([x[0] for x in so2]):>10.4f}"
+              f"{np.mean([x[0] for x in so4]):>10.4f}"
+              f"{np.mean([x[0] for x in so4]) - np.mean([x[0] for x in so2]):>+10.4f}")
+        print(f"{'  correction/K':>16}{np.mean([x[1] for x in so2]):>10.4f}"
+              f"{np.mean([x[1] for x in so4]):>10.4f}"
+              f"{np.mean([x[1] for x in so4]) - np.mean([x[1] for x in so2]):>+10.4f}"
+              "   <- shrinks if Chao1 is converging")
+        d_opt = sum(len(distinct_at_1e5(per[nm]["d"], 400))
+                    - len(distinct_at_1e5(per[nm]["d"], 200)) for nm in full)
+        d_K = sum(per[nm]["K"] for nm in full)
+        print(f"  optima at f<=1e-5 bought by the 200 extra draws: {d_opt} of {d_K}")
+
     # ── Chao1 split: does a draw buy an optimum or buy correction? ───────────
     print("\n== `mpr_sup_chao1` split into landed coverage and Chao1 correction "
           "(16-problem mean)")
