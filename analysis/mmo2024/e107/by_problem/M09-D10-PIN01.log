@@ -3,3 +3,8 @@ peak ratio on the reported set, 1 seeds, budget = 1 x suite
 
 function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
 ---------------------------------------------------------------------------------------------------
+M09-D10-PIN01       MC-ESO        current    10    50000    100    0.60   0.30   0.10   0.10   0.10    0.240   222
+M09-D10-PIN01       MC-ESO        reselect   10    50000    100    0.60   0.30   0.10   0.10   0.10    0.240   229
+M09-D10-PIN01       MC-ESO        history    10    50000 500000    0.60   0.30   0.10   0.10   0.10    0.240   229
+
+rows written to analysis/mmo2024/e107/by_problem/M09-D10-PIN01.csv
