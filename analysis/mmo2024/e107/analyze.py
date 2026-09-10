@@ -61,11 +61,17 @@ E106_SEED0 = {
 
 def load():
     """{rule: {problem: (5-level mean per seed, per-eps mean, K, |rep|)}}."""
+    # run.sh writes one CSV per problem under by_problem/ so a cut-short cycle
+    # still leaves finished problems behind (entry 85's rule); those are merged
+    # into rules_runs_d10.csv and the directory dropped (entry 106's pattern).
     rows = []
     for p in sorted((HERE / "by_problem").glob("*.csv")):
         rows += list(csv.DictReader(p.open()))
+    merged = HERE / "rules_runs_d10.csv"
+    if not rows and merged.exists():
+        rows = list(csv.DictReader(merged.open()))
     if not rows:
-        sys.exit("no per-problem CSV found -- did run.sh finish a problem?")
+        sys.exit("no run table found -- did run.sh finish a problem?")
     out = {r: {} for r in RULES}
     for rule in RULES:
         for nm in PROBS:
