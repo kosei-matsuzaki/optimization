@@ -689,7 +689,7 @@ claim 中のものは `(claimed ...)` が付く。2 時間以上前の claim は
 - **新 suite で最適化 run が 1 本も走っていない**（その91〜その105 の 15 サイクルすべて「最適化 run ゼロ」）。
   **キューの先頭はそこに置いた。**
 
-1. **【最優先】新 suite の 16 問で MC-ESO と NMMSO を実際に走らせ、MPR を測る。**
+1. **【最優先】新 suite の 16 問で MC-ESO と NMMSO を実際に走らせ、MPR を測る。** (claimed 2026-09-10 00:29 UTC)
    **測るもの**: D=10・PIN01・M01-M16、正規予算 `suite_max_evals`（= floor(50000×D) = 500,000）、
    **5 水準平均の MPR**（`niching_baseline.py` の `pr.mean()` が `NICHE_ACCURACIES = (1e-1..1e-5)` の平均 ＝
    公表値と同じ型。`core/runner.py:153`）。seed は 5 本から始め、余れば増やす。
