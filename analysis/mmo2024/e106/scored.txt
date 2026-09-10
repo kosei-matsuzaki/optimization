@@ -1,0 +1,41 @@
+== entry 106: MC-ESO at D=10, PIN01, budget 500,000 (5-level mean MPR on the reported set)
+problems finished: 16/16
+seeds per problem: [3]
+
+problem           K  |rep|      MPR      sd  null mpr     diff  null sup     diff   per-eps 1e-1..1e-5
+M01-D10-PIN01    20    100   0.2000  0.0361    0.5898  -0.3898    0.8000  -0.6000   0.550 0.283 0.067 0.050 0.050
+M02-D10-PIN01    20    100   0.1600  0.0100    0.4615  -0.3015    0.7400  -0.5800   0.450 0.200 0.050 0.050 0.050
+M03-D10-PIN01    20    100   0.0567  0.0058    0.5296  -0.4729    0.8300  -0.7733   0.083 0.050 0.050 0.050 0.050
+M04-D10-PIN01    20    100   0.0800  0.0100    0.6333  -0.5533    0.8000  -0.7200   0.117 0.100 0.083 0.050 0.050
+M05-D10-PIN01    20    100   0.0500  0.0000    0.6742  -0.6242    0.8000  -0.7500   0.050 0.050 0.050 0.050 0.050
+M06-D10-PIN01    20    100   0.1100  0.1277    0.3823  -0.2723    0.6000  -0.4900   0.183 0.183 0.117 0.033 0.033
+M07-D10-PIN01    20    100   0.0433  0.0115    0.4959  -0.4526    0.6000  -0.5567   0.050 0.050 0.050 0.033 0.033
+M08-D10-PIN01    20    100   0.0400  0.0000    0.6421  -0.6021    0.8000  -0.7600   0.050 0.050 0.050 0.050 0.000
+M09-D10-PIN01    10    100   0.2200  0.0200    0.4593  -0.2393    0.5400  -0.3200   0.500 0.300 0.100 0.100 0.100
+M10-D10-PIN01    10    100   0.1400  0.0693    0.6309  -0.4909    0.8400  -0.7000   0.233 0.167 0.100 0.100 0.100
+M11-D10-PIN01    10    100   0.1133  0.0115    0.5188  -0.4055    0.6000  -0.4867   0.167 0.100 0.100 0.100 0.100
+M12-D10-PIN01    10    100   0.1067  0.0115    0.7464  -0.6397    0.8000  -0.6933   0.133 0.100 0.100 0.100 0.100
+M13-D10-PIN01    10    100   0.1000  0.0000    0.7975  -0.6975    0.9000  -0.8000   0.100 0.100 0.100 0.100 0.100
+M14-D10-PIN01    10    100   0.0467  0.0808    0.2979  -0.2512    0.3000  -0.2533   0.067 0.067 0.033 0.033 0.033
+M15-D10-PIN01    10    100   0.0867  0.0231    0.4185  -0.3318    0.6600  -0.5733   0.100 0.100 0.100 0.067 0.067
+M16-D10-PIN01    10    100   0.0800  0.0000    0.5692  -0.4892    0.6000  -0.5200   0.100 0.100 0.100 0.100 0.000
+
+mean                         0.1021            0.5529  -0.4509    0.7006  -0.5985
+published 0.651                                        -0.5489 (method - published)
+
+== paired tests, unit = problem (two-sided Wilcoxon, alpha=0.05)
+   vs null mpr  (memoryless)      W=    0.0  p=3.052e-05  rank-biserial=-1.000  win/loss/tie=0/16/0  -> significant
+   vs null sup  (no redundancy)   W=    0.0  p=3.052e-05  rank-biserial=-1.000  win/loss/tie=0/16/0  -> significant
+
+== where the loss sits along the accuracy ladder (16-problem mean)
+              1e-1    1e-2    1e-3    1e-4    1e-5    1e-1 -> 1e-5  retained
+MC-ESO      0.1833  0.1250  0.0781  0.0667  0.0573         +0.1260     31.2%
+null sup    0.7437  0.7219  0.7156  0.6906  0.6312         +0.1125     84.9%
+   optima reached at 1e-5, per problem: [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0]  (K = [20, 20, 20, 20, 20, 20, 20, 20, 10, 10, 10, 10, 10, 10, 10, 10])
+   problems where that is exactly 1: 13/16; 0: 3/16
+   NOTE: the gap is already 0.5604 at eps=1e-1, so this is not a depth loss. Whether the reported set or the search is the binding side needs `--report-rule both` (same runs, no extra evaluations).
+
+== prereg branches (prereg.md)
+   mean 0.1021 < 0.5529  -> BRANCH 2: MC-ESO has a memory and still loses to the memoryless null; the loss is not redundancy
+
+wrote /home/user/optimization/analysis/mmo2024/e106/mceso_vs_null_d10.csv

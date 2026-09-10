@@ -37,13 +37,20 @@ EPS_COLS = ["pr_1e-1", "pr_1e-2", "pr_1e-3", "pr_1e-4", "pr_1e-5"]
 
 
 def load(method):
-    """{problem: (per-seed 5-level-mean MPR, per-seed per-eps array, K, |rep|)}."""
+    """{problem: (per-seed 5-level-mean MPR, per-seed per-eps array, K, |rep|)}.
+
+    Reads the merged run table. run.sh writes one CSV per problem under
+    by_problem/ so a cut-short cycle still leaves finished problems behind;
+    those are merged into baseline_d10_runs.csv and the directory dropped.
+    """
+    src = HERE / "baseline_d10_runs.csv"
+    if not src.exists():
+        sys.exit(f"{src} not found -- merge by_problem/*.csv into it first")
+    allrows = list(csv.DictReader(src.open()))
     out = {}
     for nm in PROBS:
-        p = HERE / "by_problem" / f"{nm}.csv"
-        if not p.exists():
-            continue
-        rows = [r for r in csv.DictReader(p.open()) if r["method"] == method]
+        rows = [r for r in allrows
+                if r["function"] == nm and r["method"] == method]
         if not rows:
             continue
         per_eps = np.array([[float(r[c]) for c in EPS_COLS] for r in rows])
@@ -113,6 +120,27 @@ def main():
         verdict = "significant" if p < 0.05 else "NOT significant"
         print(f"   {lbl:<30} W={w:>7.1f}  p={p:.4g}  rank-biserial={rb:+.3f}"
               f"  win/loss/tie={up}/{dn}/{tie}  -> {verdict}")
+
+    # Where along the accuracy ladder the loss sits. The null column is entry
+    # 103's `S_obs/K per accuracy level` at n=500 -- the support ceiling, so the
+    # comparison is method-vs-ceiling at each eps, not method-vs-method.
+    NULL_EPS = np.array([0.7437, 0.7219, 0.7156, 0.6906, 0.6312])
+    per = np.array([got[n][1].mean(axis=0) for n in names])
+    print("\n== where the loss sits along the accuracy ladder (16-problem mean)")
+    print(f"{'':<10}" + "".join(f"{c.replace('pr_',''):>8}" for c in EPS_COLS)
+          + f"{'1e-1 -> 1e-5':>16}{'retained':>10}")
+    for lbl, v in ((args.method, per.mean(axis=0)), ("null sup", NULL_EPS)):
+        print(f"{lbl:<10}" + "".join(f"{x:>8.4f}" for x in v)
+              + f"{v[0] - v[-1]:>+16.4f}{v[-1] / v[0]:>10.1%}")
+    k = np.array([got[n][2] for n in names])
+    at5 = np.array([int(round(a * b)) for a, b in zip(per[:, -1], k)])
+    print("   optima reached at 1e-5, per problem: "
+          f"{[int(v) for v in at5]}  (K = {[int(v) for v in k]})")
+    print(f"   problems where that is exactly 1: {int((at5 == 1).sum())}/16; "
+          f"0: {int((at5 == 0).sum())}/16")
+    print("   NOTE: the gap is already 0.5604 at eps=1e-1, so this is not a "
+          "depth loss. Whether the reported set or the search is the binding "
+          "side needs `--report-rule both` (same runs, no extra evaluations).")
 
     print("\n== prereg branches (prereg.md)")
     mm = m.mean()
