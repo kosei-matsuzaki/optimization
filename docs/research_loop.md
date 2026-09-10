@@ -689,7 +689,7 @@ claim 中のものは `(claimed ...)` が付く。2 時間以上前の claim は
 - **新 suite で最適化 run が 1 本も走っていない**（その91〜その105 の 15 サイクルすべて「最適化 run ゼロ」）。
   **キューの先頭はそこに置いた。**
 
-1. **【最優先】NMMSO を新 suite で回し、比較を 1 対 1 から順位に変える。**
+1. **【最優先】NMMSO を新 suite で回し、比較を 1 対 1 から順位に変える。** (claimed 2026-09-10 18:29 UTC)
    **測るもの**: `niching_baseline.py --funcs M01..M16-D10-PIN01 --methods NMMSO --evals-frac 1.0
    --seeds 1 --report-rule current`。**その107 が使った seed 1 本の形をそのまま当てる** ——
    MC-ESO 側はその107 の `analysis/mmo2024/e107/rules_runs_d10.csv`（seed 0）と**同じ seed で対**になるので、
