@@ -1,0 +1,4 @@
+function,method,rule,seed,evals,n_optima,n_reported,pr_1e-1,pr_1e-2,pr_1e-3,pr_1e-4,pr_1e-5
+M04-D10-PIN01,MC-ESO,current,0,500000,20,100,0.1000,0.1000,0.0500,0.0500,0.0500
+M04-D10-PIN01,MC-ESO,reselect,0,500000,20,100,0.1000,0.1000,0.0500,0.0500,0.0500
+M04-D10-PIN01,MC-ESO,history,0,500000,20,500000,0.1000,0.1000,0.0500,0.0500,0.0500
