@@ -1,0 +1,50 @@
+runs held out of the headline to keep seeds balanced: M05-D10-PIN01 seed 2 (1e-1 0.0000), M06-D10-PIN01 seed 2 (1e-1 0.0500)
+== entry 109: NMMSO at D=10, PIN01, budget 500,000, reporting rule 'current'
+problems finished: 16/16
+runs: 32   seeds per problem: [2]
+
+problem           K  NMMSO@1e-1  NMMSO MPR      sd  MC-ESO MPR  null mpr  null sup  |rep|
+M01-D10-PIN01    20      0.2750     0.1350  0.0212      0.2000    0.5898    0.8000     15
+M02-D10-PIN01    20      0.7250     0.2550  0.0212      0.1600    0.4615    0.7400     16
+M03-D10-PIN01    20      0.6500     0.3750  0.1061      0.0567    0.5296    0.8300     18
+M04-D10-PIN01    20      0.2250     0.1250  0.0071      0.0800    0.6333    0.8000     13
+M05-D10-PIN01    20      0.0250     0.0250  0.0354      0.0500    0.6742    0.8000     62
+M06-D10-PIN01    20      0.0250     0.0100  0.0141      0.1100    0.3823    0.6000    100
+M07-D10-PIN01    20      0.2250     0.0450  0.0071      0.0433    0.4959    0.6000     32
+M08-D10-PIN01    20      0.0000     0.0000  0.0000      0.0400    0.6421    0.8000     82
+M09-D10-PIN01    10      0.3000     0.2200  0.0000      0.2200    0.4593    0.5400     11
+M10-D10-PIN01    10      0.9500     0.4600  0.0283      0.1400    0.6309    0.8400     10
+M11-D10-PIN01    10      0.3500     0.1500  0.0424      0.1133    0.5188    0.6000     60
+M12-D10-PIN01    10      0.1500     0.1100  0.0141      0.1067    0.7464    0.8000     10
+M13-D10-PIN01    10      0.1000     0.0300  0.0141      0.1000    0.7975    0.9000    100
+M14-D10-PIN01    10      0.0500     0.0500  0.0707      0.0467    0.2979    0.3000    100
+M15-D10-PIN01    10      0.0500     0.0100  0.0141      0.0867    0.4185    0.6600     27
+M16-D10-PIN01    10      0.0000     0.0000  0.0000      0.0800    0.5692    0.6000    100
+mean                     0.2562     0.1250              0.1021    0.5529    0.7006
+problems whose seed spread exceeds their own mean: M05-D10-PIN01, M06-D10-PIN01, M14-D10-PIN01, M15-D10-PIN01
+
+== accuracy ladder, 16-problem mean
+method           1e-1     1e-2     1e-3     1e-4     1e-5   1e-1 -> 1e-5  retained
+NMMSO          0.2562   0.1672   0.1016   0.0547   0.0453        +0.2109     17.7%
+MC-ESO         0.1833   0.1396   0.0771   0.0698   0.0646        +0.1187     35.2%
+null sup       0.7437   0.7219   0.7156   0.6906   0.6312        +0.1125     84.9%
+
+== paired tests, unit = problem (n=16, two-sided Wilcoxon, alpha=0.05)
+   NMMSO - MC-ESO   5-level   delta=+0.0229  W=  67.0  p=0.9588  rb=-0.015  win/loss/tie=8/8/0  -> NOT significant
+   NMMSO - MC-ESO   @1e-1     delta=+0.0729  W=  51.0  p=0.6092  rb=+0.150  win/loss/tie=7/8/1  -> NOT significant
+   NMMSO - null mpr 5-level   delta=-0.4279  W=   0.0  p=3.052e-05  rb=-1.000  win/loss/tie=0/16/0  -> significant
+   NMMSO - null sup 5-level   delta=-0.5756  W=   0.0  p=3.052e-05  rb=-1.000  win/loss/tie=0/16/0  -> significant
+   level only, not tested: published best (GECCO'2024 sheet, 16-problem mean) = 0.651, NMMSO = 0.1250  (delta -0.5260)
+
+== reporting-rule probe (separate runs, seed 0, all three rules off the same run)
+problem           |cur|  cur@1e-1  resel@1e-1  hist@1e-1  cur MPR   resel    hist
+M01-D10-PIN01        17    0.4000      0.4000     0.4000   0.3200  0.3200  0.3200
+M03-D10-PIN01        18    0.7000      0.7000     0.7000   0.2900  0.2900  0.2900
+M04-D10-PIN01        14    0.2000      0.2000     0.2000   0.1100  0.1100  0.1100
+M12-D10-PIN01        10    0.1000      0.1000     0.1000   0.0800  0.0800  0.0800
+   history - current, 5-level, over 4 problems: max +0.0000, mean +0.0000   -> the reported set discards nothing: no reporting rule, no rho and no cap can raise NMMSO here
+
+== prereg branches (prereg.md), read on the 16-problem mean @1e-1
+   NMMSO 0.2562 <= 0.30  -> BRANCH 1: the narrow support set is NOT MC-ESO-specific; every method we hold is narrow at D=10, and the mechanism has to come from queue item 2, not from comparing methods
+
+wrote /home/user/optimization/analysis/mmo2024/e109/nmmso_d10.csv
