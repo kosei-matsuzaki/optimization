@@ -1,0 +1,4 @@
+function,method,rule,seed,evals,n_optima,n_reported,pr_1e-1,pr_1e-2,pr_1e-3,pr_1e-4,pr_1e-5
+M15-D10-PIN01,MC-ESO,current,0,500000,10,100,0.1000,0.1000,0.1000,0.1000,0.1000
+M15-D10-PIN01,MC-ESO,current,1,500000,10,100,0.1000,0.1000,0.1000,0.0000,0.0000
+M15-D10-PIN01,MC-ESO,current,2,500000,10,100,0.1000,0.1000,0.1000,0.1000,0.1000
