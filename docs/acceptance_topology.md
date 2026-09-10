@@ -6711,6 +6711,16 @@ M01-M04 の行単位ダンプ 4 本 `*_sig050200.csv.gz`）。`analyze.py` は `
    Python 3.11 は set を拒否する。**これを忘れると NMMSO は実行時に落ちる**
    （その26 は NMMSO を実際には走らせていなかったと思われる）。
 
+**【その106 で 2026-09-10 のイメージに再適用し、手順 1-3 がそのまま通った】**
+手順 1 は `--ignore-installed blinker` が要る形のまま（素で叩くと `Cannot uninstall blinker 1.7.0` で
+`ioh` ごと止まる ＝ その80 の形が継続）。**`pip install -r requirements.txt` は相変わらず `pynmmso` で落ちる**が、
+**手順 2・3（sdist を site-packages ではなく PYTHONPATH 上のディレクトリに展開し、`random.sample` を 4 箇所直す）で
+NMMSO は動く** —— `M09-D10-PIN01` を 1e4 評価で実走し、報告 8 点・所要 3 秒。
+**＝ 実行ルーチンの手順書にある「pynmmso はこのイメージの Python で落ちるので NMMSO は回せない」は、
+`pip install` の話としては正しいが、手順 2・3 を踏めば誤り。** 4 箇所の書き換えは
+`re.sub(r"random\.sample\((?!list\()([^,]+?), ", r"random.sample(list(\1), ", s)` で機械的に当たる。
+D=10・50 万評価の 1 run は約 150 秒（1e4 評価 3 秒からの外挿）＝ MC-ESO とほぼ同額。
+
 **NMMSO を回さない回は手順 2・3 を省ける**（その86。**手順 2 が 1 サイクルに数分かかるので、
 base を保存 CSV と対にする回はこれで足りる**）: `core.optimizers` の無条件 import を通すためだけの
 **空 stub を `PYTHONPATH` に置く** —— `pynmmso/__init__.py` に `Nmmso` 相当のクラスを 1 つ置き、

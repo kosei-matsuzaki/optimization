@@ -40,7 +40,8 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from core.benchmarks import NICHING_BENCHMARKS_BY_NAME              # noqa: E402
+from core.benchmarks import (NICHING_BENCHMARKS_BY_NAME,            # noqa: E402
+                             niching_by_name)
 from core.runner import NICHE_ACCURACIES, _niching_counts           # noqa: E402
 from scripts.diagnose_niching import reselect_from_history          # noqa: E402
 from core.optimizers import (MultiChannelEpidemicOptimizer, NCDEOptimizer,
@@ -165,7 +166,9 @@ def main() -> None:
     print("-" * 99)
 
     for name in names:
-        b = NICHING_BENCHMARKS_BY_NAME[name]
+        # niching_by_name, not the dict: the GECCO'2024 problems (M..-D..-PIN..)
+        # are built on demand and are not in NICHING_BENCHMARKS_BY_NAME.
+        b = niching_by_name(name)
         for frac in args.evals_frac:
             budget = max(1000, int(b.suite_max_evals * frac))
             for m in methods:

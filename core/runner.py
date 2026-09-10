@@ -187,6 +187,28 @@ def count_goptima(solutions: np.ndarray, fvals: np.ndarray, k: int,
     return count
 
 
+def count_goptima_nn(solutions: np.ndarray, fvals: np.ndarray,
+                     optima: np.ndarray, accuracy: float) -> int:
+    """How many distinct global optima the reported set covers, by *nearest
+    optimum* rather than by a niche radius.
+
+    The GECCO'2024 suite defines PR as "the fraction of global minima that have
+    been detected given the target accuracy in the objective space"
+    (``external/mmo2024/docs/competition_setup_TR2024001.txt`` §4) and gives no
+    rho, so ``count_goptima``'s radius filter has nothing to read. Each point
+    with ``f <= accuracy`` is attributed to its nearest optimum and the distinct
+    optima are counted — the same rule ``scripts/hunt_coverage.py`` scores the
+    restart-lander null with, which is what makes method and null comparable.
+    """
+    if len(solutions) == 0:
+        return 0
+    qual = solutions[fvals <= accuracy]
+    if qual.shape[0] == 0:
+        return 0
+    d = np.linalg.norm(qual[:, None, :] - optima[None, :, :], axis=2)
+    return int(np.unique(np.argmin(d, axis=1)).size)
+
+
 def _niching_counts(
     results: list[OptimizeResult],
     benchmark,
@@ -199,9 +221,17 @@ def _niching_counts(
     rewards dense sampling rather than multi-solution search. The set is capped
     at ``max(100, 2K)`` best-by-f points so a method cannot win by reporting
     everything it ever touched.
+
+    Benchmarks that carry no ``niche_rho`` (the GECCO'2024 suite) are scored by
+    nearest optimum instead — see ``count_goptima_nn``.
     """
     k = benchmark.n_global_optima
     rho = benchmark.niche_rho
+    opts = (np.asarray(benchmark.optima_pos, dtype=float)
+            if rho is None and benchmark.optima_pos else None)
+    if rho is None and opts is None:
+        raise ValueError(f"{benchmark.name}: no niche_rho and no optima_pos, "
+                         "so the reported set cannot be scored")
     cap = max(100, 2 * k)
     counts = np.zeros((len(results), len(accuracies)))
     n_reported: list[int] = []
@@ -213,7 +243,8 @@ def _niching_counts(
             X, F = X[keep], F[keep]
         n_reported.append(len(F))
         for j, a in enumerate(accuracies):
-            counts[i, j] = count_goptima(X, F, k, rho, a)
+            counts[i, j] = (count_goptima(X, F, k, rho, a) if opts is None
+                            else count_goptima_nn(X, F, opts, a))
     return counts, n_reported
 
 
