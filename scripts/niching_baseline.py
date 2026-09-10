@@ -42,7 +42,8 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.benchmarks import (NICHING_BENCHMARKS_BY_NAME,            # noqa: E402
                              niching_by_name)
-from core.runner import NICHE_ACCURACIES, _niching_counts           # noqa: E402
+from core.runner import (NICHE_ACCURACIES, _niching_counts,         # noqa: E402
+                         count_goptima_nn)
 from scripts.diagnose_niching import reselect_from_history          # noqa: E402
 from core.optimizers import (MultiChannelEpidemicOptimizer, NCDEOptimizer,
                              RingPSOOptimizer, DEOptimizer,
@@ -93,18 +94,64 @@ except Exception:                                     # pragma: no cover
     pass
 
 
+def _reselect_rho(b) -> float:
+    """The separation radius the rho-greedy reselection walks with.
+
+    CEC2013 ships one per function. The GECCO'2024 suite ships none — it defines
+    PR in objective space only (entry 106) — so the radius is taken as *half the
+    smallest distance between two global optima*: the largest value that cannot
+    merge two distinct optima into one kept point, i.e. the choice most
+    favourable to coverage inside the constraint the rule exists to enforce.
+    That uses the optima positions, so on this suite ``reselect`` is a
+    diagnostic ceiling for the reporting rule, not a legal output rule a method
+    could adopt blind (on CEC2013 it still is, rho comes from the competition).
+    """
+    if b.niche_rho is not None:
+        return float(b.niche_rho)
+    o = np.asarray(b.optima_pos, dtype=float)
+    d = np.linalg.norm(o[:, None, :] - o[None, :, :], axis=2)
+    d[np.diag_indices_from(d)] = np.inf
+    return float(d.min()) / 2.0
+
+
 def _reselected_results(results, b):
     """Same runs, reported set replaced by the rho-greedy pick from the run's own
     history. Returns fresh OptimizeResult copies so the original reported sets
     stay intact and both rules can be scored off one set of runs."""
     cap = max(100, 2 * b.n_global_optima)          # core.runner._niching_counts
+    rho = _reselect_rho(b)
     out = []
     for r in results:
         hx = np.asarray(r.history_x, dtype=float)
         hf = np.asarray(r.history_f, dtype=float)
-        rx, _ = reselect_from_history(hx, hf, b.niche_rho, cap)
+        rx, _ = reselect_from_history(hx, hf, rho, cap)
         out.append(dataclasses.replace(r, final_solutions=[x.copy() for x in rx]))
     return out
+
+
+def _history_counts(results, b, accuracies):
+    """Peaks covered by the *entire* evaluation history, uncapped — the
+    supremum over every reporting rule, since any rule reports a subset of the
+    points the run evaluated.
+
+    This is not a legal answer (reporting the whole history would reward dense
+    sampling); it exists to make the reporting-versus-search split rho-free. If
+    the supremum is low, no choice of rho and no selection rule can be the thing
+    that is losing the peaks. Scores the stored ``history_f`` rather than
+    re-calling the objective: on this suite that would be another full budget of
+    evaluations per run, and the stored values are the same numbers the scorer
+    would recompute (``benchmark.func`` is deterministic).
+    """
+    opts = np.asarray(b.optima_pos, dtype=float)
+    counts = np.zeros((len(results), len(accuracies)))
+    n_reported = []
+    for i, r in enumerate(results):
+        hx = np.asarray(r.history_x, dtype=float)
+        hf = np.asarray(r.history_f, dtype=float)
+        n_reported.append(len(hf))
+        for j, a in enumerate(accuracies):
+            counts[i, j] = count_goptima_nn(hx, hf, opts, a)
+    return counts, n_reported
 
 
 def main() -> None:
@@ -125,17 +172,21 @@ def main() -> None:
                          "concatenated, or paired seed-by-seed against a stored "
                          "CSV from an earlier cycle.")
     ap.add_argument("--report-rule", type=str, default="current",
-                    choices=("current", "reselect", "both"),
+                    choices=("current", "reselect", "history", "both", "all"),
                     help="which reporting rule scores the runs. 'current' = the "
                          "method's own final_solutions (the historical table). "
                          "'reselect' = rho-greedy pick from the run's own "
                          "history, capped at max(100, 2K), zero extra "
-                         "evaluations. 'both' scores each run under both, "
-                         "paired, off the same runs.")
+                         "evaluations. 'history' = the whole evaluation "
+                         "history, uncapped — not a legal answer, it is the "
+                         "supremum over every reporting rule. 'both' = current "
+                         "+ reselect; 'all' adds history. Every rule is scored "
+                         "off the *same* runs, paired, at no extra evaluations.")
     ap.add_argument("--csv", type=Path, default=Path("analysis/hm/niching_baseline.csv"))
     args = ap.parse_args()
-    rules = (("current", "reselect") if args.report_rule == "both"
-             else (args.report_rule,))
+    rules = {"both": ("current", "reselect"),
+             "all": ("current", "reselect", "history")}.get(
+                 args.report_rule, (args.report_rule,))
 
     names = ([s.strip() for s in args.funcs.split(",")] if args.funcs
              else sorted(NICHING_BENCHMARKS_BY_NAME))
@@ -178,9 +229,15 @@ def main() -> None:
                 results = [cls(b, seed=s * 100, **kw).optimize(budget)
                            for s in seeds]
                 for rule in rules:
-                    scored = (results if rule == "current"
-                              else _reselected_results(results, b))
-                    counts, n_rep = _niching_counts(scored, b, NICHE_ACCURACIES)
+                    if rule == "history":
+                        scored = results
+                        counts, n_rep = _history_counts(results, b,
+                                                        NICHE_ACCURACIES)
+                    else:
+                        scored = (results if rule == "current"
+                                  else _reselected_results(results, b))
+                        counts, n_rep = _niching_counts(scored, b,
+                                                        NICHE_ACCURACIES)
                     pr = counts.mean(axis=0) / b.n_global_optima
                     for i in range(len(scored)):
                         w.writerow([name, m, rule, args.seed_offset + i, budget,

@@ -205,8 +205,18 @@ def count_goptima_nn(solutions: np.ndarray, fvals: np.ndarray,
     qual = solutions[fvals <= accuracy]
     if qual.shape[0] == 0:
         return 0
-    d = np.linalg.norm(qual[:, None, :] - optima[None, :, :], axis=2)
-    return int(np.unique(np.argmin(d, axis=1)).size)
+    # Chunked so a whole evaluation history can be passed in: the pairwise block
+    # is len(qual) x K x D floats, which at 500,000 points is gigabytes in one
+    # allocation. Blocking changes nothing — the nearest optimum of a point does
+    # not depend on which other points share its block.
+    hit: set[int] = set()
+    for s in range(0, qual.shape[0], 20000):
+        blk = qual[s:s + 20000]
+        d = np.linalg.norm(blk[:, None, :] - optima[None, :, :], axis=2)
+        hit.update(np.unique(np.argmin(d, axis=1)).tolist())
+        if len(hit) == optima.shape[0]:
+            break
+    return len(hit)
 
 
 def _niching_counts(
