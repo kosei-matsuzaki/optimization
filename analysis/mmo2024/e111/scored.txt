@@ -1,0 +1,51 @@
+
+problem           K   seed0   seed1  2-seed  |gap|    seed0 95% boot  in  desc0  desc1    e103  MC-ESO   NMMSO
+----------------------------------------------------------------------------------------------------------------------
+M01-D10-PIN01    20  0.7200  0.6300  0.6750 0.0900     [0.500,0.700]   y     76     72  0.5898  0.2000  0.1350
+M02-D10-PIN01    20  0.5300  0.6200  0.5750 0.0900     [0.350,0.530]   N     53     52  0.4615  0.1600  0.2550
+M03-D10-PIN01    20  0.4900  0.5700  0.5300 0.0800     [0.390,0.490]   N     45     44  0.5296  0.0567  0.3750
+M04-D10-PIN01    20  0.6500  0.4500  0.5500 0.2000     [0.500,0.650]   N    114    118  0.6333  0.0800  0.1250
+M05-D10-PIN01    20  0.6500  0.6500  0.6500 0.0000     [0.500,0.650]   y    118    120  0.6742  0.0500  0.0250
+M06-D10-PIN01    20  0.4000  0.4000  0.4000 0.0000     [0.250,0.400]   y    156    157  0.3823  0.1100  0.0100
+M07-D10-PIN01    20  0.4400  0.4000  0.4200 0.0400     [0.400,0.440]   y    113    112  0.4959  0.0433  0.0450
+M08-D10-PIN01    20  0.6500  0.8000  0.7250 0.1500     [0.550,0.650]   N    123    124  0.6421  0.0400  0.0000
+M09-D10-PIN01    10  0.5000  0.5200  0.5100 0.0200     [0.380,0.500]   N     57     56  0.4593  0.2200  0.2200
+M10-D10-PIN01    10  0.6000  0.6600  0.6300 0.0600     [0.360,0.600]   N     42     45  0.6309  0.1400  0.4600
+M11-D10-PIN01    10  0.4600  0.4600  0.4600 0.0000     [0.360,0.460]   y     46     47  0.5188  0.1133  0.1500
+M12-D10-PIN01    10  0.7800  0.7000  0.7400 0.0800     [0.600,0.820]   y    106    108  0.7464  0.1067  0.1100
+M13-D10-PIN01    10  0.8000  0.7000  0.7500 0.1000     [0.600,0.800]   y    113    113  0.7975  0.1000  0.0300
+M14-D10-PIN01    10  0.3000  0.3000  0.3000 0.0000     [0.300,0.300]   y    130    139  0.2979  0.0467  0.0500
+M15-D10-PIN01    10  0.3000  0.3000  0.3000 0.0000     [0.200,0.320]   y    119    117  0.4185  0.0867  0.0100
+M16-D10-PIN01    10  0.7000  0.4000  0.5500 0.3000     [0.500,0.700]   N    113    112  0.5692  0.0800  0.0000
+
+== 16-problem means
+   MPR, seed 0 (entry 110)                       0.5606
+   MPR, seed 1 (this entry)                      0.5350
+   MPR, 2-seed mean                              0.5478
+   entry 103's estimate (500 offline descents)   0.5529
+   MC-ESO (entry 106)                            0.1021
+   NMMSO (entry 109)                             0.1250
+   published best RR-CMA-ES                      0.6510
+
+   descents per run: seed 0 mean 95.2 (range 42-156), seed 1 mean 96.0 (range 44-157)
+
+== pre-registered branch: seed 1's mean MPR 0.5350 -> branch A (entry 110's branch 1 holds on a second seed)
+
+== paired tests (unit = problem, n = 16)
+   seed 1 vs seed 0 (is the seed carrying signal?): mean diff -0.0256, 5/6/5 (win/loss/tie), W=24, p=0.4236, rank-biserial=-0.273
+   seed 1 vs entry 103's estimate               : mean diff -0.0179, 8/8/0 (win/loss/tie), W=54, p=0.4954, rank-biserial=-0.206
+   2-seed mean vs entry 103's estimate          : mean diff -0.0051, 7/9/0 (win/loss/tie), W=59, p=0.6685, rank-biserial=-0.132
+   2-seed mean vs MC-ESO                        : mean diff +0.4457, 16/0/0 (win/loss/tie), W=0, p=0.0004358, rank-biserial=+1.000
+   2-seed mean vs NMMSO                         : mean diff +0.4228, 16/0/0 (win/loss/tie), W=0, p=3.052e-05, rank-biserial=+1.000
+
+== is entry 110's descent bootstrap a stand-in for a second seed?
+   seed 1 inside seed 0's 95% descent-bootstrap interval: 9/16  (an honest 95% interval would cover about 15/16)
+   mean interval width 0.1419   mean |seed0 - seed1| gap 0.0756   max gap 0.3000 (M16-D10-PIN01)
+   n = 2 seeds cannot estimate a variance; this is a description, not a test.
+
+== what ends a descent, seed 1 (tolfun = tolfunhist = tolx = 0)
+   tolxstagnation                                 687  ( 44.7%)
+   tolflatfitness                                 661  ( 43.0%)
+   maxfevals                                      168  ( 10.9%)
+   budget                                          16  (  1.0%)
+   tolstagnation                                    4  (  0.3%)
