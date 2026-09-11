@@ -50,6 +50,7 @@ from core.optimizers import (MultiChannelEpidemicOptimizer, NCDEOptimizer,
                              MultistartNelderMeadOptimizer)         # noqa: E402
 from core.optimizers.mceso_crowding import MCESOCrowding            # noqa: E402
 from core.optimizers.mceso_rel_level import RelLevelMCESO           # noqa: E402
+from core.optimizers.restart_lander import RestartLanderOptimizer   # noqa: E402
 
 _METHODS: dict = {
     "MC-ESO": (MultiChannelEpidemicOptimizer, {}),
@@ -82,6 +83,14 @@ _METHODS: dict = {
     "MC-ESO-rel-fl08": (RelLevelMCESO, {"rel_level": 1e-5, "fis_floor": 1e-12,
                                         "sigma_floor_ratio": 1e-8}),
     "MC-ESO-crowd": (MCESOCrowding, {}),
+    # The memoryless multistart null as an actual run (entry 110). Not a
+    # proposal and not a variant of anything here: uniform restart + isotropic
+    # descent, no memory, no repulsion, no selection over draws. It exists so
+    # the 0.5529 every ceiling argument rests on can be scored by the same
+    # driver, budget and scorer as the methods it is the null for. Parameters
+    # are entry 103's, which is where 0.5529 comes from.
+    "Restart-Lander": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
+                                                "descent_budget": 12500}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),
     "DE": (DEOptimizer, {}),

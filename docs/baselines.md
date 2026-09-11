@@ -24,6 +24,7 @@ MC-ESO と比較する既存最適化手法の一覧と実装詳細。提案手�
 | **r3pso** | ring-topology lbest PSO | 多解比較対象（Li 2010。**niche 半径を持たない** niching の古典）|
 | **NMMSO** | 多スウォーム niching | 多解比較対象（Fieldsend 2014、`pynmmso` 経由。**公式実装で動く競技上位級**）|
 | **Repel-CMA-ES** | 斥力付き restart ES | 多解比較対象（de Nobel+ 2024 の近似実装。MC-ESO の情報化リスタートの先行例）|
+| **Restart-Lander** | 記憶なし多スタート | **null（下限ではなく「協調なしで届く線」）**。一様再起動 ＋ 等方降下だけ。`scripts/niching_baseline.py` から `--methods Restart-Lander` で回す（下記）|
 
 ---
 
@@ -129,3 +130,30 @@ Neighborhood-based Crowding DE（Qu, Suganthan & Liang, 2012）。DE ベース�
 - IPOP/BIPOP も CMA-ES と同じく `sigma0 = 0.2 × span` を `main.py` が付与する。
 
 > **注意（再現性）**: pycma 系（CMA-ES seed0 / IPOP / BIPOP）は同一 seed でも run ごとに結果が変動しうる。Wilcoxon 等の seed-paired 比較ではこの非決定性を念頭に置く。
+
+---
+
+## Restart-Lander（記憶なし多スタート null）
+
+`core/optimizers/restart_lander.py`。**手法の提案ではなく null** ——
+niching 手法が「協調している」ことの値打ちを測るための、協調を全部外した対照。
+
+1 run は降下の直列鎖: **箱から一様に 1 点引く → そこから等方 CMA-ES で降下
+（`CMA_on=0`、`tolfun = tolfunhist = tolx = 0`、1 降下あたり上限 `descent_budget` 評価）
+→ その降下の best 点を報告集合に積む → 予算を使い切るまで繰り返す**。
+**記憶・反発・draw の選抜のいずれも持たない。**
+
+| パラメータ | 既定 | 意味 |
+|---|---|---|
+| `sigma_ratio` | 0.1 | `sigma0 = sigma_ratio × span` |
+| `descent_budget` | 12500 | 1 降下の上限評価回数（新 suite の予算 5e5 の 1/40） |
+| `iso` | True | 共分散を止めてステップ幅だけ（`CMA_on=0`）|
+
+既定値は `scripts/hunt_coverage.py --null` の offline 降下（`_null_descent`）と同一で、
+**降下 1 本は offline 版と厳密に一致する**（`analysis/mmo2024/e110/identity_check.py` が
+保存ダンプに対して evals / best_f / 着地最適の一致を確認）。
+違うのは**鎖にしたこと**だけ ＝ 再起動本数が「予算 ÷ 平均降下コスト」ではなく実際に買えた本数になり、
+報告集合が `max(100, 2K)` の上限を通る。
+
+環境変数 `RESTART_LANDER_DUMP` にディレクトリを指定すると、
+1 降下 1 行（着地最適・best_f・評価回数・CMA の停止理由）の CSV を書き出す。
