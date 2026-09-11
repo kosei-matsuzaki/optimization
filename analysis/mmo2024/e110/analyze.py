@@ -20,6 +20,7 @@ computed off the same runs:
 Usage: PYTHONPATH=/tmp/pystub python3 analysis/mmo2024/e110/analyze.py
 """
 import csv
+import gzip
 import sys
 from collections import Counter
 from pathlib import Path
@@ -100,9 +101,13 @@ def main() -> None:
         for r in rows:
             seed = int(r["seed"]) * 100
             d = HERE / "descents" / f"{name}_seed{seed}.csv"
-            if not d.exists():
+            gz = d.with_suffix(".csv.gz")          # dumps are gzipped on commit
+            if gz.exists():
+                dr = list(csv.DictReader(gzip.open(gz, "rt")))
+            elif d.exists():
+                dr = list(csv.DictReader(open(d)))
+            else:
                 continue
-            dr = list(csv.DictReader(open(d)))
             bf = np.array([float(x["best_f"]) for x in dr])
             ld = np.array([int(x["land_opt"]) for x in dr])
             ev = np.array([float(x["evals"]) for x in dr])

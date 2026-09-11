@@ -1,2 +1,2 @@
 function,method,rule,seed,evals,n_optima,n_reported,pr_1e-1,pr_1e-2,pr_1e-3,pr_1e-4,pr_1e-5
-M09-D10-PIN01,Restart-Lander,current,0,500000,10,57,0.6000,0.5000,0.5000,0.5000,0.4000
+M13-D10-PIN01,Restart-Lander,current,0,500000,10,100,0.8000,0.8000,0.8000,0.8000,0.8000
