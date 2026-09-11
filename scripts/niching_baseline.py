@@ -51,9 +51,17 @@ from core.optimizers import (MultiChannelEpidemicOptimizer, NCDEOptimizer,
 from core.optimizers.mceso_crowding import MCESOCrowding            # noqa: E402
 from core.optimizers.mceso_rel_level import RelLevelMCESO           # noqa: E402
 from core.optimizers.restart_lander import RestartLanderOptimizer   # noqa: E402
+from core.optimizers.mceso_traced import TracedMCESO                # noqa: E402
 
 _METHODS: dict = {
     "MC-ESO": (MultiChannelEpidemicOptimizer, {}),
+    # Entry 113 (queue 2): MC-ESO with a per-spillover trace, so its "hunt"
+    # count and landing distribution can be paired against the null's descent
+    # dump at matched counts. Recording only -- the subclass overrides two
+    # hooks, both of which call super(), and mceso.py is untouched. The search
+    # is bit-identical to "MC-ESO" at the same seed (identity check in
+    # analysis/mmo2024/e113/). Writes to $MCESO_HUNT_DUMP when that is set.
+    "MC-ESO-traced": (TracedMCESO, {}),
     # The adoption candidate: the hunt-release level made relative to the
     # scoring accuracy, L = c * eps_target with c = 1.0 (entry 46 located the
     # corner there) and the endpoint clamp on f_init_scale (entry 44). This is
