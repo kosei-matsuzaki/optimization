@@ -96,7 +96,7 @@ def main() -> None:
         n_rep = float(np.mean([float(r["n_reported"]) for r in rows]))
 
         # per-descent dump, seed by seed
-        caps, uncaps, mults, nds, costs = [], [], [], [], []
+        caps, uncaps, mults, nds, costs, boot = [], [], [], [], [], []
         for r in rows:
             seed = int(r["seed"]) * 100
             d = HERE / "descents" / f"{name}_seed{seed}.csv"
@@ -113,12 +113,30 @@ def main() -> None:
             mults.append(multinomial_mpr(bf, ld, ev, K, BUDGET)[0])
             nds.append(len(dr))
             costs.append(ev.mean())
+            # One seed this cycle, so the seed-to-seed spread is not measured.
+            # A run is however an average over its own 40-150 independent
+            # descents, and resampling those (cap re-applied each time) bounds
+            # how much of this problem's MPR is which descents happened to be
+            # drawn.  It is not a substitute for a second seed -- it holds the
+            # descent count fixed -- but it costs zero evaluations and says
+            # whether the run-to-run number can be read at all.
+            rs = np.random.default_rng(0)
+            bs = []
+            for _ in range(1000):
+                idx = rs.integers(0, len(bf), len(bf))
+                bb, lb = bf[idx], ld[idx]
+                kk = np.argsort(bb)[:max(100, 2 * K)]
+                bs.append(support_mpr(bb, lb, K, kk))
+            boot.append((float(np.percentile(bs, 2.5)),
+                         float(np.percentile(bs, 97.5))))
         out.append({
             "problem": name, "K": K, "seeds": len(rows),
             "mpr_run": mpr, "n_reported": n_rep,
             "mpr_run_capped_chk": float(np.mean(caps)) if caps else float("nan"),
             "mpr_run_uncapped": float(np.mean(uncaps)) if uncaps else float("nan"),
             "mpr_multinom_on_run": float(np.mean(mults)) if mults else float("nan"),
+            "mpr_boot_lo": float(np.mean([b[0] for b in boot])) if boot else float("nan"),
+            "mpr_boot_hi": float(np.mean([b[1] for b in boot])) if boot else float("nan"),
             "descents": float(np.mean(nds)) if nds else float("nan"),
             "descent_cost": float(np.mean(costs)) if costs else float("nan"),
             "n_prime_e103": BUDGET / np.mean(costs) if costs else float("nan"),
@@ -135,13 +153,14 @@ def main() -> None:
         w.writerows(out)
 
     print(f"\n{'problem':<16}{'K':>3}{'|rep|':>7}{'desc':>6}{'cost':>8}"
-          f"{'MPR run':>9}{'uncap':>8}{'multinom':>10}{'e103 est':>10}"
-          f"{'MC-ESO':>8}{'NMMSO':>8}")
-    print("-" * 93)
+          f"{'MPR run':>9}{'95% boot':>16}{'uncap':>8}{'multinom':>10}"
+          f"{'e103 est':>10}{'MC-ESO':>8}{'NMMSO':>8}")
+    print("-" * 109)
     for r in out:
+        ci = f"[{r['mpr_boot_lo']:.3f},{r['mpr_boot_hi']:.3f}]"
         print(f"{r['problem']:<16}{r['K']:>3}{r['n_reported']:>7.0f}"
               f"{r['descents']:>6.0f}{r['descent_cost']:>8.0f}"
-              f"{r['mpr_run']:>9.4f}{r['mpr_run_uncapped']:>8.4f}"
+              f"{r['mpr_run']:>9.4f}{ci:>16}{r['mpr_run_uncapped']:>8.4f}"
               f"{r['mpr_multinom_on_run']:>10.4f}{r['mpr_est_e103']:>10.4f}"
               f"{r['mpr_mceso']:>8.4f}{r['mpr_nmmso']:>8.4f}")
 
