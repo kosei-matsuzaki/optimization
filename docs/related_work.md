@@ -42,7 +42,9 @@ GECCO'17 niching 競技（CEC2013 ベース）の上位は RS-CMSA が平均 PR 
 **新 suite の到達水準（2026-09-08 に取得した競技結果、`external/mmo2024/docs/gecco2024_results_deck.txt`）。**
 MPR（5 水準 1e-1..1e-5 の平均 PR）を D 別に見ると **D=2 で 0.984（TRDE-LR）、D=5 で 0.844、D=10 で 0.651、D=20 で 0.476（いずれも 3 手法中の最良）** ＝ **飽和解消は効いており、次元が上がるほど headroom が残る。** 総合 Score（PR と static F1 の平均）は TRDE-LR 0.703 / RR-CMA-ES 0.653 / N-DAM-CMA-ES 0.057。**問題ごとの値はこの資料には無い**（上記「未読・未確認」）。
 
-参考として、[Cano+ 2022 "Out of the Niche"](https://www.mdpi.com/2227-7390/10/9/1494)（Mathematics）は multistart 直接探索で複数大域解を狙う路線を示している。本プロジェクトの NM-Restart 下限ベースライン（[baselines.md](baselines.md)）と同じ発想で、低次元では強い比較相手になる。
+**【2026-09-12 の俯瞰で位置づけを訂正】**[Cano+ 2022 "Out of the Niche"](https://www.mdpi.com/2227-7390/10/9/1494)（Mathematics 10:1494）は multistart 直接探索で複数大域解を狙う路線を示している。本プロジェクトの NM-Restart 下限ベースライン（[baselines.md](baselines.md)）と同じ発想で、低次元では強い比較相手になる。
+**ここまでが 2026-08-30 の記述で、「比較相手の候補」としてしか書かれていなかった。これは過小評価だった** —— 同論文の主張は「直接探索の多スタートが**大多数の場合に最先端 niching 手法との比較に耐える**（見つけた大域最適の数でも評価回数でも）」で、**その106 以降この研究が積み上げてきた主張（多スタート null が niching 手法に勝つ）を現象としては占有している。**
+**同じ現象はビット列領域でも公表済み** —— [Lobo & Bazargani, *When Hillclimbers Beat Genetic Algorithms in Multimodal Optimization*, Evolutionary Computation 30(4):535-559, 2022](https://direct.mit.edu/evco/article-abstract/30/4/535/111270/When-Hillclimbers-Beat-Genetic-Algorithms-in)。**詳細と「残っている主張」は [research_loop.md の「占有されている領域」](research_loop.md#この研究のゴール毎回着手する問いをここに照らすこと)（2026-09-12 の 10 件目）と [status.md](status.md) の判断 (1)。**
 
 ### CEC2013 の合成関数 F11-F20（対象集合を広げる案 (A) の実額。その70 で実測）
 
