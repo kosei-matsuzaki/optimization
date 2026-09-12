@@ -116,11 +116,17 @@ class RestartLanderOptimizer(BaseOptimizer):
         out.mkdir(parents=True, exist_ok=True)
         opts = np.asarray(self.benchmark.optima_pos, dtype=float)
         path = out / f"{self.benchmark.name}_seed{self.seed}.csv"
+        # `land_opt`/`dist` need the true optima, so they are oracle columns --
+        # diagnostics only.  The `x*` columns are what the algorithm itself
+        # holds, so a reporting rule computed from them is legal under the
+        # competition's parameter rules (entry 112 section 6).
         with open(path, "w", newline="") as fh:
             w = csv.writer(fh)
-            w.writerow(["descent", "evals", "best_f", "land_opt", "dist", "stop"])
+            w.writerow(["descent", "evals", "best_f", "land_opt", "dist", "stop"]
+                       + [f"x{i}" for i in range(self.dim)])
             for r in self.descents:
                 dd = np.linalg.norm(opts - r["x"], axis=1)
                 j = int(np.argmin(dd))
                 w.writerow([r["descent"], r["evals"], f"{r['best_f']:.12g}",
-                            j, f"{dd[j]:.6g}", r["stop"]])
+                            j, f"{dd[j]:.6g}", r["stop"]]
+                           + [f"{v:.12g}" for v in r["x"]])
