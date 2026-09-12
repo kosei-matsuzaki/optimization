@@ -337,6 +337,15 @@ _OPTIMIZERS = {
     #  depth gain on N06 while costing nothing at the eps <= 1e-3 decision levels,
     #  so the gate has to clear this arm too, not only the more extreme 1e-8.
     "level_t07":      (MultiChannelEpidemicOptimizer, {"hunt_level_tol": 1e-7}),
+    #  Adoption candidate under gate (research_loop キュー 2, 2026-09-12): the
+    #  committed basin-switch restart, placement only (`commit_place_r010` in
+    #  scripts/diagnose_niching.py). Five of the six stalled adoption candidates
+    #  had already been through the BBOB-24 dim2 gate; this one never had, which
+    #  is the single measurement 方針欄 2026-09-11 (3) asks for. Entry exists
+    #  only to run that gate — mceso.py defaults are untouched either way.
+    "commit_place_r010": (CommitReseedMCESO, {"commit_mode": "on",
+                                              "commit_sigma_mode": "place",
+                                              "commit_sigma_ratio": 0.1}),
 }
 
 

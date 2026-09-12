@@ -373,6 +373,22 @@ _VARIANTS: dict[str, tuple[type, dict]] = {
                            {"commit_sigma_mode": "run",
                             "commit_sigma_ratio": 0.1,
                             "sol_trim_mode": "rho", "rel_level": 0.0}),
+    # Entry 117 / queue 2 (方針欄 2026-09-11 (3)): the four arms that passed the
+    # BBOB-24 dim2 gate, loaded *at the same time* -- the one configuration the
+    # adoption procedure (研究ループ「採用が決まったときの実装手順」(e)) says has
+    # never been measured, so status.md's "見込み" row is a sum of four singles.
+    # c = 1.0 with the adoption clamp (entry 44/46/47), `_sig10` (entry 56),
+    # `_fl08` (entry 56) and `soltrim_rho` (entry 60), commit deliberately OFF
+    # because `commit_place_r010` is the one arm still inside the gate.
+    # `comp4_off` is the identity check: same class, every layer disabled, must
+    # reproduce base seed for seed.
+    "comp4": (_CountingRelCommitSolArchiveMCESO,
+              {"commit_mode": "off", "sol_trim_mode": "rho",
+               "rel_level": 1e-5, "fis_floor": 1e-12,
+               "sigma_floor_ratio": 1e-8, "exhausted_sigma_tol": 1.0}),
+    "comp4_off": (_CountingRelCommitSolArchiveMCESO,
+                  {"commit_mode": "off", "sol_trim_mode": "off",
+                   "rel_level": 0.0}),
 }
 # How tight the commitment has to be: the same variant at a sweep of spreads,
 # as a fraction of the locally observed basin spacing. The suffix is the ratio
