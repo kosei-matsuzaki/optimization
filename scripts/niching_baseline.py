@@ -33,6 +33,8 @@ from __future__ import annotations
 import argparse
 import csv
 import dataclasses
+import gzip
+import os
 import sys
 import time
 from pathlib import Path
@@ -171,6 +173,39 @@ def _history_counts(results, b, accuracies):
     return counts, n_reported
 
 
+def _dump_report_sets(results, b, method, seeds) -> None:
+    """Write each run's *uncapped* reported set to ``$REPORT_SET_DUMP`` — one
+    ``.csv.gz`` per run, columns ``f, x0..x{D-1}``.
+
+    This is the instrument entry 116 needs and entry 115 wished it had: the
+    candidate set a reporting rule gets to choose from, in the coordinates the
+    method itself holds. Deliberately *no* oracle column (entry 115's lesson —
+    a dump of scorer-only columns diagnoses but cannot define a rule): which
+    optimum a point is nearest to is recomputed at analysis time from
+    ``optima_pos``, and is used for scoring only.
+
+    ``f`` is ``benchmark.func(x)`` (= f - f* on this suite), the same number
+    ``core.runner._niching_counts`` scores with. Uncapped on purpose: the
+    ``max(100, 2K)`` cap is the harness's post-processing, not the method's
+    output, and it uses K, which the competition rules (§5) do not allow.
+    Recording only — no optimizer state is touched.
+    """
+    d = os.environ.get("REPORT_SET_DUMP")
+    if not d:
+        return
+    Path(d).mkdir(parents=True, exist_ok=True)
+    safe = method.replace("/", "-")
+    for s, r in zip(seeds, results):
+        X = np.asarray(r.final_solutions or [r.best_x], dtype=float)
+        F = np.array([float(b.func(x)) for x in X])
+        path = Path(d) / f"{b.name}_{safe}_seed{s}.csv.gz"
+        with gzip.open(path, "wt", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["f"] + [f"x{i}" for i in range(X.shape[1])])
+            for f, x in zip(F, X):
+                w.writerow([f"{f:.12g}"] + [f"{v:.12g}" for v in x])
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -245,6 +280,7 @@ def main() -> None:
                 seeds = range(args.seed_offset, args.seed_offset + args.seeds)
                 results = [cls(b, seed=s * 100, **kw).optimize(budget)
                            for s in seeds]
+                _dump_report_sets(results, b, m, list(seeds))
                 for rule in rules:
                     if rule == "history":
                         scored = results
