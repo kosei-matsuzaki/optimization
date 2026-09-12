@@ -1,9 +1,0 @@
-function                   n    SRb    SRv  won  lost        p    stage1 (w/l)   pooled p
---------------------------------------------------------------------------------------------
-F04-BucheRastrigin        40  0.925  0.850    2     5   0.4531             0/3   0.1094
-F17-SchafferF7            40  0.750  0.825    3     0   0.2500             3/0   0.0312
-F20-Schwefel              40  0.950  0.925    0     1   1.0000             0/1   0.5000
-F23-Katsuura              40  0.650  0.700    3     1   0.6250             1/0   0.3750
-
-  pooled p combines stage 1 and stage 2 cells; it is reported for completeness only.
-  Stage 2's own p is the one that is free of the selection that picked these four functions.

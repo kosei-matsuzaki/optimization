@@ -1,6 +1,0 @@
-function                  runs  differ  bank<div  med_bank  med_div  same_best_f  same_succ_ev
-------------------------------------------------------------------------------------------------
-F17-SchafferF7              40      35        35      2310     3895           32            37
-F23-Katsuura                40      35        34      2454     4045           35            36
-
-wrote analysis/hm/e78/ext5k_win.csv (80 rows)
