@@ -201,6 +201,25 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 
 ---
 
+## 計器（手法ではない）: `core/optimizers/mceso_traced.py`
+
+**`MCESOTraced` は MC-ESO の診断用サブクラスで、手法の一部ではない。**
+`docs/research_loop.md` のその113（MC-ESO と記憶なし多スタート null の 5.16 倍差の内訳）で、
+**null 側にしか無かった降下単位のダンプを MC-ESO 側にも用意するために書いた。**
+
+- **単位は「spillover と spillover の間の探索 segment」**（null の 1 hunt ＝ 1 draw ＋ 1 降下に対応する単位。
+  MC-ESO には hunt というオブジェクトが無いため）。`sol_archive_x` は容量 200 で並べ替えられるので
+  segment の計数には使えず、**別に上限なしのリストを持つ。**
+- **出力は 1 run につき 2 本**（列名は `restart_lander.py` のダンプに揃えてあり、同じ reader が両手法を読める）:
+  `<problem>_seed<N>_segments.csv.gz`（spillover ごとに 1 行 ＋ 予算が尽きた segment の終端行）と
+  `<problem>_seed<N>_draws.csv.gz`（再投入直後の集団スロットごとに 1 行。`kind` が `reseed` / `retained`）。
+- **既定にも探索にも影響しない**: 上書きしているのは 2 つのフックだけで、どちらも `super()` を呼んで状態を読むだけ。
+  **RNG を 1 度も引かず、評価も 1 回も消費せず、`optimize` は継承したまま。**
+  **恒等検査は `analysis/mmo2024/e113/identity_check.py`。**
+- **本体（`mceso.py`）は 1 ビットも変わっていない**（`CLAUDE.md` の「診断用の変種は本体を書き換えず別ファイルに置く」）。
+
+---
+
 ## パラメータ一覧
 
 | パラメータ | デフォルト | 意味 |

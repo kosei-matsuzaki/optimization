@@ -206,7 +206,7 @@ cmd_ui() {
   "$PY" web/app.py
 }
 
-# 研究ループ（1 時間ごとにクラウドで回っているサイクル）の現況を 1 画面で見る。
+# 研究ループ（クラウドで回っているサイクル。実行役は 6 時間ごと、俯瞰役は 1 日 1 回）の現況を 1 画面で見る。
 # 先に research-loop を取り込んでから表示する。
 cmd_loop() {
   git fetch -q origin research-loop 2>/dev/null || true
