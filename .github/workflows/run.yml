@@ -476,7 +476,14 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add analysis/hm/e71/ analysis/mmo2024/e91/ analysis/mmo2024/e92/refs/ analysis/mmo2024/e118/refs/
+          # e91 was pruned by a consolidation cycle, so a fixed path list makes
+          # `git add` fail with "pathspec did not match any files" and the whole
+          # job dies AFTER the fetch has succeeded (entry 118 lost one run to
+          # exactly that).  Add only the directories that exist.
+          for d in analysis/hm/e71 analysis/mmo2024/e91 analysis/mmo2024/e92/refs \
+                   analysis/mmo2024/e118/refs; do
+            [ -d "$d" ] && git add "$d" || echo "skip missing $d"
+          done
           git commit -m "F11-F20 の公表 PR 表と GECCO 2024/2025 の新 suite を CI 経由で取り込む" \
             -m "サンドボックスの egress が arxiv.org / sites.google.com / drive.google.com を
           CONNECT 403 で塞いでいるので、egress の開いている runner で取得して置く。再最適化はしていない。"
