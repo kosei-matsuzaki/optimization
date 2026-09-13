@@ -1,0 +1,44 @@
+=== 1. tau sweep (POST-HOC): does H1 have power at any threshold?
+frac   tau_A  ncl_A ncl_B  sizes(min-max)  n_pts  rho      p       verdict
+0.30   2.48     0     0  -                  0      nan     nan  (ii)/ns
+/home/user/optimization/analysis/mmo2024/e119/robustness.py:94: ConstantInputWarning: An input array is constant; the correlation coefficient is not defined.
+  rho, p = spearmanr([c["size"] for c in cl], [c["reach"] for c in cl])
+0.35   2.89     7     0  2-2                7      nan     nan  (ii)/ns
+0.40   3.30     8     0  2-3                8      nan     nan  (ii)/ns
+0.45   3.72     8     0  3-4                8      nan     nan  (ii)/ns
+0.50   4.13     8     0  4-6                8   0.0727  0.8641  (ii)/ns
+0.55   4.54     8     0  5-7                8  -0.3244  0.4330  (ii)/ns
+0.60   4.96     8     0  5-8                8   0.0395  0.9260  (ii)/ns
+
+=== 2. enrichment = observed descent share / Voronoi cell-volume share
+    (reading (i) predicts enrichment >= 1 for clustered optima)
+pid   cell_cl  cell_iso | enr_cl  enr_iso | enr_cl(near)  enr_iso(near)
+M01   0.0095    0.0635 |  0.161    1.099 |        0.161          1.099
+M02   0.0254    0.0633 |  0.162    1.309 |        0.162          1.309
+M03   0.0240    0.0673 |  0.000    1.346 |        0.000          1.346
+M04   0.0195    0.0664 |  0.083    1.040 |        0.083          1.040
+M05   0.0120    0.0705 |  0.000    1.102 |        0.000          1.076
+M06   0.0220    0.0651 |  0.061    1.179 |        0.298          1.466
+M07   0.0095    0.0673 |  0.000    0.944 |        0.000          0.940
+M08   0.0256    0.0663 |  0.160    1.335 |        0.209          1.331
+M09      nan    0.1000 |    nan    1.119 |          nan          1.113
+M10      nan    0.1000 |    nan    1.791 |          nan          1.791
+M11      nan    0.1000 |    nan    1.113 |          nan          1.212
+M12      nan    0.1000 |    nan    1.269 |          nan          1.267
+M13      nan    0.1000 |    nan    1.042 |          nan          1.043
+M14      nan    0.1000 |    nan    0.910 |          nan          1.020
+M15      nan    0.1000 |    nan    0.719 |          nan          0.681
+M16      nan    0.1000 |    nan    1.046 |          nan          0.987
+
+  enrichment, all descents: clustered mean 0.0770 (median 0.0000) vs isolated 1.1468 (median 0.8281)
+    MWU p=7.835e-20  A12=0.100; clustered >= 1.0 in 0/55, isolated 82/185
+
+  enrichment, converged only (dist<0.1): clustered mean 0.1143 (median 0.0000) vs isolated 1.1702 (median 0.7449)
+    MWU p=1.728e-13  A12=0.184; clustered >= 1.0 in 2/55, isolated 75/185
+
+  Voronoi cell share: clustered 0.01915 vs isolated 0.08079 (ratio 4.22x) -> this is the confound H3 was carrying
+
+=== 3. H2 re-read on SHALLOW descents only (best_f > 1e-5; deep ones sit on an optimum)
+    shallow n=512: mean 1.0704, median 0.8240 vs uniform mean 8.2496, median 8.2654
+    MWU p=0  A12=0.008; 16/16 problems significantly closer than uniform
+    deep n=1012: mean 4.46e-06 (tautological -- a deep descent IS at an optimum)

@@ -1,0 +1,34 @@
+pid   K  tau    memb  ncl  sizes            reach_cl  reach_iso  att_cl  att_iso
+M01  20  4.96    5    1  [5]                 0.200      1.000    0.20    5.00
+M02  20  4.99    7    1  [7]                 0.286      0.692    0.29    3.92
+M03  20  4.96    8    1  [8]                 0.000      0.833    0.00    3.75
+M04  20  5.00    7    1  [7]                 0.143      0.923    0.29    8.62
+M05  20  4.99    7    1  [7]                 0.000      1.000    0.00    9.08
+M06  20  4.97    7    1  [7]                 0.286      1.000    0.29   11.85
+M07  20  4.98    6    1  [6]                 0.000      0.714    0.00    8.07
+M08  20  4.97    8    1  [8]                 0.250      0.917    0.62    9.83
+M09  10  5.51    0    0  []                    nan      0.900     nan    5.70
+M10  10  5.52    0    0  []                    nan      0.700     nan    4.20
+M11  10  5.50    0    0  []                    nan      0.900     nan    4.60
+M12  10  5.53    0    0  []                    nan      0.900     nan   10.60
+M13  10  5.54    0    0  []                    nan      0.900     nan   11.30
+M14  10  5.50    0    0  []                    nan      1.000     nan   13.00
+M15  10  5.54    0    0  []                    nan      0.800     nan   11.90
+M16  10  5.49    0    0  []                    nan      1.000     nan   11.30
+
+=== H1 (PRIMARY) n_clusters=8  sizes 5-8 (mean 6.88)
+    Spearman(size, reach) rho=0.0395  p=0.926  -> (ii) inert
+    A (PID 1-8): n=8 rho=0.0395 p=0.926
+    B (PID 9-16): n=0 (too few to correlate)
+
+=== H3 clustered n=55  isolated n=185
+    attract (descents per optimum): 0.218 vs 8.173  p=1.837e-21  A12=0.083
+    reach   (fraction reached)    : 0.145 vs 0.886  p=1.212e-26  A12=0.129
+
+=== H2 pooled over 16 problems (per-problem rows in landing_vs_uniform_d10.csv)
+    landing mean 0.2945 vs uniform mean 8.2490; 16/16 problems significantly closer than uniform
+    deep landings 0.0000 vs shallow 0.7822  (deep n = 1012 of 1524)
+
+=== power control (2000 permutations of cluster labels within problem)
+    null rho 95% band [0.0395, 0.0395]; observed 0.0395  -> inside the band
+    smallest |rho| this design can call significant: about 0.040
