@@ -409,12 +409,74 @@ jobs:
           sort /tmp/e91.list
           du -sh analysis/mmo2024/e91 || true
 
+      - name: Fetch the three unread papers (entry 118 prelude)
+        # Entry 117's review found that the project's strongest claim ("a
+        # multistart null beats niching methods") is largely occupied by two
+        # 2022 papers, and a third (Splitting for optimization) has been listed
+        # as unread for weeks.  The sandbox gets 403 on MDPI / doi.org /
+        # sciencedirect / MIT Press, so try them from the runner.  Only the MDPI
+        # one is open access; the other two are expected to come back as an HTML
+        # paywall page, which PARSE-FAILs and is simply reported.
+        run: |
+          set -uo pipefail
+          pip install pypdf
+          mkdir -p analysis/mmo2024/e118/refs
+          python3 - <<'PY'
+          import pathlib, subprocess
+          from pypdf import PdfReader
+
+          out = pathlib.Path("analysis/mmo2024/e118/refs")
+          # id -> candidate URLs, tried in order.
+          URLS = {
+              "cano2022_out_of_the_niche": [
+                  "https://www.mdpi.com/2227-7390/10/9/1494/pdf",
+                  "https://www.mdpi.com/2227-7390/10/9/1494/pdf?version=1652katex",
+              ],
+              "lobo_bazargani2022_hillclimbers": [
+                  "https://direct.mit.edu/evco/article-pdf/30/4/535/2057478/evco_a_00313.pdf",
+                  "https://arxiv.org/pdf/2108.02912",
+              ],
+              "splitting_for_optimization": [
+                  "https://www.sciencedirect.com/science/article/pii/S0305054816300855/pdfft",
+                  "https://arxiv.org/pdf/1506.03349",
+              ],
+          }
+          ok = []
+          for name, urls in URLS.items():
+              pdf = pathlib.Path(f"/tmp/{name}.pdf")
+              got = False
+              for url in urls:
+                  r = subprocess.run(["curl", "-sSL", "--max-time", "120",
+                                      "-A", "Mozilla/5.0", "-o", str(pdf), url],
+                                     capture_output=True, text=True)
+                  if r.returncode == 0 and pdf.exists() and pdf.stat().st_size > 10000:
+                      got = True
+                      break
+                  print(f"FETCH-FAIL {name} {url} rc={r.returncode} {r.stderr[:200]}")
+              if not got:
+                  continue
+              try:
+                  text = "\n".join((p.extract_text() or "") for p in PdfReader(str(pdf)).pages)
+              except Exception as e:            # a paywall/HTML body lands here
+                  print(f"PARSE-FAIL {name}: {e} ({pdf.stat().st_size} bytes)")
+                  continue
+              if len(text) < 5000:
+                  print(f"SHORT {name}: only {len(text)} chars -- probably a landing page")
+                  continue
+              (out / f"{name}.txt").write_text(text)
+              print(f"OK {name}: {pdf.stat().st_size} bytes pdf, {len(text)} chars text")
+              ok.append(name)
+          print("EXTRACTED", len(ok), "of", len(URLS), ":", ok)
+          PY
+          gzip -9f analysis/mmo2024/e118/refs/*.txt 2>/dev/null
+          ls -l analysis/mmo2024/e118/refs/ || true
+
       - name: Commit the extracted text
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add analysis/hm/e71/ analysis/mmo2024/e91/ analysis/mmo2024/e92/refs/
+          git add analysis/hm/e71/ analysis/mmo2024/e91/ analysis/mmo2024/e92/refs/ analysis/mmo2024/e118/refs/
           git commit -m "F11-F20 の公表 PR 表と GECCO 2024/2025 の新 suite を CI 経由で取り込む" \
             -m "サンドボックスの egress が arxiv.org / sites.google.com / drive.google.com を
           CONNECT 403 で塞いでいるので、egress の開いている runner で取得して置く。再最適化はしていない。"
