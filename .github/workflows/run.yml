@@ -493,7 +493,11 @@ jobs:
                   break
           print("EXTRACTED", len(ok), "of", len(WANT), ":", ok)
           PY
-          gzip -9f analysis/mmo2024/e118/refs/*.txt 2>/dev/null
+          # 0 extractions is a legitimate outcome (every publisher blocks the
+          # runner too), but then the glob matches nothing and gzip's exit 1
+          # becomes the step's status, which skips "Commit the extracted text"
+          # and would drop anything the EARLIER steps fetched. Never fail here.
+          gzip -9f analysis/mmo2024/e118/refs/*.txt 2>/dev/null || true
           ls -l analysis/mmo2024/e118/refs/ || true
 
       - name: Commit the extracted text
