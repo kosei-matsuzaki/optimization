@@ -1,0 +1,73 @@
+e121: 1320 descents, 8 problems (M01, M02, M03, M04, M05, M06, M07, M08)
+targets: 55 members, 55 isolated controls
+
+0. CALIBRATION -- r = 0 (start ON the optimum). Ceiling of the measurement.
+   deployed  member : hit 0.818  loose 0.909  median best_f 5.95e-07  (n=55)
+   deployed  isolated: hit 0.636  loose 1.000  median best_f 0.000596  (n=55)
+   matched   member : hit 1.000  loose 1.000  median best_f 1.14e-08  (n=55)
+   matched   isolated: hit 1.000  loose 1.000  median best_f 8.34e-08  (n=55)
+
+1. REACH CURVES  P(reach target | start distance r)
+
+   sigma0 = deployed
+     r     member  isolated   |  member(loose) isolated(loose)
+    0.00   0.818     0.636    |    0.909        1.000  <- calibration
+    0.10   0.727     0.800    |    0.836        1.000
+    0.25   0.745     0.691    |    0.836        1.000
+    0.50   0.764     0.727    |    0.818        1.000
+    1.00   0.709     0.727    |    0.855        1.000
+    2.00   0.691     0.727    |    0.764        0.982
+     r_half: member 2.00  isolated 2.00
+
+   sigma0 = matched
+     r     member  isolated   |  member(loose) isolated(loose)
+    0.00   1.000     1.000    |    1.000        1.000  <- calibration
+    0.10   1.000     1.000    |    1.000        1.000
+    0.25   0.982     0.945    |    1.000        1.000
+    0.50   0.927     0.873    |    1.000        1.000
+    1.00   0.927     0.764    |    0.982        1.000
+    2.00   0.709     0.764    |    0.782        1.000
+     r_half: member 2.00  isolated 2.00
+
+2. PRE-REGISTERED RULE (deployed curve, members, strict hit)
+   P(reach | r=0.25) = 0.745   threshold for (alpha): >= 0.5
+   P(reach | r=0.10) = 0.727   threshold for (beta):  <  0.2
+   => (alpha) -- basin is there, resolution is the issue
+
+3. FALSIFIER -- is the member curve actually below the isolated curve?
+   (if the isolated control is equally flat, the measurement is about
+    the 3125-eval budget and nothing above may be concluded)
+
+   sigma0 = deployed
+   r=0.10  member 0.727 vs iso 0.800   MWU p=0.187  A12=0.464
+   r=0.25  member 0.745 vs iso 0.691   MWU p=0.738  A12=0.527
+   r=0.50  member 0.764 vs iso 0.727   MWU p=0.67  A12=0.518
+   r=1.00  member 0.709 vs iso 0.727   MWU p=0.418  A12=0.491
+   r=2.00  member 0.691 vs iso 0.727   MWU p=0.339  A12=0.482
+   paired over 8 problems (r>0 pooled): member 0.732 vs iso 0.747  Wilcoxon p=0.4688  (4/3/1 down/up/tie)
+
+   sigma0 = matched
+   r=0.10  member 1.000 vs iso 1.000   (degenerate: all identical)
+   r=0.25  member 0.982 vs iso 0.945   MWU p=0.847  A12=0.518
+   r=0.50  member 0.927 vs iso 0.873   MWU p=0.83  A12=0.527
+   r=1.00  member 0.927 vs iso 0.764   MWU p=0.991  A12=0.582
+   r=2.00  member 0.709 vs iso 0.764   MWU p=0.26  A12=0.473
+   paired over 8 problems (r>0 pooled): member 0.910 vs iso 0.874  Wilcoxon p=0.8516  (3/4/1 down/up/tie)
+
+4. MECHANISM -- matched vs deployed on the SAME targets (members only)
+   r=0.10  deployed 0.727 -> matched 1.000  (+0.273)  p=5.38e-05  n=55
+   r=0.25  deployed 0.745 -> matched 0.982  (+0.236)  p=0.000395  n=55
+   r=0.50  deployed 0.764 -> matched 0.927  (+0.164)  p=0.00333  n=55
+   r=1.00  deployed 0.709 -> matched 0.927  (+0.218)  p=0.00067  n=55
+   r=2.00  deployed 0.691 -> matched 0.709  (+0.018)  p=0.353  n=55
+
+5. PER-PROBLEM (deployed, strict hit, r>0 pooled)
+   pid    member  isolated   n_mem
+   M01   0.880    0.880    5
+   M02   0.829    1.000    7
+   M03   0.725    0.550    8
+   M04   0.886    1.000    7
+   M05   0.800    0.743    7
+   M06   0.514    0.229    7
+   M07   0.600    0.900    6
+   M08   0.625    0.675    8

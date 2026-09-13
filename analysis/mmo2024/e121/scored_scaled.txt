@@ -1,0 +1,16 @@
+e121 rescaled by NN (POST-HOC). mean NN: member 3.616, isolated 7.770 (ratio 2.15)
+990 deployed descents at r > 0
+
+ r/NN bin      member        isolated       MWU p    A12
+ [0.000,0.12)  0.758 (n=128)  0.724 (n=185)    0.746  0.517
+ [0.125,0.25)  0.691 (n= 55)  0.772 (n= 57)    0.169  0.459
+ [0.250,0.50)  0.754 (n= 57)  0.705 (n=105)    0.750  0.525
+ [0.500,0.75)  0.654 (n= 52)  0.639 (n= 72)    0.569  0.507
+ [0.750,1.00)  0.578 (n= 45)  0.457 (n= 46)    0.876  0.561
+ [1.000,1.50)  0.259 (n= 81)  0.345 (n= 29)    0.192  0.457
+ [1.500,10.00)  n too small (m=77, i=1)
+
+pooled (unrescaled): member 0.529 vs iso 0.665, MWU p=7.16e-06, A12=0.432
+half-reach in NN units (last bin with reach >= 0.5):
+  member  : 1.0
+  isolated: 0.75
