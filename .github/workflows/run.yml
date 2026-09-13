@@ -414,59 +414,84 @@ jobs:
         # multistart null beats niching methods") is largely occupied by two
         # 2022 papers, and a third (Splitting for optimization) has been listed
         # as unread for weeks.  The sandbox gets 403 on MDPI / doi.org /
-        # sciencedirect / MIT Press, so try them from the runner.  Only the MDPI
-        # one is open access; the other two are expected to come back as an HTML
-        # paywall page, which PARSE-FAILs and is simply reported.
+        # sciencedirect / MIT Press, so try them from the runner.
+        #
+        # DO NOT GUESS arXiv NUMBERS.  Entry 118's first attempt hand-guessed
+        # 2108.02912 for Lobo & Bazargani; that number is a real preprint about
+        # an eclipsing binary star, so the fetch printed "OK ... 60033 chars"
+        # and committed the WRONG PAPER.  Every id here is resolved by title
+        # through the arXiv API, and every extracted text has to contain a
+        # distinctive phrase from the expected title or it is thrown away.
         run: |
           set -uo pipefail
           pip install pypdf
           mkdir -p analysis/mmo2024/e118/refs
           python3 - <<'PY'
-          import pathlib, subprocess
+          import pathlib, re, subprocess, urllib.parse
           from pypdf import PdfReader
 
           out = pathlib.Path("analysis/mmo2024/e118/refs")
-          # id -> candidate URLs, tried in order.
-          URLS = {
-              "cano2022_out_of_the_niche": [
-                  "https://www.mdpi.com/2227-7390/10/9/1494/pdf",
-                  "https://www.mdpi.com/2227-7390/10/9/1494/pdf?version=1652katex",
-              ],
-              "lobo_bazargani2022_hillclimbers": [
-                  "https://direct.mit.edu/evco/article-pdf/30/4/535/2057478/evco_a_00313.pdf",
-                  "https://arxiv.org/pdf/2108.02912",
-              ],
-              "splitting_for_optimization": [
-                  "https://www.sciencedirect.com/science/article/pii/S0305054816300855/pdfft",
-                  "https://arxiv.org/pdf/1506.03349",
-              ],
+          # name -> (title to search arXiv for, phrase the text must contain,
+          #          extra direct URLs to try first)
+          WANT = {
+              "cano2022_out_of_the_niche": (
+                  "Out of the Niche: Using Direct Search Methods to Find Multiple "
+                  "Global Optima",
+                  "out of the niche",
+                  ["https://www.mdpi.com/2227-7390/10/9/1494/pdf"]),
+              "lobo_bazargani2022_hillclimbers": (
+                  "When Hillclimbers Beat Genetic Algorithms in Multimodal "
+                  "Optimization",
+                  "hillclimbers beat genetic algorithms",
+                  []),
+              "splitting_for_optimization": (
+                  "Splitting for optimization",
+                  "splitting",
+                  []),
           }
+
+          def arxiv_ids(title):
+              url = ("http://export.arxiv.org/api/query?search_query="
+                     + urllib.parse.quote(f'ti:"{title}"') + "&max_results=5")
+              r = subprocess.run(["curl", "-sSL", "--max-time", "60", url],
+                                 capture_output=True, text=True)
+              if r.returncode != 0:
+                  print("SEARCH-FAIL", title[:40]); return []
+              ids = re.findall(r"<id>http://arxiv\.org/abs/([^<]+)</id>", r.stdout)
+              tts = [t.strip().replace("\n", " ") for t in
+                     re.findall(r"<title>([^<]+)</title>", r.stdout)[1:]]
+              for i, t in zip(ids, tts):
+                  print(f"  arXiv hit {i}: {t[:80]}")
+              return ids
+
           ok = []
-          for name, urls in URLS.items():
+          for name, (title, must, direct) in WANT.items():
+              urls = list(direct) + [f"https://arxiv.org/pdf/{i}" for i in arxiv_ids(title)]
+              if not urls:
+                  print(f"NO-CANDIDATE {name}")
+                  continue
               pdf = pathlib.Path(f"/tmp/{name}.pdf")
-              got = False
               for url in urls:
                   r = subprocess.run(["curl", "-sSL", "--max-time", "120",
                                       "-A", "Mozilla/5.0", "-o", str(pdf), url],
                                      capture_output=True, text=True)
-                  if r.returncode == 0 and pdf.exists() and pdf.stat().st_size > 10000:
-                      got = True
-                      break
-                  print(f"FETCH-FAIL {name} {url} rc={r.returncode} {r.stderr[:200]}")
-              if not got:
-                  continue
-              try:
-                  text = "\n".join((p.extract_text() or "") for p in PdfReader(str(pdf)).pages)
-              except Exception as e:            # a paywall/HTML body lands here
-                  print(f"PARSE-FAIL {name}: {e} ({pdf.stat().st_size} bytes)")
-                  continue
-              if len(text) < 5000:
-                  print(f"SHORT {name}: only {len(text)} chars -- probably a landing page")
-                  continue
-              (out / f"{name}.txt").write_text(text)
-              print(f"OK {name}: {pdf.stat().st_size} bytes pdf, {len(text)} chars text")
-              ok.append(name)
-          print("EXTRACTED", len(ok), "of", len(URLS), ":", ok)
+                  if r.returncode != 0 or not pdf.exists() or pdf.stat().st_size <= 10000:
+                      print(f"FETCH-FAIL {name} {url} rc={r.returncode}")
+                      continue
+                  try:
+                      text = "\n".join((p.extract_text() or "") for p in PdfReader(str(pdf)).pages)
+                  except Exception as e:          # a paywall/HTML body lands here
+                      print(f"PARSE-FAIL {name} {url}: {e}")
+                      continue
+                  if must not in text[:20000].lower():
+                      print(f"WRONG-PAPER {name} {url}: title phrase {must!r} absent "
+                            f"({len(text)} chars) -- discarded")
+                      continue
+                  (out / f"{name}.txt").write_text(text)
+                  print(f"OK {name} {url}: {len(text)} chars, title phrase verified")
+                  ok.append(name)
+                  break
+          print("EXTRACTED", len(ok), "of", len(WANT), ":", ok)
           PY
           gzip -9f analysis/mmo2024/e118/refs/*.txt 2>/dev/null
           ls -l analysis/mmo2024/e118/refs/ || true
