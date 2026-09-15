@@ -1,0 +1,16 @@
+M01-D10-PIN01 seed100: evals=499997 archive=13 (+final) K=20 fopt=0 219.1s -> M01-D10-PIN01_rrcma_seed100.csv
+M02-D10-PIN01 seed100: evals=499991 archive=6 (+final) K=20 fopt=9.948e-14 244.4s -> M02-D10-PIN01_rrcma_seed100.csv
+M04-D10-PIN01 seed100: evals=499999 archive=9 (+final) K=20 fopt=0 315.2s -> M04-D10-PIN01_rrcma_seed100.csv
+M06-D10-PIN01 seed100: evals=499990 archive=126 (+final) K=20 fopt=0 194.5s -> M06-D10-PIN01_rrcma_seed100.csv
+M05-D10-PIN01 seed100: evals=499990 archive=33 (+final) K=20 fopt=1.53e-10 327.7s -> M05-D10-PIN01_rrcma_seed100.csv
+M03-D10-PIN01 seed100: evals=499992 archive=22 (+final) K=20 fopt=0 590.0s -> M03-D10-PIN01_rrcma_seed100.csv
+M09-D10-PIN01 seed100: evals=499994 archive=7 (+final) K=10 fopt=0 124.8s -> M09-D10-PIN01_rrcma_seed100.csv
+M10-D10-PIN01 seed100: evals=499990 archive=4 (+final) K=10 fopt=2.842e-14 141.2s -> M10-D10-PIN01_rrcma_seed100.csv
+M08-D10-PIN01 seed100: evals=499997 archive=28 (+final) K=20 fopt=1.12e-08 422.1s -> M08-D10-PIN01_rrcma_seed100.csv
+M12-D10-PIN01 seed100: evals=499997 archive=4 (+final) K=10 fopt=0 160.6s -> M12-D10-PIN01_rrcma_seed100.csv
+M11-D10-PIN01 seed100: evals=499997 archive=13 (+final) K=10 fopt=0 302.5s -> M11-D10-PIN01_rrcma_seed100.csv
+M07-D10-PIN01 seed100: evals=499992 archive=71 (+final) K=20 fopt=1.074e-11 668.2s -> M07-D10-PIN01_rrcma_seed100.csv
+M14-D10-PIN01 seed100: evals=499996 archive=107 (+final) K=10 fopt=0 122.1s -> M14-D10-PIN01_rrcma_seed100.csv
+M13-D10-PIN01 seed100: evals=499998 archive=28 (+final) K=10 fopt=1.331e-10 182.8s -> M13-D10-PIN01_rrcma_seed100.csv
+M16-D10-PIN01 seed100: evals=499991 archive=10 (+final) K=10 fopt=8.119e-09 234.5s -> M16-D10-PIN01_rrcma_seed100.csv
+M15-D10-PIN01 seed100: evals=499998 archive=6 (+final) K=10 fopt=9.152e-12 348.4s -> M15-D10-PIN01_rrcma_seed100.csv
