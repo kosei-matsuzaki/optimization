@@ -50,6 +50,13 @@ SRC = {
     ("RR-CMA-ES", 200):      (os.path.join(HERE, "dumps"), "{p}_rrcma_seed200.csv"),
 }
 COMBINED_RR100 = os.path.join(MMO, "e128", "dumps_rrcma_seed100.csv.gz")
+# 今回の 32 本は、採点したあとに **`problem` 列つきの 1 本ずつ**に畳む（e128 と同じ形。
+# 16 ファイルに散らすとファイル数だけが増えて中身は同じ）。**畳む前後で出力が
+# 1 文字も変わらないことを確認してから per-problem を消す。**
+COMBINED = {
+    ("RR-CMA-ES", 200): os.path.join(HERE, "dumps_rrcma_seed200.csv.gz"),
+    ("Restart-Lander", 200): os.path.join(HERE, "descents_seed200.csv.gz"),
+}
 METHODS = ["RR-CMA-ES", "Restart-Lander"]
 SEEDS = [0, 100, 200]
 
@@ -115,6 +122,11 @@ def main():
         for p, (f, opt, xs) in read_combined(COMBINED_RR100).items():
             if p in PROBS:
                 cell[("RR-CMA-ES", 100)][p] = score_arrays(f, opt, xs, K_of(p))
+    for (m, s), path in COMBINED.items():
+        if os.path.exists(path):
+            for p, (f, opt, xs) in read_combined(path).items():
+                if p in PROBS and p not in cell[(m, s)]:
+                    cell[(m, s)][p] = score_arrays(f, opt, xs, K_of(p))
 
     print("=" * 104)
     print("その129 — 直接対決を 3 本目の seed（200）で決める（キュー 1(A)、新規 run は 32 本）")

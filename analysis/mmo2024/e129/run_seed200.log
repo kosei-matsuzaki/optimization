@@ -1,0 +1,4 @@
+M01-D10-PIN01 seed200: evals=499998 archive=15 (+final) K=20 fopt=0 221.8s -> M01-D10-PIN01_rrcma_seed200.csv
+done rr M01-D10-PIN01 18:35:40
+M02-D10-PIN01 seed200: evals=499995 archive=6 (+final) K=20 fopt=1.421e-13 247.8s -> M02-D10-PIN01_rrcma_seed200.csv
+done rr M02-D10-PIN01 18:36:06
