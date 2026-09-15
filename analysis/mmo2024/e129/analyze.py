@@ -47,7 +47,9 @@ SRC = {
     ("Restart-Lander", 100): (os.path.join(MMO, "e115", "s1", "descents"), "{p}_seed100.csv"),
     ("Restart-Lander", 200): (os.path.join(HERE, "descents"), "{p}_seed200.csv"),
     ("RR-CMA-ES", 0):        (os.path.join(MMO, "e127", "dumps"), "{p}_rrcma_seed0.csv"),
-    ("RR-CMA-ES", 200):      (os.path.join(HERE, "dumps"), "{p}_rrcma_seed200.csv"),
+    # `run_rrcma.py` は出力先が e127/dumps に固定（その127 のものをそのまま使うため）。
+    # 畳んだあとは e129 の `dumps_rrcma_seed200.csv.gz`（下の COMBINED）から読む。
+    ("RR-CMA-ES", 200):      (os.path.join(MMO, "e127", "dumps"), "{p}_rrcma_seed200.csv"),
 }
 COMBINED_RR100 = os.path.join(MMO, "e128", "dumps_rrcma_seed100.csv.gz")
 # 今回の 32 本は、採点したあとに **`problem` 列つきの 1 本ずつ**に畳む（e128 と同じ形。
