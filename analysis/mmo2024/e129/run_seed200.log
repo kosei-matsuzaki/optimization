@@ -4,3 +4,15 @@ M02-D10-PIN01 seed200: evals=499995 archive=6 (+final) K=20 fopt=1.421e-13 247.8
 done rr M02-D10-PIN01 18:36:06
 done null M01-D10-PIN01 18:36:25
 done null M02-D10-PIN01 18:37:04
+M04-D10-PIN01 seed200: evals=499994 archive=9 (+final) K=20 fopt=0 287.9s -> M04-D10-PIN01_rrcma_seed200.csv
+done rr M04-D10-PIN01 18:41:14
+done null M04-D10-PIN01 18:42:38
+M03-D10-PIN01 seed200: evals=499990 archive=22 (+final) K=20 fopt=0 568.6s -> M03-D10-PIN01_rrcma_seed200.csv
+done rr M03-D10-PIN01 18:45:10
+M05-D10-PIN01 seed200: evals=499998 archive=27 (+final) K=20 fopt=1.884e-10 318.9s -> M05-D10-PIN01_rrcma_seed200.csv
+done rr M05-D10-PIN01 18:46:35
+done null M03-D10-PIN01 18:46:35
+M06-D10-PIN01 seed200: evals=499998 archive=124 (+final) K=20 fopt=0 198.4s -> M06-D10-PIN01_rrcma_seed200.csv
+done rr M06-D10-PIN01 18:48:30
+done null M05-D10-PIN01 18:48:57
+done null M06-D10-PIN01 18:50:37
