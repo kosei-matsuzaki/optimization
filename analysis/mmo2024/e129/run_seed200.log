@@ -16,3 +16,12 @@ M06-D10-PIN01 seed200: evals=499998 archive=124 (+final) K=20 fopt=0 198.4s -> M
 done rr M06-D10-PIN01 18:48:30
 done null M05-D10-PIN01 18:48:57
 done null M06-D10-PIN01 18:50:37
+M08-D10-PIN01 seed200: evals=499991 archive=26 (+final) K=20 fopt=8.932e-09 420.2s -> M08-D10-PIN01_rrcma_seed200.csv
+done rr M08-D10-PIN01 18:55:59
+M07-D10-PIN01 seed200: evals=499994 archive=56 (+final) K=20 fopt=1.319e-11 642.1s -> M07-D10-PIN01_rrcma_seed200.csv
+done rr M07-D10-PIN01 18:57:19
+M09-D10-PIN01 seed200: evals=499999 archive=5 (+final) K=10 fopt=0 124.2s -> M09-D10-PIN01_rrcma_seed200.csv
+done rr M09-D10-PIN01 18:58:05
+done null M08-D10-PIN01 18:58:21
+done null M07-D10-PIN01 19:00:05
+done null M09-D10-PIN01 19:00:17
