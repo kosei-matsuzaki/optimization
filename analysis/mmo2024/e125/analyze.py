@@ -5,8 +5,8 @@
 e115 の `analyze.py` からそのまま import する。違うのは入力（どの降下ダンプか）だけ。
 
   * `null`   -> analysis/mmo2024/e115/descents（seed 0、座標つき、保存物。追加 run ゼロ）
-  * `reseed` -> analysis/mmo2024/e125/descents/*_reseed_seed0.csv(.gz)
-  * `bhop`   -> analysis/mmo2024/e125/descents/*_bhop_seed0.csv(.gz)
+  * `reseed` -> analysis/mmo2024/e125/descents_reseed_seed0.csv.gz（その131 が 16 本を畳んだ）
+  * `bhop`   -> analysis/mmo2024/e125/descents_bhop_seed0.csv.gz（同上）
 
 **関門**: `null` をこのコードで採点し直した 16 問平均が、その116 の記録
 （MPR 0.5644 / Score 0.6284）と 4 桁一致すること。外れたら採点経路が壊れているので判定に進まない。
@@ -38,8 +38,15 @@ GROUP_A = PROBS[:8]                              # 塊のある側（その118�
 GROUP_B = PROBS[8:]
 NULL_DIR = os.path.join(MMO, "e115", "descents")
 ARM_DIR = os.path.join(HERE, "descents")
+# **その131 の片付けで、腕のダンプ 32 本は腕ごとに 1 本の combined へ畳んだ**
+# （`descents_reseed_seed0.csv.gz` / `descents_bhop_seed0.csv.gz`、`problem` 列つき）。
+# `ARM_DIR` の per-problem が残っていればそちらを使い、無ければ combined から読む。
+# **畳む前後で本 script の出力が 1 文字も変わらないことは その131 が確認済み。**
+COMBINED_ARM = {arm: os.path.join(HERE, f"descents_{arm}_seed0.csv.gz")
+                for arm in ("reseed", "bhop")}
 
 _K: dict = {}
+_COMB: dict = {}
 
 
 def K_of(prob):
@@ -57,11 +64,37 @@ def find(d, *cands):
     return None
 
 
+def arm_rows(prob, arm):
+    """畳んだ combined から 1 問ぶんの生の行を返す（入出力の写し。統計量は含まない）。"""
+    if arm not in _COMB:
+        path = COMBINED_ARM.get(arm)
+        out: dict = {}
+        if path and os.path.exists(path):
+            with gzip.open(path, "rt") as fh:
+                for r in csv.DictReader(fh):
+                    out.setdefault(r.pop("problem"), []).append(r)
+        _COMB[arm] = out
+    return _COMB[arm].get(prob)
+
+
 def load(prob, arm):
     if arm == "null":
         p = find(NULL_DIR, f"{prob}_seed0.csv")
     else:
         p = find(ARM_DIR, f"{prob}_{arm}_seed0.csv")
+    if p is None and arm != "null":
+        rows = arm_rows(prob, arm)
+        if not rows:
+            return None
+        dim = sum(1 for k in rows[0] if k.startswith("x") and k[1:].isdigit())
+        f = np.array([float(r["best_f"]) for r in rows])
+        opt = np.array([int(r["land_opt"]) for r in rows])
+        xs = np.array([[float(r[f"x{i}"]) for i in range(dim)] for r in rows])
+        idx = rule_indices(ARM, f, K_of(prob), x=xs, r=ARM_R)
+        recall, prec, f1, sc, n = score(idx, f, opt, K_of(prob))
+        return dict(mpr=float(recall.mean()), f1=float(f1.mean()),
+                    score=float(sc.mean()), n=int(n), ndesc=len(f),
+                    pr_lv=recall, path=COMBINED_ARM[arm])
     if p is None:
         return None
     f, opt, xs = read_dump(p)
@@ -76,10 +109,11 @@ def rho_trace(prob, arm):
     """腕の計器（`mode` / `rho` 列）。腕の中身が想定どおり動いたかの確認だけに使う。"""
     p = find(ARM_DIR, f"{prob}_{arm}_seed0.csv")
     if p is None:
-        return None
-    op = gzip.open if p.endswith(".gz") else open
-    with op(p, "rt") as fh:
-        rows = list(csv.DictReader(fh))
+        rows = arm_rows(prob, arm)          # 畳んだ combined からの退避路（その131）
+    else:
+        op = gzip.open if p.endswith(".gz") else open
+        with op(p, "rt") as fh:
+            rows = list(csv.DictReader(fh))
     if not rows or "mode" not in rows[0]:
         return None
     modes = [r["mode"] for r in rows]
