@@ -7801,7 +7801,7 @@ e115 の `analyze.py` から import（**新しい規則も新しい統計量も 
 **(d) 実測が公表値より 0.035 低いこと自体は、(a)(b)(c) のどれでも説明がつく**ので、
 **「RR-CMA-ES の実力は 0.5377 である」とは書かない。書けるのは「この採点器は公表値を ±0.05 で再現する」まで。**
 
-**保持**: 行単位の報告集合ダンプは `e127/dumps/*_rrcma_seed0.csv.gz`（16 本、計 505 行）、
+**保持**: 行単位の報告集合ダンプは `e127/dumps_rrcma_seed0.csv.gz`（**その130 で 16 本を `problem` 列つきの 1 本に畳んだ**。計 489 行 ＝ ヘッダ 16 行ぶんが 1 行になった数。畳む前後で `e127`/`e128`/`e129` の `analyze.py` の出力は 3 本とも 1 文字も変わらない）、
 問題別の採点は `by_problem_d10.csv`（64 行 ＝ 4 手法 × 16 問）、出力全文は `scored.txt`、事前登録は `prereg.md`。
 **再測定は `analysis/mmo2024/e127/run.sh`**（16 run ＝ 実測 15.6 分、4 並列）、
 **採点は `PYTHONPATH=/tmp/pystub python3 analysis/mmo2024/e127/analyze.py`**（追加評価ゼロ。上の数値を全部出す）。
@@ -7903,7 +7903,7 @@ seed 0 の 1 本を 15 インスタンス平均と比べていることだ」。
 問題別の採点は `by_problem_d10.csv`（64 行 ＝ 2 手法 × 2 seed × 16 問）、対比較は `paired_d10.csv`（6 行）、
 出力全文は `scored.txt`、事前登録は `prereg.md`、run のログは `run_seed100.log`。
 **再測定は `SEED=100 bash analysis/mmo2024/e127/run.sh`**（16 run ＝ **実測 22.6 分**、4 並列。
-**ダンプは `e127/dumps/` に出るので、`problem` 列を足して 1 本の `.csv.gz` に畳んでから `e128/` に置く**）、
+**ダンプは `e127/dumps/` に出るので、`problem` 列を足して 1 本の `.csv.gz` に畳んでから `e128/` に置く**。**その130 以降は seed 0 も `e127/dumps_rrcma_seed0.csv.gz` の 1 本**）、
 **採点は `PYTHONPATH=/tmp/pystub python3 analysis/mmo2024/e128/analyze.py`**（追加評価ゼロ。上の数値を全部出す）。
 **1 run の所要は 122.1〜668.2 秒**（5.5 倍に散る ＝ その127 と同じ性質。平均 287.4 秒）。
 **畳んだもの: なし**（e127 の seed 0 ダンプは対の片側なので消せない）。
@@ -8008,7 +8008,7 @@ seed 0 の 1 本を 15 インスタンス平均と比べていることだ」。
 `niching_baseline.py` の問題別 CSV 13 本 ＋ ログ 13 本は `by_problem_current.csv`（11 行）に畳んだ。
 出力全文は `scored.txt`、事前登録は `prereg.md`、run のログは `run_seed200.log`。
 **再測定は `SEED=200 bash analysis/mmo2024/e129/run.sh`**（**2 手法を 1 つの 4 並列プールに問題ごとに交互に入れる**。
-**RR のダンプは `e127/dumps/` に出るので `fold_dumps.py` で畳む**）、
+**RR のダンプは `e127/dumps/` に出るので `fold_dumps.py` で畳む。seed 0 は その130 で `e127/dumps_rrcma_seed0.csv.gz` に畳み済み**）、
 **採点は `PYTHONPATH=/tmp/pystub python3 analysis/mmo2024/e129/analyze.py`**（追加評価ゼロ）。
 **実測 0.64 run/分**（21 run / 33.1 分、4 並列）＝ **計画の 0.78 run/分（32 run を 41 分）を 18% 下回った。**
 **RR-CMA-ES 1 run は 124.2〜642.1 秒（平均 304.8 秒、12 run）。**

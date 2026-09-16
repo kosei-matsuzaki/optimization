@@ -4,7 +4,7 @@
 **新しい規則も新しい統計量も 1 つも定義しない。** `rule_indices` / `score` / `paired` は
 `analysis/mmo2024/e115/analyze.py` から、問題別の記録値は e116 / e127 から読む。違うのは入力だけ。
 
-  * `RR-CMA-ES` seed 0    -> analysis/mmo2024/e127/dumps/*_rrcma_seed0.csv.gz  （その127 の保存物）
+  * `RR-CMA-ES` seed 0    -> analysis/mmo2024/e127/dumps_rrcma_seed0.csv.gz  （その127 の保存物。その130 で畳んだ）
   * `RR-CMA-ES` seed 100  -> analysis/mmo2024/e128/dumps/*_rrcma_seed100.csv.gz（今回の 16 run）
   * `Restart-Lander` s0   -> analysis/mmo2024/e115/descents      （保存物。追加 run ゼロ）
   * `Restart-Lander` s100 -> analysis/mmo2024/e115/s1/descents   （保存物。追加 run ゼロ）
@@ -49,6 +49,8 @@ SRC = {
 # 問題ごとに 16 ファイルへ散らすとファイル数だけが増えて中身は同じなので、
 # CLAUDE.md の保持規則（行単位は .csv.gz）を満たす形のまま 1 本に畳んである。
 COMBINED_RR100 = os.path.join(HERE, "dumps_rrcma_seed100.csv.gz")
+# その130 の片付けで、その127 の seed 0 ダンプ 16 本も 1 本に畳んだ（出力は不変。その130 で確認）。
+COMBINED_RR0 = os.path.join(MMO, "e127", "dumps_rrcma_seed0.csv.gz")
 METHODS = ["RR-CMA-ES", "Restart-Lander"]
 SEEDS = [0, 100]
 
@@ -114,6 +116,10 @@ def main():
             q = find(d, pat.format(p=p))
             if q:
                 cell[(m, s)][p] = score_dump(q, K_of(p))
+    if os.path.exists(COMBINED_RR0):
+        for p, (f, opt, xs) in read_combined(COMBINED_RR0).items():
+            if p in PROBS and p not in cell[("RR-CMA-ES", 0)]:
+                cell[("RR-CMA-ES", 0)][p] = score_arrays(f, opt, xs, K_of(p))
     if os.path.exists(COMBINED_RR100):
         for p, (f, opt, xs) in read_combined(COMBINED_RR100).items():
             if p in PROBS:

@@ -5,7 +5,7 @@
 `analysis/mmo2024/e115/analyze.py` から import する（その116 以降の全サイクルと同一）。
 `read_combined` は e128 の**入出力**ヘルパの写しで、統計量ではない。
 
-  * `RR-CMA-ES` seed 0    -> analysis/mmo2024/e127/dumps/*_rrcma_seed0.csv.gz   （その127 の保存物）
+  * `RR-CMA-ES` seed 0    -> analysis/mmo2024/e127/dumps_rrcma_seed0.csv.gz   （その127 の保存物。その130 で畳んだ）
   * `RR-CMA-ES` seed 100  -> analysis/mmo2024/e128/dumps_rrcma_seed100.csv.gz   （その128 の保存物）
   * `RR-CMA-ES` seed 200  -> analysis/mmo2024/e129/dumps/*_rrcma_seed200.csv.gz （今回）
   * `Restart-Lander` s0   -> analysis/mmo2024/e115/descents      （保存物）
@@ -48,10 +48,13 @@ SRC = {
     ("Restart-Lander", 200): (os.path.join(HERE, "descents"), "{p}_seed200.csv"),
     ("RR-CMA-ES", 0):        (os.path.join(MMO, "e127", "dumps"), "{p}_rrcma_seed0.csv"),
     # `run_rrcma.py` は出力先が e127/dumps に固定（その127 のものをそのまま使うため）。
+    # **その130 で e127/dumps は畳んで消えた**ので、この 2 行は再 run したときだけ効く。
     # 畳んだあとは e129 の `dumps_rrcma_seed200.csv.gz`（下の COMBINED）から読む。
     ("RR-CMA-ES", 200):      (os.path.join(MMO, "e127", "dumps"), "{p}_rrcma_seed200.csv"),
 }
 COMBINED_RR100 = os.path.join(MMO, "e128", "dumps_rrcma_seed100.csv.gz")
+# その130 の片付けで、その127 の seed 0 ダンプ 16 本も 1 本に畳んだ（出力は不変。その130 で確認）。
+COMBINED_RR0 = os.path.join(MMO, "e127", "dumps_rrcma_seed0.csv.gz")
 # 今回の 32 本は、採点したあとに **`problem` 列つきの 1 本ずつ**に畳む（e128 と同じ形。
 # 16 ファイルに散らすとファイル数だけが増えて中身は同じ）。**畳む前後で出力が
 # 1 文字も変わらないことを確認してから per-problem を消す。**
@@ -120,6 +123,10 @@ def main():
             q = find(d, pat.format(p=p))
             if q:
                 cell[(m, s)][p] = score_dump(q, K_of(p))
+    if os.path.exists(COMBINED_RR0):
+        for p, (f, opt, xs) in read_combined(COMBINED_RR0).items():
+            if p in PROBS and p not in cell[("RR-CMA-ES", 0)]:
+                cell[("RR-CMA-ES", 0)][p] = score_arrays(f, opt, xs, K_of(p))
     if os.path.exists(COMBINED_RR100):
         for p, (f, opt, xs) in read_combined(COMBINED_RR100).items():
             if p in PROBS:

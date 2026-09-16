@@ -4,7 +4,8 @@
 **新しい規則も新しい統計量も 1 つも定義しない。** `rule_indices` / `score` / `paired` は
 `analysis/mmo2024/e115/analyze.py` からそのまま import する。違うのは入力だけ。
 
-  * `RR-CMA-ES`       -> analysis/mmo2024/e127/dumps/*_rrcma_seed0.csv(.gz)（今回の run）
+  * `RR-CMA-ES`       -> analysis/mmo2024/e127/dumps_rrcma_seed0.csv.gz（今回の run。
+                        **その130 で 16 本を `problem` 列つきの 1 本に畳んだ。出力は不変**）
   * `Restart-Lander`  -> analysis/mmo2024/e115/descents（seed 0、保存物。追加 run ゼロ）
   * `MC-ESO` / `NMMSO` -> analysis/mmo2024/e116/ranking_d10.csv の `legal` 行（記録値。
                           ダンプはその120 で削除済み）
@@ -18,6 +19,7 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import os
 import sys
 
@@ -40,6 +42,9 @@ PROBS = [f"M{i:02d}-D10-PIN01" for i in range(1, 17)]
 GROUP_A, GROUP_B = PROBS[:8], PROBS[8:]
 NULL_DIR = os.path.join(MMO, "e115", "descents")
 RR_DIR = os.path.join(HERE, "dumps")
+# その130 の片付けで、16 本の per-problem ダンプは `problem` 列つきの 1 本に畳んだ
+# （e128/e129 と同じ形）。**畳む前後で本 script の出力は 1 文字も変わらない**（その130 で確認）。
+COMBINED_RR0 = os.path.join(HERE, "dumps_rrcma_seed0.csv.gz")
 RANKING = os.path.join(MMO, "e116", "ranking_d10.csv")
 
 _K: dict = {}
@@ -57,6 +62,30 @@ def find(d, name):
         if os.path.exists(p):
             return p
     return None
+
+
+def read_combined(path):
+    """`problem` 列つきの 1 本のダンプを problem -> (f, opt, xs) に割る（e128 の写し）。"""
+    op = gzip.open if path.endswith(".gz") else open
+    with op(path, "rt") as fh:
+        rows = list(csv.DictReader(fh))
+    out: dict = {}
+    for r in rows:
+        out.setdefault(r["problem"], []).append(r)
+    res = {}
+    for p, rs in out.items():
+        dim = sum(1 for k in rs[0] if k.startswith("x") and k[1:].isdigit())
+        res[p] = (np.array([float(r["best_f"]) for r in rs]),
+                  np.array([int(r["land_opt"]) for r in rs]),
+                  np.array([[float(r[f"x{i}"]) for i in range(dim)] for r in rs]))
+    return res
+
+
+def score_arrays(f, opt, xs, K):
+    idx = rule_indices(ARM, f, K, x=xs, r=ARM_R)
+    recall, prec, f1, sc, n = score(idx, f, opt, K)
+    return dict(mpr=float(recall.mean()), f1=float(f1.mean()),
+                score=float(sc.mean()), n=int(n), ndump=len(f))
 
 
 def score_dump(path, K):
@@ -91,6 +120,10 @@ def main():
         q = find(RR_DIR, f"{p}_rrcma_seed0.csv")
         if q:
             live["RR-CMA-ES"][p] = score_dump(q, K_of(p))
+    if os.path.exists(COMBINED_RR0):
+        for p, (f, opt, xs) in read_combined(COMBINED_RR0).items():
+            if p in PROBS and p not in live["RR-CMA-ES"]:
+                live["RR-CMA-ES"][p] = score_arrays(f, opt, xs, K_of(p))
 
     print("=" * 96)
     print("その127 — RR-CMA-ES（de Nobel+ 2024, modcma の repelling）を同一採点器に載せる（キュー 1）")
