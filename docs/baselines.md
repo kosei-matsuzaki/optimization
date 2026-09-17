@@ -108,18 +108,21 @@ Neighborhood-based Crowding DE（Qu, Suganthan & Liang, 2012）。DE ベース�
 |---|---|---|---|
 | **Crowding-DE** | `ncde.py`（`m = n_pop`）| n_pop 30 / F 0.5 / CR 0.9 | 素の crowding DE。NCDE との差 = 近傍変異の寄与。ドナーが basin をまたぐため深精度が落ちる（実測: N04 で PR@1e-4 0.00 vs NCDE 0.25, 2000 評価）|
 | **r3pso** | `r3pso.py` | n_particles 30 / w 0.729 / c1=c2 1.494 / ring 3 | 慣性・加速係数を PSO ベースラインと完全に揃えてあるので、PSO との差は**近傍トポロジのみ**。MC-ESO の系統共存（半径依存）に対する「半径なし niching」の対照 |
-| **NMMSO** | `nmmso.py`（`pynmmso` ラッパ）| swarm_size 10（**公表設定は `10·D`。下記の注意を読むこと**）| スウォームの分裂・併合でニッチ数を自分で決める。再実装でないので「ベースラインの実装が悪い」という反論を封じられる |
+| **NMMSO** | `nmmso.py`（`pynmmso` ラッパ）| swarm_size `10·D`（**公表設定。2026-09-17 までは直書き 10 だった。下記の注意を読むこと**）| スウォームの分裂・併合でニッチ数を自分で決める。再実装でないので「ベースラインの実装が悪い」という反論を封じられる |
 | **Repel-CMA-ES** | `restart_cmaes.py:RepellingCMAESOptimizer` | repel_coverage 0.2 / repel_gamma 0.9 | restart の best を taboo 点にし、その球内に落ちた候補を引き直す。半径は「taboo 集合が箱の `repel_coverage` を塞ぐ」体積条件から決まり、restart が増えるほど自動で縮む |
 
 実装上の注意:
 
-- **【要注意・未修正】`swarm_size` の直書き 10 は Fieldsend 2014 の設定ではない。** 原論文 §V は
+- **【2026-09-17・その137 で修正済み】`swarm_size` の既定は `10 * benchmark.dim`。** 原論文 §V は
   *"the maximum swarm size n = 10D (where D is the number of design parameters)"* と書いており、
   **D=10 では 100、D=20 では 200 が公表設定**（`pynmmso` のライブラリ既定 `4+floor(3·ln D)` ともまた別）。
-  **この 1 個のずれで CEC2013 の公表 PR に届かなくなる**（その136 の実測、[acceptance_topology.md](acceptance_topology.md)）——
+  **その137 より前は D に依らず 10 を直書きしていた** ＝ **公表設定の 1/D 倍**で、
+  **この 1 個のずれで CEC2013 の公表 PR に届かなくなっていた**（その136 の実測）——
   **N19-CF4-10D の PR@1e-5 は `swarm_size=10` で 0.0917（15 run）、`10·D` で 0.3500（5 run）、公表値 0.443。**
   低次元（N04-N10、D=2/3）で公表値と合っていたのは**問題が易しくこのずれに鈍かったから**で、配線が正しかったからではない。
-  **`core/optimizers/nmmso.py:43` は その136 の時点でまだ 10 のまま**（既存の測定の対照を壊さないため。直すのはキュー 2 の次の一手）。
+  **`swarm_size` 引数は残してあるので、旧設定を再現したい腕は明示的に `swarm_size=10` を渡す。**
+  **【重要】その137 より前に記録された NMMSO の数値はすべて旧既定（`swarm_size=10`）のもの**である
+  —— 内訳と関門の結果は [acceptance_topology.md](acceptance_topology.md) の その137 の節。
 - **NMMSO は最大化**なので符号を反転して渡す。`Nmmso.run` は反復の切れ目でしか予算を見ずオーバーランするため、`max_evals` に達した後の `fitness` は**関数を呼ばずに `-inf` を返す**。評価回数は厳密に一致し、偽の点がモードとして報告されることもない。
 - **Repel-CMA-ES は de Nobel+ 2024 の近似**。棄却判定を Euclid 距離で行っている（原論文は現在の CMA 計量での Mahalanobis 距離 / σ）。`repel_coverage` も本プロジェクトの選択で、斥力の強さを決める唯一のパラメータなので、これに依存する主張をする前に感度を測ること。
 - 多解指標は `final_solutions` だけを見る（[experiments.md](experiments.md#多解報告cec2013-ルール-niching-スイート)）。報告するのは r3pso が全粒子の pbest、NMMSO がモード集合、Repel-CMA-ES が各 restart の best ＋最終集団、Crowding-DE / NCDE が最終集団。

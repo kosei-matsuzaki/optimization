@@ -40,10 +40,20 @@ class NMMSOOptimizer(BaseOptimizer):
         self,
         benchmark: BenchmarkFunction,
         seed: int = 42,
-        swarm_size: int = 10,
+        swarm_size: int | None = None,
     ):
         super().__init__(benchmark, seed)
-        self.swarm_size = swarm_size
+        # Fieldsend 2014 §V, verbatim: "the maximum swarm size n = 10D (where D
+        # is the number of design parameters)". Until 2026-09-17 this wrapper
+        # hard-coded 10 for every D, i.e. 1/D of the published setting, which
+        # weakened NMMSO one-sidedly and by more the higher D went (entry 136:
+        # the CEC2013 gap to the published peak ratio was -0.001 at D=3, -0.121
+        # at D=5, -0.351 at D=10). ``pynmmso``'s own library default is
+        # 4+floor(3 ln D), which happens to equal 10 at D=10 -- that coincidence
+        # is what hid the defect for two cycles. The argument stays so an arm
+        # can pin a size; only the default is D-dependent.
+        self.swarm_size = (10 * benchmark.dim if swarm_size is None
+                           else int(swarm_size))
 
     def optimize(self, max_evals: int = 5000) -> OptimizeResult:
         lo, hi = self.bounds
