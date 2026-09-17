@@ -500,6 +500,188 @@ jobs:
           gzip -9f analysis/mmo2024/e118/refs/*.txt 2>/dev/null || true
           ls -l analysis/mmo2024/e118/refs/ || true
 
+      - name: Fetch the NMMSO published CEC2013 PR table (entry 134, queue 1c)
+        # Queue 2 has to check this repository's NMMSO wiring at D=10 against a
+        # published number, and no paper already vendored here mentions NMMSO
+        # even once (entry 134 grepped all 7).  Fieldsend's own CEC'2014 paper
+        # is the primary source; it is not on arXiv, only in Exeter's
+        # institutional repository (ORE), which the sandbox cannot reach.
+        # Secondary sources are any arXiv paper that tabulates NMMSO on the
+        # CEC2013 suite -- resolved by SEARCH, never by a hand-typed id
+        # (entry 118 committed a paper about eclipsing binary stars that way).
+        # Every extracted text must contain a distinctive phrase or it is
+        # discarded, and every failure prints its URL and status.
+        run: |
+          set -uo pipefail
+          pip install pypdf
+          mkdir -p analysis/mmo2024/e134/refs
+          python3 - <<'PY'
+          import pathlib, re, subprocess, urllib.parse
+          from pypdf import PdfReader
+
+          out = pathlib.Path("analysis/mmo2024/e134/refs")
+          UA = ["-A", "Mozilla/5.0 (X11; Linux x86_64)"]
+
+          def get(url, dest=None, timeout="120"):
+              cmd = ["curl", "-sSL", "--max-time", timeout, *UA,
+                     "-w", "%{http_code}"]
+              cmd += ["-o", str(dest)] if dest else ["-o", "/tmp/page.html"]
+              r = subprocess.run(cmd, capture_output=True, text=True)
+              code = (r.stdout or "").strip()[-3:]
+              if dest is None:
+                  try:
+                      return code, pathlib.Path("/tmp/page.html").read_text(errors="replace")
+                  except Exception:
+                      return code, ""
+              return code, ""
+
+          def keep(name, pdf, must):
+              """Extract, verify a distinctive phrase, write. Returns True on keep."""
+              try:
+                  text = "\n".join((p.extract_text() or "") for p in PdfReader(str(pdf)).pages)
+              except Exception as e:
+                  print(f"  PARSE-FAIL {name}: {e}")
+                  return False
+              if must not in text[:40000].lower():
+                  print(f"  WRONG-PAPER {name}: {must!r} absent in first 40k of "
+                        f"{len(text)} chars -- discarded")
+                  return False
+              (out / f"{name}.txt").write_text(text)
+              print(f"  OK {name}: {len(text)} chars, phrase verified")
+              return True
+
+          ok = []
+
+          # ---- (c1) Fieldsend 2014, the NMMSO paper itself, from ORE Exeter ----
+          # The README of github.com/fieldsend/ieee_cec_2014_nmmso names this
+          # handle as the institutional deposit of the CEC'2014 paper.
+          HANDLES = ["https://ore.exeter.ac.uk/repository/handle/10871/15247",
+                     "https://ore.exeter.ac.uk/handle/10871/15247",
+                     "https://ore.exeter.ac.uk/articles/journal_contribution/"
+                     "Running_up_those_hills_multi-modal_search_with_the_niching_"
+                     "migratory_multi-swarm_optimiser/"]
+          pdf_urls = []
+          for h in HANDLES:
+              code, html = get(h)
+              print(f"ORE {h} -> HTTP {code}, {len(html)} bytes")
+              if not html:
+                  continue
+              for m in re.findall(r'href="([^"]+?\.pdf[^"]*)"', html, re.I):
+                  pdf_urls.append(urllib.parse.urljoin(h, m.replace("&amp;", "&")))
+              for m in re.findall(r'href="(/repository/bitstream/[^"]+)"', html, re.I):
+                  pdf_urls.append(urllib.parse.urljoin(h, m.replace("&amp;", "&")))
+              # figshare-backed ORE exposes direct download links in the page JSON
+              for m in re.findall(r'"(https://[^"]*?ndownloader[^"]*?)"', html):
+                  pdf_urls.append(m.replace("\\u002F", "/"))
+          pdf_urls = list(dict.fromkeys(pdf_urls))
+          print("ORE pdf candidates:", pdf_urls[:10])
+          for u in pdf_urls[:10]:
+              dest = pathlib.Path("/tmp/nmmso_fieldsend2014.pdf")
+              code, _ = get(u, dest)
+              size = dest.stat().st_size if dest.exists() else 0
+              print(f"  TRY {u} -> HTTP {code}, {size} bytes")
+              if size > 10000 and keep("fieldsend2014_nmmso_cec",
+                                       dest, "niching migratory multi-swarm"):
+                  ok.append("fieldsend2014_nmmso_cec")
+                  break
+
+          # ---- (c2) any arXiv paper that tabulates NMMSO on CEC2013 ----
+          def arxiv_hits(query, n=12):
+              url = ("http://export.arxiv.org/api/query?search_query="
+                     + urllib.parse.quote(query) + f"&max_results={n}")
+              r = subprocess.run(["curl", "-sSL", "--max-time", "60", url],
+                                 capture_output=True, text=True)
+              if r.returncode != 0:
+                  print("SEARCH-FAIL", query)
+                  return []
+              ids = re.findall(r"<id>http://arxiv\.org/abs/([^<]+)</id>", r.stdout)
+              tts = [t.strip().replace("\n", " ") for t in
+                     re.findall(r"<title>(.*?)</title>", r.stdout, re.S)][1:]
+              for i, t in zip(ids, tts):
+                  print(f"  arXiv {i}: {t[:85]}")
+              return list(zip(ids, tts))
+
+          seen = set()
+          for q in ('all:"NMMSO"', 'all:"niching migratory multi-swarm"',
+                    'all:"peak ratio" AND all:"CEC2013"'):
+              print("QUERY", q)
+              for num, title in arxiv_hits(q):
+                  base = num.split("v")[0]
+                  if base in seen:
+                      continue
+                  seen.add(base)
+                  dest = pathlib.Path(f"/tmp/ax_{base.replace('/', '_')}.pdf")
+                  code, _ = get(f"https://arxiv.org/pdf/{base}", dest)
+                  size = dest.stat().st_size if dest.exists() else 0
+                  if size <= 10000:
+                      print(f"  FETCH-FAIL {base} HTTP {code} {size} bytes")
+                      continue
+                  try:
+                      text = "\n".join((p.extract_text() or "")
+                                       for p in PdfReader(str(dest)).pages)
+                  except Exception as e:
+                      print(f"  PARSE-FAIL {base}: {e}")
+                      continue
+                  low = text.lower()
+                  # keep only if it actually carries NMMSO *and* peak-ratio numbers
+                  if "nmmso" not in low or "peak ratio" not in low:
+                      print(f"  SKIP {base}: nmmso={'nmmso' in low} "
+                            f"peak_ratio={'peak ratio' in low}")
+                      continue
+                  name = f"nmmso_table_{base.replace('/', '_')}"
+                  (out / f"{name}.txt").write_text(text)
+                  print(f"  OK {name}: {len(text)} chars ({title[:60]})")
+                  ok.append(name)
+              if len(ok) >= 4:
+                  break
+
+          # ---- (b) TRDE-LR (GECCO'2024 winner): the only place a per-problem
+          # table for the competition could live. e92 failed to resolve it.
+          for q in ('ti:"Tabu Restart" AND all:"niching"',
+                    'all:"TRDE-LR"',
+                    'all:"Tabu Restart-Based Niching Differential Evolution"'):
+              print("QUERY", q)
+              for num, title in arxiv_hits(q, 6):
+                  base = num.split("v")[0]
+                  if base in seen:
+                      continue
+                  seen.add(base)
+                  dest = pathlib.Path(f"/tmp/tr_{base.replace('/', '_')}.pdf")
+                  code, _ = get(f"https://arxiv.org/pdf/{base}", dest)
+                  size = dest.stat().st_size if dest.exists() else 0
+                  if size <= 10000:
+                      print(f"  FETCH-FAIL {base} HTTP {code}")
+                      continue
+                  try:
+                      text = "\n".join((p.extract_text() or "")
+                                       for p in PdfReader(str(dest)).pages)
+                  except Exception as e:
+                      print(f"  PARSE-FAIL {base}: {e}")
+                      continue
+                  if "tabu" not in text[:40000].lower():
+                      print(f"  WRONG-PAPER trde {base}")
+                      continue
+                  name = f"trde_candidate_{base.replace('/', '_')}"
+                  (out / f"{name}.txt").write_text(text)
+                  print(f"  OK {name}: {len(text)} chars ({title[:60]})")
+                  ok.append(name)
+
+          # ---- (c3) the CEC2013 niching competition's own results page ----
+          for u in ("https://titan.csit.rmit.edu.au/~e46507/cec13-niching/competition/",
+                    "http://www.epitropakis.co.uk/gecco2019/",
+                    "https://github.com/mikeagn/CEC2013/raw/master/README.md"):
+              code, html = get(u)
+              print(f"PAGE {u} -> HTTP {code}, {len(html)} bytes")
+              if html and len(html) > 400:
+                  nm = re.sub(r"[^A-Za-z0-9]+", "_", u)[-60:]
+                  (out / f"page_{nm}.txt").write_text(html[:400000])
+                  ok.append("page_" + nm)
+
+          print("E134 EXTRACTED", len(ok), ":", ok)
+          PY
+          gzip -9f analysis/mmo2024/e134/refs/*.txt 2>/dev/null || true
+          ls -l analysis/mmo2024/e134/refs/ || true
+
       - name: Commit the extracted text
         run: |
           set -euo pipefail
@@ -510,9 +692,10 @@ jobs:
           # job dies AFTER the fetch has succeeded (entry 118 lost one run to
           # exactly that).  Add only the directories that exist.
           for d in analysis/hm/e71 analysis/mmo2024/e91 analysis/mmo2024/e92/refs \
-                   analysis/mmo2024/e118/refs; do
+                   analysis/mmo2024/e118/refs analysis/mmo2024/e134/refs; do
             [ -d "$d" ] && git add "$d" || echo "skip missing $d"
           done
+          git diff --cached --quiet && { echo "nothing fetched -- no commit"; exit 0; }
           git commit -m "F11-F20 の公表 PR 表と GECCO 2024/2025 の新 suite を CI 経由で取り込む" \
             -m "サンドボックスの egress が arxiv.org / sites.google.com / drive.google.com を
           CONNECT 403 で塞いでいるので、egress の開いている runner で取得して置く。再最適化はしていない。"
