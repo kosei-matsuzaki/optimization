@@ -40,7 +40,11 @@ OLD = {"N15-CF4-3D": 0.6667, "N17-CF4-5D": 0.4167, "N18-CF3-10D": 0.4000,
 
 def load() -> dict[str, list[dict]]:
     by: dict[str, list[dict]] = {}
-    for p in sorted(HERE.glob("gate_*.csv")):
+    # `gate.csv` is the folded form (the five per-function files concatenated,
+    # `function` column already present); the glob also accepts the
+    # per-function `gate_<name>.csv` files this cycle wrote before folding, so
+    # the output is identical either way.
+    for p in sorted(HERE.glob("gate*.csv")):
         with open(p, newline="") as fh:
             for r in csv.DictReader(fh):
                 if r["rule"] != "current" or r["method"] != "NMMSO":
