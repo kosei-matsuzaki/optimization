@@ -1,0 +1,7 @@
+peak ratio on the reported set, 15 seeds, budget = 1 x suite
+
+function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
+---------------------------------------------------------------------------------------------------
+N19-CF4-10D         NMMSO         current     8    50000    100    0.09   0.09   0.06   0.04   0.03    0.063  1356
+
+rows written to analysis/mmo2024/e135/n19.csv
