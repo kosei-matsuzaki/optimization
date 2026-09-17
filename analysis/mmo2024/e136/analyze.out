@@ -1,0 +1,27 @@
+e136 -- N19-CF4-10D, official budget 400,000, one wrapper detail off per arm
+
+     arm  n    1e-1    1e-2    1e-3    1e-4    1e-5      SD      SE    sup  near.1  |rep|  req-bud  clip  modes    sec
+--------------------------------------------------------------------------------------------------------
+    base 15  0.1833  0.1667  0.1417  0.1250  0.0917  0.1201  0.0310  0.092    1.53   96.4     61.9   0.0  540.9     48
+  noclip  5  0.1500  0.1500  0.1250  0.1000  0.0500  0.0685  0.0306  0.050    1.60   94.8     62.8   0.0  567.6     48
+   nocut  5  0.2500  0.2500  0.2250  0.1750  0.1000  0.0559  0.0250  0.100    2.40   99.8     55.6   0.0  372.0     42
+  noseed  5  0.2500  0.2500  0.2000  0.1250  0.1250  0.1768  0.0791  0.125    2.40   91.8     59.2   0.0  471.6     44
+   sw10d  5  0.3750  0.3500  0.3500  0.3500  0.3500  0.1630  0.0729  0.350    3.40   94.4     64.2   0.0  121.0     33
+
+fidelity gate (refutation (ii)): base 0.0917 (n=15) vs entry 135 0.0333 (n=15, SD 0.0572)  diff +0.0583  -> PASS, arms are comparable
+
+registered decision, against base pooled with entry 135 (n=30, mean 0.0625):
+    noclip  diff -0.0125  Welch t -0.35   -> innocent (within +-0.05)
+     nocut  diff +0.0375  Welch t +1.22   -> innocent (within +-0.05)
+    noseed  diff +0.0625  Welch t +0.77   -> acts but does not explain (+0.05..+0.10)
+     sw10d  diff +0.2875  Welch t +3.83   -> WRAPPER DEFECT (>= +0.10)
+
+refutation (i): nocut 0.1000 vs published 0.443 -> not fired
+
+At least one arm moved: noseed +0.0625; sw10d +0.2875
+
+Other CEC2013 functions, against Fieldsend 2014 table IV (arm is stated -- `base` is swarm_size 10, `sw10d` is 10*D):
+function          arm  D  n   PR@1e-5      SD      SE     pub      gap  verdict
+N15-CF4-3D       base  3  3    0.6667  0.0722  0.0417   0.668  -0.0013  within +-0.10
+N17-CF4-5D       base  5  3    0.4167  0.0722  0.0417   0.538  -0.1213  LOW
+N18-CF3-10D     sw10d 10  3    0.5556  0.1925  0.1111   0.633  -0.0774  within +-0.10
