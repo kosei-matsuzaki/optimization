@@ -674,15 +674,17 @@ jobs:
                   ok.append(name)
 
           # ---- (c3) the CEC2013 niching competition's own results page ----
+          # Entry 134 fetched these three: all reachable from the runner, and
+          # all three contain zero occurrences of "NMMSO" and of "peak ratio",
+          # i.e. the published per-method tables are not on the landing pages.
+          # Kept as a reachability probe only -- do NOT commit the bodies again.
           for u in ("https://titan.csit.rmit.edu.au/~e46507/cec13-niching/competition/",
                     "http://www.epitropakis.co.uk/gecco2019/",
                     "https://github.com/mikeagn/CEC2013/raw/master/README.md"):
               code, html = get(u)
-              print(f"PAGE {u} -> HTTP {code}, {len(html)} bytes")
-              if html and len(html) > 400:
-                  nm = re.sub(r"[^A-Za-z0-9]+", "_", u)[-60:]
-                  (out / f"page_{nm}.txt").write_text(html[:400000])
-                  ok.append("page_" + nm)
+              print(f"PAGE {u} -> HTTP {code}, {len(html)} bytes, "
+                    f"nmmso={html.lower().count('nmmso')} "
+                    f"peak_ratio={html.lower().count('peak ratio')}")
 
           print("E134 EXTRACTED", len(ok), ":", ok)
           PY
