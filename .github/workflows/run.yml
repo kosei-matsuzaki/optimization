@@ -526,8 +526,15 @@ jobs:
               cmd = ["curl", "-sSL", "--max-time", timeout, *UA,
                      "-w", "%{http_code}"]
               cmd += ["-o", str(dest)] if dest else ["-o", "/tmp/page.html"]
+              cmd.append(url)          # entry 134 attempt 1 omitted this: curl
+                                       # then printed usage to stderr and every
+                                       # URL read back as "HTTP , 0 bytes"
               r = subprocess.run(cmd, capture_output=True, text=True)
               code = (r.stdout or "").strip()[-3:]
+              # never swallow stderr: a silent 0-byte read is indistinguishable
+              # from a blocked host, which is the thing being measured here
+              if r.returncode != 0 and r.stderr:
+                  print(f"  curl rc={r.returncode}: {r.stderr.strip()[:200]}")
               if dest is None:
                   try:
                       return code, pathlib.Path("/tmp/page.html").read_text(errors="replace")
