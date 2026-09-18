@@ -691,6 +691,80 @@ jobs:
           gzip -9f analysis/mmo2024/e134/refs/*.txt 2>/dev/null || true
           ls -l analysis/mmo2024/e134/refs/ || true
 
+      - name: Fetch the NCDE / r3pso originals (entry 141, queue 2a)
+        # Both baselines hard-code a D-independent population of 30; the audit
+        # needs the two original papers' experiment sections to say what the
+        # published population actually is.  Neither is on arXiv (2012 / 2010,
+        # both IEEE TEC) and every IEEE mirror is egress-blocked from the
+        # sandbox, so the id is looked up through the Semantic Scholar API and
+        # the open-access PDF, when there is one, is taken from there.
+        # Entry 118's rule is enforced: a fetched PDF is kept only if a
+        # distinctive phrase of its own title survives extraction, so a
+        # wrong-paper hit cannot be committed as "OK".
+        run: |
+          set -uo pipefail
+          pip install pypdf
+          mkdir -p analysis/mmo2024/e141/refs
+          python3 - <<'PY'
+          import json, pathlib, subprocess, urllib.parse
+          from pypdf import PdfReader
+
+          out = pathlib.Path("analysis/mmo2024/e141/refs")
+          # name -> (title to search, phrase that must survive extraction,
+          #          extra direct URLs to try before the API)
+          WANT = {
+              "ncde_qu2012": (
+                  "Differential Evolution With Neighborhood Mutation for Multimodal Optimization",
+                  "neighborhood mutation", ()),
+              "r3pso_li2010": (
+                  "Niching Without Niching Parameters: Particle Swarm Optimization Using a Ring Topology",
+                  "ring topology",
+                  ("https://web.xidian.edu.cn/xlwang/files/20150312_174832.pdf",)),
+          }
+
+          def api_pdf(title):
+              url = ("https://api.semanticscholar.org/graph/v1/paper/search?query="
+                     + urllib.parse.quote(title)
+                     + "&fields=title,year,openAccessPdf&limit=5")
+              r = subprocess.run(["curl", "-sSL", "--max-time", "60", url],
+                                 capture_output=True, text=True)
+              if r.returncode != 0:
+                  print("SEARCH-FAIL", title, r.returncode, r.stderr[:300]); return []
+              try:
+                  data = json.loads(r.stdout).get("data", [])
+              except Exception as e:
+                  print("SEARCH-PARSE-FAIL", title, e, r.stdout[:200]); return []
+              for d in data:
+                  print("  candidate:", d.get("year"), d.get("title"))
+              return [d["openAccessPdf"]["url"] for d in data
+                      if d.get("openAccessPdf") and d["openAccessPdf"].get("url")]
+
+          ok = []
+          for name, (title, phrase, direct) in WANT.items():
+              pdf = pathlib.Path(f"/tmp/{name}.pdf")
+              for url in tuple(direct) + tuple(api_pdf(title)):
+                  r = subprocess.run(["curl", "-sSL", "--max-time", "120", "-o", str(pdf), url],
+                                     capture_output=True, text=True)
+                  if r.returncode != 0 or not pdf.exists() or pdf.stat().st_size < 10000:
+                      print(f"FETCH-FAIL {name} {url} rc={r.returncode} {r.stderr[:200]}")
+                      continue
+                  try:
+                      text = "\n".join((p.extract_text() or "") for p in PdfReader(str(pdf)).pages)
+                  except Exception as e:
+                      print(f"PARSE-FAIL {name} {url}: {e}"); continue
+                  if phrase.lower() not in text[:40000].lower():
+                      print(f"TITLE-MISMATCH {name} {url}: {phrase!r} absent"); continue
+                  (out / f"{name}.txt").write_text(text)
+                  print(f"OK {name}: {url} -> {len(text)} chars")
+                  ok.append(name)
+                  break
+              else:
+                  print(f"NONE {name}: no candidate passed")
+          print("E141 EXTRACTED", len(ok), ":", ok)
+          PY
+          gzip -9f analysis/mmo2024/e141/refs/*.txt 2>/dev/null || true
+          ls -l analysis/mmo2024/e141/refs/ || true
+
       - name: Commit the extracted text
         run: |
           set -euo pipefail
@@ -701,7 +775,8 @@ jobs:
           # job dies AFTER the fetch has succeeded (entry 118 lost one run to
           # exactly that).  Add only the directories that exist.
           for d in analysis/hm/e71 analysis/mmo2024/e91 analysis/mmo2024/e92/refs \
-                   analysis/mmo2024/e118/refs analysis/mmo2024/e134/refs; do
+                   analysis/mmo2024/e118/refs analysis/mmo2024/e134/refs \
+                   analysis/mmo2024/e141/refs; do
             [ -d "$d" ] && git add "$d" || echo "skip missing $d"
           done
           git diff --cached --quiet && { echo "nothing fetched -- no commit"; exit 0; }

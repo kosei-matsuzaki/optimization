@@ -103,6 +103,21 @@ _METHODS: dict = {
                                                 "descent_budget": 12500}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),
+    # Entry 141 (queue 2a): the population-size audit arms. Both baselines
+    # hard-code a D-independent population of 30 (``ncde.py:36``,
+    # ``r3pso.py:36``, the latter's own comment reading "Li used larger
+    # swarms") -- the same shape of wiring as the NMMSO defect entry 136 found.
+    # These arms span one decade so the question "does that constant bite at
+    # the dimensions the head claim is made at" can be answered before the
+    # published constant is pinned. Diagnostic arms: ``core/optimizers/`` is
+    # untouched and the ``NCDE`` / ``r3pso`` rows above are unchanged, so every
+    # recorded number keeps its meaning.
+    # ``m`` moves with the population on purpose: NCDE defines the
+    # neighbourhood as a *fraction* of the population (10-20% in the
+    # secondary literature; the shipped 6/30 is 1/5), so holding the fraction
+    # is holding the published parameterisation while the population moves.
+    "NCDE-p300": (NCDEOptimizer, {"n_pop": 300, "m": 60}),
+    "r3pso-p300": (RingPSOOptimizer, {"n_particles": 300}),
     "DE": (DEOptimizer, {}),
     "NM-Restart": (MultistartNelderMeadOptimizer, {}),
 }
