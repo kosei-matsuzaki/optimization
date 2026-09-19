@@ -118,6 +118,13 @@ _METHODS: dict = {
     # is holding the published parameterisation while the population moves.
     "NCDE-p300": (NCDEOptimizer, {"n_pop": 300, "m": 60}),
     "r3pso-p300": (RingPSOOptimizer, {"n_particles": 300}),
+    # Entry 142 (queue 1): the published-band arm for `r3pso` on the new
+    # suite. Entry 141 read Li (2010) §VI-B as "a population size from 300 to
+    # 800" for D=8-20, i.e. roughly `40*D`; at D=10 that band value is 400.
+    # The shipped `r3pso` row above is *unchanged* (defaults are not touched,
+    # ベースライン側でも -- 方針欄 2026-09-11 (3)), so this is a second arm,
+    # not a redefinition: every recorded `r3pso` number keeps its meaning.
+    "r3pso-p400": (RingPSOOptimizer, {"n_particles": 400}),
     "DE": (DEOptimizer, {}),
     "NM-Restart": (MultistartNelderMeadOptimizer, {}),
 }
