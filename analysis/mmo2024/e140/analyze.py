@@ -17,6 +17,12 @@
   * null  seed 100    -> `e115/s1/descents/`（同上。その139 が「seed 1」と呼んだ列）
   * null  seed 2/3/4  -> `e140/descents/`（この回の `RESTART_LANDER_DUMP`。**新規 run 12 本**）
 
+**【その143 で保持整理】この回の行単位の入力（`e140/report_sets.csv.gz` /
+`e140/descents.csv.gz` と per-run の `dumps/` `descents/`）は路線を畳んだ際に削除した。
+集計は `by_seed.csv` / `means_5seed.csv` に残っており、結論は
+`docs/acceptance_topology.md` の その140 の節にある（bytes は git 履歴）。
+＝ **この script はそのままでは再実行できない。**
+
 使い方: python3 analysis/mmo2024/e140/analyze.py
 """
 from __future__ import annotations

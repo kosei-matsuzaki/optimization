@@ -46,9 +46,10 @@ descents (`e115/descents/`) are rescored through the same path and must match
 not, this cycle reports the mismatch instead of a judgement.
 
 **Second gate, specific to this cycle**: the three `r3pso-p400` problems entry
-142 already scored (M01 0.5133 / M09 0.4322 / M10 0.4030 per `e142/scored.txt`,
-re-read at analysis time) must come out **unchanged to 4 digits** after the new
-rows are folded in. This is what proves the fold appended and did not perturb.
+142 already scored (M01 0.5133 / M09 0.3886 / M10 0.3808 per
+`e142/scored.txt`, read from that file after this prereg was first written and
+corrected here before any result of this cycle existed) must come out
+**unchanged to 4 digits** after the new rows are folded in. This is what proves the fold appended and did not perturb.
 
 ## Judgement, fixed now
 
