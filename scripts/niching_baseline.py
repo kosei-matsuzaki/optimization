@@ -101,6 +101,17 @@ _METHODS: dict = {
     # are entry 103's, which is where 0.5529 comes from.
     "Restart-Lander": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
                                                 "descent_budget": 12500}),
+    # その145（キュー 1）: 勝っている null 自身のつまみを振る腕。1 降下の上限を
+    # 12500（= 50 万 / 40、その103 の値）から **MC-ESO の 1 segment の実測 1540** に
+    # 下げるだけ。ほかは 1 つも変えない（`sigma_ratio` は 0.1 のまま）。
+    # 目的は 2 つ: (A) 頭の結果が `descent_budget` の選び方に依存しないことを示す
+    # （弱い環 2 の非対称 —— 外部手法は公表設定と照合したのに、勝っている側の
+    # つまみは一度も振っていない）、(B) hunt 長と選抜のどちらが MC-ESO の
+    # 被覆差を作っているかを分ける（本数が MC-ESO の 317.9 本とほぼ揃う）。
+    # 上の `Restart-Lander` の行は 1 文字も変えていない ＝ 記録済みの値は全部そのまま。
+    # `core/` は触っていない（腕は driver 側のパラメータ 1 個）。
+    "Restart-Lander-1540": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
+                                                     "descent_budget": 1540}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),
     # Entry 141 (queue 2a): the population-size audit arms. Both baselines
