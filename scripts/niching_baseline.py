@@ -112,6 +112,15 @@ _METHODS: dict = {
     # `core/` は触っていない（腕は driver 側のパラメータ 1 個）。
     "Restart-Lander-1540": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
                                                      "descent_budget": 1540}),
+    # その146（キュー 1）: その145 で反証条件 (A1) が発火した（1540 で Score が
+    # 直した NMMSO の 0.4144 を下回る）ので、**順位が入れ替わる水準を挟む**。
+    # 12500 と 1540 の間に 2 点だけ置く。掃引ではなく境界を括るための 2 点で、
+    # `sigma_ratio` は 0.1 のまま、ほかは 1 つも変えない。上の 2 行も不変 ＝
+    # 記録済みの値は全部そのまま。`core/` は触っていない。
+    "Restart-Lander-3000": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
+                                                     "descent_budget": 3000}),
+    "Restart-Lander-6000": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
+                                                     "descent_budget": 6000}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),
     # Entry 141 (queue 2a): the population-size audit arms. Both baselines
