@@ -242,5 +242,49 @@ def main():
     print("\n".join(out))
 
 
+
+
+def addendum():
+    """副次（追加評価ゼロ）: 対の独立性と、問題単位に平均した保守的な検定。
+
+    **新しい統計量は定義しない**（`paired` と numpy の相関だけ）。
+    `(問題, インスタンス)` の 32 対は**同じ 16 問から 2 つずつ**取っているので独立ではない。
+    そこで (i) 2 インスタンスの差の相関、(ii) 問題ごとに 2 インスタンスを平均した n=16 の検定
+    （＝ 疑似反復を潰した保守側）を出す。
+    """
+    out = []
+    P = out.append
+    rr02, rl02 = {}, {}
+    for p in PROBS:
+        prob = f"{p}-D10-PIN02"
+        K = K_of(prob)
+        a = find(os.path.join(HERE, "dumps", f"{prob}_rrcma_seed0.csv"))
+        b = find(os.path.join(HERE, "descents", f"{prob}_seed0.csv"))
+        rr02[p] = score_dump(a, K) if a else score_arrays(*folded("rr", prob), K)
+        rl02[p] = score_dump(b, K) if b else score_arrays(*folded("rl", prob), K)
+
+    d1 = np.array([PIN01[p][3] - PIN01[p][2] for p in PROBS])
+    d2 = np.array([rl02[p]["score"] - rr02[p]["score"] for p in PROBS])
+    P("")
+    P("## 副次（追加評価ゼロ）—— 32 対は独立ではない")
+    P(f"  2 インスタンスの Score 差の相関: r = {float(np.corrcoef(d1, d2)[0, 1]):+.4f}"
+      f"  （符号が一致した問題 {int(((d1 > 0) == (d2 > 0)).sum())}/16）")
+    a = {p: (PIN01[p][2] + rr02[p]["score"]) / 2 for p in PROBS}
+    b = {p: (PIN01[p][3] + rl02[p]["score"]) / 2 for p in PROBS}
+    P(f"  問題ごとに 2 インスタンスを平均した保守側の検定（n=16）: {fmt(paired(b, a, PROBS))}")
+    am = {p: (PIN01[p][0] + rr02[p]["mpr"]) / 2 for p in PROBS}
+    bm = {p: (PIN01[p][1] + rl02[p]["mpr"]) / 2 for p in PROBS}
+    P(f"    MPR 側: {fmt(paired(bm, am, PROBS))}")
+    P("")
+    P("## 外部妥当性（PIN02 は 2 本目のインスタンス）")
+    rrm = float(np.mean([rr02[p]["score"] for p in PROBS]))
+    rlm = float(np.mean([rl02[p]["score"] for p in PROBS]))
+    P(f"  RR-CMA-ES PIN02 16 問平均 Score {rrm:.4f}  対 公表値 0.5730 ＝ {rrm - 0.5730:+.4f}"
+      f"  （事前登録の許容幅 ±0.05 の{'内側' if abs(rrm - 0.5730) < 0.05 else '外側'}）")
+    P(f"  `Restart-Lander` PIN02 16 問平均 Score {rlm:.4f}  対 公表最良 0.6080 ＝ {rlm - 0.6080:+.4f}")
+    print("\n".join(out))
+
+
 if __name__ == "__main__":
     main()
+    addendum()
