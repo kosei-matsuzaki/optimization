@@ -70,12 +70,45 @@ def find(*cands):
     return None
 
 
-def score_dump(path, K):
-    f, opt, xs = read_dump(path)
+def read_combined(path):
+    """`problem` 列つきの 1 本のダンプを problem -> (f, opt, xs) に割る（e128/e129 の写し）。"""
+    op = gzip.open if path.endswith(".gz") else open
+    with op(path, "rt") as fh:
+        rows = list(csv.DictReader(fh))
+    by: dict = {}
+    for r in rows:
+        by.setdefault(r["problem"], []).append(r)
+    res = {}
+    for prob, rs in by.items():
+        dim = sum(1 for kk in rs[0] if kk.startswith("x") and kk[1:].isdigit())
+        res[prob] = (np.array([float(r["best_f"]) for r in rs]),
+                     np.array([int(r["land_opt"]) for r in rs]),
+                     np.array([[float(r[f"x{i}"]) for i in range(dim)] for r in rs]))
+    return res
+
+
+# 畳んだ後の退避路（その148 と同じ形。畳む前後で出力が 1 文字も変わらないことを確認する）
+FOLDED = {"rr": os.path.join(HERE, "dumps_rrcma.csv.gz"),
+          "rl": os.path.join(HERE, "descents.csv.gz")}
+_FOLD: dict = {}
+
+
+def folded(kind, prob):
+    if kind not in _FOLD:
+        path = FOLDED[kind]
+        _FOLD[kind] = read_combined(path) if os.path.exists(path) else {}
+    return _FOLD[kind].get(prob)
+
+
+def score_arrays(f, opt, xs, K):
     idx = rule_indices(ARM, f, K, x=xs, r=ARM_R)
     recall, prec, f1, sc, n = score(idx, f, opt, K)
     return dict(mpr=float(recall.mean()), f1=float(f1.mean()),
                 score=float(sc.mean()), n=int(n), ndump=len(f))
+
+
+def score_dump(path, K):
+    return score_arrays(*read_dump(path), K)
 
 
 def fmt(d):
@@ -126,9 +159,13 @@ def main():
         prob = f"{p}-D10-PIN02"
         a = find(os.path.join(HERE, "dumps", f"{prob}_rrcma_seed0.csv"))
         b = find(os.path.join(HERE, "descents", f"{prob}_seed0.csv"))
-        if a and b:
-            K = K_of(prob)
-            rr02[p], rl02[p] = score_dump(a, K), score_dump(b, K)
+        K = K_of(prob)
+        ra = score_dump(a, K) if a else (
+            score_arrays(*folded("rr", prob), K) if folded("rr", prob) else None)
+        rb = score_dump(b, K) if b else (
+            score_arrays(*folded("rl", prob), K) if folded("rl", prob) else None)
+        if ra and rb:
+            rr02[p], rl02[p] = ra, rb
             done.append(p)
     k = len(done)
     na = sum(1 for p in done if p in GROUP_A)

@@ -2,6 +2,3 @@ peak ratio on the reported set, 1 seeds, budget = 1 x suite
 
 function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
 ---------------------------------------------------------------------------------------------------
-M01-D10-PIN02       Restart-Landercurrent    20    25000     66    0.55   0.55   0.55   0.50   0.50    0.530   188
-
-rows written to analysis/mmo2024/e149/by_problem/RL_M01-D10-PIN02.csv
