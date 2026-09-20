@@ -121,6 +121,18 @@ _METHODS: dict = {
                                                      "descent_budget": 3000}),
     "Restart-Lander-6000": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
                                                      "descent_budget": 6000}),
+    # その147（キュー 2）: **2 つ目のつまみ `sigma_ratio` の監査**。その145・その146 が
+    # `descent_budget` を振り切ったので、残る 1 個を同じやり方で振る。0.1 は
+    # `restart_lander.py:56` の直書き（その103 の値）で、この suite の上で 1 度も
+    # 振っていない。**掃引ではなく対照** —— 0.2 は **MC-ESO の σ_init**
+    # （`core/optimizers/mceso.py:216`）、0.05 は対称を取るための反対側の点。
+    # `descent_budget` は 12500 のまま（現行 null と 1 個だけ違う対になる）。
+    # 上の 4 行は 1 文字も変えていない ＝ 記録済みの値は全部そのまま。
+    # `core/` は触っていない（腕は driver 側のパラメータ 1 個）。
+    "Restart-Lander-s020": (RestartLanderOptimizer, {"sigma_ratio": 0.2,
+                                                     "descent_budget": 12500}),
+    "Restart-Lander-s005": (RestartLanderOptimizer, {"sigma_ratio": 0.05,
+                                                     "descent_budget": 12500}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),
     # Entry 141 (queue 2a): the population-size audit arms. Both baselines
