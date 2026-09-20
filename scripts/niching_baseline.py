@@ -133,6 +133,12 @@ _METHODS: dict = {
                                                      "descent_budget": 12500}),
     "Restart-Lander-s005": (RestartLanderOptimizer, {"sigma_ratio": 0.05,
                                                      "descent_budget": 12500}),
+    # その148（キュー 1）: その146 が括った区間 1540-3000（1.95 倍幅）を二分する 1 点。
+    # 2200 は 1540 と 3000 の幾何中点（2150）に最も近いキリのよい値で、キューが名指した値。
+    # `sigma_ratio` は 0.1 のまま、ほかは 1 つも変えない ＝ 対は条件 1 個の差。
+    # 上の 6 行は 1 文字も変えていない ＝ 記録済みの値は全部そのまま。`core/` は触っていない。
+    "Restart-Lander-2200": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
+                                                     "descent_budget": 2200}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),
     # Entry 141 (queue 2a): the population-size audit arms. Both baselines
