@@ -15,6 +15,8 @@
 """
 from __future__ import annotations
 
+import csv
+import gzip
 import os
 import sys
 
@@ -58,14 +60,42 @@ def find(*cands):
     return None
 
 
-def score_dump(path, K):
-    f, opt, xs = read_dump(path)
+def score_arrays(f, opt, xs, K):
     idx = rule_indices(ARM, f, K, x=xs, r=ARM_R)
     recall, prec, f1, sc, n = score(idx, f, opt, K)
     cov = float(recall[0])                       # 1e-1 被覆
     return dict(mpr=float(recall.mean()), f1=float(f1.mean()), score=float(sc.mean()),
                 n=int(n), ndump=len(f), cov=cov,
                 keep=float(recall[4] / cov) if cov > 0 else float("nan"))
+
+
+def score_dump(path, K):
+    return score_arrays(*read_dump(path), K)
+
+
+# 畳んだ後の退避路（その148・その149 と同じ形。畳む前後で出力が 1 文字も変わらないことを確認する）
+FOLDED_RL = os.path.join(HERE, "descents.csv.gz")
+_FOLD: dict = {}
+
+
+def folded(prob):
+    """`problem` 列つきの 1 本のダンプを problem -> (f, opt, xs) に割る（e149 の写し）。"""
+    if not _FOLD:
+        if not os.path.exists(FOLDED_RL):
+            _FOLD["_"] = None
+            return None
+        op = gzip.open if FOLDED_RL.endswith(".gz") else open
+        with op(FOLDED_RL, "rt") as fh:
+            rows = list(csv.DictReader(fh))
+        by: dict = {}
+        for r in rows:
+            by.setdefault(r["problem"], []).append(r)
+        for pr, rs in by.items():
+            dim = sum(1 for kk in rs[0] if kk.startswith("x") and kk[1:].isdigit())
+            _FOLD[pr] = (np.array([float(r["best_f"]) for r in rs]),
+                         np.array([int(r["land_opt"]) for r in rs]),
+                         np.array([[float(r[f"x{i}"]) for i in range(dim)] for r in rs]))
+    return _FOLD.get(prob)
 
 
 def fmt(d):
@@ -105,10 +135,13 @@ def main():
     for p in PROBS:
         prob = f"{p}-D20-PIN01"
         path = find(os.path.join(HERE, "descents", f"{prob}_seed0.csv"))
-        if path is None:
+        if path is not None:
+            d20[p] = score_dump(path, K_of(prob))
+        elif folded(prob) is not None:
+            d20[p] = score_arrays(*folded(prob), K_of(prob))
+        else:
             missing.append(p)
             continue
-        d20[p] = score_dump(path, K_of(prob))
         done.append(p)
     k = len(done)
     na = sum(1 for p in done if p in GROUP_A)
