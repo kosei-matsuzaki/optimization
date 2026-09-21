@@ -67,10 +67,17 @@ def load_runs(with_coords=False):
     """1 run 1 要素で読む。`with_coords` は座標つきの再 run（その115）を読む。"""
     runs = []
     sources = SRC_COORD if with_coords else SRC_PLAIN
+    missing = [dd for dd, _, _ in sources if not os.path.isdir(dd)]
+    if missing:
+        # その150: e110/descents と e111/descents は その118 が削除した。以前はここで
+        # `continue` していたので、入力ゼロのまま exit 0 で NaN と p=1 の表を刷り、
+        # 「測ったが帰無だった」ようにしか見えなかった。消えた入力は黙って飛ばさない。
+        raise SystemExit(
+            "入力の降下ダンプが無い: " + ", ".join(missing)
+            + "\n  -> その118 の統合で削除済み。この経路（with_coords=False）は再現できない。"
+            + " 数値は docs/acceptance_topology.md の その115 の節が全部持っている。")
     for dd, bp, seed in sources:
         exp = os.path.basename(os.path.dirname(dd))
-        if not os.path.isdir(dd):
-            continue
         for fn in sorted(os.listdir(dd)):
             if not fn.endswith((".csv", ".csv.gz")):
                 continue
