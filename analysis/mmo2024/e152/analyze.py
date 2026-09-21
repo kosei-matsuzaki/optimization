@@ -82,27 +82,39 @@ def score_dump(path, K):
     return score_arrays(*read_dump(path), K)
 
 
-# --- その151 の畳んだダンプ（`problem` 列つき 1 本）を problem -> (f, opt, xs) に割る ---
+# --- 畳んだダンプ（`problem` 列つき 1 本）を problem -> (f, opt, xs) に割る ---
+# その151 の RL 側（保存物）と、この回の RR 側（`fold.py` の出力）の両方に使う。
 FOLDED_RL_D20 = os.path.join(MMO, "e151", "descents.csv.gz")
+FOLDED_RR_D20 = os.path.join(HERE, "dumps_rrcma.csv.gz")
 _FOLD: dict = {}
 
 
+def _load_folded(path, cache):
+    if cache in _FOLD:
+        return
+    _FOLD[cache] = {}
+    if not os.path.exists(path):
+        return
+    with gzip.open(path, "rt") as fh:
+        rows = list(csv.DictReader(fh))
+    by: dict = {}
+    for r in rows:
+        by.setdefault(r["problem"], []).append(r)
+    for pr, rs in by.items():
+        dim = sum(1 for kk in rs[0] if kk.startswith("x") and kk[1:].isdigit())
+        _FOLD[cache][pr] = (np.array([float(r["best_f"]) for r in rs]),
+                            np.array([int(r["land_opt"]) for r in rs]),
+                            np.array([[float(r[f"x{i}"]) for i in range(dim)] for r in rs]))
+
+
 def folded(prob):
-    if not _FOLD:
-        if not os.path.exists(FOLDED_RL_D20):
-            _FOLD["_"] = None
-            return None
-        with gzip.open(FOLDED_RL_D20, "rt") as fh:
-            rows = list(csv.DictReader(fh))
-        by: dict = {}
-        for r in rows:
-            by.setdefault(r["problem"], []).append(r)
-        for pr, rs in by.items():
-            dim = sum(1 for kk in rs[0] if kk.startswith("x") and kk[1:].isdigit())
-            _FOLD[pr] = (np.array([float(r["best_f"]) for r in rs]),
-                         np.array([int(r["land_opt"]) for r in rs]),
-                         np.array([[float(r[f"x{i}"]) for i in range(dim)] for r in rs]))
-    return _FOLD.get(prob)
+    _load_folded(FOLDED_RL_D20, "rl")
+    return _FOLD["rl"].get(prob)
+
+
+def folded_rr(prob):
+    _load_folded(FOLDED_RR_D20, "rr")
+    return _FOLD["rr"].get(prob)
 
 
 def fmt(d):
@@ -154,10 +166,13 @@ def main():
     for p in PROBS:
         prob = f"{p}-D20-PIN01"
         path = find(os.path.join(HERE, "dumps", f"{prob}_rrcma_seed0.csv"))
-        if path is None:
+        if path is not None:
+            rr20[p] = score_dump(path, K_of(prob))
+        elif folded_rr(prob) is not None:
+            rr20[p] = score_arrays(*folded_rr(prob), K_of(prob))
+        else:
             missing.append(p)
             continue
-        rr20[p] = score_dump(path, K_of(prob))
         done.append(p)
     k = len(done)
     na = sum(1 for p in done if p in GROUP_A)
