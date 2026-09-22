@@ -4086,11 +4086,22 @@ suite が 6 個の最適座標を全部持っている（`b.optima_pos`）ので
 
 ### 停滞カウンタを盆地相対にすると N18-CF3-10D の判定水準が動く —— 本テーマで**深さ側が初めて動いた**測定。ただし BBOB gate は未実施で、まだ勝ってもいない（その77, `analysis/hm/e77/`）
 
+> **【その156 の統合で `analysis/hm/e77/` を丸ごと削除した】** 路線（`basin_reset`）は その79 が測定を理由に畳んでおり、
+> 案 (A)（F14-F20）も その85〜その89 で閉じている ＝ 生きた問いがこのディレクトリを読まない。
+> 消したのは **hunt ダンプ 6 本（`.csv.gz`、計 99 KB）／ 集計 `N18_*_pr.csv` 6 本（各 2 行 × 12 seed）／ `.log` 6 本
+> （規則上そもそも残さない側）／ `analyze.py` / `basin_reset.py` / `analysis_out.txt`** の 20 ファイル。
+> **消す前に、この節と [research_loop.md](research_loop.md) が `N18_*_pr.csv` に負わせていた主張を機械で検算した**
+> （24 行 ＝ 2 腕 × 12 seed、追加評価ゼロ）:
+> **`PR == PRtrue` は eps ≤ 1e-2 の 4 水準すべてで 24/24 行が完全一致（最大差 0.0000）、食い違うのは eps=1e-1 だけ（24/24 行、最大差 0.5000）。**
+> **base 12 seed 平均は PR 1.0000 対 PRtrue 0.6667（1e-1）、0.4028 / 0.1944 / 0.1667 / 0.1667（1e-2 以下、PR と PRtrue が同値）。**
+> **＝ 「真の被覆上限 0.667」という読みは、消した CSV 抜きでもこの 2 行で支えられる。**
+> **診断腕の実体は消えていない** —— **クラス本体は `core/optimizers/mceso_basin_reset.py` に生きている**（その117 の gate 用に その77 のクラスを逐語で写したもの。`scripts/gate_power.py --basin-reset` が読む）。消えたのは測定の出力側だけで、**腕を回し直すことはいまでもできる。**
+
 その76 が特定した機序（`no_improve` は**大域 best** の改善でしかリセットされないので、hunt 0 が 1e-12 まで
 掘り切った後は後続 hunt がどれだけ降下していてもカウンタを戻せず、`_spillover_should_fire` の exhausted 分岐
 （`no_improve >= window`、dim 10 では window = 1500）で必ず 1499 評価で切られる）に対する、
 事前登録どおりの診断腕 1 本。**`basin_best` が改善したときにも `no_improve` を 0 に戻す**
-（`analysis/hm/e77/basin_reset.py` の `BasinResetMCESO`）。
+（旧 `analysis/hm/e77/basin_reset.py` の `BasinResetMCESO`。**その156 で `analysis/hm/e77/` ごと削除したが、同じクラスが `core/optimizers/mceso_basin_reset.py` に残っている**）。
 
 **設計上の制約 3 点**: (i) リセットのゲートは基底と同じ `_meaningful_improvement`（log slope 1e-4）を使う
 ＝ 「無限小の改善で hunt が永久に生き延びる」形にしない。(ii) 触るのは `st.no_improve` だけで、
@@ -6995,6 +7006,17 @@ recall を落とさない（precision を下げる側にしか効かない）。
 
 ### 滞留していた採用候補 6 件の決着 —— 5 件は BBOB gate を通り、通り方は「未発火」ではなく「分岐は答えの後」。ただし `commit_place_r010` の同点は「1 度も発火しない」ではない（その117, `analysis/hm/e117/`）
 
+> **【その156 の統合で `analysis/hm/e117/` を丸ごと削除した】** 採用判断 6 件は **2026-09-18 の俯瞰が全件「不採用」で閉じて**おり、
+> 生きた問いがこのディレクトリを読まない（gate の per-run 生データはもともと `results/` にあり `.gitignore` 済み）。
+> 消したのは 11 ファイル（`gatepower_commit_5k.csv.gz` 480 run ／ `bbob_gate_commit_place.csv` 24 行 ／
+> `n06_*.csv` `n08_*.csv` 5 本 ／ `gate_power_commit.py` / `analyze.py` / `run.sh` / `prereg.md`）。
+> **消す前に 24 行の関数別集計を機械で読み直し、文書に無かった数値を 1 つ救出した**（追加評価ゼロ）:
+> **24 関数すべてで `cells_identical_best_f_nevals_success` は 20/20（合計 480/480）、`sr_1e-10` と `evals_succ_mean` も 24/24 関数で base と同値。**
+> **ただし 1 関数だけ動く列がある —— F16-Weierstrass の `pr_1e-4` が base 0.65 に対し腕 0.55。**
+> **＝ `best_f` バイト一致のゲートは<u>報告集合を覆っていない</u>。** しかも F16 は上の probe で**委託が最も多く取られた関数**（19/20 セル）で、
+> **同じ関数で多解側の指標だけが動いている** ＝ 「バイト一致＝無害」と読めるのは `best_f` 系の 3 列に限られる。
+> **方針欄 2026-09-11 (3) のゲート定義を将来使い直すときは、この 1 行を併記すること**（採否そのものは 2026-09-18 に全件不採用で決着済み）。
+
 **方針欄 2026-09-11 の決定 (3) の手順をそのまま実行した回。** ゲートはユーザー指定の
 **`best_f` バイト一致**（pin の SR@1e-10 93.5% / `evals_succ_mean` 798 は**この環境で再現しない**ので対照に使わない）。
 **新規測定は 2 本だけ**（`commit_place_r010` の BBOB gate と、その gate の**検出力** probe）で、
@@ -7088,15 +7110,16 @@ PR@1e-3 0.7083 対 0.689** ＝ **対照側は疑わなくてよい。**
 - **閉じない**: **合成腕の N09-Vincent3D**（被覆律速の唯一の関数）、および **`_fl08` 単独との分解**。
 - **閉じない**: **既定の書き換えそのもの**（実行ルーチンの権限外。上の (3) の代償を承知した上でユーザーが決める）。
 
-**ファイル**: `analysis/hm/e117/`（`gate_power_commit.py` / `analyze.py` / `run.sh` / `prereg.md` /
+**ファイル**: **`analysis/hm/e117/` は その156 の統合で削除した**（採用判断 6 件が 2026-09-18 に全件不採用で閉じたため）。
+当時の中身は `gate_power_commit.py` / `analyze.py` / `run.sh` / `prereg.md` /
 `bbob_gate_commit_place.csv`（gate の関数別集計 24 行）/ `gatepower_commit_5k.csv.gz`（480 run、1 run 1 行）/
-`n06_base.csv` / `n06_comp4.csv` / `n06_comp4off.csv` / `n08_base_s{0,4}.csv` / `n08_comp4_s{0,4}.csv`）。
-**gate の per-run 生データは `results/` にあり、`results/` は `.gitignore` 済み**なので、
-**関数別集計を `bbob_gate_commit_place.csv` に落としてある**（再現は
-`./run.sh quick --all --n-runs 20 --max-evals 5000 --methods MC-ESO,commit_place_r010`、**壁時計 8.3 分**
-＝ **24 関数 × 20 seed × 2 腕 = 960 run で 1 関数 21 秒**。**`--max-evals 5000` の dim2 gate は安い**）。
-probe の再生成は `python3 analysis/hm/e117/gate_power_commit.py --seed-start {0,5,10,15} --seeds 5 --evals 5000`
-（480 run、**4 並列で 5 分**）。
+`n06_base.csv` / `n06_comp4.csv` / `n06_comp4off.csv` / `n08_base.csv` / `n08_comp4.csv` で、
+**実体は `git log -- analysis/hm/e117` から取り出せる。**
+**gate の per-run 生データはもともと `results/` にあり `.gitignore` 済み**なので、消えたのは関数別集計と probe の出力だけで、
+**その 24 行の内容は上の注記（480/480 一致 ＋ F16 の `pr_1e-4` だけ 0.65 → 0.55）に全部入れてある。**
+**やり直すなら** gate は `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods MC-ESO,commit_place_r010`（**壁時計 8.3 分**
+＝ **24 関数 × 20 seed × 2 腕 = 960 run で 1 関数 21 秒**。**`--max-evals 5000` の dim2 gate は安い**）、
+probe は `gate_power_commit.py` を git から戻して `--seed-start {0,5,10,15} --seeds 5 --evals 5000`（480 run、**4 並列で 5 分**）。
 
 
 ### 最適の配置の構造は suite が半分に割れる —— 群 A（PID 1-8）は 8/8 で一様より**過集中**、群 B（PID 9-16）は 8/8 で一様と区別できない。ただし構造の有無は `Restart-Lander` との差を説明しない（その118, `analysis/mmo2024/e118/`）
@@ -9926,8 +9949,11 @@ Score は `eps_loose+dedup`（r=0.05·span=0.5）、D=10・正規予算 50 万�
 | `mmo2024/e113/analyze.py` | `e110/descents` | その118 |
 | `mmo2024/e118/power_and_landing.py` | `e113/hunts/` | その145 |
 | `mmo2024/e110/identity_check.py` | `e98/M09-D10-PIN01_sig100200` | 不明（掃引の畳み） |
-| `hm/e117/gate_power_commit.py` | `hm/e117/gatepower_commit_5k.csv` | 出力先の可能性（未確認） |
-| `hm/e77/analyze.py` | `hm/e77/N18_`（接頭辞。誤検出の可能性） | — |
+| ~~`hm/e117/gate_power_commit.py`~~ | `hm/e117/gatepower_commit_5k.csv` | 出力先の可能性（未確認）。**その156 の統合で `hm/e117/` を路線ごと削除 ＝ この行は消滅** |
+| ~~`hm/e77/analyze.py`~~ | `hm/e77/N18_`（接頭辞。誤検出の可能性） | **その156 の統合で `hm/e77/` を路線ごと削除 ＝ この行も消滅** |
+
+**【その156 の統合による更新】この一覧は 7 行 → 5 行になった**（`hm/e117` と `hm/e77` を路線ごと消したため）。**ただし<u>実害 4 本の内訳は 1 つも変わっていない</u>** —— **実害側は `e115`（その150 が exit 1 に直した）・`e113`・`e118`・`e110` で、消した 2 行はどちらも実害側ではなかった。キュー 2 (i) の対象は いまも `e113` / `e118` / `e110` の 3 本のまま。**
+**そして その156 は数え方を 1 つ足した** —— **`if not os.path.exists(...): return` / `continue` という<u>形</u>で走査すると、<u>いま入力が生きている</u>同型の loader が 3 本出る（`e142/analyze.py` / `e152/analyze.py` / `e153/analyze.py`）。****この 3 本はパス実在チェックには掛からない**（壊れるのは次に誰かがその入力を消した瞬間）。**キュー 2 (iii) は両方の走査を掛けること。**
 | `mmo2024/e149/run_rrcma.py` | `e127/run_rrcma.py`（**コメント内の復元手順なので無害**） | その132 |
 
 **＝ 実害のあるものが 4 本、うち 1 本（`e115`）は完成形の偽の表を出す。**
@@ -10475,6 +10501,10 @@ padding が足すのは**既報告の盆地の重複点だけ**。**recall は 1
 #### 8. この回の片付け（CLAUDE.md の保持規則）
 
 **出したのは 4 ファイル**（`prereg.md` / `analyze.py` / `scored.txt` / `caps_by_problem.csv.gz` 720 行）。
+> **【その156 の統合で `caps_by_problem.csv.gz` を削除した】** 報告規則の路線はこの回で畳んだ（「やり直さないこと」）。
+> **上の表（判定 (i) の 5 セル × 7 水準、判定 (ii) の当落表、§4 の天井）がこの回の数値の正本**で、
+> **消したのは問題別の内訳だけ**。**再生成は `python3 analysis/mmo2024/e154/analyze.py`**（入力 4 セルはすべて生きており、
+> 欠けたときは `analyze.py` が理由を印字して exit 1 する ＝ 黙って `nan` の表を出さない。その150 §5 の規則）。
 **行単位のダンプは 1 本も作っていない**（再採点なので出力は集計のみ）。集計 CSV は 300 行を超えるので `.csv.gz`。
 **畳んだ路線の削除はゼロ** —— **この回が閉じたのは報告規則の軸だが、その入力（`e115` `e151` `e152` `e153` の保存物）は
 キュー 2・3 が名指しで使う生きた入力なので消さない。** `e115/__pycache__`（import で生えた ignore 対象）だけ消した。
@@ -10596,6 +10626,12 @@ archive サイズも 16/16 で一致**（＝ `es.step()` の手回しは `es.run
 
 **代金**: **48 run・壁時計 13.7 分**（4 並列、1 run 平均 50 秒。D=5・25 万評価）。**机上の分解は追加評価ゼロ。**
 **`core/` は 1 行も触っていない。MC-ESO の既定は 1 つも変えていない。**
+
+> **【その156 の統合で `dumps_rrcma_cov.csv.gz`（58 KB、48 run の報告点ダンプ）を削除した】** c の路線はこの回で閉じた（「やり直さないこと」）。
+> **§3・§4 の表（3 水準の MPR / mean-F1 / Score、archive の内訳 `shallow` 102 点・`deep` 39 → 44、合併 190/240 = 0.7917）がこの回の数値の正本。**
+> **`restarts_cov.csv.gz`（125.1 本・1 本 2,044 評価の唯一の控え）と `run_rrcma_cov.py` は残してある** ——
+> **前者はキュー 1 が「1 本あたり評価」で参照し、後者はキュー 1 の始点（`cov=20` で その153 と同一配線）だから。**
+> **`analyze.py` は入力が欠けたら理由を印字して exit 1 する**ので、c の表を再生成しようとして黙って `nan` が出ることはない（その150 §5 の規則）。
 
 
 ## 多峰テーマの測定上の教訓
@@ -11661,6 +11697,7 @@ niching 側はすべて `--fast-scoring`、並列は 2-3 本）。**
 | その149 | **RR-CMA-ES と `Restart-Lander` を新 suite 16 問 × インスタンス PIN02 × seed 0 × 正規予算 50 万 ＝ 32 run**（`analysis/mmo2024/e149/run.sh`、4 並列、**問題ごとに 2 手法を隣り合わせ**（打ち切っても対が壊れない）＋ 群 A / 群 B 交互。RR は `run_rrcma.py`（その127 のものを git から取り出し、出力先だけ変更 ＝ 2 フラグのまま）、RL は `niching_baseline.py --report-rule current`。PIN01 の 16 対は その131 §7 の表から読むので**追加評価ゼロ**。MC-ESO / NMMSO は回さない） | **測定 30.5 分**（18:32:28 → 19:02:57 UTC、4 並列、**32/32 完走 ＝ 打ち切り発動せず**）＝ **1.05 run/分、per-slot 1 run 約 229 秒**。＋ **採点と対検定で約 20 秒**（`e149/analyze.py`）＋ **畳みと同一性確認で約 20 秒**。**サイクル全体 約 55 分**（18:30 → 19:25。うち**測定以外が 25 分** ＝ 読み直しと claim 4 分 ／ 環境の再構築 2 分 ／ **駆動の掘り出しと事前登録 5 分**（`e127` が削除済みなので `git show` で `run_rrcma.py` を取り戻した）／ 採点スクリプト 6 分（測定と並行）／ 片付けと記録 8 分）。**実測 1.05 run/分は その129 の同一構成（2 手法交互、32 run）の 0.64 run/分の 1.6 倍**で、**その129 が入らなかった 32 run が今回は 30.5 分で入った** —— **RR の 1 run は PIN02 では 82.5〜453.4 秒・平均 198.3 秒で、その129 の平均 304.8 秒より 35% 軽い側に当たった**（インスタンスで再起動回数が変わる）。**計画規則を 1 行足す: 2 手法交互の 32 run は 30〜50 分 ＝ 枠に入るかはインスタンス次第で 1.6 倍動く。入れるなら打ち切り規則を必ず事前登録すること**（今回は発動しなかったが、その129 は同じ構成で 21/32 で切れている）。 **環境**: `pip install -q --ignore-installed blinker numpy scipy matplotlib cma ioh flask mealpy multiprocess`（`--timeout 120 --retries 5`）＋ `pip install modcma` で通った。NMMSO を回さないので `pynmmso` は `/tmp/pystub` の最小 stub |
 | その152 | **RR-CMA-ES（`modcma==1.2.0` の `c_maes.repelling`）を新 suite 16 問 × D=20 × PIN01 × seed 0 × 正規予算 100 万 ＝ 16 run**（`analysis/mmo2024/e152/run.sh`、4 並列、群 A／群 B 交互。その149 の `run_rrcma.py` を 出力先以外 1 文字も変えずに写した。対の相手（`Restart-Lander` D=20）は その151 の保存物、D=10 の 16 対は その131 §7 の表 ＝ **追加評価ゼロ**。`Restart-Lander` / MC-ESO / NMMSO / `r3pso` は回さない） | **測定 35.0 分**（12:34:06 → 13:09:05 UTC、4 並列、16/16 完走 ＝ **事前登録した deadline 13:12 は最後の投入に掛からなかった**）＝ **0.46 run/分、per-slot 1 run 約 525 秒**。＋ **採点 約 8 秒**（`e152/analyze.py`）＋ **畳みと同一性確認 約 12 秒**。**サイクル全体 約 50 分**（12:30 → 13:20。うち**測定以外が 15 分** ＝ 読み直しと claim 4 分 ／ 環境の再構築 3 分 ／ 事前登録 3 分 ／ 採点スクリプト 6 分（測定と並行）／ 片付けと記録 12 分（一部並行））。**run 間のばらつきが その151 より桁違いに大きい** —— **最短 M14 170.7 秒 対 最長 M03 1478.1 秒 ＝ 8.7 倍**（その151 の `Restart-Lander` は降下予算が固定なのでほぼ一定だったが、**RR-CMA-ES は再起動のたびに母集団と σ を作り直すので、盆地の数と形で 1 run の所要が決まる**）。**計画規則を 1 行足す: RR-CMA-ES を D=20 で 16 run 回すと 4 並列で 35-45 分だが、<u>最長 run が 25 分に達しうる</u>ので、deadline は最終波の投入時刻ではなく<u>最長 run の完了</u>で見積もること。****環境**: 手順 1 の `pip install -q --ignore-installed blinker numpy scipy matplotlib cma ioh flask mealpy` に加えて **`pip install modcma==1.2.0`**（その127 の追記どおり wheel で 1 回で通った）。NMMSO を回さないので `pynmmso` は `/tmp/pystub` の最小 stub |
 | その153 | **`Restart-Lander` と RR-CMA-ES を新 suite 16 問 × D=5 × PIN01 × seed 0 × 正規予算 25 万 ＝ 32 run**（`analysis/mmo2024/e153/run.sh`、4 並列、同じ問題の RL/RR を隣り合わせ・群 A／群 B 交互。D=10 は その131 §7 の表、D=20 は その151／その152 の保存物 ＝ **追加評価ゼロ**。MC-ESO / NMMSO / `r3pso` / `NCDE` は回さない） | **測定 10.4 分**（18:35:20 → 18:45:45 UTC、4 並列、32/32 完走 ＝ **事前登録した deadline 19:10 には掛からなかった**）＝ **3.08 run/分、per-slot 1 run 約 78 秒**。＋ **採点 約 9 秒**（`e153/analyze.py`）＋ **畳みと同一性確認 約 12 秒**。**サイクル全体 約 45 分**（18:30 → 19:15。うち**測定以外が 35 分** ＝ 読み直しと claim 5 分 ／ 環境の再構築 2 分 ／ 単発のコスト実測 2 分 ／ 事前登録 5 分 ／ 採点スクリプト 8 分（測定と並行）／ 片付けと記録 18 分）。**投入前の単発実測は RR 55.7 s / RL 67.7 s で、4 並列の per-slot はその 1.2〜1.4 倍** ＝ **その142 の教訓「並列は単発の倍を見る」より軽い側に外れた**（D=5 は 1 評価が安く、メモリ帯域の取り合いが浅い）。**計画規則を 1 行足す: 新 suite 16 問 × 2 腕を D=5 で回すと約 10 分 ＝ 40 分枠の 1/4。次元を 1 段上げるコストは約 2.6 倍**（D=5 10.4 分／2 腕 対 D=10 その148 16.4 分／1 腕 対 D=20 その151 42.1 分／1 腕）。**環境**: 手順 1 の `pip install -q --ignore-installed blinker numpy scipy matplotlib cma ioh flask mealpy multiprocess` ＋ **`pip install -q modcma`** が 1 回で通った。NMMSO を回さないので `pynmmso` は `/tmp/pystub` の最小 stub |
+| その156 | **統合の回。最適化 run ゼロ・追加評価ゼロ。**ログの畳み（9 件 → 3 件＋要約）と `analysis/` の掃除（34 ファイル削除）、**消す前の機械検算 2 本**（`hm/e77/N18_*_pr.csv` 24 行の `PR` 対 `PRtrue`、`hm/e117/bbob_gate_commit_place.csv` 24 行のゲート列）、**削除した `e154/caps_by_problem.csv.gz` の再生成と 721 行の完全一致確認**（`analysis/mmo2024/e154/analyze.py`）、**`scripts/` 直下 22 本の被参照の再計測** | **サイクル全体 約 50 分**（12:30 → 13:20 UTC）、うち **run は 1 本もゼロ**。内訳は **読み直しと claim 9 分 ／ 統合の可否判定と `check_*` 2 分 ／ 畳む前の数値照合（6 件のログの小数 190 個を `acceptance_topology.md` と機械照合）4 分 ／ 削除候補の選別と検算 12 分 ／ 環境 6 分**（`numpy` `scipy` `ioh` `cma` ＋ `/tmp/pystub`。**`e154/analyze.py` の再生成 1 本のためだけに要った** —— **計画規則: 「削除しても再生成できる」を確かめる回は、再解析と同じ環境費（約 6 分）を見込むこと。確かめずに消すより安い**） ／ **記録と畳み 17 分**。**再生成の実測は `e154/analyze.py` 単体で約 90 秒**（5 セル × 9 水準 × 16 問 ＝ 720 セルの採点）|
 | その155 | **RR-CMA-ES を被覆係数 c ∈ {2, 20, 200} × 新 suite 16 問 × D=5 × PIN01 × seed 0 × 正規予算 25 万 ＝ 48 run**（`analysis/mmo2024/e155/run.sh`、**4 並列**、`xargs -P 4`。配線は その153 の `run_rrcma.py` を写し、変えたのは `es.p.repelling.coverage` の代入と、`es.run()` → `while es.step(f)` の手回し（再起動ごとに評価回数を記録）の 2 点だけ。採点・統計量は `e115/analyze.py` から import（新しい統計量ゼロ）。机上の分解は追加評価ゼロ） | **測定 13.7 分**（06:36 → 06:50 UTC、48/48 完走）＝ **3.5 run/分、1 run 平均 50 秒**（最遅 M08 の 107 秒、最速 M14 の 29 秒）。＋ **採点 約 20 秒** ＋ **畳みと同一性確認 約 15 秒**。**サイクル全体 約 65 分**（06:30 → 07:35。うち読み直しと claim 8 分 ／ 環境 4 分 ／ **手元の refs 調査 10 分**（(i) が失敗すると分かるまで）／ 事前登録と配線 12 分 ／ 実行 14 分（**解析スクリプトを並行して書いた**）／ 記録 17 分）。**計画規則を 1 行足す: D=5 の RR-CMA-ES は 1 run 50 秒（4 並列で 3.5 run/分）＝ 48 run で 14 分 ＝ 40 分枠に 3 腕が入る。****D=20 の同手法（その152）の 16 run 単独と同じ壁時計で、D=5 なら 3 倍の腕を撃てる。****環境**: 手順 1 ＋ **`pip install -q modcma`**（その127）が 1 回で通った。**この回は `/tmp/pystub` の `pynmmso/__init__.py`（`Nmmso` 1 クラス）だけで足り、`wrappers.py` は要らなかった** |
 | その154 | **新規 run ゼロ**（保存物の再採点だけ。`analysis/mmo2024/e154/analyze.py`）。**5 セル**（D=5 RL/RR、D=10 RL、D=20 RL/RR）**× 報告点数 9 水準 × 16 問 ＝ 720 セルの採点**、ほかに**間引き半径 6 水準 × 4 セル**と**実報告点数の揃え直し 3 通り × 2 次元**。採点・統計量は `e115/analyze.py` から import（新しい統計量ゼロ） | **計算 約 50 秒**（大半は `.csv.gz` を展開して座標配列を組む時間）。**サイクル全体 約 75 分**（00:30 → 01:45 UTC。**うち計算は 2 分未満** ＝ 読み直しと claim 8 分 ／ 環境 5 分 ／ 事前登録 12 分 ／ 採点スクリプト 20 分 ／ 追加の切り分け 8 分 ／ 記録 20 分）。**計画規則: 再採点だけの回は計算が 1 分で終わり、40 分枠を使い切るのは記録の側である。****環境**: `pip install -r requirements.txt` は `pynmmso` で落ちる。`--ignore-installed blinker numpy scipy matplotlib cma ioh flask mealpy multiprocess` が 1 回で通った。**`core.benchmarks` の import が `core/optimizers/__init__.py` 経由で `pynmmso` を引く**ので、**NMMSO を回さない回でも `/tmp/pystub` の stub が要る**（`pynmmso/__init__.py` の `Nmmso` と `pynmmso/wrappers.py` の `UniformRangeProblem` の 2 つ） |
 | その151 | **`Restart-Lander` を新 suite 16 問 × D=20 × PIN01 × seed 0 × 正規予算 100 万 ＝ 16 run**（`analysis/mmo2024/e151/run.sh`、4 並列、群 A（M01-M08、K=20）／群 B（M09-M16、K=10）交互 ＝ **どの波も A 2 本 / B 2 本**。既定（`sigma_ratio=0.1` / `descent_budget=12500`）は 1 ビットも変えず、D=10 と変えたのは `--funcs` の `D10` → `D20` だけ。D=10 の対照は `e115/descents` の保存物なので**追加評価ゼロ**。MC-ESO / NMMSO / RR は回さない） | **測定 42.1 分**（06:34:04 → 07:16:09 UTC、4 並列、16/16 完走 ＝ **事前登録した deadline 07:05 は最後の 2 本の投入に掛からなかった**）＝ **0.38 run/分、per-slot 1 run 約 632 秒**。＋ **採点 約 6 秒**（`e151/analyze.py`）＋ **畳みと同一性確認 約 10 秒**。**サイクル全体 約 55 分**（06:30 → 07:25。うち**測定以外が 13 分** ＝ 読み直しと claim 4 分 ／ 環境の再構築 2 分 ／ 事前登録 2 分（測定と並行）／ 採点スクリプト 5 分（測定と並行）／ 片付けと記録 13 分（一部並行））。**実測 0.38 run/分は その148 の同一手法・同一問題数・同一並列数の D=10（0.98 run/分）の 39%** ＝ **予算 2 倍 × 1 評価が重い分で 2.6 倍。****計画規則を 1 行足す: 新 suite 16 問 × 1 腕を D=20 で回すと 40-45 分 ＝ 枠ちょうど。D=20 で 2 手法 32 run は 1 サイクルに入らない**（キュー 2 は 16 run 単独で撃つこと）。**素の評価速度はこの環境で 3383 evals/s（M01、K=20）／ 5748 evals/s（M09、K=10）。** **環境**: `pip install -q --ignore-installed blinker numpy scipy matplotlib cma ioh flask mealpy multiprocess` が1 回で通った（`--timeout` は不要）。NMMSO を回さないので `pynmmso` は `/tmp/pystub` の最小 stub |

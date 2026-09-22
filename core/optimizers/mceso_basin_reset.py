@@ -1,6 +1,8 @@
 """`no_improve` reset by the basin's own progress (entry 77's diagnostic arm).
 
-Entry 77 introduced this arm in `analysis/hm/e77/basin_reset.py` and measured it
+Entry 77 introduced this arm in `analysis/hm/e77/basin_reset.py` (that directory
+was removed by the entry-156 consolidation once the route was folded; this module
+is now the live copy of the class) and measured it
 on N18-CF3-10D: PR@1e-3 0.194 -> 0.306 (6/6/0, p = 0.031), PR@1e-5 0.167 ->
 0.292 (7/5/0, p = 0.016, A12 = 0.79), the first time the depth side moved on the
 multimodal theme. What it did not measure is the price: `no_improve` also drives
