@@ -17,6 +17,7 @@ import csv
 import glob
 import gzip
 import os
+import re
 import sys
 from collections import Counter
 
@@ -48,26 +49,74 @@ def die(msg):
     sys.exit(1)
 
 
+_FOLDED = None
+
+
+def _folded():
+    """畳んだ `dumps_rrcma_cov.csv.gz` を (cov, problem) -> 行list で返す。
+
+    per-problem の `dumps/` が残っていればそちらを優先する（畳む前後の照合用）。
+    **どちらも無ければ exit 1。黙って飛ばさない**（その150 §3 の直し）。
+    """
+    global _FOLDED
+    if _FOLDED is None:
+        path = os.path.join(HERE, "dumps_rrcma_cov.csv.gz")
+        if not os.path.exists(path):
+            die(f"入力が無い: {path}")
+        _FOLDED = {}
+        with gzip.open(path, "rt") as fh:
+            for row in csv.DictReader(fh):
+                _FOLDED.setdefault((float(row["cov"]), row["problem"]), []).append(row)
+    return _FOLDED
+
+
 def load_arm(cov):
     """c = cov の 16 問を読む。**1 問でも欠けたら exit 1**（その150 §3 の直し）。"""
     out = {}
     for p in PROBS:
         path = os.path.join(HERE, "dumps", f"{p}_cov{cov:g}_seed0.csv")
-        if not os.path.exists(path):
-            die(f"入力が無い: {path}  （黙って飛ばさない）")
-        f, opt, xs = read_dump(path)
+        if os.path.exists(path):
+            f, opt, xs = read_dump(path)
+        else:
+            rows = _folded().get((float(cov), p))
+            if not rows:
+                die(f"入力が無い: cov={cov} {p}（dumps/ にも畳んだ gz にも無い）")
+            f = np.array([float(r["best_f"]) for r in rows])
+            opt = np.array([int(r["land_opt"]) for r in rows])
+            dim = sum(1 for k in rows[0] if k.startswith("x") and k[1:].isdigit())
+            xs = np.array([[float(r[f"x{i}"]) for i in range(dim)] for r in rows])
         out[p] = dict(f=f, opt=opt, x=xs, K=K_OF[p])
     return out
+
+
+_FOLDED_R = None
+
+
+def _folded_restarts():
+    global _FOLDED_R
+    if _FOLDED_R is None:
+        path = os.path.join(HERE, "restarts_cov.csv.gz")
+        if not os.path.exists(path):
+            die(f"入力が無い: {path}")
+        _FOLDED_R = {}
+        with gzip.open(path, "rt") as fh:
+            for row in csv.DictReader(fh):
+                _FOLDED_R.setdefault((float(row["cov"]), row["problem"]), []).append(row)
+    return _FOLDED_R
 
 
 def load_restarts(cov):
     out = {}
     for p in PROBS:
         path = os.path.join(HERE, "restarts", f"{p}_cov{cov:g}_seed0.csv")
-        if not os.path.exists(path):
-            die(f"入力が無い: {path}")
-        with open(path) as fh:
-            out[p] = list(csv.DictReader(fh))
+        if os.path.exists(path):
+            with open(path) as fh:
+                out[p] = list(csv.DictReader(fh))
+        else:
+            rows = _folded_restarts().get((float(cov), p))
+            if not rows:
+                die(f"入力が無い: cov={cov} {p}（restarts/ にも畳んだ gz にも無い）")
+            out[p] = rows
     return out
 
 
@@ -123,15 +172,18 @@ def main():
     print(f"  G1b archive サイズの 1 問ずつの一致: {16-len(diffs)}/16"
           + ("" if not diffs else f"  ずれ: {diffs}"))
 
-    # G2: 予算消化
-    bad = []
-    for c in COVS:
-        for p in PROBS:
-            ev = int(rst[c][p][-1]["evals_cum"]) if rst[c][p] else 0
-            if ev < 0.99 * BUDGET:
-                bad.append((c, p, ev))
-    print(f"  G2  予算消化 ≥99%: {'通過' if not bad else '**不通過** ' + str(bad[:5])}"
-          f"（最終再起動時点の累積評価で見る。予算切れ時の端数は含まない）")
+    # G2: 予算消化（**run.log の総評価回数で見る**。
+    # 最終再起動時点の累積は定義上つねに総評価より小さいので、そこで見てはいけない）
+    tot = {}
+    with open(os.path.join(HERE, "run.log")) as fh:
+        for line in fh:
+            m = re.match(r"(M\d\d-D05-PIN01) cov([\d.]+): evals=(\d+)", line)
+            if m:
+                tot[(float(m.group(2)), m.group(1))] = int(m.group(3))
+    bad = [(c, p, tot.get((float(c), p)))
+           for c in COVS for p in PROBS if tot.get((float(c), p), 0) < 0.99 * BUDGET]
+    print(f"  G2  予算消化 ≥99%（run.log の総評価）: "
+          f"{'通過（48/48、最小 %d / %d）' % (min(tot.values()), BUDGET) if not bad else '**不通過** ' + str(bad[:5])}")
 
     # ---------------- 容疑「再起動の回数」 ----------------
     print("\n## 1. 容疑「再起動の回数」の実測\n")
@@ -195,6 +247,18 @@ def main():
         S = sum(dec[c][p]["shallow"] for p in PROBS)
         print(f"  | {c} | {A} | {D} | {Di} | {R} | {S} | {Di/240:.4f} |")
     print("\n  （K の合計は 8×20 + 8×10 = 240。`redundant` は 'final' 行の重複 1 点を各問で引いてある）")
+
+    # 3 腕の archive を合併した到達上限（1 run ではなく 3 run ぶん ＝ 予算 3 倍相当の天井）
+    uni = 0
+    for p in PROBS:
+        s_ = set()
+        for c in COVS:
+            f, o = arms[c][p]["f"], arms[c][p]["opt"]
+            s_ |= {int(v) for v, y in zip(o, f) if y <= 1e-5}
+        uni += len(s_)
+    print(f"\n  **3 腕の archive を合併しても届く最適は {uni}/240 = {uni/240:.4f}**"
+          f"（1 腕の最良 {max(sum(dec[c][p]['distinct'] for p in PROBS) for c in COVS)}/240 に対し、"
+          f"予算 3 倍ぶん撃ってもここまで）。公表 MPR 0.844。")
 
     # ---------------- 問題別 ----------------
     print("\n## 4. 問題別 MPR（関数別の増減を必ず列挙する規則）\n")
