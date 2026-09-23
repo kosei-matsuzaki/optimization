@@ -765,6 +765,61 @@ jobs:
           gzip -9f analysis/mmo2024/e141/refs/*.txt 2>/dev/null || true
           ls -l analysis/mmo2024/e141/refs/ || true
 
+      - name: Fetch the prior-art texts for the duplicate-descent arm (e159)
+        # Entry 159's prior-art sweep needs verbatim text for four vocabularies:
+        # (i) EC/niching taboo-repelling, (ii) multistart theory (MLSL), (iii)
+        # QD/novelty archives, (iv) batch-BO local penalization. WebSearch
+        # snippets are paraphrases, and this project's rule is that a retreat is
+        # recorded only on a verbatim procedural match. arxiv.org and
+        # proceedings.mlr.press are both CONNECT 403 from the sandbox.
+        run: |
+          set -uo pipefail
+          pip install pypdf
+          mkdir -p analysis/mmo2024/e159/refs
+          python3 - <<'PY'
+          import pathlib, subprocess
+          from pypdf import PdfReader
+
+          out = pathlib.Path("analysis/mmo2024/e159/refs")
+          # name -> list of URLs to try in order (first one that yields a parsable PDF wins)
+          REFS = {
+              # (i) EC / niching -- the newest paper in exactly this space (2026)
+              "scard_cmsa_2607.13764": ["https://arxiv.org/pdf/2607.13764",
+                                        "https://export.arxiv.org/pdf/2607.13764"],
+              # (ii) multistart theory -- DEFT-FUNNEL restates the MLSL start rule
+              "deft_funnel_mlsl_1912.12637": ["https://arxiv.org/pdf/1912.12637",
+                                              "https://export.arxiv.org/pdf/1912.12637"],
+              # (iii) QD -- MAP-Elites (archive as the anti-rediscovery device)
+              "map_elites_1504.04909": ["https://arxiv.org/pdf/1504.04909",
+                                        "https://export.arxiv.org/pdf/1504.04909"],
+              # (iv) batch BO -- local penalization
+              "local_penalization_gonzalez2016": ["https://proceedings.mlr.press/v51/gonzalez16a.pdf"],
+          }
+          ok, bad = [], []
+          for name, urls in REFS.items():
+              pdf = pathlib.Path(f"/tmp/{name}.pdf")
+              got = False
+              for url in urls:
+                  r = subprocess.run(["curl", "-sSL", "--max-time", "120", "-o", str(pdf), url],
+                                     capture_output=True, text=True)
+                  if r.returncode == 0 and pdf.exists() and pdf.stat().st_size > 10000:
+                      got = True
+                      break
+                  print(f"FETCH-FAIL {name} {url} rc={r.returncode}")
+              if not got:
+                  bad.append(name); continue
+              try:
+                  text = "\n".join((pg.extract_text() or "") for pg in PdfReader(str(pdf)).pages)
+              except Exception as e:
+                  print(f"PARSE-FAIL {name}: {e}"); bad.append(name); continue
+              (out / f"{name}.txt").write_text(text)
+              print(f"OK {name}: {len(text)} chars")
+              ok.append(name)
+          print("E159 EXTRACTED", len(ok), "of", len(REFS), "FAILED:", bad)
+          PY
+          gzip -9f analysis/mmo2024/e159/refs/*.txt 2>/dev/null || true
+          ls -l analysis/mmo2024/e159/refs/ || true
+
       - name: Commit the extracted text
         run: |
           set -euo pipefail
@@ -776,7 +831,7 @@ jobs:
           # exactly that).  Add only the directories that exist.
           for d in analysis/hm/e71 analysis/mmo2024/e91 analysis/mmo2024/e92/refs \
                    analysis/mmo2024/e118/refs analysis/mmo2024/e134/refs \
-                   analysis/mmo2024/e141/refs; do
+                   analysis/mmo2024/e141/refs analysis/mmo2024/e159/refs; do
             [ -d "$d" ] && git add "$d" || echo "skip missing $d"
           done
           git diff --cached --quiet && { echo "nothing fetched -- no commit"; exit 0; }
