@@ -10842,7 +10842,118 @@ PIN03 0.1584 / 0.6832 / 0.1584（0.7313）、PIN04 0.1525 / 0.6611 / 0.1864（0.
 **保存物**: `prereg.md` / `analyze.py` / `by_problem.csv.gz`（問題 × 次元 × instance × 5 水準 ＝ 480 行）/ `scored.txt`。
 **入力は 1 つも消していない**（`e115` `e151` `e153` `e157` はキュー 2・3・4 が名指しで使う生きた入力）。
 
+## 重複降下を減らす腕は作れない —— 手続きは RS-CMSA（2017）と MLSL（1987）が占有しており、`Restart-Lander` は「MLSL から開始規則を外したもの」だった（その159, `analysis/mmo2024/e159/`）
+
+**2026-09-23。キュー 1（その158 が書き直した問い）。最適化 run ゼロ・追加評価ゼロ・`core/` 不変・腕は作っていない。**
+**事前登録した反証条件 (a)（4 分野のどれかが空振り）は不発** —— 4 分野とも引けた（(i) 6 本 / (ii) 2 本 / (iii) 4 本 / (iv) 3 本）。
+
+### 1. 調べた手続き（prereg で 1 文に固定した）
+
+**一様多スタート ＋ 局所降下の再起動点の選び方を、既に見つけた解の近傍を避ける向きに変える。**
+その158 の測定（大域最適に届いた降下のうち既出に落ちるものが D=5 で 82.6% / D=20 で 92.3%、
+集中度 0.7143 → 0.3590 ＝ 飽和の帰結ではない）が指した唯一の腕の置き場。
+
+### 2. 判定 —— **撤退。しかも独立な 2 本から落ちる**
+
+**(a) RS-CMSA-ES（Ahrari, Deb & Preuss, Evolutionary Computation 25(3):439-471, 2017。GECCO'17 niching 競技の優勝手法）。**
+逐語は手元の第三者記述から引ける（Maree+ の Hill-Valley Clustering 論文 arXiv 1810.07085、
+`analysis/hm/e71/hvc_1810.07085.txt.gz` 138-153 行）:
+
+> the core search algorithms are furthermore **kept away from previously located global optima** … Rejection regions
+> from located optima, referred to as **taboo regions**, are considered to be (hyper-)spheres around the located optimum.
+> **The radius of the taboo region grows adaptively if the corresponding optimum is located multiple times**, and
+> shrinks again if rejection sampling fails too often.
+
+**一致は 3 点そろう**: **目的が多解**／**手続きが「既発見の<u>大域</u>最適の近傍を避けて再起動する」**／
+**適応則まで一致（同じ最適を複数回見つけたら半径を広げる ＝ その158 が動機づける量そのもの）。**
+**不一致点は無い。** 方針欄 2026-09-08 の追記 (1) の緩い基準（一致するのは組み合わせと具体的手続きのときだけ）でも撤退。
+
+**(b) Multi-Level Single Linkage（Rinnooy Kan & Timmer, Math. Prog. 39, 1987）。**
+本文を CI で取得した（DEFT-FUNNEL arXiv 1912.12637 §2 が書き下している。
+`analysis/mmo2024/e159/refs/deft_funnel_mlsl_1912.12637.txt.gz` 123-186 行）:
+
+> a local search procedure is applied to each of them **except if there is another sample point or a previously
+> detected local minimum within a critical distance with smaller objective function value**
+> — Algorithm 2.1 の 6 行目: `if ∄x : ‖x − x_i‖ ≤ r_k and f(x) < f(x_i) then L* = L* ∪ LocalSearch(x_i)`
+> 臨界距離 `r_k = π^{-1/2} ( Γ(1 + n/2) · m(S) · σ · log(kN) / (kN) )^{1/n}`
+
+**そして その158 が測った失敗に、この論文は<u>名前と定理</u>を与えている**:
+
+> **Error 1.** The same local minimum x\* has been found after applying local search to two or more points belonging
+> to the same region of attraction of x\*.
+> **Property 1.** If σ > 4 in (3), then, even if the sampling continues forever, **the total number of local searches
+> ever started by MLSL is finite with probability 1.**
+> **Property 2.** If r_k tends to 0 with increasing k, then any local minimum x\* will be found within a finite number
+> of iterations with probability 1.
+
+### 3. この撤退でいちばん重い 1 行 —— **`Restart-Lander` は MLSL から開始規則を外したものである**
+
+**この harness の首位（記憶なし多スタート ＋ 局所降下）は、MLSL の Algorithm 2.1 から 6 行目の filter を
+抜いた構成にほかならない。** ＝ **「重複降下を減らす腕」を作るとは、1987 年の手続きを入れ直すことである。**
+**その158 の 82.6〜92.3% は、MLSL が Error 1 と名付けて定理で縛った量を、この suite で測った値だった。**
+
+### 4. 占有の現在形（昔の話ではない）
+
+- **この suite の公表 1 位と 2 位が<u>どちらも</u>持っている。** 優勝 **TRDE-LR = "Tabu Restart-Based Niching
+  Differential Evolution Algorithm with Local Refinement"**（題名で一致。本文は arXiv に無い、その92 で確認済み）、
+  次点 **RR-CMA-ES**（tabu 点 ＋ Mahalanobis 棄却。本文は `e92/refs/` にある）。
+- **RS-CMSA-ESII（Ahrari+ 2021, IEEE TEVC 9555836）** は taboo 距離の適応則と非球形の棄却領域を足している
+  （**逐語は取れていない**。原論文への経路が CI からも無い）。
+- **2026 年の競技投稿がまだ基盤にしている** —— **S-CARD-CMSA（Chauhan 2026, arXiv 2607.13764、IEEE CEC 2026 投稿）**は
+  逐語で "preserves its sampling, covariance adaptation, **taboo-region update**, restart, and termination mechanisms"、
+  RS-CMSA-ESII を "Use covariance-adaptive local search together with **repelling taboo regions around archived optima**" と記述する。
+- **RS-CMSA を作った Ahrari は、この研究が測っている GECCO'2024/'2025 suite の設計者本人である。**
+
+### 5. 一致しなかったもの（＝ 撤退理由にならないもの。両方とも逐語で確認した）
+
+- **QD / novelty**（novelty search の archive、MAP-Elites の bin、CMA-ME の emitter 再起動、ME-MAP-Elites のバンディット配分）——
+  枠組み（既訪の記憶で再探索を抑える）は一致するが、**対象が behaviour space の bin** で、決定空間の盆地ではない。
+  **手続きは一致しない。** ただし枠組みが教科書事項である以上、**「記憶で再探索を抑える」という概念自体は新規性にならない。**
+- **batch BO の local penalization（González+ 2016, AISTATS）** —— 排除域は **Lipschitz 定数から決まる球 `B_r(x_i)`** で、
+  中心は**そのバッチ内の評価済みの点**、目的は **"the convergence to the maximum"**（単一最適）。
+  **時間方向の既発見最適ではない。** **不一致。**
+- **HillVallEA（Maree+ 2018/2019）** —— 初期標本を hill-valley でクラスタリングして niche ごとに核探索を 1 本立てるが、
+  **既発見最適の記憶を持って後続の再起動を曲げる部分が無い。不一致。**
+- **arXiv 2210.06635（多峰の高価関数で局所最適を取りにいく BO）** —— 目的は一致するが手続きが違う
+  （目的関数と 1 階微分の同時分布を獲得関数に使う）。**不一致。**
+
+### 6. 潰れていないもの（次の回が踏み外さないために）
+
+**潰れたのは「その158 の測定から腕を作る」道だけで、<u>測定そのものは潰れていない</u>。**
+**今回引いた 15 本のどれも、(a) 大域最適に届いた降下だけを分母にした重複率も、
+(b) それが飽和の帰結でないことを示す集中度も報告していない。**
+**2405.01226 の redundancy factor は「全再起動の評価回数に占める冗長分」で、分母が違う量である。**
+＝ **その158 の数値は、この研究が繰り返し書いてきた「新規性は測定の側にしか置けない」の側に、そのまま残る。**
+
+### 7. 同型の見落としが 3 度目である
+
+**この撤退は、手元の記録が<u>既に持っていた</u>1 行で決まった** —— `docs/related_work.md` の表は **2026-08-30 から**
+「斥力・タブー ｜ RS-CMSA-ES (Ahrari+ 2017), RS-CMSA-ESII (2021) ｜ **発見済み解を taboo 点として部分集団を反発させる**」
+を載せている。**2026-09-09（RR-CMA-ES が「公表最良」と「その22 を占有した論文」の同一物だった）、
+2026-09-12（Cano+ が「比較相手の候補」として載っていた）に続いて 3 度目。**
+**一般形: 新しい腕の置き場を見つけた回は、web を引く<u>前に</u> `related_work.md` の表を 1 行ずつ読むこと。**
+
+### 8. 代金と保存物
+
+**最適化 run ゼロ・追加評価ゼロ。** CI の `fetch_refs` 1 回（壁時計 2 分 54 秒）で 4 本取得。
+**`core/` は 1 行も触っていない。MC-ESO の既定は 1 つも変えていない。腕は作っていない。**
+**保存物**: `prereg.md` / `survey.md` / `refs/` 4 本（MLSL 経由 1912.12637 / S-CARD 2607.13764 /
+MAP-Elites 1504.04909 / local penalization González 2016）。**入力は 1 つも消していない。**
+
 ## 多峰テーマの測定上の教訓
+
+- **新しい腕の置き場を見つけた回は、web を引く<u>前に</u> `related_work.md` の表を 1 行ずつ読むこと**（その159。**3 度目の同型**）。
+  その159 の撤退は、**2026-08-30 から表にある 1 行**（「斥力・タブー ｜ RS-CMSA-ES (Ahrari+ 2017) ｜ 発見済み解を taboo 点として
+  部分集団を反発させる」）で決まった。**2026-09-09（RR-CMA-ES が「公表最良」と「その22 を占有した論文」の同一物だった）、
+  2026-09-12（Cano+ が「比較相手の候補」として載っていた）に続く。**
+  **一般形: この研究の記録は、占有の事実を<u>別の見出しの下に</u>持っている。** 手元の表は「比較相手」「関連手法」として
+  読まれるので、**「占有」の目で読み直す動作を、調査の第 1 手に置くこと**（その134 の「取りに行く前に手元を grep しろ」の、
+  **表についての版**）。
+- **自分の首位手法が「教科書の手法から 1 行外したもの」でないかを、腕を設計する前に確かめること**（その159）。
+  **`Restart-Lander` は MLSL（1987）の Algorithm 2.1 から開始規則 1 行を外した構成**で、
+  **その158 が測った「既出に落ちる降下」は MLSL が Error 1 と名付けて定理で縛った量**だった。
+  **＝ 「自分の手法の弱点を直す腕」が、実は「元の教科書手法に戻す操作」であることがありうる。**
+  **測定の側は残る**（この suite でその量を測った例は無い）が、**手続きの側は最初から占有されている。**
 
 - **1 本の instance で取った差を主張に使う前に、その 1 本が何本目に有利かを見ること**（その157）。
   **その153 の「D=5 の対差 +0.0550」は、後から 4 instance に広げたら<u>いちばん大きい</u>1 本だった**
@@ -11915,6 +12026,7 @@ niching 側はすべて `--fast-scoring`、並列は 2-3 本）。**
 | その156 | **統合の回。最適化 run ゼロ・追加評価ゼロ。**ログの畳み（9 件 → 3 件＋要約）と `analysis/` の掃除（34 ファイル削除）、**消す前の機械検算 2 本**（`hm/e77/N18_*_pr.csv` 24 行の `PR` 対 `PRtrue`、`hm/e117/bbob_gate_commit_place.csv` 24 行のゲート列）、**削除した `e154/caps_by_problem.csv.gz` の再生成と 721 行の完全一致確認**（`analysis/mmo2024/e154/analyze.py`）、**`scripts/` 直下 22 本の被参照の再計測** | **サイクル全体 約 20 分**（12:30 → 12:50 UTC）、うち **run は 1 本もゼロ**。内訳は **読み直しと claim 4 分 ／ 統合の可否判定と `check_*` 1 分 ／ 畳む前の数値照合（6 件のログの小数 190 個を `acceptance_topology.md` と機械照合）1 分 ／ 削除候補の選別と検算 4 分 ／ 環境 3 分**（`numpy` `scipy` `ioh` `cma` ＋ `/tmp/pystub`。**`e154/analyze.py` の再生成 1 本のためだけに要った** —— **計画規則: 「削除しても再生成できる」を確かめる回は、再解析と同じ環境費（約 6 分）を見込むこと。確かめずに消すより安い**） ／ **記録と畳み 7 分**。**再生成の実測は `e154/analyze.py` 単体で約 90 秒**（5 セル × 9 水準 × 16 問 ＝ 720 セルの採点）|
 | その155 | **RR-CMA-ES を被覆係数 c ∈ {2, 20, 200} × 新 suite 16 問 × D=5 × PIN01 × seed 0 × 正規予算 25 万 ＝ 48 run**（`analysis/mmo2024/e155/run.sh`、**4 並列**、`xargs -P 4`。配線は その153 の `run_rrcma.py` を写し、変えたのは `es.p.repelling.coverage` の代入と、`es.run()` → `while es.step(f)` の手回し（再起動ごとに評価回数を記録）の 2 点だけ。採点・統計量は `e115/analyze.py` から import（新しい統計量ゼロ）。机上の分解は追加評価ゼロ） | **測定 13.7 分**（06:36 → 06:50 UTC、48/48 完走）＝ **3.5 run/分、1 run 平均 50 秒**（最遅 M08 の 107 秒、最速 M14 の 29 秒）。＋ **採点 約 20 秒** ＋ **畳みと同一性確認 約 15 秒**。**サイクル全体 約 65 分**（06:30 → 07:35。うち読み直しと claim 8 分 ／ 環境 4 分 ／ **手元の refs 調査 10 分**（(i) が失敗すると分かるまで）／ 事前登録と配線 12 分 ／ 実行 14 分（**解析スクリプトを並行して書いた**）／ 記録 17 分）。**計画規則を 1 行足す: D=5 の RR-CMA-ES は 1 run 50 秒（4 並列で 3.5 run/分）＝ 48 run で 14 分 ＝ 40 分枠に 3 腕が入る。****D=20 の同手法（その152）の 16 run 単独と同じ壁時計で、D=5 なら 3 倍の腕を撃てる。****環境**: 手順 1 ＋ **`pip install -q modcma`**（その127）が 1 回で通った。**この回は `/tmp/pystub` の `pynmmso/__init__.py`（`Nmmso` 1 クラス）だけで足り、`wrappers.py` は要らなかった** |
 | その158 | **新規 run ゼロ**（保存物の分解だけ。`analysis/mmo2024/e158/analyze.py`）。**96 run 分の降下ダンプ 8,726 行**（D=5 PIN01-04 / D=10 PIN01 / D=20 PIN01）**を 5 水準 × 3 分類で数え直し、16 問対検定を 3 対 × 5 量 × 2 水準で回した** | **分解と検定で約 20 秒**。**サイクル全体 約 35 分**（00:28 → 01:03 UTC。読み直しと claim 8 分 ／ 環境の再構築 2 分（`pip` 1 コマンド。**この回は `modcma` も `pynmmso` も不要**）／ 事前登録 5 分 ／ 分解スクリプト 10 分 ／ 記録 10 分）。**計画規則を 1 行**: **保存ダンプの再分解は 1 万行規模でも秒で終わるので、40 分枠のほぼ全部が「何をどう数えるか」の設計と記録に使える** —— その154 と同型（新規 run ゼロの回は測定が律速にならない） |
+| その159 | **最適化 run ゼロ・追加評価ゼロ・腕なし**（先行調査のみ）。**4 分野で 6 検索、手元の `analysis/**/refs/` 9 本を `grep`、CI の `fetch_refs` に step を 1 つ足して 4 本取得（4/4 成功）** | **CI ジョブ 2 分 54 秒**（うち e159 の step は 5 秒。先行 8 step が 2 分 36 秒）。**サイクル全体 約 25 分**（06:29 → 06:54 UTC。読み直しと claim 5 分 ／ 手元の refs の grep と de Nobel 本文の精読 5 分 ／ 検索 6 本 4 分 ／ CI の step 追記と dispatch 3 分（**待ち時間は並行して精読と検索に使った**）／ 記録 8 分）。**計画規則を 1 行**: **先行調査の回は CI の待ちが律速に見えるが、`fetch_refs` は既存 8 step が直列で 2.5 分かかるので、<u>dispatch は調査の最初に打つこと</u>** —— 待ちの間に手元の本文を読めば実質ゼロになる。**`pip install` は不要だった**（この回は `ioh` も `cma` も使わない） |
 | その154 | **新規 run ゼロ**（保存物の再採点だけ。`analysis/mmo2024/e154/analyze.py`）。**5 セル**（D=5 RL/RR、D=10 RL、D=20 RL/RR）**× 報告点数 9 水準 × 16 問 ＝ 720 セルの採点**、ほかに**間引き半径 6 水準 × 4 セル**と**実報告点数の揃え直し 3 通り × 2 次元**。採点・統計量は `e115/analyze.py` から import（新しい統計量ゼロ） | **計算 約 50 秒**（大半は `.csv.gz` を展開して座標配列を組む時間）。**サイクル全体 約 75 分**（00:30 → 01:45 UTC。**うち計算は 2 分未満** ＝ 読み直しと claim 8 分 ／ 環境 5 分 ／ 事前登録 12 分 ／ 採点スクリプト 20 分 ／ 追加の切り分け 8 分 ／ 記録 20 分）。**計画規則: 再採点だけの回は計算が 1 分で終わり、40 分枠を使い切るのは記録の側である。****環境**: `pip install -r requirements.txt` は `pynmmso` で落ちる。`--ignore-installed blinker numpy scipy matplotlib cma ioh flask mealpy multiprocess` が 1 回で通った。**`core.benchmarks` の import が `core/optimizers/__init__.py` 経由で `pynmmso` を引く**ので、**NMMSO を回さない回でも `/tmp/pystub` の stub が要る**（`pynmmso/__init__.py` の `Nmmso` と `pynmmso/wrappers.py` の `UniformRangeProblem` の 2 つ） |
 | その151 | **`Restart-Lander` を新 suite 16 問 × D=20 × PIN01 × seed 0 × 正規予算 100 万 ＝ 16 run**（`analysis/mmo2024/e151/run.sh`、4 並列、群 A（M01-M08、K=20）／群 B（M09-M16、K=10）交互 ＝ **どの波も A 2 本 / B 2 本**。既定（`sigma_ratio=0.1` / `descent_budget=12500`）は 1 ビットも変えず、D=10 と変えたのは `--funcs` の `D10` → `D20` だけ。D=10 の対照は `e115/descents` の保存物なので**追加評価ゼロ**。MC-ESO / NMMSO / RR は回さない） | **測定 42.1 分**（06:34:04 → 07:16:09 UTC、4 並列、16/16 完走 ＝ **事前登録した deadline 07:05 は最後の 2 本の投入に掛からなかった**）＝ **0.38 run/分、per-slot 1 run 約 632 秒**。＋ **採点 約 6 秒**（`e151/analyze.py`）＋ **畳みと同一性確認 約 10 秒**。**サイクル全体 約 55 分**（06:30 → 07:25。うち**測定以外が 13 分** ＝ 読み直しと claim 4 分 ／ 環境の再構築 2 分 ／ 事前登録 2 分（測定と並行）／ 採点スクリプト 5 分（測定と並行）／ 片付けと記録 13 分（一部並行））。**実測 0.38 run/分は その148 の同一手法・同一問題数・同一並列数の D=10（0.98 run/分）の 39%** ＝ **予算 2 倍 × 1 評価が重い分で 2.6 倍。****計画規則を 1 行足す: 新 suite 16 問 × 1 腕を D=20 で回すと 40-45 分 ＝ 枠ちょうど。D=20 で 2 手法 32 run は 1 サイクルに入らない**（キュー 2 は 16 run 単独で撃つこと）。**素の評価速度はこの環境で 3383 evals/s（M01、K=20）／ 5748 evals/s（M09、K=10）。** **環境**: `pip install -q --ignore-installed blinker numpy scipy matplotlib cma ioh flask mealpy multiprocess` が1 回で通った（`--timeout` は不要）。NMMSO を回さないので `pynmmso` は `/tmp/pystub` の最小 stub |
 | その150 | **統合の回。最適化 run ゼロ・追加評価ゼロ**（ログの畳み、畳んだ 2 路線の削除、引用候補 arXiv 2407.00939 の本文検索、新 suite の f\* / K を公表 Table 1 と 4 次元ぶん照合） | **サイクル全体 約 40 分**（00:30 → 01:10。うち読み直しと claim 6 分 ／ **環境の再構築 2 分**（手順 1 ＋ NMMSO stub。**NMMSO を回さない回なので手順 2・3 は省いた**）／ **本文検索 3 分**（48,242 字、機械で語数を数えるだけ）／ **suite 照合 3 分**（`ProblemMM` を 16 問 × 4 次元 ＝ 64 回構築。**1 次元あたり約 45 秒**）／ 掃除と機械照合 8 分 ／ 記録 15 分）。**CI は 1 回も叩いていない** —— **取りに行く前に `analysis/*/refs/` を見たら本文が 13 日前からあった**（その134 の教訓の 2 度目）。**計画規則: 統合の回は測定ゼロでも 40 分を使い切る。掃除より記録のほうが長い** |
