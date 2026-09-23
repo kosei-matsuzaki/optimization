@@ -27,6 +27,19 @@ NAME = "M09-D10-PIN01"
 DUMP = ROOT / "analysis/mmo2024/e98" / f"{NAME}_sig100200.csv.gz"
 NDRAW = 4
 
+# 【2026-09-23 その161】この入力は既に消えている（掃引の畳みで削除、削除回は不明。
+# その150 §5 の一覧の 4 本目）。素で叩くと gzip の FileNotFoundError の裸の
+# トレースバックが出るだけで、「何が無くてなぜ無いのか」が分からない。
+# その150 が e115/analyze.py に施したのと同じ形で、理由を印字して exit 1 する。
+if not DUMP.exists():
+    raise SystemExit(
+        f"恒等検査の照合先が無い: {DUMP}\n"
+        f"（e98 の sigma 掃引ダンプは畳みで削除済み。いま e98 に残っているのは\n"
+        f" ceiling_sweep_d10.csv の集計だけ）\n"
+        f"この検査は「保存ダンプの降下と RestartLanderOptimizer の降下が同一か」を\n"
+        f"見るもので、照合先なしでは意味を持たない。結果は\n"
+        f"acceptance_topology.md の その110 の節に記録されている。")
+
 
 class _FixedDraws:
     """Hands out `_null_descent`'s draw k, in order, in place of the run's rng."""

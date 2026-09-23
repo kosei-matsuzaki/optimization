@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
 """その113 — 4.5 倍差の内訳: hunt 本数か、選抜か、降下か。
 
-追加評価ゼロの側（null）は e110 の保存ダンプを読み直すだけ。MC-ESO 側は
+追加評価ゼロの側（null）は保存ダンプを読み直すだけ。MC-ESO 側は
 e113 の計器つき run（MC-ESO-traced、base とビット一致）の spillover 単位ダンプ。
+
+【2026-09-23 その161】この script は<u>もう再実行できない</u>。入力が 2 本とも消えている:
+  - MC-ESO 側 `e113/hunts/`  -> その145 が削除（`HUNTS_REMOVED.md`）
+  - null 側 `e110/descents/` -> その118 が削除（`e115/descents/` が厳密な上位集合）
+null 側の読み先は `e115/descents/` に直した（これは生きている）が、`hunts/` は
+復元できないので main() は理由を印字して exit 1 する。
+**生き残った入力からの引き直しは `analysis/mmo2024/e161/rederive_e113.py`**
+（問題別 16/16 で記録値と一致することを その161 が確認済み）。
 
 被覆の定義は e112 の恒等検査が採点器と突き合わせたものと同じ:
     detected(eps) = |{ land_opt : best_f <= eps }|,  PR = detected / K
@@ -71,15 +79,23 @@ def paired(a, b, labels):
 def main():
     seg_paths = sorted(glob.glob(os.path.join(HERE, "hunts", "*_segments.csv.gz")))
     if not seg_paths:
-        raise SystemExit("no segment dumps in e113/hunts -- run run.sh first")
+        raise SystemExit(
+            "e113/hunts/ の segment ダンプが無い（その145 が削除。HUNTS_REMOVED.md）。\n"
+            "この 3.0 MB は復元できないので run.sh を回しても同じ数字にはならない\n"
+            "（MC-ESO-traced の 16 問 21.5 分の再測定になる）。\n"
+            "記録された出力は e113/scored.txt に全部残っている。\n"
+            "生き残った入力からの引き直しは analysis/mmo2024/e161/rederive_e113.py を使うこと。")
 
     rows = []
     for sp in seg_paths:
         problem = os.path.basename(sp).split("_seed")[0]
-        nullp = os.path.join(MMO, "e110", "descents", f"{problem}_seed0.csv.gz")
+        # e110/descents は その118 が削除した。e115/descents は同じ run の
+        # 列 1-6 が 16/16 でバイト一致する厳密な上位集合（e110/DUMPS_REMOVED.md）。
+        nullp = os.path.join(MMO, "e115", "descents", f"{problem}_seed0.csv.gz")
         if not os.path.exists(nullp):
-            print(f"  (skip {problem}: no null dump)")
-            continue
+            # 黙って飛ばすと「測ったが帰無だった」に見える表が出る（その150 §5）。
+            raise SystemExit(f"null 降下ダンプが無い: {nullp}\n"
+                             f"（{problem} が欠けたまま集計すると 16 問の表が黙って痩せる）")
         k = k_of(problem)
         seg = read_dump(sp)
         nul = read_dump(nullp)

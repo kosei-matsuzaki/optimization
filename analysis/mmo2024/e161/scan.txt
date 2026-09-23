@@ -1,0 +1,34 @@
+=== 走査 A: 文字列で組むパスが実在しない script ===
+  mmo2024/e118/power_and_landing.py
+      analysis/mmo2024/e113/hunts   [親のみ実在]
+  → 1 本
+
+=== 走査 C: os.path.join で組むパスが実在しない script（走査 A の穴埋め）===
+  （該当なし）
+  → 0 本
+
+=== 走査 B: 実在チェックのあと黙って抜ける loader ===
+  mmo2024/e153/analyze.py
+      L103: if not os.path.exists(path):  ->  return
+  mmo2024/e112/analyze.py
+      L141: if not os.path.exists(dump):  ->  continue
+  mmo2024/e142/analyze.py
+      L132: if not os.path.exists(path):  ->  return out
+  mmo2024/e93/analyze.py
+      L82: if not src.exists():  ->  continue
+  mmo2024/e99/mechanism.py
+      L55: if not src.exists():  ->  continue
+  mmo2024/e152/analyze.py
+      L96: if not os.path.exists(path):  ->  return
+  mmo2024/e110/analyze.py
+      L84: if not run_csv.exists():  ->  continue
+  mmo2024/e94/analyze.py
+      L70: if not src.exists():  ->  continue
+  mmo2024/e151/analyze.py
+      L84: if not os.path.exists(FOLDED_RL):  ->  return None
+  mmo2024/e111/analyze.py
+      L61: if not p.exists():  ->  return None
+  → 10 本 / 箇所 10
+
+=== まとめ ===
+いま入力が壊れている（A または C）1 本 / 黙って抜ける loader を持つ（B）10 本 / 両方 0 本 ＝ <u>いま黙って帰無を出しうる</u>

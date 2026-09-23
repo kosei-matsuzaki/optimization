@@ -88,10 +88,22 @@ def read_rl(pid):
 
 
 def read_mceso(pid):
-    """MC-ESO seed-0 segment dump: (land_opt, f) pairs."""
+    """MC-ESO seed-0 segment dump: (land_opt, f) pairs.
+
+    【2026-09-23 その161】`e113/hunts/` は その145 が削除した。ここが None を
+    返すと part_c は MC_touch / MC@1e-5 を 0.00 として印字し、**その値で
+    `landing_d10.csv` を上書きする** —— 完成形の表の姿をした帰無である
+    （その150 §5 と同じ型。その161 が実測して landing_d10.csv の復元が要った）。
+    黙って抜けずに理由を印字して落とす。
+    """
     p = ROOT / f"analysis/mmo2024/e113/hunts/{pid}-D10-PIN01_seed0_segments.csv.gz"
     if not p.exists():
-        return None
+        raise SystemExit(
+            f"MC-ESO の segment ダンプが無い: {p}\n"
+            f"（その145 が削除。analysis/mmo2024/e113/HUNTS_REMOVED.md）\n"
+            f"このまま続けると MC_touch = 0.00 の表を刷り、landing_d10.csv を\n"
+            f"その 0 で上書きする。記録済みの値は landing_d10.csv の\n"
+            f"mc_touch / mc_deep 列（＝ 唯一の控え）と acceptance_topology.md の その118 の節。")
     with gzip.open(p, "rt") as f:
         rows = list(csv.DictReader(f))
     key_f = "best_f" if "best_f" in rows[0] else "f"
