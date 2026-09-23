@@ -72,6 +72,6 @@
 
 ## 出力
 
-`analysis/mmo2024/e158/` に `by_problem.csv`（問題 × 次元 × 水準の 3 分類、数百行なので非 gz 可）と
+`analysis/mmo2024/e158/` に `by_problem.csv.gz`（問題 × 次元 × 水準の 3 分類、480 行なので gz）と
 `analyze.py` / `scored.txt`。**行単位のダンプは新たに作らない**（入力が既に保存物）。
 **数値は全部 docs のログ／`acceptance_topology.md` に本文として書く。**
