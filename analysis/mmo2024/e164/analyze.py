@@ -227,6 +227,40 @@ def main():
     P("  **同（25000 側、対照）**: " + (", ".join(
         f"{p} ({s25[p]['ndump']} 本 < K={K[p]})" for p in done if s25[p]["ndump"] < K[p]) or "（なし）"))
 
+    # ------------------------------------------------- 群別の対検定（prereg §4-6）
+    P("")
+    P("## 群別の対検定（50000 − 25000）—— 16 問平均が相殺かどうかを見る")
+    for gname, G in (("A(K=20)", GROUP_A), ("B(K=10)", GROUP_B)):
+        g = [p for p in done if p in G]
+        if len(g) < 2:
+            P(f"  群 {gname}: 有効対 {len(g)} 本。検定しない")
+            continue
+        for key, lab in (("score", "Score"), ("mpr", "MPR"), ("f1", "mean-F1"),
+                         ("ndump", "降下本数"), ("distinct5", "相異なり")):
+            P(f"  群 {gname} {lab:>8}: "
+              f"{fmt(paired([s25[p][key] for p in g], [s50[p][key] for p in g]))}")
+        P(f"  群 {gname} 平均 Score: 12500 {np.mean([s12[p]['score'] for p in g]):.4f} -> "
+          f"25000 {np.mean([s25[p]['score'] for p in g]):.4f} -> "
+          f"50000 {np.mean([s50[p]['score'] for p in g]):.4f}")
+        P(f"  群 {gname} 平均 相異なり(1e-5): {np.mean([s12[p]['distinct5'] for p in g]):.2f} -> "
+          f"{np.mean([s25[p]['distinct5'] for p in g]):.2f} -> "
+          f"{np.mean([s50[p]['distinct5'] for p in g]):.2f}  (K={K[g[0]]})")
+    P("")
+    P("  降下本数 / K の比（run が 3 水準で異なる問題だけ。1 を切ると被覆が構造的に頭打ち）:")
+    for p in done:
+        if s50[p]["ndump"] == s25[p]["ndump"] and s25[p]["ndump"] == s12[p]["ndump"]:
+            continue
+        P(f"    {p} K={K[p]:2d}  降下/K  12500 {s12[p]['ndump'] / K[p]:.2f} / "
+          f"25000 {s25[p]['ndump'] / K[p]:.2f} / 50000 {s50[p]['ndump'] / K[p]:.2f}   "
+          f"Δscore(50k-25k) {s50[p]['score'] - s25[p]['score']:+.4f}")
+    moved = [p for p in done if abs(s50[p]["score"] - s25[p]["score"]) > 1e-12]
+    P("")
+    P(f"  動いた問題だけの対検定（n={len(moved)}: {' '.join(moved)}）:")
+    if len(moved) >= 2:
+        for key, lab in (("score", "Score"), ("mpr", "MPR"), ("f1", "mean-F1")):
+            P(f"    {lab:>8}: "
+              f"{fmt(paired([s25[p][key] for p in moved], [s50[p][key] for p in moved]))}")
+
     # ------------------------------------------------- 主判定
     P("")
     P("## 判定（prereg.md §4）")
