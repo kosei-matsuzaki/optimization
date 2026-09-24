@@ -273,6 +273,43 @@ def main():
           + " -> ".join(f"{mm(l, 'distinct5', G):.2f}" for l in LEVELS) + f"  (K={K[G[0]]})")
         P(f"    群 {gname} 平均 降下本数の 4 点: " + " -> ".join(f"{mm(l, 'ndump', G):.1f}" for l in LEVELS))
 
+    # ------------------------------------------------- 群間の対比（事後。prereg には無い）
+    P("")
+    P("## 【事後】群間の対比 —— 「最適降下長は K に依存するか」を<u>群をまたいで</u>検定する")
+    P("  **これは事前登録に無い。** 主判定（群ごとの対検定）が **構造的に α=0.05 に届かない**ことが")
+    P("  採点後に分かったので足した ＝ **確認的ではなく探索的な検定として読むこと。**")
+    P("  理由: **群は 8 問、そのうち水準で値が動かない問題は同点で落ちる**ので有効対は 4（群 B）/ 2（群 A）。")
+    P("  **両側 Wilcoxon exact は n=4 で最小 p=0.125、n=2 で最小 p=0.5** ＝ **全問が同符号でも 0.05 を跨げない。**")
+    P("  仮説が問うているのは『群 A と群 B で Δ が違うか』なので、**対応の無い Mann-Whitney U（両側、n=8 対 8）が形の合う検定**である。")
+    from scipy.stats import mannwhitneyu
+    pairs = (("50k−25k（その164 の回。仮説を<u>見つけた</u>データ ＝ 循環）", "25000", "50000"),
+             ("**100k−50k（この回の新規。唯一の確認的な対比）**", "50000", "100000"),
+             ("100k−25k（2 段ぶんの span。その164 を含むので循環）", "25000", "100000"))
+    for lab, lo, hi in pairs:
+        if not (doneA and doneB):
+            P("  群 A / 群 B のどちらかが空。検定しない")
+            break
+        da = [S[hi][p_]["score"] - S[lo][p_]["score"] for p_ in doneA]
+        db = [S[hi][p_]["score"] - S[lo][p_]["score"] for p_ in doneB]
+        u, pv = mannwhitneyu(da, db, alternative="two-sided")
+        rb = 2 * u / (len(da) * len(db)) - 1
+        agree = sum(1 for p_ in doneA if S[hi][p_]["score"] < S[lo][p_]["score"]) + \
+            sum(1 for p_ in doneB if S[hi][p_]["score"] > S[lo][p_]["score"])
+        movedn = sum(1 for p_ in done if abs(S[hi][p_]["score"] - S[lo][p_]["score"]) > 1e-12)
+        P(f"    {lab}: 群 A 平均 {np.mean(da):+.4f} / 群 B 平均 {np.mean(db):+.4f}  "
+          f"U={u:.1f}  p={pv:.5g}  rb={rb:+.3f}")
+        P(f"      動いた問題 {movedn} 問のうち、符号が K の向き（A は下がる / B は上がる）に一致 {agree} 問")
+    dpa = [S[hi][p_]["score"] - S[lo][p_]["score"]
+           for lo, hi in (("25000", "50000"), ("50000", "100000")) for p_ in doneA]
+    dpb = [S[hi][p_]["score"] - S[lo][p_]["score"]
+           for lo, hi in (("25000", "50000"), ("50000", "100000")) for p_ in doneB]
+    if dpa and dpb:
+        u, pv = mannwhitneyu(dpa, dpb, alternative="two-sided")
+        P(f"    2 段をプール（n={len(dpa)} 対 {len(dpb)}、その164 を含むので循環）: "
+          f"群 A 平均 {np.mean(dpa):+.4f} / 群 B 平均 {np.mean(dpb):+.4f}  U={u:.1f}  p={pv:.5g}  "
+          f"rb={2 * u / (len(dpa) * len(dpb)) - 1:+.3f}")
+    P("  **読み方**: **確認的な行は 1 本だけ（100k−50k）で、その 1 本が非有意なら K 依存は<u>新規データで再現しなかった</u>と書く。**")
+
     # ------------------------------------------------- 全 16 問（参考）
     if len(done) >= 2:
         P("")
