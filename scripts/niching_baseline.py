@@ -157,6 +157,15 @@ _METHODS: dict = {
     # 上の 9 行は 1 文字も変えていない ＝ 記録済みの値は全部そのまま。`core/` は触っていない。
     "Restart-Lander-50000": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
                                                       "descent_budget": 50000}),
+    # その165（キュー 1）: **その164 が閉じた軸の、ただ 1 つ残った枝 —— 飽和点は K に依存するか**。
+    # その164 は 25000 -> 50000 の 16 問平均 Score を +0.0051（p=0.375）と測って軸を閉じたが、
+    # **その飽和は相殺**だった（群 A ＝ K=20 は −0.0128 / rb=−1.000、群 B ＝ K=10 は +0.0230 / rb=+1.000）。
+    # **群 B の側はまだ上っている可能性がある**ので、**上限をもう 1 段（50000 の 2 倍 = 100000）だけ**置いて
+    # 50000 との対を取る。`sigma_ratio` は 0.1 のまま、ほかは 1 つも変えない ＝
+    # その164（50000）との対も その163（25000）との対も条件 1 個の差。
+    # 上の 11 行は 1 文字も変えていない ＝ 記録済みの値は全部そのまま。`core/` は触っていない。
+    "Restart-Lander-100000": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
+                                                       "descent_budget": 100000}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),
     # Entry 141 (queue 2a): the population-size audit arms. Both baselines
