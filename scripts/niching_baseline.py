@@ -148,6 +148,15 @@ _METHODS: dict = {
     # 上の 7 行は 1 文字も変えていない ＝ 記録済みの値は全部そのまま。`core/` は触っていない。
     "Restart-Lander-25000": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
                                                       "descent_budget": 25000}),
+    # その164（キュー 1）: **その163 の続き —— 飽和点を取る腕**。その163 が
+    # 12500 -> 25000 で反証条件 (b) を発火させた（16 問平均 Score +0.0418、p=0.03125）が、
+    # `maxfevals` 打ち切りは全降下の 24.3% -> 12.7% に半減しただけで**ゼロではない** ＝
+    # 軸はまだ飽和していない。**上限をもう 1 段（25000 の 2 倍 = 50000）だけ**置いて
+    # 25000 との対を取る。`sigma_ratio` は 0.1 のまま、ほかは 1 つも変えない ＝
+    # その163（25000）との対も その151（12500）との対も条件 1 個の差。
+    # 上の 9 行は 1 文字も変えていない ＝ 記録済みの値は全部そのまま。`core/` は触っていない。
+    "Restart-Lander-50000": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
+                                                      "descent_budget": 50000}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),
     # Entry 141 (queue 2a): the population-size audit arms. Both baselines
