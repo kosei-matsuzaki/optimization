@@ -139,6 +139,15 @@ _METHODS: dict = {
     # 上の 6 行は 1 文字も変えていない ＝ 記録済みの値は全部そのまま。`core/` は触っていない。
     "Restart-Lander-2200": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
                                                      "descent_budget": 2200}),
+    # その163（キュー 1）: **D=20 で降下長が binding かを測る腕**。その158 の副産物
+    # （D=20 では `descent_budget=12500` を使い切った降下が全降下の 24.3%・未到達の
+    # 42.3% を占める）に対し、**上限を 2 倍の 25000 にした 1 水準だけ**を置く。
+    # その145〜その148 の 5 水準スイープは **D=10 の上の結論**なので「長さは効かない」は
+    # D ≦ 10 限定であり、D=20 では未測定。`sigma_ratio` は 0.1 のまま、ほかは 1 つも
+    # 変えない ＝ その151（既定 12500）との対は条件 1 個の差。
+    # 上の 7 行は 1 文字も変えていない ＝ 記録済みの値は全部そのまま。`core/` は触っていない。
+    "Restart-Lander-25000": (RestartLanderOptimizer, {"sigma_ratio": 0.1,
+                                                      "descent_budget": 25000}),
     "NCDE": (NCDEOptimizer, {}),
     "r3pso": (RingPSOOptimizer, {}),
     # Entry 141 (queue 2a): the population-size audit arms. Both baselines
