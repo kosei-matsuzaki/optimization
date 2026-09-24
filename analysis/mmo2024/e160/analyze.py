@@ -117,7 +117,9 @@ def score_cell(f, opt, xs, K, opt_pos):
 # ------------------------------------------------------------------ 入力
 def load_folded(path):
     if not os.path.exists(path):
-        sys.exit(f"[FATAL] 入力が無い: {path}")
+        sys.exit(f"[FATAL] 入力が無い: {path}\n"
+                 "  その162 の統合で削除した可能性がある（そのディレクトリの DUMPS_REMOVED.md を読むこと）。\n"
+                 "  この回の数値は acceptance_topology.md の その160 の節と scored.txt にある。")
     with gzip.open(path, "rt") as fh:
         rows = list(csv.DictReader(fh))
     by: dict = {}

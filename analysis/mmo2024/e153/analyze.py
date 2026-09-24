@@ -101,7 +101,9 @@ def _load_folded(path, cache):
         return
     _FOLD[cache] = {}
     if not os.path.exists(path):
-        return
+        sys.exit(f"[FATAL] 入力が無い: {path}\n"
+                 "  その162 の統合で削除した（同じディレクトリの DUMPS_REMOVED.md を読むこと）。\n"
+                 "  この回の数値は acceptance_topology.md の その153 の節と scored.txt にある。")
     with gzip.open(path, "rt") as fh:
         rows = list(csv.DictReader(fh))
     by: dict = {}

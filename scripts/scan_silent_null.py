@@ -3,11 +3,12 @@
 
 その150 §5 の 2 通りの走査を両方かける:
   走査 A: script が文字列で組むパスのうち、いま実在しないもの（＝ 既に壊れている）
+  走査 D: os.path.join(HERE, "file") で組む自ディレクトリの 1 ファイルが実在しない（その162 が足した）
   走査 B: 実在チェックのあと return / continue / pass する loader
           （＝ いまは動くが、その入力を誰かが消した瞬間に黙って壊れる）
 
 さらに走査 B の各 script について「欠けたときに落ちるか、黙って通るか」を区別する。
-追加評価ゼロ。使い方: python3 scan_silent_null.py
+追加評価ゼロ。使い方: python3 scripts/scan_silent_null.py
 """
 from __future__ import annotations
 
@@ -15,9 +16,9 @@ import os
 import re
 import sys
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                    "..", ".."))            # analysis/
-REPO = os.path.dirname(ROOT)
+# その162 の統合で `analysis/mmo2024/e161/` から `scripts/` に上げた（毎回の掃除の定例点検にするため）。
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.join(REPO, "analysis")                        # 走査対象
 
 # 文字列リテラルの中で analysis 配下を指していそうな断片。
 # 散文（docstring の日本語・空白入りの文）を拾わないよう、パスらしい形だけに絞る。
@@ -105,6 +106,35 @@ def scan_c():
     return hits
 
 
+JOIN1 = re.compile(r'os\.path\.join\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*'
+                   r'["\']([A-Za-z0-9_.-]+\.[A-Za-z0-9_.]+)["\']\s*\)')
+
+
+def scan_d():
+    """走査 A・C の 3 つ目の穴（その162 が実測で見つけた）: os.path.join(HERE, "file.csv.gz") の形。
+
+    走査 A は文字列 1 個の中に `/` が要り、走査 C は先頭要素が eNNN/hm であることを要求するので、
+    **自分のディレクトリの中の 1 ファイルを変数 ＋ ファイル名だけで組む形**がどちらにも掛からない。
+    その162 が `e152/dumps_rrcma.csv.gz` を消したとき、`e152/analyze.py` がこの形でその 1 本を読んでおり、
+    **A でも C でも掛からないまま黙って空を返す状態**になりかけた。"""
+    hits = []
+    for dirpath, _, files in os.walk(ROOT):
+        for fn in sorted(files):
+            if not fn.endswith(".py"):
+                continue
+            p = os.path.join(dirpath, fn)
+            text = open(p, encoding="utf-8", errors="replace").read()
+            missing = []
+            for m in JOIN1.finditer(text):
+                frag = m.group(2)
+                if any(os.path.exists(c) for c in resolve(frag, dirpath)):
+                    continue
+                missing.append(f"{m.group(1)} + {frag}")
+            if missing:
+                hits.append((os.path.relpath(p, ROOT), sorted(set(missing))))
+    return hits
+
+
 def scan_b():
     hits = []
     for dirpath, _, files in os.walk(ROOT):
@@ -149,6 +179,16 @@ def main():
             print(f"      {frag}")
     print(f"  → {len(c)} 本")
 
+    print("\n=== 走査 D: os.path.join(HERE, \"file\") で組む自分のディレクトリの 1 ファイルが実在しない script ===")
+    d = scan_d()
+    if not d:
+        print("  （該当なし）")
+    for rel, miss in d:
+        print(f"  {rel}")
+        for frag in miss:
+            print(f"      {frag}")
+    print(f"  → {len(d)} 本")
+
     print("\n=== 走査 B: 実在チェックのあと黙って抜ける loader ===")
     b = scan_b()
     if not b:
@@ -160,10 +200,10 @@ def main():
     print(f"  → {len(b)} 本 / 箇所 {sum(len(m) for _, m in b)}")
 
     print("\n=== まとめ ===")
-    broken = {r for r, _ in a} | {r for r, _ in c}
+    broken = {r for r, _ in a} | {r for r, _ in c} | {r for r, _ in d}
     guards = {r for r, _ in b}
     both = sorted(broken & guards)
-    print(f"いま入力が壊れている（A または C）{len(broken)} 本 / "
+    print(f"いま入力が壊れている（A / C / D のいずれか）{len(broken)} 本 / "
           f"黙って抜ける loader を持つ（B）{len(guards)} 本 / "
           f"両方 {len(both)} 本 ＝ <u>いま黙って帰無を出しうる</u>")
     for r in both:

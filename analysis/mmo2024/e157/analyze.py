@@ -100,7 +100,11 @@ def folded_cell(meth, prob, pin):
     f = "dumps_rrcma.csv.gz" if meth == "RR" else "descents.csv.gz"
     if meth not in _FOLDED:
         path = os.path.join(HERE, f)
-        _FOLDED[meth] = load_folded(path) if os.path.exists(path) else {}
+        if not os.path.exists(path):
+            sys.exit(f"[FATAL] 入力が無い: {path}\n"
+                     "  その162 の統合で削除した（同じディレクトリの DUMPS_REMOVED.md を読むこと）。\n"
+                     "  この回の数値は acceptance_topology.md の その157 の節と scored.txt にある。")
+        _FOLDED[meth] = load_folded(path)
     return _FOLDED[meth].get(f"{prob}-D05-PIN{pin}")
 
 
@@ -274,7 +278,12 @@ def main():
 
     # ------------------------------------------------ 本体 7: 再起動の計器（instance 別。追加評価ゼロ）
     rp = os.path.join(HERE, "restarts.csv.gz")
-    if os.path.exists(rp):
+    if not os.path.exists(rp):
+        sys.exit(f"[FATAL] 入力が無い: {rp}\n"
+                 "  その162 の統合で削除した（同じディレクトリの DUMPS_REMOVED.md を読むこと）。\n"
+                 "  §4 の表（再起動本数 125.2-125.8 / 1 本あたり評価 2,031-2,045 / archive 21.94-25.38）は\n"
+                 "  acceptance_topology.md の その157 の節 §4 と scored.txt にある。")
+    if True:
         P("")
         P("## 7 —— RR の再起動の計器（instance 別、16 問平均。その155 の PIN01 実測 125.1 本 / 1 本 2,044 評価と比べる）")
         with gzip.open(rp, "rt") as fh:

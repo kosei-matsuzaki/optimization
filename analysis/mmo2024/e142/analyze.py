@@ -72,6 +72,13 @@ def read_this_cycle(seed=0):
     畳んだ 1 本があればそれを読み、無ければ `dumps/` の per-run ダンプを読む
     （**どちらを読んでも同じ**ことが畳みの検査条件）。"""
     acc: dict = {}
+    if not os.path.exists(FOLDED):
+        # その162 の走査 D で「入力が消えているのに黙って次へ進む」形として出た箇所。
+        # 下流の完走判定（16 問揃わなければ exit 1）が守っているので落としはしないが、
+        # 何が無いのかを名指しする（その161 の e118 と同じ型を繰り返さないため）。
+        print(f"  [注意] 畳んだ報告集合が無い: {FOLDED}"
+              "（その150 の統合で削除済み。この回の数値は acceptance_topology.md の その142 の節にある）",
+              file=sys.stderr)
     if os.path.exists(FOLDED):
         with gzip.open(FOLDED, "rt") as fh:
             rows = list(csv.DictReader(fh))
