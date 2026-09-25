@@ -59,6 +59,8 @@ def problem_K(bp_dir, prob):
 # (降下ダンプのディレクトリ, by_problem のディレクトリ, seed 番号)
 SRC_PLAIN = [(os.path.join(MMO, "e110", "descents"), os.path.join(MMO, "e110", "by_problem"), 0),
              (os.path.join(MMO, "e111", "descents"), os.path.join(MMO, "e111", "by_problem"), 1)]
+# seed 1 側（`s1/descents` / `s1/by_problem`）は その168 が削除した（`e115/S1_REMOVED.md`）。
+# 定義は残す —— この 2 本が無いことを上の guard が名前で報告するため。
 SRC_COORD = [(os.path.join(HERE, "descents"), os.path.join(HERE, "by_problem"), 0),
              (os.path.join(HERE, "s1", "descents"), os.path.join(HERE, "s1", "by_problem"), 1)]
 
@@ -74,8 +76,14 @@ def load_runs(with_coords=False):
         # 「測ったが帰無だった」ようにしか見えなかった。消えた入力は黙って飛ばさない。
         raise SystemExit(
             "入力の降下ダンプが無い: " + ", ".join(missing)
-            + "\n  -> その118 の統合で削除済み。この経路（with_coords=False）は再現できない。"
-            + " 数値は docs/acceptance_topology.md の その115 の節が全部持っている。")
+            + "\n  -> `e110/descents` / `e111/descents`（with_coords=False の経路）は その118 の統合で削除済み。"
+            + "\n  -> `s1/descents`（with_coords=True の経路、seed 1）は **その168 が削除した** ——"
+            + " この関数の main() は上の 2 本が無いので その118 以降そもそも走れておらず、"
+            + " s1 を読む経路が他に 1 本も無かった（走査 E で判明）。"
+            + "\n     seed 1 の問題別の値は `s1/by_problem_s1.csv`（16 行、削除前に 16 ファイルを畳んだもの）と"
+            + " `e115/scored.txt` に残してある。経緯は `e115/S1_REMOVED.md`。"
+            + "\n  -> 数値は docs/acceptance_topology.md の その115 / その168 の節が全部持っている。"
+            + " ＝ これはバグではない。この script はもう再走できない。")
     for dd, bp, seed in sources:
         exp = os.path.basename(os.path.dirname(dd))
         for fn in sorted(os.listdir(dd)):

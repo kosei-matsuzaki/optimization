@@ -10,6 +10,8 @@
 
   * **100000（この回、新規 run）**  -> `e165/descents/M??-D20-PIN01_seed0.csv[.gz]`
                                        （畳んだ後は `e165/descents.csv.gz`）
+                                       **＝ その168 が削除した** —— 読み手がこの script だけで、
+                                       その166 の `e163` / `e164` 削除で既に走れなくなっていた。
   * **50000（主対照、追加評価ゼロ）** -> `e164/descents.csv.gz` の保存物
   * **25000（追加評価ゼロ）**         -> `e163/descents.csv.gz` の保存物
   * **12500（既定、追加評価ゼロ）**   -> `e151/descents.csv.gz` の保存物
@@ -79,6 +81,10 @@ def _need(path):
             "     降下長の軸は その163〜その165 の 4 水準で閉じており、数値は\n"
             "     docs/acceptance_topology.md の その165 の節「この軸の数値を消す前に移した表」に全部ある。\n"
             "     経緯は analysis/mmo2024/e163/DUMPS_REMOVED.md ／ e164/DUMPS_REMOVED.md。\n"
+            "  -> この script が走れなくなったので、**この回の 100000 の降下ダンプ**\n"
+            "     `e165/descents.csv.gz`（155,536 バイト）も読み手を失った。**その168 が削除した**\n"
+            "     （経緯は analysis/mmo2024/e165/DUMPS_REMOVED.md。集計は同じ回の `scored.txt` と\n"
+            "     `driver_summary.csv` に残してある）。\n"
             "     ＝ これはバグではない。この script はもう再走できない。")
     return path
 
@@ -130,7 +136,9 @@ def load_this():
         raise SystemExit(
             f"入力が無い: {folded} も {dd} も無い\n"
             "  -> 入力ゼロで「完走 0 / 16」の表を刷る経路（その150 §3 / その161 の走査の穴 (2)）は踏まない。\n"
-            "  -> この回の降下ダンプは **その166（2026-09-25）が意図的に削除した**。\n"
+            "  -> この回の降下ダンプ `descents.csv.gz` は **その168（2026-09-25）が意図的に削除した**\n"
+            "     （その166 が `e163` / `e164` を消した時点でこの script は上のガードで止まるので、\n"
+            "     この 100000 のダンプは読み手を失っていた。走査 E で判明）。\n"
             "     降下長の軸は その163〜その165 の 4 水準で閉じており、数値は\n"
             "     docs/acceptance_topology.md の その165 の節「この軸の数値を消す前に移した表」に全部ある。\n"
             "     経緯は analysis/mmo2024/e163/DUMPS_REMOVED.md ／ e164/DUMPS_REMOVED.md。\n"

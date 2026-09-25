@@ -1,0 +1,21 @@
+## 走査 E —— os.path.join の途中の要素が変数であるパス（走査 A / C / D の死角）
+
+  analysis/mmo2024/e165/analyze.py
+      :42  join(..., entry, 'analyze.py')
+      :111  join(..., entry, 'descents.csv.gz')
+  analysis/mmo2024/e112/analyze.py
+      :136  join(..., exp, 'by_problem')
+      :165  join(..., exp, 'by_problem')
+  analysis/mmo2024/e164/analyze.py
+      :37  join(..., entry, 'analyze.py')
+      :98  join(..., entry, 'descents.csv.gz')
+  analysis/mmo2024/e155/fold.py
+      :24  join(..., subdir, '*.csv')
+  analysis/mmo2024/e157/fold.py
+      :26  join(..., subdir, '*.csv')
+  analysis/mmo2024/e163/analyze.py
+      :36  join(..., entry, 'analyze.py')
+
+  → 6 本 / 9 箇所
+
+  判定はこの一覧を 1 本ずつ叩いて行う（この走査は死角を指すだけで、実害は言わない）。
