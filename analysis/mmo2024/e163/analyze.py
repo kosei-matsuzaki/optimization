@@ -62,8 +62,14 @@ PUB_D20_SCORE = 0.4445
 
 def _need(path):
     if not os.path.exists(path):
-        raise SystemExit(f"入力が無い: {path}\n"
-                         "  -> その150 §3 の経路（欠けた入力を黙って飛ばして nan の表を刷る）は踏まない。")
+        raise SystemExit(
+            f"入力が無い: {path}\n"
+            "  -> その150 §3 の経路（欠けた入力を黙って飛ばして nan の表を刷る）は踏まない。\n"
+            "  -> `e163` / `e164` の `descents.csv.gz` は **その166（2026-09-25）が意図的に削除した**。\n"
+            "     降下長の軸は その163〜その165 の 4 水準で閉じており、数値は\n"
+            "     docs/acceptance_topology.md の その165 の節「この軸の数値を消す前に移した表」に全部ある。\n"
+            "     経緯は analysis/mmo2024/e163/DUMPS_REMOVED.md ／ e164/DUMPS_REMOVED.md。\n"
+            "     ＝ これはバグではない。この script はもう再走できない。")
     return path
 
 
@@ -107,6 +113,18 @@ def load_25000():
                 continue
             p = fn.split("_")[0].split("-")[0]
             out.setdefault(p, _pack(_rows(os.path.join(dd, fn))))
+    if not out:
+        # その161 が見つけた走査の穴 (2)（肯定形の `os.path.exists` ガードに `else` が無い）
+        # をこの 2 本のガードが踏んでいた ＝ 入力ゼロでも「完走 0/16」の表を刷って exit 0 に
+        # なる。その166 が塞いだ。
+        raise SystemExit(
+            f"入力が無い: {folded} も {dd} も無い\n"
+            "  -> 入力ゼロで「完走 0 / 16」の表を刷る経路（その150 §3 / その161 の走査の穴 (2)）は踏まない。\n"
+            "  -> この回の降下ダンプは **その166（2026-09-25）が意図的に削除した**。\n"
+            "     降下長の軸は その163〜その165 の 4 水準で閉じており、数値は\n"
+            "     docs/acceptance_topology.md の その165 の節「この軸の数値を消す前に移した表」に全部ある。\n"
+            "     経緯は analysis/mmo2024/e163/DUMPS_REMOVED.md ／ e164/DUMPS_REMOVED.md。\n"
+            "     ＝ これはバグではない。この script はもう再走できない。")
     return out
 
 

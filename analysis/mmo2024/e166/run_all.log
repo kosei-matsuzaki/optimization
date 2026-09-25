@@ -1,0 +1,88 @@
+########## run.log
+shard c exit=0
+shard b exit=0
+shard a exit=0
+all shards done
+########## run_a.log
+peak ratio on the reported set, 1 seeds, budget = 1 x suite
+
+function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
+---------------------------------------------------------------------------------------------------
+N14-CF3-3D          Restart-Landercurrent     6    66667    100    0.67   0.67   0.67   0.67   0.67    0.667    35
+N14-CF3-3D          NMMSO         current     6    66667    100    0.67   0.67   0.67   0.67   0.67    0.667    29
+
+N15-CF4-3D          Restart-Landercurrent     8    50000    100    0.75   0.75   0.75   0.75   0.75    0.750    36
+N15-CF4-3D          NMMSO         current     8    50000    100    0.75   0.75   0.75   0.75   0.75    0.750    58
+
+N16-CF3-5D          Restart-Landercurrent     6    66667    100    0.67   0.67   0.67   0.67   0.67    0.667    36
+N16-CF3-5D          NMMSO         current     6    66667    100    0.67   0.67   0.67   0.67   0.67    0.667    39
+
+N17-CF4-5D          Restart-Landercurrent     8    50000    100    0.75   0.75   0.75   0.75   0.75    0.750    37
+N17-CF4-5D          NMMSO         current     8    50000    100    0.50   0.50   0.50   0.50   0.50    0.500    57
+
+rows written to analysis/mmo2024/e166/baseline_a.csv
+########## run_b.log
+peak ratio on the reported set, 1 seeds, budget = 1 x suite
+
+function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
+---------------------------------------------------------------------------------------------------
+N18-CF3-10D         Restart-Landercurrent     6    66667    100    0.67   0.67   0.67   0.67   0.67    0.667    43
+N18-CF3-10D         NMMSO         current     6    66667     83    0.67   0.67   0.67   0.67   0.67    0.667    42
+
+N19-CF4-10D         Restart-Landercurrent     8    50000     95    0.50   0.50   0.50   0.50   0.50    0.500    44
+N19-CF4-10D         NMMSO         current     8    50000    100    0.25   0.25   0.25   0.12   0.00    0.175    72
+
+rows written to analysis/mmo2024/e166/baseline_b.csv
+########## run_c.log
+peak ratio on the reported set, 1 seeds, budget = 1 x suite
+
+function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
+---------------------------------------------------------------------------------------------------
+N20-CF4-20D         Restart-Landercurrent     8    50000     48    0.38   0.38   0.38   0.38   0.38    0.375    62
+N20-CF4-20D         NMMSO         current     8    50000     18    0.25   0.25   0.12   0.12   0.12    0.175    65
+
+rows written to analysis/mmo2024/e166/baseline_c.csv
+########## run_s12.log
+shard c exit=0
+shard b exit=0
+shard a exit=0
+all shards done
+########## run_s12_a.log
+peak ratio on the reported set, 2 seeds, budget = 1 x suite
+
+function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
+---------------------------------------------------------------------------------------------------
+N14-CF3-3D          Restart-Landercurrent     6    66667    100    0.67   0.67   0.67   0.67   0.67    0.667    70
+N14-CF3-3D          NMMSO         current     6    66667    100    0.83   0.75   0.75   0.75   0.75    0.767    58
+
+N15-CF4-3D          Restart-Landercurrent     8    50000    100    0.75   0.75   0.75   0.75   0.75    0.750    69
+N15-CF4-3D          NMMSO         current     8    50000    100    0.75   0.75   0.75   0.75   0.75    0.750   108
+
+N16-CF3-5D          Restart-Landercurrent     6    66667    100    0.67   0.67   0.67   0.67   0.67    0.667    71
+N16-CF3-5D          NMMSO         current     6    66667    100    0.67   0.67   0.67   0.67   0.67    0.667    91
+
+N17-CF4-5D          Restart-Landercurrent     8    50000    100    0.75   0.75   0.75   0.75   0.75    0.750    74
+N17-CF4-5D          NMMSO         current     8    50000    100    0.50   0.50   0.50   0.50   0.50    0.500    95
+
+rows written to analysis/mmo2024/e166/baseline_s12_a.csv
+########## run_s12_b.log
+peak ratio on the reported set, 2 seeds, budget = 1 x suite
+
+function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
+---------------------------------------------------------------------------------------------------
+N18-CF3-10D         Restart-Landercurrent     6    66667    100    0.67   0.67   0.67   0.67   0.67    0.667    84
+N18-CF3-10D         NMMSO         current     6    66667    100    0.67   0.67   0.67   0.67   0.67    0.667   112
+
+N19-CF4-10D         Restart-Landercurrent     8    50000     96    0.56   0.56   0.56   0.56   0.56    0.562    85
+N19-CF4-10D         NMMSO         current     8    50000     84    0.44   0.44   0.44   0.44   0.38    0.425    75
+
+rows written to analysis/mmo2024/e166/baseline_s12_b.csv
+########## run_s12_c.log
+peak ratio on the reported set, 2 seeds, budget = 1 x suite
+
+function            method        rule        K  evals/K  |rep|   1e-1  1e-2  1e-3  1e-4  1e-5     mean     s
+---------------------------------------------------------------------------------------------------
+N20-CF4-20D         Restart-Landercurrent     8    50000     46    0.38   0.38   0.38   0.38   0.38    0.375   123
+N20-CF4-20D         NMMSO         current     8    50000     20    0.25   0.25   0.25   0.25   0.25    0.250   125
+
+rows written to analysis/mmo2024/e166/baseline_s12_c.csv
