@@ -81,6 +81,17 @@ def read_descents():
     if os.path.exists(FOLDED):
         with gzip.open(FOLDED, "rt") as fh:
             rows = list(csv.DictReader(fh))
+    elif not glob.glob(os.path.join(HERE, "descents", "*.csv")):
+        sys.exit(
+            "e166/descents.csv.gz は その167 が削除した（`descent_budget` は CEC2013 で "
+            "binding しないという結論が その166 §4 で閉じ、その167 §3 が 2D の 3 問で "
+            "独立に再現したため）。\n"
+            "  - 降下の本数と 1 降下あたり平均評価は run ごとに `e166/by_problem.csv` の "
+            "`descents` / `descent_evals_mean` 列にある。\n"
+            "  - 打ち切り理由の内訳（全 3741 降下: tolflatfitness 2803 / tolxstagnation 917 / "
+            "budget 21）は docs/acceptance_topology.md の その166 §4 にある。\n"
+            "  - 行単位が要るなら git 履歴から取れる。"
+        )
     else:
         for p in sorted(glob.glob(os.path.join(HERE, "descents", "*.csv"))):
             base = os.path.basename(p)[: -len(".csv")]

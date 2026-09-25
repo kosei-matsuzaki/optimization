@@ -1,0 +1,10 @@
+function,method,rule,seed,evals,n_optima,n_reported,pr_1e-1,pr_1e-2,pr_1e-3,pr_1e-4,pr_1e-5
+N11-CF1-2D,Restart-Lander,current,0,200000,6,100,0.6667,0.6667,0.6667,0.6667,0.6667
+N11-CF1-2D,Restart-Lander,current,1,200000,6,100,0.6667,0.6667,0.6667,0.6667,0.6667
+N11-CF1-2D,Restart-Lander,current,2,200000,6,100,0.6667,0.6667,0.6667,0.6667,0.6667
+N12-CF2-2D,Restart-Lander,current,0,200000,8,100,0.6250,0.6250,0.6250,0.6250,0.6250
+N12-CF2-2D,Restart-Lander,current,1,200000,8,100,0.5000,0.5000,0.5000,0.5000,0.5000
+N12-CF2-2D,Restart-Lander,current,2,200000,8,100,0.6250,0.6250,0.6250,0.6250,0.6250
+N13-CF3-2D,Restart-Lander,current,0,200000,6,100,0.6667,0.6667,0.6667,0.6667,0.6667
+N13-CF3-2D,Restart-Lander,current,1,200000,6,100,0.6667,0.6667,0.6667,0.6667,0.6667
+N13-CF3-2D,Restart-Lander,current,2,200000,6,100,0.6667,0.6667,0.6667,0.6667,0.6667
