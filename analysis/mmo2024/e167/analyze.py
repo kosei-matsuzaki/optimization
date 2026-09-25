@@ -102,7 +102,7 @@ def _descents() -> dict[tuple[str, int], tuple[int, dict[str, int], float]]:
                 stops[r["stop"]] = stops.get(r["stop"], 0) + 1
             out[kk] = (len(rs), stops, statistics.mean(int(r["evals"]) for r in rs))
         return out
-    sys.exit("降下ダンプが無い。数値は docs/acceptance_topology.md の その167 の節にある。")
+    return {}          # その169 が畳んだ（下の §3 が理由を印字する）
 
 
 def main() -> None:
@@ -134,6 +134,18 @@ def main() -> None:
 
     print("\n## その167 §3 診断 (2) —— 降下本数 ÷ K（その165 の壁 0.90〜1.00 の上か下か）\n")
     d = _descents()
+    if not d:
+        global DEGRADED
+        DEGRADED = True
+        print("**§3 は引けない —— `descents.csv.gz` は その169 が畳んだ**"
+              "（キュー 1 の軸が閉じたため。判断の根拠は その169 の節）。\n"
+              "この節の数値は全部 docs/acceptance_topology.md の "
+              "「### §3 `descent_budget` は 2D でも binding しない」の表にある:\n"
+              "  降下本数 N11 204/207/207・N12 177/179/179・N13 243/246/239、"
+              "降下/K 22〜41、1 降下 820〜1120 評価（上限 12500 の 0.065〜0.090）、\n"
+              "  打ち切りは全 1881 降下で tolxstagnation 1042（55.4%）／"
+              "tolflatfitness 830（44.1%）／budget 9（0.5%）。")
+        return
     print(f"{'問題':<13}{'seed':>6}{'降下本数':>10}{'降下/K':>9}"
           f"{'1 降下の評価':>14}{'上限 12500 比':>14}  打ち切り内訳")
     allstops: dict[str, int] = {}
@@ -164,9 +176,16 @@ E166 = os.path.join(os.path.dirname(HERE), "e166", "baseline_all.csv")
 
 
 def _e166_seed0_mpr() -> list[float]:
-    """その166 の 7 問の seed 0 対差（RL - NM、MPR）。"""
+    """その166 の 7 問の seed 0 対差（RL - NM、MPR）。
+
+    **入力が無ければ黙って空を返さず、理由を印字して落ちる**（その169）——
+    以前は `return []` で、`scan_silent_null.py` の走査 B に「黙って抜ける loader」として
+    掛かっていた。この節は 7 対差が無ければ引けないので、空は帰無ではなく**欠損**である。
+    """
     if not os.path.exists(E166):
-        return []
+        sys.exit(f"その166 の 42 run が無い（{E166}）。§4 の決定境界は "
+                 "7 対差なしには引けない —— 数値は docs/acceptance_topology.md の "
+                 "その167 §4 の節にある（勝ち 0/3 → 最小 p 0.250、3/3 → 0.03125）。")
     with open(E166) as fh:
         rows = [r for r in csv.DictReader(fh) if int(r["seed"]) == 0]
     by: dict[str, dict[str, float]] = {}
@@ -222,6 +241,12 @@ def power() -> None:
               + ("  ← α=0.05 に届きうる" if by_wins[w] < 0.05 else ""))
 
 
+DEGRADED = False
+
 if __name__ == "__main__":
     main()
     power()
+    if DEGRADED:
+        print("\n[exit 1] §3 の入力（`descents.csv.gz`）は畳まれている。"
+              "§1 / §2 / §4 は保存物から引けており、上の出力は有効。")
+        sys.exit(1)
