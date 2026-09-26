@@ -29,7 +29,14 @@ def a12(x, y):
 
 def load():
     rows = []
-    for p in sorted(glob.glob(str(HERE / "by_problem" / "*.csv.gz"))):
+    paths = sorted(glob.glob(str(HERE / "by_problem" / "*.csv.gz")))
+    if not paths:                       # entry 170 deleted the row-level dumps
+        raise SystemExit(
+            "e121/by_problem/*.csv.gz was removed by entry 170 (the basin-radius "
+            "route closed at entry 125).  Every number this script printed is in "
+            "docs/acceptance_topology.md, section 121; see DUMPS_REMOVED.md.  "
+            "To re-measure: python3 analysis/mmo2024/e121/basin_radius.py --pid M01")
+    for p in paths:
         for r in csv.DictReader(gzip.open(p, 'rt')):
             r["r"] = float(r["r"])
             r["clustered"] = int(r["clustered"])

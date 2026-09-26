@@ -39,8 +39,17 @@ def main():
     nn = {(r["pid"], int(r["idx"])): float(r["nn"]) for r in
           csv.DictReader(open(HERE.parents[0] / "e119/enrichment_d10.csv"))}
     rows = []
-    for sub in ("by_problem", "by_problem_far"):
-        for p in sorted(glob.glob(str(HERE / sub / "*.csv.gz"))):
+    paths = [q for sub in ("by_problem", "by_problem_far")
+             for q in sorted(glob.glob(str(HERE / sub / "*.csv.gz")))]
+    if not paths:                       # entry 170 deleted the row-level dumps
+        raise SystemExit(
+            "e121/by_problem{,_far}/*.csv.gz was removed by entry 170 (the "
+            "basin-radius route closed at entry 125).  Every number this script "
+            "printed is in docs/acceptance_topology.md, section 121; see "
+            "DUMPS_REMOVED.md.  To re-measure: python3 "
+            "analysis/mmo2024/e121/basin_radius.py --pid M01")
+    for p in paths:
+        if True:
             for r in csv.DictReader(gzip.open(p, 'rt')):
                 if r["cond"] != "deployed" or float(r["r"]) == 0.0:
                     continue
