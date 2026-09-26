@@ -1,0 +1,48 @@
+M06-D10-PIN01: dim 10, box [-5.0, 5.0], K = 20
+
+== geometric (Voronoi) null, 1000 uniform draws
+  opt 0: share 0.0390 +- 0.0120 (95% CI)
+  opt 1: share 0.0540 +- 0.0140 (95% CI)
+  opt 2: share 0.0240 +- 0.0095 (95% CI)
+  opt 3: share 0.0250 +- 0.0097 (95% CI)
+  opt 4: share 0.0270 +- 0.0100 (95% CI)
+  opt 5: share 0.1050 +- 0.0190 (95% CI)
+  opt 6: share 0.0340 +- 0.0112 (95% CI)
+  opt 7: share 0.0450 +- 0.0128 (95% CI)
+  opt 8: share 0.0920 +- 0.0179 (95% CI)
+  opt 9: share 0.1140 +- 0.0197 (95% CI)
+  opt 10: share 0.0470 +- 0.0131 (95% CI)
+  opt 11: share 0.0760 +- 0.0164 (95% CI)
+  opt 12: share 0.0020 +- 0.0028 (95% CI)
+  opt 13: share 0.0740 +- 0.0162 (95% CI)
+  opt 14: share 0.0410 +- 0.0123 (95% CI)
+  opt 15: share 0.0270 +- 0.0100 (95% CI)
+  opt 16: share 0.0810 +- 0.0169 (95% CI)
+  opt 17: share 0.0020 +- 0.0028 (95% CI)
+  opt 18: share 0.0460 +- 0.0130 (95% CI)
+  opt 19: share 0.0450 +- 0.0128 (95% CI)
+
+== descent null: 200 draws, 12500 evals each, sigma0 = 2.0, isotropic
+  200 descents in 207.5s
+  rows written to analysis/mmo2024/e172/check/M06_base_repro.csv
+  opt 0: share 0.0200 +- 0.0194  (geo 0.0390)
+  opt 1: share 0.0700 +- 0.0354  (geo 0.0540)
+  opt 2: share 0.0000 +- 0.0000  (geo 0.0240)
+  opt 3: share 0.0000 +- 0.0000  (geo 0.0250)
+  opt 4: share 0.0400 +- 0.0272  (geo 0.0270)
+  opt 5: share 0.0900 +- 0.0397  (geo 0.1050)
+  opt 6: share 0.0400 +- 0.0272  (geo 0.0340)
+  opt 7: share 0.0000 +- 0.0000  (geo 0.0450)
+  opt 8: share 0.0700 +- 0.0354  (geo 0.0920)
+  opt 9: share 0.1250 +- 0.0458  (geo 0.1140)
+  opt 10: share 0.0600 +- 0.0329  (geo 0.0470)
+  opt 11: share 0.0900 +- 0.0397  (geo 0.0760)
+  opt 12: share 0.0000 +- 0.0000  (geo 0.0020)
+  opt 13: share 0.1300 +- 0.0466  (geo 0.0740)
+  opt 14: share 0.0000 +- 0.0000  (geo 0.0410)
+  opt 15: share 0.0050 +- 0.0098  (geo 0.0270)
+  opt 16: share 0.1000 +- 0.0416  (geo 0.0810)
+  opt 17: share 0.0000 +- 0.0000  (geo 0.0020)
+  opt 18: share 0.0600 +- 0.0329  (geo 0.0460)
+  opt 19: share 0.1000 +- 0.0416  (geo 0.0450)
+  descent endpoint: median dist 0.6836, median f 1.934, frac f <= 0.1 0.205

@@ -1,0 +1,15 @@
+=== start 12:56:24: 13 問 x 200 抽選, sigma0=0.1*span, 降下上限 12500 ===
+  done M13-D10-PIN01 13:00:40
+  done M01-D10-PIN01 13:04:31
+  done M02-D10-PIN01 13:07:39
+  done M15-D10-PIN01 13:11:43
+  done M05-D10-PIN01 13:14:09
+  done M07-D10-PIN01 13:14:32
+  done M16-D10-PIN01 13:16:54
+  done M12-D10-PIN01 13:18:31
+  done M14-D10-PIN01 13:19:28
+  done M06-D10-PIN01 13:21:46
+  done M08-D10-PIN01 13:22:02
+  done M04-D10-PIN01 13:25:23
+  done M03-D10-PIN01 13:26:41
+=== done 13:26:41: 13 null dumps (期待 13) ===
