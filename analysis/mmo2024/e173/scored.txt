@@ -1,0 +1,203 @@
+# e173 採点出力（第 1 部 = 追加評価ゼロ / 第 2 部 = 200 -> 600 抽選）
+# 生成: PYTHONPATH=/tmp/pystub python3 analysis/mmo2024/e173/support.py / analyze.py
+
+############ 第 1 部: 台と検出集合の突き合わせ（13 問、追加評価ゼロ） ############
+
+=== M16-D10-PIN01  K=10  span=10  min optima gap=7.5820
+    null draws=200   RL descents=113 -> reported=100
+  eps=0.1  |S_null|= 6  |S_RL|= 7  (nn= 7)  extra=[7]  missing=[]  extra(dist,f): 7:(4.39e-12,2.97e-09)
+  eps=0.01  |S_null|= 6  |S_RL|= 7  (nn= 7)  extra=[7]  missing=[]  extra(dist,f): 7:(4.39e-12,2.97e-09)
+  eps=0.001  |S_null|= 6  |S_RL|= 7  (nn= 7)  extra=[7]  missing=[]  extra(dist,f): 7:(4.39e-12,2.97e-09)
+  eps=0.0001  |S_null|= 6  |S_RL|= 7  (nn= 7)  extra=[7]  missing=[]  extra(dist,f): 7:(4.39e-12,2.97e-09)
+  eps=1e-05  |S_null|= 6  |S_RL|= 7  (nn= 7)  extra=[7]  missing=[]  extra(dist,f): 7:(4.39e-12,2.97e-09)
+    dist: null median 1.658e-11 p95 3.253 | RL median 1.242e-11 p95 1.708 | 0.001*span=0.01  min_gap/2=3.791
+    mpr_sup(200 draws) = 0.6000   RL measured MPR = 0.7000   -> BREACHED
+
+=== M01-D10-PIN01  K=20  span=10  min optima gap=2.7424
+    null draws=200   RL descents=76 -> reported=76
+  eps=0.1  |S_null|=15  |S_RL|=16  (nn=16)  extra=[1, 7]  missing=[17]  extra(dist,f): 1:(0.0281,0.00326) 7:(3.45e-09,0)
+  eps=0.01  |S_null|=15  |S_RL|=16  (nn=16)  extra=[1, 7]  missing=[17]  extra(dist,f): 1:(0.0281,0.00326) 7:(3.45e-09,0)
+  eps=0.001  |S_null|=15  |S_RL|=14  (nn=14)  extra=[7]  missing=[17, 18]  extra(dist,f): 7:(3.45e-09,0)
+  eps=0.0001  |S_null|=14  |S_RL|=13  (nn=13)  extra=[7]  missing=[13, 17]  extra(dist,f): 7:(3.45e-09,0)
+  eps=1e-05  |S_null|=13  |S_RL|=13  (nn=13)  extra=[7]  missing=[17]  extra(dist,f): 7:(3.45e-09,0)
+    dist: null median 9.151e-09 p95 0.04134 | RL median 9.701e-09 p95 0.04425 | 0.001*span=0.01  min_gap/2=1.371
+    mpr_sup(200 draws) = 0.7200   RL measured MPR = 0.7200   -> tied/ok
+
+=== M13-D10-PIN01  K=10  span=10  min optima gap=6.3636
+    null draws=200   RL descents=113 -> reported=100
+  eps=0.1  |S_null|= 8  |S_RL|= 8  (nn= 8)  extra=[]  missing=[]
+  eps=0.01  |S_null|= 8  |S_RL|= 8  (nn= 8)  extra=[]  missing=[]
+  eps=0.001  |S_null|= 8  |S_RL|= 8  (nn= 8)  extra=[]  missing=[]
+  eps=0.0001  |S_null|= 8  |S_RL|= 8  (nn= 8)  extra=[]  missing=[]
+  eps=1e-05  |S_null|= 8  |S_RL|= 8  (nn= 8)  extra=[]  missing=[]
+    dist: null median 1.296e-11 p95 0.9406 | RL median 1.253e-11 p95 0.3599 | 0.001*span=0.01  min_gap/2=3.182
+    mpr_sup(200 draws) = 0.8000   RL measured MPR = 0.8000   -> tied/ok
+
+=== M14-D10-PIN01  K=10  span=10  min optima gap=7.2563
+    null draws=200   RL descents=130 -> reported=100
+  eps=0.1  |S_null|= 3  |S_RL|= 3  (nn= 3)  extra=[]  missing=[]
+  eps=0.01  |S_null|= 3  |S_RL|= 3  (nn= 3)  extra=[]  missing=[]
+  eps=0.001  |S_null|= 3  |S_RL|= 3  (nn= 3)  extra=[]  missing=[]
+  eps=0.0001  |S_null|= 3  |S_RL|= 3  (nn= 3)  extra=[]  missing=[]
+  eps=1e-05  |S_null|= 3  |S_RL|= 3  (nn= 3)  extra=[]  missing=[]
+    dist: null median 0.8419 p95 1.992 | RL median 0.6749 p95 1.488 | 0.001*span=0.01  min_gap/2=3.628
+    mpr_sup(200 draws) = 0.3000   RL measured MPR = 0.3000   -> tied/ok
+
+=== M02-D10-PIN01  K=20  span=10  min optima gap=2.6764
+    null draws=200   RL descents=53 -> reported=53
+  eps=0.1  |S_null|=12  |S_RL|=11  (nn=11)  extra=[7]  missing=[2, 17]  extra(dist,f): 7:(6.06e-05,2.96e-06)
+  eps=0.01  |S_null|=12  |S_RL|=11  (nn=11)  extra=[7]  missing=[2, 17]  extra(dist,f): 7:(6.06e-05,2.96e-06)
+  eps=0.001  |S_null|=12  |S_RL|=11  (nn=11)  extra=[7]  missing=[2, 17]  extra(dist,f): 7:(6.06e-05,2.96e-06)
+  eps=0.0001  |S_null|=12  |S_RL|=11  (nn=11)  extra=[7]  missing=[2, 17]  extra(dist,f): 7:(6.06e-05,2.96e-06)
+  eps=1e-05  |S_null|= 8  |S_RL|= 9  (nn= 9)  extra=[7]  missing=[]  extra(dist,f): 7:(6.06e-05,2.96e-06)
+    dist: null median 9.579e-08 p95 0.0001452 | RL median 7.267e-08 p95 0.0002052 | 0.001*span=0.01  min_gap/2=1.338
+    mpr_sup(200 draws) = 0.5600   RL measured MPR = 0.5300   -> tied/ok
+
+=== M03-D10-PIN01  K=20  span=10  min optima gap=2.8811
+    null draws=200   RL descents=45 -> reported=45
+  eps=0.1  |S_null|=14  |S_RL|=10  (nn=10)  extra=[]  missing=[5, 10, 11, 18]
+  eps=0.01  |S_null|=14  |S_RL|=10  (nn=10)  extra=[]  missing=[5, 10, 11, 18]
+  eps=0.001  |S_null|=14  |S_RL|=10  (nn=10)  extra=[]  missing=[5, 10, 11, 18]
+  eps=0.0001  |S_null|=14  |S_RL|=10  (nn=10)  extra=[]  missing=[5, 10, 11, 18]
+  eps=1e-05  |S_null|=12  |S_RL|= 9  (nn= 9)  extra=[]  missing=[5, 11, 18]
+    dist: null median 8.409e-08 p95 0.005847 | RL median 8.551e-08 p95 0.006625 | 0.001*span=0.01  min_gap/2=1.441
+    mpr_sup(200 draws) = 0.6800   RL measured MPR = 0.4900   -> tied/ok
+
+=== M04-D10-PIN01  K=20  span=10  min optima gap=2.7855
+    null draws=200   RL descents=114 -> reported=100
+  eps=0.1  |S_null|=15  |S_RL|=13  (nn=13)  extra=[]  missing=[7, 15]
+  eps=0.01  |S_null|=15  |S_RL|=13  (nn=13)  extra=[]  missing=[7, 15]
+  eps=0.001  |S_null|=15  |S_RL|=13  (nn=13)  extra=[]  missing=[7, 15]
+  eps=0.0001  |S_null|=15  |S_RL|=13  (nn=13)  extra=[]  missing=[7, 15]
+  eps=1e-05  |S_null|=15  |S_RL|=13  (nn=13)  extra=[]  missing=[7, 15]
+    dist: null median 7.34e-09 p95 2.498e-08 | RL median 7.566e-09 p95 1.709e-08 | 0.001*span=0.01  min_gap/2=1.393
+    mpr_sup(200 draws) = 0.7500   RL measured MPR = 0.6500   -> tied/ok
+
+=== M05-D10-PIN01  K=20  span=10  min optima gap=2.6619
+    null draws=200   RL descents=118 -> reported=100
+  eps=0.1  |S_null|=14  |S_RL|=13  (nn=13)  extra=[]  missing=[4]
+  eps=0.01  |S_null|=14  |S_RL|=13  (nn=13)  extra=[]  missing=[4]
+  eps=0.001  |S_null|=14  |S_RL|=13  (nn=13)  extra=[]  missing=[4]
+  eps=0.0001  |S_null|=14  |S_RL|=13  (nn=13)  extra=[]  missing=[4]
+  eps=1e-05  |S_null|=14  |S_RL|=13  (nn=13)  extra=[]  missing=[4]
+    dist: null median 1.24e-11 p95 0.3735 | RL median 1.108e-11 p95 2.056e-11 | 0.001*span=0.01  min_gap/2=1.331
+    mpr_sup(200 draws) = 0.7000   RL measured MPR = 0.6500   -> tied/ok
+
+=== M06-D10-PIN01  K=20  span=10  min optima gap=2.6880
+    null draws=200   RL descents=156 -> reported=100
+  eps=0.1  |S_null|= 9  |S_RL|= 8  (nn= 8)  extra=[4, 15]  missing=[2, 13, 14]  extra(dist,f): 4:(8.71e-09,7.11e-15) 15:(9.9e-09,0)
+  eps=0.01  |S_null|= 9  |S_RL|= 8  (nn= 8)  extra=[4, 15]  missing=[2, 13, 14]  extra(dist,f): 4:(8.71e-09,7.11e-15) 15:(9.9e-09,0)
+  eps=0.001  |S_null|= 9  |S_RL|= 8  (nn= 8)  extra=[4, 15]  missing=[2, 13, 14]  extra(dist,f): 4:(8.71e-09,7.11e-15) 15:(9.9e-09,0)
+  eps=0.0001  |S_null|= 9  |S_RL|= 8  (nn= 8)  extra=[4, 15]  missing=[2, 13, 14]  extra(dist,f): 4:(8.71e-09,7.11e-15) 15:(9.9e-09,0)
+  eps=1e-05  |S_null|= 9  |S_RL|= 8  (nn= 8)  extra=[4, 15]  missing=[2, 13, 14]  extra(dist,f): 4:(8.71e-09,7.11e-15) 15:(9.9e-09,0)
+    dist: null median 0.686 p95 1.202 | RL median 0.6728 p95 0.8429 | 0.001*span=0.01  min_gap/2=1.344
+    mpr_sup(200 draws) = 0.4500   RL measured MPR = 0.4000   -> tied/ok
+
+=== M07-D10-PIN01  K=20  span=10  min optima gap=2.9787
+    null draws=200   RL descents=113 -> reported=100
+  eps=0.1  |S_null|=12  |S_RL|= 9  (nn= 9)  extra=[]  missing=[10, 11, 14]
+  eps=0.01  |S_null|=12  |S_RL|= 9  (nn= 9)  extra=[]  missing=[10, 11, 14]
+  eps=0.001  |S_null|=12  |S_RL|= 9  (nn= 9)  extra=[]  missing=[10, 11, 14]
+  eps=0.0001  |S_null|=12  |S_RL|= 9  (nn= 9)  extra=[]  missing=[10, 11, 14]
+  eps=1e-05  |S_null|=12  |S_RL|= 8  (nn= 8)  extra=[]  missing=[2, 10, 11, 14]
+    dist: null median 5.879e-10 p95 3.333 | RL median 1.378e-11 p95 0.0007371 | 0.001*span=0.01  min_gap/2=1.489
+    mpr_sup(200 draws) = 0.6000   RL measured MPR = 0.4400   -> tied/ok
+
+=== M08-D10-PIN01  K=20  span=10  min optima gap=2.7546
+    null draws=200   RL descents=123 -> reported=100
+  eps=0.1  |S_null|=14  |S_RL|=13  (nn=13)  extra=[8]  missing=[11, 17]  extra(dist,f): 8:(1.03e-11,4.67e-09)
+  eps=0.01  |S_null|=14  |S_RL|=13  (nn=13)  extra=[8]  missing=[11, 17]  extra(dist,f): 8:(1.03e-11,4.67e-09)
+  eps=0.001  |S_null|=14  |S_RL|=13  (nn=13)  extra=[8]  missing=[11, 17]  extra(dist,f): 8:(1.03e-11,4.67e-09)
+  eps=0.0001  |S_null|=14  |S_RL|=13  (nn=13)  extra=[8]  missing=[11, 17]  extra(dist,f): 8:(1.03e-11,4.67e-09)
+  eps=1e-05  |S_null|=14  |S_RL|=13  (nn=13)  extra=[8]  missing=[11, 17]  extra(dist,f): 8:(1.03e-11,4.67e-09)
+    dist: null median 1.26e-11 p95 1.727 | RL median 1.132e-11 p95 0.9923 | 0.001*span=0.01  min_gap/2=1.377
+    mpr_sup(200 draws) = 0.7000   RL measured MPR = 0.6500   -> tied/ok
+
+=== M12-D10-PIN01  K=10  span=10  min optima gap=6.3709
+    null draws=200   RL descents=106 -> reported=100
+  eps=0.1  |S_null|= 9  |S_RL|= 8  (nn= 8)  extra=[]  missing=[7]
+  eps=0.01  |S_null|= 8  |S_RL|= 8  (nn= 8)  extra=[]  missing=[]
+  eps=0.001  |S_null|= 8  |S_RL|= 8  (nn= 8)  extra=[]  missing=[]
+  eps=0.0001  |S_null|= 8  |S_RL|= 8  (nn= 8)  extra=[]  missing=[]
+  eps=1e-05  |S_null|= 7  |S_RL|= 7  (nn= 7)  extra=[]  missing=[]
+    dist: null median 8.529e-09 p95 2.538e-05 | RL median 8.9e-09 p95 6.683e-06 | 0.001*span=0.01  min_gap/2=3.185
+    mpr_sup(200 draws) = 0.8000   RL measured MPR = 0.7800   -> tied/ok
+
+=== M15-D10-PIN01  K=10  span=10  min optima gap=6.3371
+    null draws=200   RL descents=119 -> reported=100
+  eps=0.1  |S_null|= 5  |S_RL|= 3  (nn= 3)  extra=[]  missing=[2, 5]
+  eps=0.01  |S_null|= 5  |S_RL|= 3  (nn= 3)  extra=[]  missing=[2, 5]
+  eps=0.001  |S_null|= 4  |S_RL|= 3  (nn= 3)  extra=[]  missing=[5]
+  eps=0.0001  |S_null|= 4  |S_RL|= 3  (nn= 3)  extra=[]  missing=[5]
+  eps=1e-05  |S_null|= 4  |S_RL|= 3  (nn= 3)  extra=[]  missing=[5]
+    dist: null median 1.171e-11 p95 4.883 | RL median 1.182e-11 p95 2.091e-06 | 0.001*span=0.01  min_gap/2=3.169
+    mpr_sup(200 draws) = 0.4400   RL measured MPR = 0.3000   -> tied/ok
+
+wrote /home/user/optimization/analysis/mmo2024/e173/support.csv
+
+=== M16-D10-PIN01 破れの内訳（追加評価ゼロ）
+  opt 7: null 200 抽選 —— 最近傍 16 本 / うち f<=1e-1 0 本
+          RL 100 報告点 —— 最近傍 7 本 / うち f<=1e-5 1 本
+          -> 盆地には入るが降下が収束しない。RL 側の当たり率 0.143 を真値とすると null が 16 本で 0 本になる確率 = 0.0849
+          -> 当たり率が両者で等しいという帰無の Fisher 的な検定（binom, RL の q）: p = 0.0849
+
+=== M01-D10-PIN01 破れの内訳（追加評価ゼロ）
+  opt 7: null 200 抽選 —— 最近傍 0 本 / うち f<=1e-1 0 本
+          RL 76 報告点 —— 最近傍 2 本 / うち f<=1e-5 2 本
+          -> 台にそもそも入っていない（稀な盆地）
+
+=== M13-D10-PIN01 破れの内訳（追加評価ゼロ）
+
+=== M14-D10-PIN01 破れの内訳（追加評価ゼロ）
+
+=== M02-D10-PIN01 破れの内訳（追加評価ゼロ）
+  opt 7: null 200 抽選 —— 最近傍 0 本 / うち f<=1e-1 0 本
+          RL 53 報告点 —— 最近傍 1 本 / うち f<=1e-5 1 本
+          -> 台にそもそも入っていない（稀な盆地）
+
+=== M03-D10-PIN01 破れの内訳（追加評価ゼロ）
+
+=== M04-D10-PIN01 破れの内訳（追加評価ゼロ）
+
+=== M05-D10-PIN01 破れの内訳（追加評価ゼロ）
+
+=== M06-D10-PIN01 破れの内訳（追加評価ゼロ）
+  opt 4: null 200 抽選 —— 最近傍 7 本 / うち f<=1e-1 0 本
+          RL 100 報告点 —— 最近傍 4 本 / うち f<=1e-5 1 本
+          -> 盆地には入るが降下が収束しない。RL 側の当たり率 0.250 を真値とすると null が 7 本で 0 本になる確率 = 0.1335
+          -> 当たり率が両者で等しいという帰無の Fisher 的な検定（binom, RL の q）: p = 0.1335
+  opt 15: null 200 抽選 —— 最近傍 0 本 / うち f<=1e-1 0 本
+          RL 100 報告点 —— 最近傍 1 本 / うち f<=1e-5 1 本
+          -> 台にそもそも入っていない（稀な盆地）
+
+=== M07-D10-PIN01 破れの内訳（追加評価ゼロ）
+
+=== M08-D10-PIN01 破れの内訳（追加評価ゼロ）
+  opt 8: null 200 抽選 —— 最近傍 0 本 / うち f<=1e-1 0 本
+          RL 100 報告点 —— 最近傍 2 本 / うち f<=1e-5 2 本
+          -> 台にそもそも入っていない（稀な盆地）
+
+=== M12-D10-PIN01 破れの内訳（追加評価ゼロ）
+
+=== M15-D10-PIN01 破れの内訳（追加評価ゼロ）
+
+############ 第 2 部: 200 -> 600 抽選（M01 / M13 / M16） ############
+      func          K          n       meas     mpr200     mpr400     mpr600     sup200     sup400     sup600    chao200    chao400    chao600      lo600      hi600    cost200    cost600     hit200     hit600   reach200   reach600
+M01-D10-PIN01         20        600     0.7200     0.5748     0.6004     0.5891     0.7200     0.8000     0.8600     0.7733     0.8067     0.9200     0.5509     0.6115  6832.1500  7100.5167     0.8450     0.8100         13         17
+M13-D10-PIN01         10        600     0.8000     0.7382     0.7845     0.7920     0.8000     0.9000     0.9000     0.8000     0.9000     0.9000     0.7371     0.8264  4531.9500  4481.4833     0.8450     0.8017          8          9
+M16-D10-PIN01         10        600     0.7000     0.5867     0.5718     0.5890     0.6000     0.6000     0.7000     0.6000     0.6000     0.7000     0.5420     0.6194  4412.3500  4458.7500     0.6300     0.6183          6          7
+
+M01-D10-PIN01: 台（f<=1e-1）  200 -> 0|2|3|5|8|9|10|11|12|13|14|15|16|17|18
+                600 -> 0|1|2|3|5|7|8|9|10|11|12|13|14|15|16|17|18|19
+   chao1_sup（その93）200 0.7733 -> 600 0.9200   200 の chao1 は 600 の plug-in 台 0.8600 を 覆わない
+   mpr_sup 0.7200 -> 0.8600 (+0.1400)   実測 MPR 0.7200   -> 破れは解消
+M13-D10-PIN01: 台（f<=1e-1）  200 -> 0|1|3|4|6|7|8|9
+                600 -> 0|1|2|3|4|6|7|8|9
+   chao1_sup（その93）200 0.8000 -> 600 0.9000   200 の chao1 は 600 の plug-in 台 0.9000 を 覆わない
+   mpr_sup 0.8000 -> 0.9000 (+0.1000)   実測 MPR 0.8000   -> 破れは解消
+M16-D10-PIN01: 台（f<=1e-1）  200 -> 0|1|3|5|6|8
+                600 -> 0|1|3|5|6|7|8
+   chao1_sup（その93）200 0.6000 -> 600 0.7000   200 の chao1 は 600 の plug-in 台 0.7000 を 覆わない
+   mpr_sup 0.6000 -> 0.7000 (+0.1000)   実測 MPR 0.7000   -> 破れは解消
+
+wrote /home/user/optimization/analysis/mmo2024/e173/ceiling600.csv

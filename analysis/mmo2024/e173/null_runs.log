@@ -1,0 +1,208 @@
+M01-D10-PIN01: dim 10, box [-5.0, 5.0], K = 20
+
+== geometric (Voronoi) null, 1000 uniform draws
+  opt 0: share 0.0700 +- 0.0158 (95% CI)
+  opt 1: share 0.0280 +- 0.0102 (95% CI)
+  opt 2: share 0.0230 +- 0.0093 (95% CI)
+  opt 3: share 0.0270 +- 0.0100 (95% CI)
+  opt 4: share 0.0110 +- 0.0065 (95% CI)
+  opt 5: share 0.0430 +- 0.0126 (95% CI)
+  opt 6: share 0.0000 +- 0.0000 (95% CI)
+  opt 7: share 0.0380 +- 0.0119 (95% CI)
+  opt 8: share 0.0610 +- 0.0148 (95% CI)
+  opt 9: share 0.0270 +- 0.0100 (95% CI)
+  opt 10: share 0.1020 +- 0.0188 (95% CI)
+  opt 11: share 0.1340 +- 0.0211 (95% CI)
+  opt 12: share 0.1240 +- 0.0204 (95% CI)
+  opt 13: share 0.0480 +- 0.0132 (95% CI)
+  opt 14: share 0.0500 +- 0.0135 (95% CI)
+  opt 15: share 0.0480 +- 0.0132 (95% CI)
+  opt 16: share 0.0730 +- 0.0161 (95% CI)
+  opt 17: share 0.0040 +- 0.0039 (95% CI)
+  opt 18: share 0.0730 +- 0.0161 (95% CI)
+  opt 19: share 0.0160 +- 0.0078 (95% CI)
+
+== descent null: 200 draws, 12500 evals each, sigma0 = 1.0, isotropic
+  200 descents in 495.1s
+  rows written to analysis/mmo2024/e173/null/M01-D10-PIN01_s200_rl.csv
+  opt 0: share 0.0250 +- 0.0216  (geo 0.0700)
+  opt 1: share 0.0050 +- 0.0098  (geo 0.0280)
+  opt 2: share 0.0050 +- 0.0098  (geo 0.0230)
+  opt 3: share 0.1400 +- 0.0481  (geo 0.0270)
+  opt 4: share 0.0000 +- 0.0000  (geo 0.0110)
+  opt 5: share 0.1200 +- 0.0450  (geo 0.0430)
+  opt 6: share 0.0000 +- 0.0000  (geo 0.0000)
+  opt 7: share 0.0100 +- 0.0138  (geo 0.0380)
+  opt 8: share 0.0400 +- 0.0272  (geo 0.0610)
+  opt 9: share 0.0200 +- 0.0194  (geo 0.0270)
+  opt 10: share 0.0150 +- 0.0168  (geo 0.1020)
+  opt 11: share 0.0800 +- 0.0376  (geo 0.1340)
+  opt 12: share 0.1450 +- 0.0488  (geo 0.1240)
+  opt 13: share 0.1300 +- 0.0466  (geo 0.0480)
+  opt 14: share 0.0750 +- 0.0365  (geo 0.0500)
+  opt 15: share 0.0450 +- 0.0287  (geo 0.0480)
+  opt 16: share 0.1250 +- 0.0458  (geo 0.0730)
+  opt 17: share 0.0000 +- 0.0000  (geo 0.0040)
+  opt 18: share 0.0200 +- 0.0194  (geo 0.0730)
+  opt 19: share 0.0000 +- 0.0000  (geo 0.0160)
+  descent endpoint: median dist 0.0000, median f 1.421e-14, frac f <= 0.1 1.000
+M01-D10-PIN01: dim 10, box [-5.0, 5.0], K = 20
+
+== geometric (Voronoi) null, 1000 uniform draws
+  opt 0: share 0.0700 +- 0.0158 (95% CI)
+  opt 1: share 0.0280 +- 0.0102 (95% CI)
+  opt 2: share 0.0230 +- 0.0093 (95% CI)
+  opt 3: share 0.0270 +- 0.0100 (95% CI)
+  opt 4: share 0.0110 +- 0.0065 (95% CI)
+  opt 5: share 0.0430 +- 0.0126 (95% CI)
+  opt 6: share 0.0000 +- 0.0000 (95% CI)
+  opt 7: share 0.0380 +- 0.0119 (95% CI)
+  opt 8: share 0.0610 +- 0.0148 (95% CI)
+  opt 9: share 0.0270 +- 0.0100 (95% CI)
+  opt 10: share 0.1020 +- 0.0188 (95% CI)
+  opt 11: share 0.1340 +- 0.0211 (95% CI)
+  opt 12: share 0.1240 +- 0.0204 (95% CI)
+  opt 13: share 0.0480 +- 0.0132 (95% CI)
+  opt 14: share 0.0500 +- 0.0135 (95% CI)
+  opt 15: share 0.0480 +- 0.0132 (95% CI)
+  opt 16: share 0.0730 +- 0.0161 (95% CI)
+  opt 17: share 0.0040 +- 0.0039 (95% CI)
+  opt 18: share 0.0730 +- 0.0161 (95% CI)
+  opt 19: share 0.0160 +- 0.0078 (95% CI)
+
+== descent null: 200 draws, 12500 evals each, sigma0 = 1.0, isotropic
+  200 descents in 491.3s
+  rows written to analysis/mmo2024/e173/null/M01-D10-PIN01_s400_rl.csv
+  opt 0: share 0.0400 +- 0.0272  (geo 0.0700)
+  opt 1: share 0.0000 +- 0.0000  (geo 0.0280)
+  opt 2: share 0.0000 +- 0.0000  (geo 0.0230)
+  opt 3: share 0.1400 +- 0.0481  (geo 0.0270)
+  opt 4: share 0.0000 +- 0.0000  (geo 0.0110)
+  opt 5: share 0.1300 +- 0.0466  (geo 0.0430)
+  opt 6: share 0.0000 +- 0.0000  (geo 0.0000)
+  opt 7: share 0.0050 +- 0.0098  (geo 0.0380)
+  opt 8: share 0.0200 +- 0.0194  (geo 0.0610)
+  opt 9: share 0.0200 +- 0.0194  (geo 0.0270)
+  opt 10: share 0.0000 +- 0.0000  (geo 0.1020)
+  opt 11: share 0.0750 +- 0.0365  (geo 0.1340)
+  opt 12: share 0.1650 +- 0.0514  (geo 0.1240)
+  opt 13: share 0.1250 +- 0.0458  (geo 0.0480)
+  opt 14: share 0.0700 +- 0.0354  (geo 0.0500)
+  opt 15: share 0.0300 +- 0.0236  (geo 0.0480)
+  opt 16: share 0.1600 +- 0.0508  (geo 0.0730)
+  opt 17: share 0.0000 +- 0.0000  (geo 0.0040)
+  opt 18: share 0.0150 +- 0.0168  (geo 0.0730)
+  opt 19: share 0.0050 +- 0.0098  (geo 0.0160)
+  descent endpoint: median dist 0.0000, median f 1.421e-14, frac f <= 0.1 1.000
+M13-D10-PIN01: dim 10, box [-5.0, 5.0], K = 10
+
+== geometric (Voronoi) null, 1000 uniform draws
+  opt 0: share 0.1240 +- 0.0204 (95% CI)
+  opt 1: share 0.1760 +- 0.0236 (95% CI)
+  opt 2: share 0.1080 +- 0.0192 (95% CI)
+  opt 3: share 0.0460 +- 0.0130 (95% CI)
+  opt 4: share 0.1260 +- 0.0206 (95% CI)
+  opt 5: share 0.0400 +- 0.0121 (95% CI)
+  opt 6: share 0.0910 +- 0.0178 (95% CI)
+  opt 7: share 0.1200 +- 0.0201 (95% CI)
+  opt 8: share 0.0170 +- 0.0080 (95% CI)
+  opt 9: share 0.1520 +- 0.0223 (95% CI)
+
+== descent null: 200 draws, 12500 evals each, sigma0 = 1.0, isotropic
+  200 descents in 282.8s
+  rows written to analysis/mmo2024/e173/null/M13-D10-PIN01_s200_rl.csv
+  opt 0: share 0.0650 +- 0.0342  (geo 0.1240)
+  opt 1: share 0.2150 +- 0.0569  (geo 0.1760)
+  opt 2: share 0.0150 +- 0.0168  (geo 0.1080)
+  opt 3: share 0.0650 +- 0.0342  (geo 0.0460)
+  opt 4: share 0.1350 +- 0.0474  (geo 0.1260)
+  opt 5: share 0.0000 +- 0.0000  (geo 0.0400)
+  opt 6: share 0.1900 +- 0.0544  (geo 0.0910)
+  opt 7: share 0.2150 +- 0.0569  (geo 0.1200)
+  opt 8: share 0.0150 +- 0.0168  (geo 0.0170)
+  opt 9: share 0.0850 +- 0.0387  (geo 0.1520)
+  descent endpoint: median dist 0.0000, median f 6.744e-11, frac f <= 0.1 0.755
+M13-D10-PIN01: dim 10, box [-5.0, 5.0], K = 10
+
+== geometric (Voronoi) null, 1000 uniform draws
+  opt 0: share 0.1240 +- 0.0204 (95% CI)
+  opt 1: share 0.1760 +- 0.0236 (95% CI)
+  opt 2: share 0.1080 +- 0.0192 (95% CI)
+  opt 3: share 0.0460 +- 0.0130 (95% CI)
+  opt 4: share 0.1260 +- 0.0206 (95% CI)
+  opt 5: share 0.0400 +- 0.0121 (95% CI)
+  opt 6: share 0.0910 +- 0.0178 (95% CI)
+  opt 7: share 0.1200 +- 0.0201 (95% CI)
+  opt 8: share 0.0170 +- 0.0080 (95% CI)
+  opt 9: share 0.1520 +- 0.0223 (95% CI)
+
+== descent null: 200 draws, 12500 evals each, sigma0 = 1.0, isotropic
+  200 descents in 278.0s
+  rows written to analysis/mmo2024/e173/null/M13-D10-PIN01_s400_rl.csv
+  opt 0: share 0.0600 +- 0.0329  (geo 0.1240)
+  opt 1: share 0.2350 +- 0.0588  (geo 0.1760)
+  opt 2: share 0.0100 +- 0.0138  (geo 0.1080)
+  opt 3: share 0.0650 +- 0.0342  (geo 0.0460)
+  opt 4: share 0.1100 +- 0.0434  (geo 0.1260)
+  opt 5: share 0.0050 +- 0.0098  (geo 0.0400)
+  opt 6: share 0.2050 +- 0.0560  (geo 0.0910)
+  opt 7: share 0.2300 +- 0.0583  (geo 0.1200)
+  opt 8: share 0.0100 +- 0.0138  (geo 0.0170)
+  opt 9: share 0.0700 +- 0.0354  (geo 0.1520)
+  descent endpoint: median dist 0.0000, median f 6.176e-11, frac f <= 0.1 0.805
+M16-D10-PIN01: dim 10, box [-5.0, 5.0], K = 10
+
+== geometric (Voronoi) null, 1000 uniform draws
+  opt 0: share 0.2260 +- 0.0259 (95% CI)
+  opt 1: share 0.0110 +- 0.0065 (95% CI)
+  opt 2: share 0.0500 +- 0.0135 (95% CI)
+  opt 3: share 0.0660 +- 0.0154 (95% CI)
+  opt 4: share 0.1220 +- 0.0203 (95% CI)
+  opt 5: share 0.1120 +- 0.0195 (95% CI)
+  opt 6: share 0.0450 +- 0.0128 (95% CI)
+  opt 7: share 0.1540 +- 0.0224 (95% CI)
+  opt 8: share 0.0590 +- 0.0146 (95% CI)
+  opt 9: share 0.1550 +- 0.0224 (95% CI)
+
+== descent null: 200 draws, 12500 evals each, sigma0 = 1.0, isotropic
+  200 descents in 323.4s
+  rows written to analysis/mmo2024/e173/null/M16-D10-PIN01_s200_rl.csv
+  opt 0: share 0.3400 +- 0.0657  (geo 0.2260)
+  opt 1: share 0.0050 +- 0.0098  (geo 0.0110)
+  opt 2: share 0.0250 +- 0.0216  (geo 0.0500)
+  opt 3: share 0.1800 +- 0.0532  (geo 0.0660)
+  opt 4: share 0.0150 +- 0.0168  (geo 0.1220)
+  opt 5: share 0.1400 +- 0.0481  (geo 0.1120)
+  opt 6: share 0.1200 +- 0.0450  (geo 0.0450)
+  opt 7: share 0.0550 +- 0.0316  (geo 0.1540)
+  opt 8: share 0.1000 +- 0.0416  (geo 0.0590)
+  opt 9: share 0.0200 +- 0.0194  (geo 0.1550)
+  descent endpoint: median dist 0.0000, median f 7.045e-09, frac f <= 0.1 0.635
+M16-D10-PIN01: dim 10, box [-5.0, 5.0], K = 10
+
+== geometric (Voronoi) null, 1000 uniform draws
+  opt 0: share 0.2260 +- 0.0259 (95% CI)
+  opt 1: share 0.0110 +- 0.0065 (95% CI)
+  opt 2: share 0.0500 +- 0.0135 (95% CI)
+  opt 3: share 0.0660 +- 0.0154 (95% CI)
+  opt 4: share 0.1220 +- 0.0203 (95% CI)
+  opt 5: share 0.1120 +- 0.0195 (95% CI)
+  opt 6: share 0.0450 +- 0.0128 (95% CI)
+  opt 7: share 0.1540 +- 0.0224 (95% CI)
+  opt 8: share 0.0590 +- 0.0146 (95% CI)
+  opt 9: share 0.1550 +- 0.0224 (95% CI)
+
+== descent null: 200 draws, 12500 evals each, sigma0 = 1.0, isotropic
+  200 descents in 341.2s
+  rows written to analysis/mmo2024/e173/null/M16-D10-PIN01_s400_rl.csv
+  opt 0: share 0.2950 +- 0.0632  (geo 0.2260)
+  opt 1: share 0.0150 +- 0.0168  (geo 0.0110)
+  opt 2: share 0.0250 +- 0.0216  (geo 0.0500)
+  opt 3: share 0.1450 +- 0.0488  (geo 0.0660)
+  opt 4: share 0.0250 +- 0.0216  (geo 0.1220)
+  opt 5: share 0.1900 +- 0.0544  (geo 0.1120)
+  opt 6: share 0.1050 +- 0.0425  (geo 0.0450)
+  opt 7: share 0.1100 +- 0.0434  (geo 0.1540)
+  opt 8: share 0.0750 +- 0.0365  (geo 0.0590)
+  opt 9: share 0.0150 +- 0.0168  (geo 0.1550)
+  descent endpoint: median dist 0.0000, median f 7.069e-09, frac f <= 0.1 0.590

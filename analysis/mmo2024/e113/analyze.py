@@ -52,7 +52,18 @@ def coverage(rows, k, n=None, fcol="best_f"):
 
 
 def k_of(problem):
-    """by_problem の集計 CSV から K を引く（e113 が無ければ e110）。"""
+    """by_problem の集計から K を引く（e113 が無ければ e110）。
+
+    【2026-09-26 その173】`e113/by_problem/` の 16 ファイルは 1 本
+    (`by_problem_e113.csv`、16 行、`function` 列で引く) に畳んだ ——
+    値は 1 つも変えていない（CLAUDE.md の「per-problem を残さない」）。
+    """
+    folded = os.path.join(MMO, "e113", "by_problem_e113.csv")
+    if os.path.exists(folded):
+        with open(folded) as fh:
+            for row in csv.DictReader(fh):
+                if row["function"] == problem:
+                    return int(row["n_optima"])
     for exp in ("e113", "e110"):
         p = os.path.join(MMO, exp, "by_problem", f"{problem}.csv")
         if os.path.exists(p):
