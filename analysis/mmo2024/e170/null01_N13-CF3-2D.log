@@ -1,0 +1,11 @@
+N13-CF3-2D: dim 2, box [-5.0, 5.0], K = 6
+
+== geometric (Voronoi) null, 1000 uniform draws
+  opt 0: share 0.1340 +- 0.0211 (95% CI)
+  opt 1: share 0.1210 +- 0.0202 (95% CI)
+  opt 2: share 0.2420 +- 0.0265 (95% CI)
+  opt 3: share 0.1760 +- 0.0236 (95% CI)
+  opt 4: share 0.2130 +- 0.0254 (95% CI)
+  opt 5: share 0.1140 +- 0.0197 (95% CI)
+
+== descent null: 2000 draws, 12500 evals each, sigma0 = 1.0, isotropic

@@ -1,0 +1,20 @@
+N13-CF3-2D: dim 2, box [-5.0, 5.0], K = 6
+
+== geometric (Voronoi) null, 200000 uniform draws
+  opt 0: share 0.1380 +- 0.0015 (95% CI)
+  opt 1: share 0.1333 +- 0.0015 (95% CI)
+  opt 2: share 0.2238 +- 0.0018 (95% CI)
+  opt 3: share 0.1916 +- 0.0017 (95% CI)
+  opt 4: share 0.2043 +- 0.0018 (95% CI)
+  opt 5: share 0.1090 +- 0.0014 (95% CI)
+
+== descent null: 2000 draws, 1499 evals each, sigma0 = 2.0, isotropic
+  2000 descents in 224.6s
+  rows written to analysis/mmo2024/e170/null/N13-CF3-2D_iso.csv.gz
+  opt 0: share 0.2205 +- 0.0182  (geo 0.1380)
+  opt 1: share 0.0900 +- 0.0125  (geo 0.1333)
+  opt 2: share 0.0055 +- 0.0032  (geo 0.2238)
+  opt 3: share 0.0000 +- 0.0000  (geo 0.1916)
+  opt 4: share 0.5230 +- 0.0219  (geo 0.2043)
+  opt 5: share 0.1610 +- 0.0161  (geo 0.1090)
+  descent endpoint: median dist 0.0000, median f 0, frac f <= 0.1 0.918
