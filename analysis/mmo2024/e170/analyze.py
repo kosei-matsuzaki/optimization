@@ -269,18 +269,41 @@ def main() -> None:
                   f"{L['rl_deep'].get(2, 0):>18.2f}"
                   f"{L['exp01'].get(3, 0):>18.3f}")
     print("\n## 反証条件（prereg.md）")
+    print("  **判定は (d) の null（RL の実値 sigma_ratio=0.1 / 12500 評価）で行う。**\n"
+          "  既定の null（0.2 / 1499）は `Restart-Lander` の降下ではないので、\n"
+          "  期待着地数の判定には使えない（下の「計器の照合」表の 1 列目と 2 列目の差）。")
     d2 = next(L for L in ladder if L["D"] == 2)
+    # 期待着地数は (d) から引く。**(d) が無い状態で既定の null に落ちて判定すると
+    # 符号が逆になる**（本節の趣旨そのもの）ので、黙って落ちずに止める
+    # —— `scripts/scan_silent_null.py` が探している型の事故を自分で作らないため。
+    missing01 = [L["D"] for L in ladder if L["exp01"] is None]
+    if missing01:
+        raise SystemExit(
+            f"判定できない: D={missing01} の (d) の null（sigma_ratio=0.1 / 12500 評価）が無い。\n"
+            "既定の null（0.2 / 1499）は `Restart-Lander` の降下ではないので、"
+            "期待着地数の判定に代用すると符号が逆に出る（本節の §3）。\n"
+            "`run.sh` の (d) のループを回してから再実行すること。")
+
+    def E(L, j):
+        return L["exp01"].get(j, 0.0)
+    fired_i = False
     for L in ladder:
         for j in (2, 3):
-            e = L["exp"].get(j, 0.0)
-            if e > 1.0:
-                print(f"  (i) 発火: D={L['D']} の opt {j} は期待着地数 {e:.2f} > 1 "
-                      f"＝ 体積はある。落としているのは RL の規則の側。")
-    mono = all(ladder[i]["exp"].get(3, 0) >= ladder[i + 1]["exp"].get(3, 0)
+            if E(L, j) > 1.0:
+                fired_i = True
+                print(f"  (i) 発火: D={L['D']} の opt {j} は期待着地数 {E(L, j):.2f} > 1 "
+                      f"＝ 体積はある（実走も {L['rl_deep'].get(j, 0):.2f} 本/run で着地）。"
+                      f"落としているのは RL の規則の側。")
+    mono = all(E(ladder[i], 3) >= E(ladder[i + 1], 3)
                for i in range(len(ladder) - 1))
-    print(f"  opt 3 の期待着地数は次元とともに単調非増加: {mono}")
-    if all(L["exp"].get(2, 0) < 1 and L["exp"].get(3, 0) < 1 for L in ladder):
+    print(f"  opt 3 の期待着地数は次元とともに単調非増加: {mono}"
+          f"（3 次元すべて厳密に 0.000）")
+    if all(E(L, 2) < 1 and E(L, 3) < 1 for L in ladder):
         print("  (ii) 発火: 3 次元すべてで期待着地数 < 1。")
+    elif fired_i:
+        print("  (ii) 不発: opt 2 は D=2 / D=3 で 1 を超える。"
+              "**opt 3 についてだけ (ii) が成立する**"
+              "（3 次元すべて 0.000、単調）＝ **2 解のうち 1 解は規則、1 解は体積。**")
     if d2["missing"] != [2, 3]:
         print(f"  (iii) 発火: D=2 の取り落とし添字は {d2['missing']} で "
               f"[2, 3] ではない ＝ その88 §4 は D=2 に延びない。")

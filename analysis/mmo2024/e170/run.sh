@@ -13,7 +13,7 @@ for F in $FUNCS; do
   RESTART_LANDER_DUMP=$OUT/rl_descents/$F \
   REPORT_SET_DUMP=$OUT/rl_reports/$F \
   python3 scripts/niching_baseline.py --funcs $F --methods Restart-Lander \
-    --seeds 3 --evals-frac 1.0 --csv $OUT/rl_$F.csv > $OUT/rl_$F.log 2>&1 &
+    --seeds 3 --evals-frac 1.0 --csv $OUT/rl_$F.csv > $OUT/rl_$F.log 2>&1 &   # 後で baseline_all.csv / run_all.log に畳む
 done
 wait
 echo "=== (a) done: $(find $OUT/rl_descents -type f | wc -l) descent dumps ==="
