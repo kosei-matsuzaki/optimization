@@ -59,6 +59,13 @@ def load(func: str, tag: str):
     （その128〜その131・その170 と同じ手順）。
     """
     folded = HERE / f"null_{tag}.csv.gz"
+    if not folded.exists() and not (HERE / "null").is_dir():
+        raise SystemExit(
+            "e171 の行単位ダンプ（null_base.csv.gz / null_rl.csv.gz）は その174 の統合が削除した"
+            " —— 上限表を引き直す軸は その171〜その173 で閉じた。\n"
+            "  この script が刷っていた数値は docs/acceptance_topology.md の その171 の節と"
+            " 同ディレクトリの ceiling_rl.csv / scored.txt に全部ある。経緯は DUMPS_REMOVED.md。\n"
+            "  再測定は同ディレクトリの run.sh（抽選の種は 1_000_000 + k 固定なのでビット再現する）。")
     if folded.exists():
         if tag not in _FOLD:
             _FOLD[tag] = _read(folded)

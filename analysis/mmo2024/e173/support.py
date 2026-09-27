@@ -38,7 +38,15 @@ def read_gz(p: Path) -> list[dict]:
 
 
 def null_rows(func: str) -> list[dict]:
-    rows = read_gz(HERE.parent / "e172" / "null_rl.csv.gz")
+    src = HERE.parent / "e172" / "null_rl.csv.gz"
+    if not src.exists():
+        raise SystemExit(
+            "e172/null_rl.csv.gz は その174 の統合が削除した"
+            " —— 上限表を引き直す軸は その171〜その173 で閉じた。\n"
+            "  この script が刷っていた数値は docs/acceptance_topology.md の その173 の節と"
+            " 同ディレクトリの support.csv / support.txt に全部ある。経緯は DUMPS_REMOVED.md。\n"
+            "  再測定は e172/run.sh（200 抽選、種は 1_000_000 + k 固定）。")
+    rows = read_gz(src)
     return [r for r in rows if r["function"] == func]
 
 

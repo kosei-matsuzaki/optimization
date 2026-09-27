@@ -40,8 +40,16 @@ def read_gz(p: Path) -> list[dict]:
 
 def rows_for(func: str) -> list[dict]:
     """draws 0-199（e172）＋ 200-599（この回）。draw 列で重複と欠けを検査する。"""
-    out = [r for r in read_gz(HERE.parent / "e172" / "null_rl.csv.gz")
-           if r["function"] == func]
+    src200 = HERE.parent / "e172" / "null_rl.csv.gz"
+    if not src200.exists():
+        raise SystemExit(
+            "e172/null_rl.csv.gz と e173/null_topup.csv.gz は その174 の統合が削除した"
+            " —— 上限表を引き直す軸は その171〜その173 で閉じた。\n"
+            "  この script が刷っていた数値は docs/acceptance_topology.md の その173 の節と"
+            " 同ディレクトリの ceiling600.csv / support.csv / scored.txt / support.txt に全部ある。"
+            " 経緯は DUMPS_REMOVED.md。\n"
+            "  再測定は e172/run.sh（200 抽選）＋ e173/run.sh（400 本の上積み）。種は 1_000_000 + k 固定。")
+    out = [r for r in read_gz(src200) if r["function"] == func]
     folded = HERE / "null_topup.csv.gz"
     if folded.exists():
         out += [r for r in read_gz(folded) if r["function"] == func]

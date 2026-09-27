@@ -84,12 +84,11 @@ def load_runs():
             continue
         p, d, pin = fn.split("_")[0].split("-")
         runs[(int(d[1:]), pin, p)].extend(_rows(os.path.join(dd, fn)))
-    bp = os.path.join(MMO, "e115", "by_problem")
-    for fn in sorted(os.listdir(bp)):
-        if not fn.endswith(".csv"):
-            continue
-        p, d, pin = fn[:-4].split("-")
-        K[(int(d[1:]), pin, p)] = int(_rows(os.path.join(bp, fn))[0]["n_optima"])
+    # その174 の統合で `e115/by_problem/` の 16 ファイルを `by_problem_e115.csv` 1 本に畳んだ
+    # （値は 1 つも変わっていない。畳む前後でこの script の出力がバイト一致することを確認済み）。
+    for r in _rows(os.path.join(MMO, "e115", "by_problem_e115.csv")):
+        p, d, pin = r["function"].split("-")
+        K[(int(d[1:]), pin, p)] = int(r["n_optima"])
 
     # D=20 PIN01（e151）
     for r in _rows(os.path.join(MMO, "e151", "descents.csv.gz")):

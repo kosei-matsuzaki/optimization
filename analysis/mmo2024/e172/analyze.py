@@ -8,7 +8,8 @@
 推定量は **e92 の `ceiling()` を import**（MPR = 1e-1..1e-5 の 5 水準平均）。新しい推定量は書かない。
 照合する量は 3 つ:
   * **公表最良 0.651**（D=10 の RR-CMA-ES の MPR。16 問平均しか存在しない ＝ その92 §6）
-  * **`Restart-Lander` の実測 MPR**（`e115/by_problem/`、seed 0、rule=current）。
+  * **`Restart-Lander` の実測 MPR**（`e115/by_problem_e115.csv`、seed 0、rule=current。
+    **その174 の統合で `e115/by_problem/` の 16 ファイルを 1 本に畳んだ。値は不変**）。
     上限はクラスの一員の実測を下回れない ＝ **整合性検査**（その151 が D=20 で見つけた壊れ方）。
   * **凍結表の σ=0.2 の上限**（対の相手）。
 
@@ -45,6 +46,13 @@ def _read(src: Path) -> list[dict]:
 def load_rl(func: str):
     """畳んだ 1 本（`fold.py` の出力）を優先し、無ければ per-function のダンプを読む。"""
     folded = HERE / "null_rl.csv.gz"
+    if not folded.exists() and not (HERE / "null").is_dir():
+        raise SystemExit(
+            "e172 の行単位ダンプ（null_rl.csv.gz）は その174 の統合が削除した"
+            " —— 上限表を引き直す軸は その171〜その173 で閉じた。\n"
+            "  この script が刷っていた数値は docs/acceptance_topology.md の その172 の節と"
+            " 同ディレクトリの ceiling_sigma_rl.csv / scored.txt に全部ある。経緯は DUMPS_REMOVED.md。\n"
+            "  再測定は同ディレクトリの run.sh（抽選の種は 1_000_000 + k 固定なのでビット再現する）。")
     if folded.exists():
         if "rl" not in _FOLD:
             _FOLD["rl"] = _read(folded)
@@ -71,11 +79,11 @@ def base_table() -> dict[str, dict]:
 
 def measured() -> dict[str, float]:
     """`Restart-Lander` の実測 MPR（e115、seed 0、rule=current）。"""
+    # その174 の統合で `e115/by_problem/` の 16 ファイルを 1 本に畳んだ。
+    # 値は 1 つも変わっていない（畳む前後でこの script の出力がバイト一致することを確認済み）。
     out = {}
-    for f in sorted((HERE.parent / "e115" / "by_problem").glob("*.csv")):
-        for r in csv.DictReader(open(f)):
-            out[r["function"]] = statistics.mean(
-                float(r[c]) for c in EPS_COLS)
+    for r in csv.DictReader(open(HERE.parent / "e115" / "by_problem_e115.csv")):
+        out[r["function"]] = statistics.mean(float(r[c]) for c in EPS_COLS)
     return out
 
 

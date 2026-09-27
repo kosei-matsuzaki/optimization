@@ -49,11 +49,21 @@ def read_dump(path):
     return f, opt, xs
 
 
-def problem_K(bp_dir, prob):
-    """by_problem の集計 CSV から K を読む（採点のためだけに使う）。"""
-    with open(os.path.join(bp_dir, f"{prob}.csv")) as fh:
-        row = next(csv.DictReader(fh))
-    return int(row["n_optima"])
+def problem_K(bp, prob):
+    """問題別の集計から K を読む（採点のためだけに使う）。
+
+    その174 の統合で `e115/by_problem/` の 16 ファイルを `by_problem_e115.csv` 1 本に
+    畳んだので、`bp` はディレクトリでも 1 本の CSV でも受ける（`e110` / `e111` 側は
+    畳んでいないのでディレクトリのまま）。値は 1 つも変わっていない。
+    """
+    if os.path.isdir(bp):
+        with open(os.path.join(bp, f"{prob}.csv")) as fh:
+            return int(next(csv.DictReader(fh))["n_optima"])
+    with open(bp) as fh:
+        for row in csv.DictReader(fh):
+            if row["function"] == prob:
+                return int(row["n_optima"])
+    raise SystemExit(f"{prob} の行が {bp} に無い")
 
 
 # (降下ダンプのディレクトリ, by_problem のディレクトリ, seed 番号)
@@ -61,8 +71,8 @@ SRC_PLAIN = [(os.path.join(MMO, "e110", "descents"), os.path.join(MMO, "e110", "
              (os.path.join(MMO, "e111", "descents"), os.path.join(MMO, "e111", "by_problem"), 1)]
 # seed 1 側（`s1/descents` / `s1/by_problem`）は その168 が削除した（`e115/S1_REMOVED.md`）。
 # 定義は残す —— この 2 本が無いことを上の guard が名前で報告するため。
-SRC_COORD = [(os.path.join(HERE, "descents"), os.path.join(HERE, "by_problem"), 0),
-             (os.path.join(HERE, "s1", "descents"), os.path.join(HERE, "s1", "by_problem"), 1)]
+SRC_COORD = [(os.path.join(HERE, "descents"), os.path.join(HERE, "by_problem_e115.csv"), 0),
+             (os.path.join(HERE, "s1", "descents"), os.path.join(HERE, "s1", "by_problem_s1.csv"), 1)]
 
 
 def load_runs(with_coords=False):
