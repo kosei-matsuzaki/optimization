@@ -267,7 +267,7 @@ BBOB がカバーしない **多大域最適解**・**deceptive 2-D 多峰** 系
 `external/mmo2024/docs/` に置いてある。**`requirements.txt` の依存ではなく vendored なコード**で、
 取得経路は `.github/workflows/run.yml` の `mode: fetch_refs`（配布元の Google Drive はサンドボックスから
 到達できない）。到達水準は [related_work.md](related_work.md)、測定は
-[acceptance_topology.md のその91 の節](acceptance_topology.md#gecco20242025-の新-suite-が入った--仕様の-3-点は確定d10-のクラス上限は-16-問中-15-問で公表最良の下m13-だけが上その91-analysismmo2024e91-externalmmo2024)。
+[acceptance_topology.md のその91 の節](acceptance_topology.md#gecco20242025-の新-suite-が入った--仕様の-3-点は確定d10-の被覆の下界推定は-16-問中-15-問で公表最良の下m13-だけが上その91-analysismmo2024e91-externalmmo2024)。
 
 | 項目 | 値 |
 |---|---|
