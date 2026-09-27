@@ -106,6 +106,7 @@ MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマー�
 ### 評価範囲・実行コマンドの基準（判定は quick n=20 / eval=5000 で統一）
 
 - **手法の検証・評価はすべて `./run.sh quick --all --n-runs 20 --max-evals 5000` で行う**（quick のデフォルトが n_runs=20 / max_evals=5000 なので `--all` だけで可）。`--all` は **2 次元 BBOB-24（F01-F24）のみ**を回す。quick-12 サブセットでの判定は不可。
+- **5 次元・10 次元の BBOB-24 も併記する**（`--all --dim 5 --max-evals 12500` / `--all --dim 10 --max-evals 25000`、予算は `2500×D`）。判定の主対象は 2D のままで、**2D の SR@1e-10 を下げる変更は高次元で上がっても採用しない**（2026-09-27 のユーザー決定）。
 - **Custom ベンチ（C01-C11）を確認したい場合のみ `--all --custom` を使う**（多峰・多解など特定目的の参照用。判定の採否は原則 BBOB-24 で決める）。Custom 単独は `--funcs C01,C02,...` で選択できる。
 - **GitHub Actions の `./run.sh trigger`（n=100）は裏で補助的に回す実験であり、手法の検証・評価では参照しない。** 評価の根拠は常に上記 quick n=20 の結果とする。
 - 結果は `results/YYYYMMDD_HHMMSS_<label>_quick/dim{N}/{summary,wilcoxon}.csv` から 3 指標を集計して報告する。
