@@ -6,7 +6,9 @@
 
 入力の出自:
 
-  * **NMMSO D=5 / D=20** -> `e175/dumps/<DIM>/M??-<DIM>-PIN01_NMMSO_seed0.csv.gz`
+  * **NMMSO D=5** -> `e175/report_sets_D05.csv.gz`（この回の新規 run を畳んだもの）
+  * **NMMSO D=20** -> **`e176/report_sets_D20.csv.gz`**（**その176 が 16 問に埋めたので一本化した。
+    この回が回した M09 / M10 の 12 行はそちらに含まれる**）
     （この回の新規 run。報告集合ダンプ ＝ `f` ＋ 座標、上限なし。`land_opt` は持たないので
     その139 と同じ最近傍帰属 `attribute()` で付ける）
   * **`Restart-Lander` D=5**  -> `e153/descents.csv.gz`（保存物、PIN01 seed 0。**追加評価ゼロ**）
@@ -101,6 +103,10 @@ def read_nmmso(dim):
         if res:
             return res
     folded = os.path.join(HERE, f"report_sets_{dim}.csv.gz")
+    if not os.path.exists(folded) and dim == "D20":
+        # **その176 が D=20 を 16 問に埋めたので、この回の 2 問ぶんは消して e176 の 1 本に一本化した**
+        # （消す前に M09 / M10 の 12 行が e176 側と完全一致することを確認済み ＝ 値は 1 つも消していない）。
+        folded = os.path.join(MMO, "e176", "report_sets_D20.csv.gz")
     if not os.path.exists(folded):
         return res
     by: dict = {}
