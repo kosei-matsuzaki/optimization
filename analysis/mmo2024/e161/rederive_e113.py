@@ -35,8 +35,29 @@ def die(msg):
     raise SystemExit(1)
 
 
+def k_of_e110(problem):
+    """e110 の集計から K（`n_optima`）を引く。畳んだ 1 本 → 旧形式の順に見る。"""
+    folded = os.path.join(MMO, "e110", "by_problem_e110.csv")
+    if os.path.exists(folded):
+        with open(folded) as fh:
+            for row in csv.DictReader(fh):
+                if row["function"] == problem:
+                    return int(row["n_optima"])
+        die(f"{folded} に {problem} の行が無い")
+    kp = os.path.join(MMO, "e110", "by_problem", f"{problem}.csv")
+    if not os.path.exists(kp):
+        die(f"K を引く集計が無い: {kp}")
+    with open(kp) as fh:
+        return int(next(csv.DictReader(fh))["n_optima"])
+
+
 def load_null():
-    """e115/descents から null 側を組み直す。K は e110/by_problem から引く。"""
+    """e115/descents から null 側を組み直す。K は e110 の集計から引く。
+
+    【2026-09-28 その180】`e110/by_problem/` の 16 ファイルは 1 本
+    (`e110/by_problem_e110.csv`、16 行、`function` 列で引く) に畳んだ ——
+    値は 1 つも変えていない。畳んだ 1 本が無ければ旧形式の per-problem を見る。
+    """
     if not os.path.isdir(NULL_DIR):
         die(f"null 降下ダンプが無い: {NULL_DIR}")
     out = {}
@@ -44,11 +65,7 @@ def load_null():
         if not fn.endswith("_seed0.csv.gz"):
             continue
         problem = fn.split("_seed")[0]
-        kp = os.path.join(MMO, "e110", "by_problem", f"{problem}.csv")
-        if not os.path.exists(kp):
-            die(f"K を引く集計が無い: {kp}")
-        with open(kp) as fh:
-            k = int(next(csv.DictReader(fh))["n_optima"])
+        k = k_of_e110(problem)
         with gzip.open(os.path.join(NULL_DIR, fn), "rt") as fh:
             rows = list(csv.DictReader(fh))
         cov = np.array([len({int(r["land_opt"]) for r in rows

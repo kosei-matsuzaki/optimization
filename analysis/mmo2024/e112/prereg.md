@@ -35,7 +35,7 @@
 |---|---|---|
 | MC-ESO | `e106/baseline_d10_runs.csv`（rule=current） | 3 |
 | NMMSO | `e109/nmmso_runs_d10.csv`（rule=current） | 2 |
-| `Restart-Lander` | `e110/by_problem/*.csv` ＋ `e111/by_problem/*.csv` | 2 |
+| `Restart-Lander` | `e110/by_problem_e110.csv` ＋ `e111/by_problem_e111.csv`（各 16 行。**2026-09-28 その180 で `by_problem/*.csv` 16 本ずつを畳んだもので、値は 1 つも変えていない**） | 2 |
 
 **集約の順序**: run → (seed 平均で) 問題 → 16 問平均。**水準は 5 つとも等重み。**
 

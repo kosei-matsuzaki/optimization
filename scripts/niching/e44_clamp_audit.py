@@ -19,7 +19,7 @@ cell by cell (function x seed x budget). Three questions, one table each:
            unclamped quotient?
 
 Usage:
-  python3 scripts/e44_clamp_audit.py --arms fis,cap
+  python3 scripts/niching/e44_clamp_audit.py --arms fis,cap
 """
 from __future__ import annotations
 import argparse

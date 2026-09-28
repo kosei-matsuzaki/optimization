@@ -9,6 +9,16 @@
 
 さらに走査 B の各 script について「欠けたときに落ちるか、黙って通るか」を区別する。
 追加評価ゼロ。使い方: python3 scripts/scan_silent_null.py
+
+**【2026-09-28 その180】まとめ行を 2 つに割った。** それまでは「A/C/D かつ B」を全部
+**「いま黙って帰無を出しうる」**として数えており、**実走すると下流に守られて exit 1 する
+script（`e142/analyze.py`）を 5 サイクル続けて 1 本だけ挙げ続けていた**。
+定例点検が毎回 1 件の偽陽性を出すと、本物が出たときに読まれない ——
+**そこで「叩いて確かめた結果、守られている」ものを `PROVEN_PROTECTED` に置き、
+別の節に出して警告の件数から外した。** 静的走査では下流の完走判定は見えないので、
+**この表は手で叩いた証拠つきの台帳であって、推論ではない。**
+表の行が走査に掛からなくなったら（＝ script が直ったか消えた）**stale として報告する**ので、
+放置された古い免除が溜まることはない。
 """
 from __future__ import annotations
 
@@ -31,6 +41,18 @@ GUARD = re.compile(r'if\s+not\s+os\.path\.(exists|isdir|isfile)\s*\(|'
 # 見ていると漏れる）。
 SILENT = re.compile(r'^\s*(continue|pass|return(\s+([A-Za-z_]\w*|None|\[\]|'
                     r'\{\}|set\(\)|0))?)\s*$')
+
+
+# 走査で「A/C/D かつ B」に掛かるが、**実走すると下流の完走判定に守られて exit 1 する**もの。
+# 値は「いつ・どう確かめたか」。**手で叩いた証拠だけを書くこと**（静的走査では見えない）。
+PROVEN_PROTECTED = {
+    "mmo2024/e142/analyze.py":
+        "その162 §4 で確認、2026-09-28 その180 で再実走 —— "
+        "`report_sets.csv.gz`（その150 の統合で削除済み）が無いと "
+        "`[注意] 畳んだ報告集合が無い` を印字し、"
+        "`16 問が揃った腕が 1 本も無い。集計しない。` で **exit 1**。"
+        "帰無の表は 1 行も刷らない ＝ 実害ゼロ。",
+}
 
 
 def candidates(text):
@@ -203,11 +225,26 @@ def main():
     broken = {r for r, _ in a} | {r for r, _ in c} | {r for r, _ in d}
     guards = {r for r, _ in b}
     both = sorted(broken & guards)
+    protected = [r for r in both if r in PROVEN_PROTECTED]
+    at_risk = [r for r in both if r not in PROVEN_PROTECTED]
     print(f"いま入力が壊れている（A / C / D のいずれか）{len(broken)} 本 / "
           f"黙って抜ける loader を持つ（B）{len(guards)} 本 / "
-          f"両方 {len(both)} 本 ＝ <u>いま黙って帰無を出しうる</u>")
-    for r in both:
-        print(f"  両方: {r}")
+          f"両方 {len(both)} 本（うち実走で守られている {len(protected)} 本）")
+    print(f"＝ <u>いま黙って帰無を出しうる {len(at_risk)} 本</u>")
+    for r in at_risk:
+        print(f"  要対応: {r}")
+    if not at_risk:
+        print("  （該当なし）")
+
+    if protected:
+        print("\n--- 実走で守られている（PROVEN_PROTECTED。警告には数えない） ---")
+        for r in protected:
+            print(f"  {r}\n      {PROVEN_PROTECTED[r]}")
+    stale = sorted(set(PROVEN_PROTECTED) - set(both))
+    if stale:
+        print("\n--- stale な免除（走査に掛からなくなった ＝ 表から消すこと） ---")
+        for r in stale:
+            print(f"  {r}")
     return 0
 
 

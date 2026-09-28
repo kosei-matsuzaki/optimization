@@ -6,7 +6,7 @@ _maybe_spillover`` re-seeds every one of the ``n_pop = max(20, 4*dim)`` slots
 (``div_ratio = 1.0``) with an *independent* repelled uniform draw, then the
 mu+lambda greedy of the following generations keeps the best of them. Entry 22
 of research_loop measured both halves of that on N07-Vincent2D (3 seeds, 20k
-evals, ``scripts/reseed_to_landing.py``):
+evals, ``scripts/niching/reseed_to_landing.py``):
 
   draws touched   36 / 36 distinct optima        (coverage is already there)
   landings        11 / 36 distinct optima        (coverage is lost downstream)

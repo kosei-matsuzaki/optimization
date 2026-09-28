@@ -17,7 +17,7 @@ Also prints, per function, which methods fail the depth requirement outright —
 the "existing SOTA is disqualified" check.
 
 Usage:
-  python3 scripts/depth_breadth.py results/<run>_quick [more runs ...] [--dim 2]
+  python3 scripts/niching/depth_breadth.py results/<run>_quick [more runs ...] [--dim 2]
 """
 from __future__ import annotations
 import argparse

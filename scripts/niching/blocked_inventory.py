@@ -32,7 +32,7 @@ Everything is recording only -- the search is untouched, so these are base's own
 numbers.
 
 Usage:
-  python3 scripts/blocked_inventory.py --funcs N06-Shubert2D --seeds 15 \
+  python3 scripts/niching/blocked_inventory.py --funcs N06-Shubert2D --seeds 15 \
       --evals 20000 --eps 1e-1,1e-3,1e-5 --csv analysis/hm/inventory_n06.csv
 """
 from __future__ import annotations

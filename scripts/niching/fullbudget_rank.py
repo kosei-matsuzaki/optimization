@@ -40,9 +40,9 @@ not the same as ranking on it. The 1/10-budget reference block is skipped unless
 pr_1e-3 is among the levels.
 
 Usage:
-  python3 scripts/fullbudget_rank.py analysis/hm/fullbudget_*.csv
-  python3 scripts/fullbudget_rank.py --pair MC-ESO-rel,MC-ESO analysis/hm/e51/*.csv
-  python3 scripts/fullbudget_rank.py --pair MC-ESO-rel6,MC-ESO-rel \
+  python3 scripts/niching/fullbudget_rank.py analysis/hm/fullbudget_*.csv
+  python3 scripts/niching/fullbudget_rank.py --pair MC-ESO-rel,MC-ESO analysis/hm/e51/*.csv
+  python3 scripts/niching/fullbudget_rank.py --pair MC-ESO-rel6,MC-ESO-rel \
       --levels pr_1e-1,pr_1e-2,pr_1e-3,pr_1e-4,pr_1e-5 analysis/hm/e5{1,3}/N08_*.csv
 """
 from __future__ import annotations

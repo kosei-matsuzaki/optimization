@@ -19,7 +19,7 @@ tie-breaking), and no re-optimisation is needed: the hunt dump from
 The comparison is strictly paired — the same run scored two ways, the design
 rule from e28 — so the loss is attributable to the trim and nothing else.
 
-Usage:  python3 scripts/trim_loss.py --cap 200 analysis/hm/e58/n09_full_hunts_*.csv.gz
+Usage:  python3 scripts/niching/trim_loss.py --cap 200 analysis/hm/e58/n09_full_hunts_*.csv.gz
 """
 from __future__ import annotations
 import csv

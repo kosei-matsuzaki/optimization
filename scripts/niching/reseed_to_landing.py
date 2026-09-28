@@ -23,7 +23,7 @@ Estimator direction: `match` is generous — with n_pop draws per hunt, some dra
 lands near the endpoint's optimum by chance, so a low match rate is strong
 evidence and a high one is weak.
 
-Usage:  python3 scripts/reseed_to_landing.py [--variant base|adaptive] [--seeds 3]
+Usage:  python3 scripts/niching/reseed_to_landing.py [--variant base|adaptive] [--seeds 3]
 
 Paired draw-vs-landing mode (entry 65).  ``--csv`` runs the seeds in parallel and
 writes per-(seed, optimum) draw/landing counts instead of the aggregate print,
@@ -32,9 +32,9 @@ can be measured on the draws that produced them, against the same
 volume-proportional null.  Draws and landings come from one run each, so the two
 sides are paired within a seed and no extra optimisation is needed to compare them.
 
-  python3 scripts/reseed_to_landing.py --func N09-Vincent3D --evals 400000 \
+  python3 scripts/niching/reseed_to_landing.py --func N09-Vincent3D --evals 400000 \
       --seeds 15 --procs 4 --csv analysis/hm/e65/n09_draws.csv
-  python3 scripts/reseed_to_landing.py --analyze analysis/hm/e65/n09_draws.csv
+  python3 scripts/niching/reseed_to_landing.py --analyze analysis/hm/e65/n09_draws.csv
 """
 from __future__ import annotations
 import argparse

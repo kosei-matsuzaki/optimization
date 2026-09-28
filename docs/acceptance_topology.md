@@ -1323,7 +1323,7 @@ N07 は 0.97 まである。**N09 は識別力が無いので判定に使わな�
 （0.24 → 0.27、distinct hunt 8.7 → 9.7 でほぼ不動）。
 
 **描画は既に全 36 解を覆っている。落ちているのは描画から着地までの間**
-（`scripts/reseed_to_landing.py`、3 seed）:
+（`scripts/niching/reseed_to_landing.py`、3 seed）:
 
 | 構成 | 描画が触れた相異なる最適解 | **着地した相異なる最適解** | 着地先の解間隔（中央値） | 描画先（中央値） |
 |---|---|---|---|---|
@@ -1407,7 +1407,7 @@ no-op で、base と同一。対照に使ってはいけない。**
 
 **対照は予算で取る。** base の評価回数を増やして hunt 数を `sigma_only` に並ばせ、そこで PR を読む。
 base に余分な評価を与えるので**帰無仮説に有利な保守的対照**。15 seed、seed 列は共通、
-解析は `scripts/hunt_confound.py`（対応のある Wilcoxon）。
+解析は `scripts/niching/hunt_confound.py`（対応のある Wilcoxon）。
 
 | 関数 | 構成 | 評価 | hunts | PR@1e-1 | PR@1e-3 | PR@1e-5 |
 |---|---|---|---|---|---|---|
@@ -1436,7 +1436,7 @@ base に 8000 評価足すだけで 0.82 → 0.92（13/2/0、p = 0.0008）に上
 **3D では成立しない**。その26 が比 0.1 の 1 点で符号反転を見つけ、その27 が
 **比を 0.1 / 0.25 / 0.5 と振って曲線ごと測り、「比の調律問題」を排除した**。
 
-**N08-Shubert3D、40000 評価 × 5 seed、reference = base（`scripts/hunt_confound.py`）:**
+**N08-Shubert3D、40000 評価 × 5 seed、reference = base（`scripts/niching/hunt_confound.py`）:**
 
 | `commit_sigma_ratio` | hunts | blocked | visited@1e-1 | **PR@1e-1** | 1e-1 の w/t/l | PR@1e-3 | PR@1e-5 | visited@1e-5（seed 別） |
 |---|---|---|---|---|---|---|---|---|
@@ -1623,7 +1623,7 @@ F21 は 306 / 668、F23 は 690 / 295 — **全生成のおよそ半分が crowd
 ## 回収すべき在庫は存在しない — 浅い niche は「進行中の hunt」であって「置き去りにされた盆地」ではない（その30, `analysis/hm/inventory_N0{6,7}.csv`）
 
 問い 1（配分側の最初の梃子）は「掘り残した盆地に σ を小さくして再突入する回収相」を提案していた。
-**その前提は実測で成立しない。** 変種を測る前に在庫を数えた（`scripts/blocked_inventory.py`、
+**その前提は実測で成立しない。** 変種を測る前に在庫を数えた（`scripts/niching/blocked_inventory.py`、
 base の記録のみを読むので探索は不変、15 seed / 20000 評価）。
 
 base の報告集合は 3 成分の和である（`mceso.py:755`）: 予算が尽きた時点で生きている **pop**、
@@ -2072,7 +2072,7 @@ base が最終 `best_f` を確定する位置 `bank_ev` を比較）: **8 run �
 そこで**被覆律速の 3D 関数 N09-Vincent3D で初めて測った**。
 
 **N09-Vincent3D、40000 評価 × 15 seed、対応のある Wilcoxon、reference = base
-（`scripts/diagnose_niching.py --variant commit_tight --fast-scoring` ＋ `scripts/hunt_confound.py`）:**
+（`scripts/diagnose_niching.py --variant commit_tight --fast-scoring` ＋ `scripts/niching/hunt_confound.py`）:**
 
 | 指標 | base | `commit_tight` | w/t/l | p | A12 |
 |---|---|---|---|---|---|
@@ -2722,7 +2722,7 @@ N09 では初めて有意に上回った。** その46 の直接対（N06 / N08�
 
 **この節は本テーマで初めての正規予算（suite 自身の 5 万〜40 万評価）の比較**で、
 [run 33896207804](https://github.com/kosei-matsuzaki/optimization/actions/runs/33896207804)（7 関数 × 7 手法 × 15 seed、
-関数ごとに 1 ジョブ、壁時計 51 分）の成果物を `scripts/fullbudget_rank.py` で集計したもの。
+関数ごとに 1 ジョブ、壁時計 51 分）の成果物を `scripts/niching/fullbudget_rank.py` で集計したもの。
 判定水準は PR@1e-3 / PR@1e-5 のみ（その28 の運用規則）。**NM-Restart の N06 / N08 の 30 行は落とした**（その28、restart 回数 1）。
 
 **事前登録した棄却条件は「1/10 予算の順位が正規予算で保たれない —— 特に Shubert 2 関数で
@@ -2973,7 +2973,7 @@ released       = sigma_bottomed and stagnated
 
 **回したもの**: `scripts/diagnose_niching.py` に 2 腕を足し、**N08-Shubert3D 40 万評価 × 15 seed × 3 腕**
 （`--fast-scoring`、eps = 1e-1 / 1e-3 / 1e-4 / 1e-5 を**同一 run から**採点、3 並列 15 分）。
-**`core/optimizers/mceso.py` は無変更＝既定は不動。** 分析は `scripts/hunt_confound.py`（既存）。
+**`core/optimizers/mceso.py` は無変更＝既定は不動。** 分析は `scripts/niching/hunt_confound.py`（既存）。
 
 | 腕 | 中身 | 位置づけ |
 |---|---|---|
@@ -3106,7 +3106,7 @@ eps = 1e-1 / 1e-3 / 1e-5 は**同一 run から**採点。`mceso.py` は無変�
 被覆は明確に減速する）。**ただし報告側にも新しい損失が見つかった**ので、両方を記録する。
 
 **(1) 被覆は減速する（＝ 被覆軸は開いたまま）。** hunt 終点を**時系列順**に rho-greedy で
-たどった累積被覆（`scripts/analyze_hunts.py --timeline`）:
+たどった累積被覆（`scripts/niching/analyze_hunts.py --timeline`）:
 
 | 予算の割合 | 10% | 25% | 50% | 75% | 100% |
 |---|---|---|---|---|---|
@@ -3168,7 +3168,7 @@ eps = 1e-1 / 1e-3 / 1e-5 は**同一 run から**採点。**1/10 予算（4 万�
 かつ被覆が末尾まで線形なら、その57 の 3 段構造は N07 固有 ＝ 一般化しないと書いて畳む。
 → 連言の片方だけ成立**（cap は binding にならないが、被覆は明確に減速する）。**畳まない。**
 
-**(1) 被覆の減速は K=216 でも出る**（`scripts/analyze_hunts.py --timeline`、eps = 1e-5）:
+**(1) 被覆の減速は K=216 でも出る**（`scripts/niching/analyze_hunts.py --timeline`、eps = 1e-5）:
 
 | 予算の割合 | 10% | 25% | 50% | 75% | 100% |
 |---|---|---|---|---|---|
@@ -3196,7 +3196,7 @@ N07（K=36、cap 100）は踏み、**N09（K=216、cap 432）は踏まない。�
 **`np.argsort(sol_archive_f)[:200]`（`mceso.py:822-825`）で f だけを見て切る** ＝ niche に盲目。
 **溢れるたびに上位 200 を残すのは、全体の上位 200 を残すのと同じ**なので、
 hunt 終点をオフラインで top-200 に切れば online の trim を**追加評価ゼロで厳密に再現できる**
-（`scripts/trim_loss.py`、同一 run を 2 通りに採点する設計 ＝ その28 の規則）:
+（`scripts/niching/trim_loss.py`、同一 run を 2 通りに採点する設計 ＝ その28 の規則）:
 
 | eps = 1e-5 | hunt 終点 | 終点が持つ niche | f だけの top-200 後 | 失う niche |
 |---|---|---|---|---|
@@ -4356,7 +4356,7 @@ w/t/l と p は対応のある Wilcoxon、A12 は腕の勝ち率）:
 **33 契約・109 セル**（その40 の decomp 4 関数、その55 の N08 σ 2 件、その60〜その63・その68・その69 の
 N07 / N09 正規予算、その61 の N06 / N08 正規予算、その80 の 3 関数）。**全ファイルが `--fast-scoring` で採点済み ＝
 対の比較可能性は満たす**（確認済み）。**落としたセルはゼロ**（共通 seed 5 未満の対は無かった）。
-計器側は `scripts/hunt_confound.py` に**成分分解の表を常時印字**するようにした（`--metric loss` も追加）。
+計器側は `scripts/niching/hunt_confound.py` に**成分分解の表を常時印字**するようにした（`--metric loss` も追加）。
 
 **事前登録した棄却条件**（判定水準 eps ≤ 1e-3、成分が p < 0.05 かつ |Δ| ≥ 0.02 で動き、PR が p ≥ 0.05）:
 
@@ -4403,7 +4403,7 @@ N07 / N09 正規予算、その61 の N06 / N08 正規予算、その80 の 3 �
 **その73 の発見（N18-CF3-10D で MC-ESO は被覆 6/6・深さ 1/6、NMMSO は逆）は 1 関数 12 seed しか無く、
 `status.md` の推奨 (A) と主張 2 がここに乗っていた。** CF4 系 4 関数（**F15 3D / F17 5D / F19 10D / F20 20D**、
 K=8、正規予算 4e5）を **MC-ESO と NMMSO × 12 seed・seed 対で paired** に測った（`--report-rule current`、
-分析は `scripts/fullbudget_rank.py`）。**N19-CF4-10D が N18-CF3-10D の直接の対**（D と予算を固定して CF3 → CF4 だけを動かす）。
+分析は `scripts/niching/fullbudget_rank.py`）。**N19-CF4-10D が N18-CF3-10D の直接の対**（D と予算を固定して CF3 → CF4 だけを動かす）。
 
 | PR（12 seed 平均） | N15-CF4-3D | N17-CF4-5D | **N19-CF4-10D** | N20-CF4-20D |
 |---|---|---|---|---|
@@ -4454,7 +4454,7 @@ NMMSO の 20D の失敗は報告損失ではなく、**37 点しか出せてい�
 7/5/0、p=0.0156）は 12 seed の観察で、`status.md` の「本テーマで『既存手法より多く見つけた』と書ける形の
 唯一の生きた候補」がここに乗っていた。** seed を 12 → 30 に増やし（seed 12-29 を追加、e82 と seed 番号で連結）、
 同じ関数を**残り 4 手法（NCDE / r3pso / DE / NM-Restart）にも回した**（正規予算 4e5、`--report-rule current`、
-分析は `scripts/fullbudget_rank.py`）。
+分析は `scripts/niching/fullbudget_rank.py`）。
 
 **1. 事前登録した棄却条件は不成立。** 30 seed でも **MC-ESO は NMMSO に PR@1e-5 で勝つ**
 （0.0625 対 0.0125、**15/12/3、p=0.0047、A12=0.70**）。平均も 0.05 を上回る。**条件の字面では生き残った。**
@@ -4500,7 +4500,7 @@ NMMSO 0/12、NM-Restart 0/12）で、**MC-ESO は 6 手法中 2 位**。
 **その83 が N20 で開けた穴（2 手法しか回していなかった）を F14-F20 の全域で塞いだ。**
 追加 4 手法（NCDE / r3pso / DE / NM-Restart）× **seed 0-11** を 7 関数すべてに回し、
 その73（N14/N16/N18）・その82（N15/N17/N19/N20）・その83 の保存 CSV と **seed 番号で対にして 6 手法表**にした
-（正規予算 4e5、`--report-rule current`、分析は `scripts/fullbudget_rank.py`。**新規スクリプトはゼロ**）。
+（正規予算 4e5、`--report-rule current`、分析は `scripts/niching/fullbudget_rank.py`。**新規スクリプトはゼロ**）。
 **問い 1 は「まず N16 / N18 の 2 関数」と枠を削って書かれていたが、1 seed のコスト probe が
 1 run 9-31 秒（その83 の CF4 実測 30-48 秒より安い）と出たので 7 関数すべてを 1 サイクルで回した。**
 
@@ -14659,6 +14659,7 @@ niching 側はすべて `--fast-scoring`、並列は 2-3 本）。**
 
 | 回 | 回した構成 | 実績 |
 |---|---|---|
+| **その180（統合）** | **最適化 run ゼロ・追加評価ゼロ・新規ダンプゼロ**（記録の仕事のみ。ログを 9 件 → 3 件＋要約に畳み、`analysis/` を 404 → 374 ファイル / 3,456,433 → 3,458,658 B にし、`scripts/` 直下 11 本を `scripts/niching/` へ移し、`scan_silent_null.py` の偽陽性を直した）。**`core/` は docstring 1 行だけ**（`mceso_commit_reseed.py` のパス。既定・挙動は不変） | **サイクル全体 約 20 分**（12:30 → 12:50 UTC ＝ **40 分枠の半分。統合の回としては その174 の 50 分より 30 分安い**）。**壁時計を食ったのは実走の検証で、合計 5 分**（`e112/analyze.py` 2 回 ＋ `e161/rederive_e113.py` 2 回 ＋ `e115` 2 回 ＋ `e113` 2 回 ＋ `e170/analyze.py` 2 回 ＋ `e142/analyze.py` 1 回。**どれも 10 秒未満**）。内訳: 読み直しと claim 3 分 ／ 環境 3 分（**`pip` は背景で走らせて畳みに重ねたので実質ゼロ**。（`pip install -r requirements.txt` は `pynmmso` の wheel で exit 1 ＝ 既知。`--ignore-installed blinker numpy scipy matplotlib cma ioh flask mealpy multiprocess` で入れ、`pynmmso.Nmmso` の stub を scratchpad に置いた —— **`e170` と `e142` は `core/optimizers/nmmso.py` を import するので stub 無しでは叩けない**）／ ログの畳みと機械照合 4 分 ／ `by_problem` の畳みと読み手 4 本の検証 ＋ `e170` の退避実走 5 分 ／ `scripts/` の仕分けと参照の直し 2 分 ／ `scan_silent_null` 2 分 ／ 記録 4 分。**計画規則を 2 行**: **(1) 統合の回は「測定 40 分」ではなく<u>直す箇所の数</u>で決まる**（その174 の教訓）—— **この回は先に `grep -rl` で 16 本ぶんの被参照を数えてから範囲を決め、243 箇所の 3 本を切り落として枠の半分で終えた。数えるのに 1 分。** **(2) 孤児を名指すときは名指しの前に<u>退避して叩く</u>こと** —— **`grep` の basename 照合は `pathlib` で組む読み手を見ない**（その180 §2）。退避と実走で 2 分。 |
 | その39 | N09-Vincent3D 40000 評価、2 腕 × 15 seed | 測定 118 秒（サイクル全体 16 分） |
 | その40 | N07-2D 20000 ＋ N09-3D 40000、各 4 腕 × 15 seed（2×2） | 約 14 分 |
 | その41 | N08-3D 40000 の 4 腕 × 15 seed ＋ 3 腕 × 15 seed の延長、N06-2D 20000 の 4 腕 × 30 seed | 約 12 分 |

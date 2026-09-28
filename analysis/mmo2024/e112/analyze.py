@@ -58,6 +58,24 @@ def read_runs(path, method=None, rule="current"):
     return out
 
 
+def by_problem_csv(exp):
+    """`by_problem/` の per-problem CSV を畳んだ 1 本を返す（無ければ旧形式）。
+
+    【2026-09-28 その180】`e110/by_problem/` と `e111/by_problem/` の 16 ファイルは
+    それぞれ 1 本（`by_problem_e110.csv` / `by_problem_e111.csv`、16 行、
+    ファイル名の昇順 = M01..M16 のまま）に畳んだ —— 値は 1 つも変えていない
+    （CLAUDE.md の「per-problem を残さない」。その173 の `e113`、その174 の `e115` と同じ形）。
+    """
+    folded = os.path.join(MMO, exp, f"by_problem_{exp}.csv")
+    if os.path.exists(folded):
+        return folded
+    bp = os.path.join(MMO, exp, "by_problem")
+    rows = []
+    for fn in sorted(os.listdir(bp)):
+        rows.append(os.path.join(bp, fn))
+    raise FileNotFoundError(f"{folded} が無い（旧形式 {len(rows)} 本は手で畳むこと）")
+
+
 def score_run(rec):
     """run 1 本を 5 水準で採点して PR / F1 / Score のベクトルを返す。"""
     k, n = rec["K"], rec["n_reported"]
@@ -133,9 +151,7 @@ def identity_check():
     # その111 のダンプは optimiser seed（100）で名前が付いている（by_problem の
     # seed 列は index 1）。名前の規則が exp ごとに違うだけで中身は同じ形。
     for exp, seed, tag in (("e110", 0, "seed0"), ("e111", 1, "seed100")):
-        bp = os.path.join(MMO, exp, "by_problem")
-        for fn in sorted(os.listdir(bp)):
-            rec = read_runs(os.path.join(bp, fn))[0]
+        for rec in read_runs(by_problem_csv(exp)):
             dump = os.path.join(MMO, exp, "descents",
                                 f"{rec['problem']}_{tag}.csv.gz")
             if not os.path.exists(dump):
@@ -162,9 +178,7 @@ def main():
     nmmso = read_runs(os.path.join(MMO, "e109", "nmmso_runs_d10.csv"), "NMMSO")
     lander = []
     for exp in ("e110", "e111"):
-        bp = os.path.join(MMO, exp, "by_problem")
-        for fn in sorted(os.listdir(bp)):
-            lander += read_runs(os.path.join(bp, fn))
+        lander += read_runs(by_problem_csv(exp))
 
     methods = {"MC-ESO": mceso, "NMMSO": nmmso, "Restart-Lander": lander}
     agg = {m: aggregate(rs) for m, rs in methods.items()}

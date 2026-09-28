@@ -16,7 +16,7 @@ two possible answers are the whole question:
 than equality of the mean.
 
 Usage:
-  python3 scripts/e44_niching_clamp.py
+  python3 scripts/niching/e44_niching_clamp.py
 """
 from __future__ import annotations
 import csv

@@ -22,7 +22,7 @@ If (b) holds across methods, PR@1e-1 does not separate methods once reporting is
 equalised, and later judgments belong at 1e-3 or below.
 
 Usage:
-  python3 scripts/resel_rule.py analysis/hm/resel_2d.csv analysis/hm/resel_n08.csv ...
+  python3 scripts/niching/resel_rule.py analysis/hm/resel_2d.csv analysis/hm/resel_n08.csv ...
 """
 from __future__ import annotations
 import argparse
@@ -34,7 +34,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.hunt_confound import paired                            # noqa: E402
+from scripts.niching.hunt_confound import paired                            # noqa: E402
 
 EPS_COLS = ["pr_1e-1", "pr_1e-2", "pr_1e-3", "pr_1e-4", "pr_1e-5"]
 

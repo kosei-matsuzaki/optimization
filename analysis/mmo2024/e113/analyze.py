@@ -57,13 +57,16 @@ def k_of(problem):
     【2026-09-26 その173】`e113/by_problem/` の 16 ファイルは 1 本
     (`by_problem_e113.csv`、16 行、`function` 列で引く) に畳んだ ——
     値は 1 つも変えていない（CLAUDE.md の「per-problem を残さない」）。
+    【2026-09-28 その180】fallback 側の `e110/by_problem/` も同じ形で
+    `e110/by_problem_e110.csv`（16 行）に畳んだので、畳んだ 1 本を先に見る。
     """
-    folded = os.path.join(MMO, "e113", "by_problem_e113.csv")
-    if os.path.exists(folded):
-        with open(folded) as fh:
-            for row in csv.DictReader(fh):
-                if row["function"] == problem:
-                    return int(row["n_optima"])
+    for exp in ("e113", "e110"):
+        folded = os.path.join(MMO, exp, f"by_problem_{exp}.csv")
+        if os.path.exists(folded):
+            with open(folded) as fh:
+                for row in csv.DictReader(fh):
+                    if row["function"] == problem:
+                        return int(row["n_optima"])
     for exp in ("e113", "e110"):
         p = os.path.join(MMO, exp, "by_problem", f"{problem}.csv")
         if os.path.exists(p):

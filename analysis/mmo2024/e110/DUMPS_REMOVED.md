@@ -6,3 +6,17 @@
 重複だった。**読む先は `analysis/mmo2024/e115/descents/`。**
 `run.sh` / `analyze.py` / `by_problem` / `scored.txt` / `lander_d10.csv` は
 キュー 2・3 が名指しで使うので残してある。
+
+## 【2026-09-28 その180】`e110/by_problem/` の 16 ファイルを 1 本に畳んだ
+
+**16 本（各 1 行・約 181 B）→ `by_problem_e110.csv`（16 行 / 1,511 B）。値は 1 つも変えていない**
+（行の並びはファイル名の昇順 = M01..M16 のまま、列も同じ 13 列）。CLAUDE.md の「per-problem を残さない」に従った
+（その173 の `e113`、その174 の `e115` と同じ形）。
+
+**読み手は 4 本で、削除前に全部叩いて確認した**:
+- `e112/analyze.py`（`by_problem_csv()` を足して畳んだ 1 本を読む）—— **標準出力 125 行が<u>バイト一致</u>。**
+- `e161/rederive_e113.py`（`k_of_e110()` を足した。`e111` は読んでいない）—— **標準出力 50 行が<u>バイト一致</u>、`rederived_e113.csv` も同じ。**
+- `e113/analyze.py:k_of()` の fallback（畳んだ 1 本を先に見る形にした）—— **出力は変わらず**（この script は `e113/hunts/` が無いので先に exit 1 する）。
+- `e115/analyze.py` の `SRC_PLAIN`（指す先だけ 1 本 CSV に変えた。`problem_K()` は両形式を受ける）—— **出力は変わらず**（`e110/descents` `e111/descents` が無いので先に exit 1 する）。
+
+**再測定**: `e110/run.sh`（ただし `descents` は既に無いので、引き直しは `e161/rederive_e113.py` を使うこと）。

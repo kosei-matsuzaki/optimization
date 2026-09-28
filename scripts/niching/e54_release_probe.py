@@ -29,7 +29,7 @@ majority, the stagnation-clause explanation cannot hold and the question folds
 over to the coverage/reporting axis.
 
 Usage:
-  python3 scripts/e54_release_probe.py --func N08-Shubert3D --seeds 15 \
+  python3 scripts/niching/e54_release_probe.py --func N08-Shubert3D --seeds 15 \
       --evals-frac 1.0 --out analysis/hm/e54
 """
 from __future__ import annotations

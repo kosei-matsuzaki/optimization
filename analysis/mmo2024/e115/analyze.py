@@ -67,8 +67,12 @@ def problem_K(bp, prob):
 
 
 # (降下ダンプのディレクトリ, by_problem のディレクトリ, seed 番号)
-SRC_PLAIN = [(os.path.join(MMO, "e110", "descents"), os.path.join(MMO, "e110", "by_problem"), 0),
-             (os.path.join(MMO, "e111", "descents"), os.path.join(MMO, "e111", "by_problem"), 1)]
+# 【2026-09-28 その180】`e110/by_problem/` `e111/by_problem/` の 16 ファイルずつは
+# それぞれ 1 本（`by_problem_e110.csv` / `by_problem_e111.csv`、16 行）に畳んだ。
+# `problem_K()` はディレクトリと 1 本 CSV の両方を受けるので、指す先だけ変えてある
+# （この経路は その118 以降 descents が無くて走れないので、到達はしない）。
+SRC_PLAIN = [(os.path.join(MMO, "e110", "descents"), os.path.join(MMO, "e110", "by_problem_e110.csv"), 0),
+             (os.path.join(MMO, "e111", "descents"), os.path.join(MMO, "e111", "by_problem_e111.csv"), 1)]
 # seed 1 側（`s1/descents` / `s1/by_problem`）は その168 が削除した（`e115/S1_REMOVED.md`）。
 # 定義は残す —— この 2 本が無いことを上の guard が名前で報告するため。
 SRC_COORD = [(os.path.join(HERE, "descents"), os.path.join(HERE, "by_problem_e115.csv"), 0),

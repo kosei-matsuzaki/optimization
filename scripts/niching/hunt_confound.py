@@ -19,7 +19,7 @@ base still does not reach `sigma_only`'s peak ratio at a matched (or higher)
 hunt count, the hunts are not the explanation.
 
 Usage:
-  python3 scripts/hunt_confound.py --func N07-Vincent2D \
+  python3 scripts/niching/hunt_confound.py --func N07-Vincent2D \
       base20k=analysis/hm/commit15_base.csv sigma_only=analysis/hm/commit15_sigma_only.csv \
       base28k=analysis/hm/base28k_n07.csv
 """
