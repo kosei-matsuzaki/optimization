@@ -1,5 +1,5 @@
 ---
-description: 研究の現況を表示する（status.md の要点 ＋ 問いのキュー ＋ 直近サイクル）
+description: 研究の現況を表示する（status.md の要点 ＋ 測定ジョブ ＋ 直近の作業ログ）
 ---
 
 Run `./run.sh loop --cycles 8` and report what it shows, in Japanese.

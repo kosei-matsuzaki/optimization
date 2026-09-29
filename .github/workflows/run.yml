@@ -103,7 +103,7 @@ jobs:
         # `pip install -r requirements.txt` cannot be used: pynmmso's setup.py
         # uses the removed `test_suite='nose.collector'` path and fails to build.
         # The sdist is copied into site-packages and patched instead -- the same
-        # three steps as docs/acceptance_topology.md "環境の再構築".
+        # three steps as docs/findings.md "環境と再現性".
         run: |
           set -euo pipefail
           pip install ioh cma numpy scipy multiprocess matplotlib

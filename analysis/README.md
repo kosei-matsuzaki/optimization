@@ -6,7 +6,7 @@
 |---|---|---|
 | `hm/` | 多峰度の高い問題での peak ratio（現行） | live |
 | `cal/` | 同上、hunt 数の較正 | live |
-| `audit/` | 受容集合と多様解の監査（2026-09-01〜09-02） | 終了。結論は [docs/acceptance_topology.md](../docs/acceptance_topology.md) |
+| `audit/` | 受容集合と多様解の監査（2026-09-01〜09-02） | 終了。要約は [docs/archive/multisolution.md](../docs/archive/multisolution.md)（全文は git タグ `archive/multisolution-2026-09-29`） |
 
 規約は [CLAUDE.md](../CLAUDE.md#ファイルを増やすときの規約) にある。要点:
 

@@ -15,6 +15,9 @@ MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマー�
 | [docs/experiments.md](docs/experiments.md) | ディレクトリ構造・実行方法（run.sh）・実験条件・ベンチマーク関数（`core/benchmarks.py`）・評価基準・結果の見方 |
 | [docs/related_work.md](docs/related_work.md) | 多峰（niching）分野の関連研究・標準ベンチマーク・指標・先行例の整理 |
 | [docs/history.md](docs/history.md) | 試した工夫・フラグ・ablation 記録（採用 / 不採用とその理由） |
+| [docs/findings.md](docs/findings.md) | 現テーマ（単一解性能）の確定した測定結果（基準値・関数別の内訳・環境と再現性） |
+| [docs/research_loop.md](docs/research_loop.md) | 研究ループの運用・方針欄・測定ジョブのキュー・作業ログ |
+| [docs/archive/](docs/archive/) | 一時停止・終了した路線の要約（全文は git タグ `archive/*`） |
 | [docs/web.md](docs/web.md) | Results UI（Flask アプリの構成・アーキテクチャ・ルート/API） |
 | [docs/report.html](docs/report.html) | **非専門家向けの現況レポート**（この分野の予備知識なしで読める説明。Artifact として公開してある）。**俯瞰ルーチンが status.md を書き直したあとに同じ内容へ更新する**。数値は必ず status.md か記録に載っているものだけを載せる ＝ レポートは翻訳であって出典ではない |
 
@@ -54,14 +57,16 @@ MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマー�
 
 ## 研究ループの役割分担
 
-`research-loop` ブランチ上で自動サイクルが回っている。詳細は [docs/research_loop.md](docs/research_loop.md)、現況は [docs/status.md](docs/status.md)（毎回上書き）。
+2026-09-29 から運用 A（判断は対話、重い測定はクラウド）。詳細は [docs/research_loop.md](docs/research_loop.md)、現況は [docs/status.md](docs/status.md)（毎回上書き）。
 
 | 役割 | 担当 | 頻度 | 権限 |
 |---|---|---|---|
-| 決定 | ユーザー | 随時 | `docs/research_loop.md` の「方針」欄。**すべてに優先** |
-| 俯瞰（研究者） | クラウド review ルーチン | 1 日 1 回 | `status.md` を書き直し、問いのキューを書き換える。**実験はしない。ゴールは変えず提案する** |
-| 実行 | クラウド execute ルーチン | 6 時間ごと | キュー先頭を測る。**並べ替え・ゴール変更・status.md 編集は禁止** |
-| 対話 | この Claude Code セッション | 随時 | 報告と方針修正の補助 |
+| 決定 | ユーザー | 随時 | `docs/research_loop.md` の「方針」欄。**すべてに優先**。既定値の採用を承認する |
+| 設計・判定 | この Claude Code セッション | 随時 | 診断・腕の実装・3 指標での判定・**測定ジョブを書く**・記録の統合。既定値の変更はユーザーの承認後 |
+| 測定 | クラウド execute ルーチン | 6 時間ごと（ジョブが無ければ何もしない） | 測定ジョブの先頭を書かれたとおりに回して記録する。**問いの選択・並べ替え・腕の作成・既定値の変更・採否の判断は禁止** |
+| 現況まとめ | クラウド review ルーチン | 週 1 回 | `status.md` と `report.html` を書き直す。測るべきものは status.md に提案するだけ。**実験とキューの編集はしない** |
+
+- クラウドの環境が**正準環境**（ローカルの numpy 版では base が再現しない。2026-09-29 に確認）。ローカルの quick の結果は、同じ run の中の base と腕の比較にだけ使う。
 
 ## ファイルを増やすときの規約
 
@@ -73,6 +78,8 @@ MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマー�
 - `analysis/` はテーマごとにサブディレクトリを切る。**トップレベルには置かない。**
 - 閉じたテーマのスクリプトは `scripts/<theme>/` へ移す。`scripts/` 直下は現行のキューが呼ぶものだけ。
 - `research-loop` は 1 日 1 回を目安に `main` へマージする（`/merge-loop`）。溜めると差分が読めなくなる。
+- **docs には行数の上限がある**（`scripts/check_doc_size.py` の `CAPS` が正。例: status 120 / research_loop 300 / findings 400 / その他 1000）。**commit 前に走らせ、超えたら統合してから commit する。** 2026-09-29 に `acceptance_topology.md` が 15,037 行まで育ち、誰も読めなくなった。
+- **路線を一時停止・終了したら、docs は要約だけ `docs/archive/` に残し、全文は git タグ（`archive/<路線名>-<日付>`）で固定して作業ツリーから外す。**
 
 ## Git
 

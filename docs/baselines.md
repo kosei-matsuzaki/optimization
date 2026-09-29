@@ -122,7 +122,7 @@ Neighborhood-based Crowding DE（Qu, Suganthan & Liang, 2012）。DE ベース�
   低次元（N04-N10、D=2/3）で公表値と合っていたのは**問題が易しくこのずれに鈍かったから**で、配線が正しかったからではない。
   **`swarm_size` 引数は残してあるので、旧設定を再現したい腕は明示的に `swarm_size=10` を渡す。**
   **【重要】その137 より前に記録された NMMSO の数値はすべて旧既定（`swarm_size=10`）のもの**である
-  —— 内訳と関門の結果は [acceptance_topology.md](acceptance_topology.md) の その137 の節。
+  —— 内訳と関門の結果は [archive/multisolution.md](archive/multisolution.md)（全文は git タグ `archive/multisolution-2026-09-29` の その137 の節）。
 - **NMMSO は最大化**なので符号を反転して渡す。`Nmmso.run` は反復の切れ目でしか予算を見ずオーバーランするため、`max_evals` に達した後の `fitness` は**関数を呼ばずに `-inf` を返す**。評価回数は厳密に一致し、偽の点がモードとして報告されることもない。
 - **Repel-CMA-ES は de Nobel+ 2024 の近似**。棄却判定を Euclid 距離で行っている（原論文は現在の CMA 計量での Mahalanobis 距離 / σ）。`repel_coverage` も本プロジェクトの選択で、斥力の強さを決める唯一のパラメータなので、これに依存する主張をする前に感度を測ること。
 - 多解指標は `final_solutions` だけを見る（[experiments.md](experiments.md#多解報告cec2013-ルール-niching-スイート)）。報告するのは r3pso が全粒子の pbest、NMMSO がモード集合、Repel-CMA-ES が各 restart の best ＋最終集団、Crowding-DE / NCDE が最終集団。
@@ -133,7 +133,7 @@ Neighborhood-based Crowding DE（Qu, Suganthan & Liang, 2012）。DE ベース�
 ### 記録値がどの配線で取られたか（但し書き。2026-09-21 その150 が追加）
 
 **外部 3 手法の記録値は配線が揃っていない。** 数値を引くときは必ずこの 3 行を併読すること
-（**新しい測定はしていない**。出典は [acceptance_topology.md](acceptance_topology.md) の その137・その141・その143 の節）。
+（**新しい測定はしていない**。出典は git タグ `archive/multisolution-2026-09-29` の `docs/acceptance_topology.md`、その137・その141・その143 の節）。
 
 | 手法 | 記録値の配線 | 公表設定との差が実測でどれだけ効くか | 判定への影響 |
 |---|---|---|---|

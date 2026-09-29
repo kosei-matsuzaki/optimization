@@ -1195,7 +1195,7 @@ MC-ESO の報告集合は 23 点（生存ホスト `n_pop`=20 ＋ 系統アー�
 
 - **記録の損失が実在**: N06 は 12.2 個に触れて 6.0 個しか報告していない（半分を捨てている）。N10 は 10.4 → 6.4。
 - **N07 は探索側も不足**: 36 解中 8.6 個しか触れていないので、記録を直しても 0.24 程度が上限。
-  → **この 1 行は 2026-09-02 に訂正された**（[research_loop.md その19](acceptance_topology.md#報告集合の天井--再起動-1-回につき-1-点しか書かないその19-analysishmniching_visited_csv)）。
+  → **この 1 行は 2026-09-02 に訂正された**（git タグ `archive/multisolution-2026-09-29` の `docs/acceptance_topology.md`「報告集合の天井」の節（その19））。
   この測定が **ε=1e-4 の 1 水準だけ**で取られていたことによる見かけ。ε=1e-1 で数え直すと
   N07 の visited は **36.0（全解）**、N09-Vincent3D も **216.0（全解）** で、3 seed とも一致する。
   つまり Vincent で探索は届いており、上限を作っているのは記録側。`--eps` を複数取れるように
@@ -1378,7 +1378,7 @@ niching スイート dim2、n=20、5000 評価（`results/20260831_133051_nich_f
 ## `hunt_level_tol` — 多解の深さを決めていた解放水準（2026-09-03, **未採用 / 既定値は不変**）
 
 **研究ループ その30 の測定**（詳細は [research_loop.md](research_loop.md) と
-[acceptance_topology.md](acceptance_topology.md#shubert-の深さを止めていたのは-hunt_level_tol--解放水準が-2-つの採点閾値のちょうど間にあるその30-analysishmlevel_csv)）。
+git タグ `archive/multisolution-2026-09-29` の `docs/acceptance_topology.md`「Shubert の深さを止めていたのは `hunt_level_tol`」の節（その30））。
 
 `_basin_exhausted`（`mceso.py:919-928`）は `has_exhausted` 以降、
 `basin_best <= hunt_level_tol * f_init_scale` で hunt を解放する。
@@ -1411,7 +1411,7 @@ niching スイート dim2、n=20、5000 評価（`results/20260831_133051_nich_f
 93.5% / 798 は**この環境で再現しないので対照に使わない**、代わりに**この環境の base
 SR@1e-10 0.9208 / `evals_succ_mean` 677.7**）で 6 件すべてに採否を書いた。
 測定・機序・留保は
-[acceptance_topology.md の該当節](acceptance_topology.md#滞留していた採用候補-6-件の決着--5-件は-bbob-gate-を通り通り方は未発火ではなく分岐は答えの後ただし-commit_place_r010-の同点は1-度も発火しないではないその117-analysishme117)。
+git タグ `archive/multisolution-2026-09-29` の `docs/acceptance_topology.md`「滞留していた採用候補 6 件の決着」の節（その117）。
 
 | 腕 | つまみ（診断用変種の場所） | 判定 | 根拠 |
 |---|---|---|---|
@@ -1447,7 +1447,7 @@ SR@1e-10 0.9208 / `evals_succ_mean` 677.7**）で 6 件すべてに採否を書�
 **MC-ESO が SR@1e-10 で下回るのは 6 関数**（**F04 / F06 / F17 / F18 / F20 / F24**。07-27 の 7 関数との重なりは 5 で、
 **F06-AttractiveSector が新規に入り、F13 / F23 が抜けた** —— F23 は MC-ESO 75% に対し**比較 5 手法すべて 0%**）。
 **注意**: **F06 の Wilcoxon 有意・large な負けは 1e-10 の 5 桁下**（median `best_f` 7.1e-15 対 厳密 0.0）**で、主指標を 1pt も動かさない。**
-詳細・関数別表・SR 梯子は [acceptance_topology.md](acceptance_topology.md) の その177 の節、保存物は `analysis/single/e177/`。
+詳細・関数別表・SR 梯子は [findings.md](findings.md) の その177 の節、保存物は `analysis/single/e177/`。
 
 ## 5D の対照を初めて同条件で測った（2026-09-28 その178, **既定は不変**）— 単一解テーマの基準値
 
@@ -1473,7 +1473,7 @@ SR@1e-10 0.9208 / `evals_succ_mean` 677.7**）で 6 件すべてに採否を書�
 **上の 2026-08-28 の表との突き合わせ（重要）**: **比較手法側はほぼ再現するが、MC-ESO だけ大きく動く** ——
 **CMA-ES 44.4 → 43.33（−1.07）／ IPOP 56.0 → 57.29（+1.29）／ MC-ESO 39.0 → 43.12（+4.12）。**
 **2D の pin のずれ（93.54 → 92.08 ＝ −1.46）とは<u>符号が逆</u>なので、「環境差」だけでは両方を説明できない**（キュー 3 への引き継ぎ）。
-詳細・関数別表・SR 梯子・群別内訳は [acceptance_topology.md](acceptance_topology.md) の その178 の節、保存物は `analysis/single/e178/`。
+詳細・関数別表・SR 梯子・群別内訳は [findings.md](findings.md) の その178 の節、保存物は `analysis/single/e178/`。
 
 ### 10D の同条件基準（2026-09-28 その179、この環境で初測定）
 
@@ -1497,7 +1497,7 @@ SR@1e-10 0.9208 / `evals_succ_mean` 677.7**）で 6 件すべてに採否を書�
 **下回るのは 12 関数**（F07 / F08 / F09 / F10 / F12 / F13 / F14 / F16 / F17 / F18 / F20 / F21。5D の 13 関数との重なりは 11）。
 **赤字 15.42pt の 54% が F12-BentCigar と F07-StepEllipsoidal の 2 関数**（どちらも MC-ESO 0% 対 比較手法 100%）、**78% が単峰系（g2 ＋ g3）から来る。**
 **そして MC-ESO が 6 手法の関数別包絡線に上乗せしている量は +0.00pt**（2D +4.38 → 5D +0.42 → 10D +0.00）＝ **10D では単独 1 位の関数がゼロ。**
-詳細・関数別表・SR 梯子・群別内訳は [acceptance_topology.md](acceptance_topology.md) の その179 の節、保存物は `analysis/single/e179/`。
+詳細・関数別表・SR 梯子・群別内訳は [findings.md](findings.md) の その179 の節、保存物は `analysis/single/e179/`。
 
 ### 2026-09-29 その182 — 学習 C の採用規則を「親に勝った子」から「その世代の上位 μ」へ（`cc_mu_frac`、腕のみ・既定不変）
 
@@ -1518,7 +1518,7 @@ SR@1e-10 0.9208 / `evals_succ_mean` 677.7**）で 6 件すべてに採否を書�
 **2D では bit 一致**（`_cc_dim_gate()` が dim2 で厳密に 0。F01/F17 × 3 run で `best_f` 6 値完全一致で確認）。
 **＝ この病理への 4 件の棄却（下記 :865 / :979 / :1041 ほか）と違い、「局所改善・他が悪化で正味ゼロ」の形にならなかった初めての軸。**
 **ただし赤字の 54% を作る F07 / F12 は閉じない**（F12 の 5% は 1 run で、`best_f` の分布は動かない: p=0.9563 / A12=0.4800）。
-全文・梯子・群別は [acceptance_topology.md](acceptance_topology.md) の その182 の節、保存物は `analysis/single/e182/`。
+全文・梯子・群別は [findings.md](findings.md) の その182 の節、保存物は `analysis/single/e182/`。
 
 **削除したフラグ 2 つ（実装されていなかったもの）**: **`cc_rank1_weight` と `cc_path_decay`。**
 `_update_cc_cov` の進化パスブロックは `if False:` で恒久的に止まっており、中の `c1` は定義すらされていなかった（有効化すると `NameError`）。

@@ -13,7 +13,7 @@ Read before speaking. In this order:
 
 1. `docs/status.md` — the current snapshot
 2. `docs/research_loop.md` — the goal, the queue, the recent log
-3. `docs/acceptance_topology.md` — the accumulated findings
+3. `docs/findings.md` — the current theme's established results (the paused multi-solution route is summarised in `docs/archive/multisolution.md`)
 4. `git log --oneline -40` — what was actually committed, which is not always what was written down
 
 Then give an assessment. Be direct. A supervisor who only encourages is useless.

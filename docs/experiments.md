@@ -113,7 +113,7 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 （`analyze_hunts` / `blocked_inventory` / `depth_breadth` / `e44_clamp_audit` / `e44_niching_clamp` / `e54_release_probe` /
 `fullbudget_rank` / `hunt_confound` / `reseed_to_landing` / `resel_rule` / `trim_loss`。**削除はしていない** ——
 路線を再開するときはここから呼ぶ）。**`scripts/` 直下に残したのは現行の単一解テーマが呼ぶもの**
-（`analyze_quick` / `loop_status` / `check_doc_links` / `check_cost_rows` / `scan_silent_null` / `measure_channel_signals`）
+（`analyze_quick` / `loop_status` / `check_doc_links` / `check_doc_size` / `scan_silent_null` / `measure_channel_signals`）
 **＋ 判定ゲート自体の検出力を測る 2 本**（`gate_power` / `e47_analyze` ＝ **BBOB-24 dim2 の腕の判別可能性**を測る道具なので、
 単一解テーマの判定ゲートの問いが使う）**＋ 被参照が 3 桁の 3 本**（`hunt_coverage` 85 箇所 / `niching_baseline` 115 箇所 /
 `diagnose_niching` 43 箇所。**移すと過去の `prereg.md` に記録された「実際に打ったコマンド」を書き換えることになる**ので、
@@ -127,8 +127,8 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 | `scripts/niching/hunt_confound.py [--func NAME] [--ref LABEL] [--metric pr\|visited\|loss\|distinct\|landed\|hunts\|blocked] LABEL=CSV ...` | `diagnose_niching.py` の CSV を複数取り、**共通 seed で対応のある Wilcoxon**（w/t/l・p・A12）を eps 水準ごとに並べる。**`--metric` は検定をかける列を選ぶ（既定 `pr`）**。表の他の列は常に平均が並ぶので、**問いの棄却条件が PR 以外の列で書かれているときは必ずこれを合わせること**（その68 の棄却条件は `visited` ＝ 被覆の天井で書かれていた）。PR の隣に **hunt 数と診断カラム（visited / distinct / landed / blocked）を必ず表示する**ので、「PR の差が hunt 数の差ではないか」「どの成分が動いて PR が動いたのか」をその場で読める。予算違いの run を並べて hunt 数を揃えるのが本来の用途（2026-09-03 の `sigma_only` 交絡テスト）で、成分の機序を読む用途は 2026-09-04 その40〜その42 **その81 から、eps 水準ごとに `PR = 被覆 − 報告損失`（`PR` / `visited/K` / `(visited − reported)/K`）の 3 成分すべてに対応のある検定をかけた成分分解表を常時印字する。**`PR` は恒等式でこの 2 成分の差なので、**PR が動かないことと成分が動かないことは別の主張**であり、hunt 本数を動かす腕では成分が両方動いて PR だけ止まることがある（その80 の `basin_reset`、その81 の吸収率の表）。 |
 | `scripts/niching_baseline.py [--funcs ...] [--methods ...] [--seeds N] [--evals-frac F ...] [--report-rule current\|reselect\|both] [--csv PATH]` | CEC2013 niching の**手法横断の順位表**（関数 × 手法 × 精度水準の peak ratio）。`--report-rule` が**報告規則**を切り替える: `current` は各手法の `final_solutions`（従来の表）、`reselect` は**その run 自身の履歴**から rho 貪欲に選び直した集合（cap = max(100, 2K)、**追加評価ゼロ**、`diagnose_niching.reselect_from_history` を共用）。**`both` は同一の run を両方の規則で採点する**ので、ペアリングが厳密で追加コストは採点分だけ。**選び直しは手法非依存の後処理なので、1 手法だけに与えて比較してはいけない**（2026-09-03 その28）。`--evals-frac` が 1.0 未満の run は狙いを定めるための道具で、公表用の比較ではない |
 | `scripts/niching/fullbudget_rank.py [--pair A,B] [--levels pr_1e-1,...] CSV [CSV ...]` | `niching_baseline.py` の CSV（正規予算の matrix ジョブが吐く `analysis/hm/fullbudget_*.csv`）を読み、**判定水準のみ（PR@1e-3 / PR@1e-5）**で (a) 関数ごとの手法順位と (b) **対応のある MC-ESO 対 NMMSO**（seed 対の w/t/l・両側 Wilcoxon・A12）を出す。棄却条件が平均ではなく**符号**（Shubert 2 関数で MC-ESO ≥ NMMSO）で書かれているため、1/10 予算の参照表（`status.md` 由来）をスクリプト内に定数で持ち、**held / FLIPPED を明示する**。**NM-Restart の N06/N08 行は落として、落としたことを刷る**（その28: restart 回数 1）。`--pair A,B` は対比する 2 手法を差し替える（その51 は `MC-ESO-rel,MC-ESO`、その53 は `MC-ESO-rel6,MC-ESO-rel`）。**`--levels` は刷る精度水準を広げる**（既定は判定水準の 2 つのまま。profile の**形**を読む回だけ 5 水準を刷る ―― 刷ることと順位の根拠にすることは別。1/10 予算の参照ブロックは `pr_1e-3` が含まれるときだけ出る） |
-| `scripts/check_doc_links.py` | `README.md` ＋ `docs/*.md` の**相互参照アンカーが実在する見出しを指しているか**を GitHub の slug 規則で検査する（壊れていれば非ゼロ終了）。**統合の回（[research_loop.md](research_loop.md) の手順 2）で、ログを畳む前に 1 回走らせる** —— リンクは押すまで壊れて見えないので、その88 は 2 本を目で見つけて次のサイクルまで放置し、その90 が全 51 本を検査したら**畳んだログ節を指す参照を含めて 6 本**壊れていた |
-| `scripts/check_cost_rows.py [--list]` | **作業ログの各回に、集約先のコスト表の行があるか**を検査する（`docs/research_loop.md` の `## 作業ログ` の `### <日付> そのN` を拾い、`docs/acceptance_topology.md` の「1 run の実測コスト」節の表に同じ回番号があるかを見る。無ければ非ゼロ終了、`--list` で内訳）。**手順 7（commit 前）と手順 2（ログを畳む前）で走らせる** —— **ログは畳まれるので、集約先の表に無いコストは畳んだ瞬間に git 履歴以外から消える**。この 1 手は手順に明記した後も 16 サイクルで 7 回落ち（その90 が 6 件・その96 が 4 件・その108 が 2 件・その114 が 5 件を後から補った）、**その114 で人手の手当てを機械に替えた** |
+| `scripts/check_doc_links.py` | `README.md` ＋ `docs/*.md` の**相互参照アンカーが実在する見出しを指しているか**を GitHub の slug 規則で検査する（壊れていれば非ゼロ終了）。**docs を統合・移動したあとに 1 回走らせる** —— リンクは押すまで壊れて見えないので、その88 は 2 本を目で見つけて次のサイクルまで放置し、その90 が全 51 本を検査したら**畳んだログ節を指す参照を含めて 6 本**壊れていた |
+| `scripts/check_doc_size.py` | **docs の行数が上限を超えていないか**を検査する（上限の表はスクリプト内の `CAPS` が正。超えていれば非ゼロ終了）。commit 前に走らせる。2026-09-29 に `acceptance_topology.md` が 15,037 行まで育ったのを受けて置いた |
 | `scripts/niching/resel_rule.py CSV [CSV ...]` | `niching_baseline.py --report-rule both` の CSV を読み、**(a) 順位が規則で動くか**（精度水準ごとに両規則の順位を並べ、変化の有無を明示）と **(b) 利得が eps=1e-1 に集中するか**（手法 × 精度水準の対応のある利得、w/t/l・Wilcoxon p・A12。両規則が同一 run を採点しているのでペアは厳密）を出す。**結論（その28）: 利得は全手法で 1e-1 に集中し、eps ≤ 1e-3 では上位 2 位が全関数で不変。以後、手法の判定に PR@1e-1 を使わない** |
 
 ---
@@ -277,7 +277,7 @@ BBOB がカバーしない **多大域最適解**・**deceptive 2-D 多峰** 系
 `external/mmo2024/docs/` に置いてある。**`requirements.txt` の依存ではなく vendored なコード**で、
 取得経路は `.github/workflows/run.yml` の `mode: fetch_refs`（配布元の Google Drive はサンドボックスから
 到達できない）。到達水準は [related_work.md](related_work.md)、測定は
-[acceptance_topology.md のその91 の節](acceptance_topology.md#gecco20242025-の新-suite-が入った--仕様の-3-点は確定d10-の被覆の下界推定は-16-問中-15-問で公表最良の下m13-だけが上その91-analysismmo2024e91-externalmmo2024)。
+git タグ `archive/multisolution-2026-09-29` の `docs/acceptance_topology.md` その91 の節（要約は [archive/multisolution.md](archive/multisolution.md)）。
 
 | 項目 | 値 |
 |---|---|

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """One screen of what the research loop is doing, for a human deciding direction.
 
-The loop runs hourly in the cloud and writes everything to docs/research_loop.md,
-which is long. This prints the parts a person needs to steer: the standing
-instruction, the goal, which questions are open and who is on them, what has been
-settled or ruled out, and what the last cycles actually concluded.
+The cloud measurement routine runs the jobs queued in docs/research_loop.md and
+logs their results there; a weekly review rewrites docs/status.md. This prints
+the parts a person needs to steer: the standing instruction, the goal, which
+measurement jobs are queued and who is on them, and what the last jobs found.
 
 Run it after `git pull` on the research-loop branch.
 
@@ -54,7 +54,7 @@ def main() -> None:
     if st.exists():
         snap = io.open(st, encoding="utf-8").read().replace(chr(13) + chr(10), chr(10))
         print("=" * 78)
-        print("OVERVIEW  (docs/status.md — rewritten daily by the review cycle)")
+        print("OVERVIEW  (docs/status.md — rewritten weekly by the review routine)")
         print("=" * 78)
         for head in ("## ユーザーの判断を仰ぐこと", "## いま論文に書ける主張",
                      "## ゴールとの距離", "## いちばん弱い環", "## 次に効く一手"):
@@ -90,9 +90,9 @@ def main() -> None:
     print()
 
     print("-" * 78)
-    print("OPEN QUESTIONS   (the loop takes the top unclaimed one each hour)")
+    print("MEASUREMENT JOBS   (the routine takes the top unclaimed one every 6 hours)")
     print("-" * 78)
-    qs = _section(text, "未解決の問い（上から着手する）")
+    qs = _section(text, "測定ジョブ（上から実行する）")
     for line in qs.split("\n"):
         m = re.match(r"^(\d+)\. \*\*(.+?)\*\*(.*)$", line)
         if not m:
@@ -108,34 +108,25 @@ def main() -> None:
         print(f"  {n}. {title}{tag}")
     print()
 
-    folded = _section(text, "畳んだ問い", level="**")
-    if not folded:
-        i = text.find("**畳んだ問い**")
-        folded = text[i:text.find("\n---", i)] if i > 0 else ""
-    if folded:
-        print("-" * 78)
-        print("RULED OUT   (do not propose these again)")
-        print("-" * 78)
-        print("\n".join(l for l in folded.split("\n")[:12] if l.strip()))
-        print()
 
     print("-" * 78)
-    print(f"LAST {args.cycles} CYCLES   (newest first)")
+    print(f"LAST {args.cycles} LOG ENTRIES   (newest first)")
     print("-" * 78)
+    # Only the work log: the standing-instruction section also has dated ### heads.
+    log = _section(text, "作業ログ")
     heads = [(m.start(), m.group(0))
-             for m in re.finditer(r"^### \d{4}-\d\d-\d\d.*$", text, re.M)]
+             for m in re.finditer(r"^### \d{4}-\d\d-\d\d.*$", log, re.M)]
     for k, (pos, head) in enumerate(heads[:args.cycles]):
         print(f"  {head[4:]}")
         if args.full:
-            end = heads[k + 1][0] if k + 1 < len(heads) else len(text)
-            print("\n".join("      " + l for l in text[pos:end].split("\n")[1:]))
+            end = heads[k + 1][0] if k + 1 < len(heads) else len(log)
+            print("\n".join("      " + l for l in log[pos:end].split("\n")[1:]))
         print()
 
     print("-" * 78)
     print("TO STEER: edit docs/research_loop.md and push to research-loop.")
-    print("  - reorder or rewrite '未解決の問い' to change what gets worked on")
     print("  - write under '方針（ユーザーが書く欄）' to give a standing instruction")
-    print("  - every cycle reads both before it claims anything")
+    print("  - measurement jobs are written by an interactive session, not by the routines")
 
 
 if __name__ == "__main__":

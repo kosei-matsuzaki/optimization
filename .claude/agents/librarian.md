@@ -15,7 +15,7 @@ review cycle and takes positions. You describe; it decides.
 
 **Read**
 
-`docs/status.md`, `docs/research_loop.md` (including the log), `docs/acceptance_topology.md`,
+`docs/status.md`, `docs/research_loop.md` (including the log), `docs/findings.md`, `docs/archive/multisolution.md`,
 `docs/mceso.md`, `docs/history.md`, `docs/experiments.md`, and `git log --oneline -60`.
 Look at the `analysis/` files a claim rests on when a number matters.
 

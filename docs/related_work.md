@@ -252,7 +252,7 @@ CI 経由で取得（`analysis/mmo2024/e134/refs/fieldsend2014_nmmso_cec.txt.gz`
 ## 未読・未確認
 
 - CEC2013 tech report 原本（PDF のテキスト抽出に失敗）。関数の式・f_goptima・rho・大域解数・MaxFEs は参照実装 `github.com/mikeagn/CEC2013` の MATLAB ソースから取って実装済みなので、残るのは本文の記述（問題の設計意図・推奨実験手順）のみ
-- ~~GECCO 2024/2025 suite の仕様書と Python 実装~~ → **2026-09-08（その91）に取得済み**。実装は `external/mmo2024/python_code/`（CC BY-SA 4.0, Ali Ahrari）、仕様書と競技結果は `external/mmo2024/docs/`。**予算 `floor(50000×D)`・探索域 [−5,5]^D・D ∈ {2,5,10,20}・PIN 1..15・K は PID 1-8 が 20 / PID 9-16 が 10。公表 PR は 1e-5 単独ではなく 5 水準（1e-1..1e-5）の平均（MPR）で、Score は PR と static F1 の平均。** 数値と読み方は [acceptance_topology.md のその91 の節](acceptance_topology.md#gecco20242025-の新-suite-が入った--仕様の-3-点は確定d10-の被覆の下界推定は-16-問中-15-問で公表最良の下m13-だけが上その91-analysismmo2024e91-externalmmo2024)
+- ~~GECCO 2024/2025 suite の仕様書と Python 実装~~ → **2026-09-08（その91）に取得済み**。実装は `external/mmo2024/python_code/`（CC BY-SA 4.0, Ali Ahrari）、仕様書と競技結果は `external/mmo2024/docs/`。**予算 `floor(50000×D)`・探索域 [−5,5]^D・D ∈ {2,5,10,20}・PIN 1..15・K は PID 1-8 が 20 / PID 9-16 が 10。公表 PR は 1e-5 単独ではなく 5 水準（1e-1..1e-5）の平均（MPR）で、Score は PR と static F1 の平均。** 数値と読み方は git タグ `archive/multisolution-2026-09-29` の `docs/acceptance_topology.md` その91 の節（要約は [archive/multisolution.md](archive/multisolution.md)）
 - **GECCO'2024 競技の参加 3 手法の論文**（問題ごとの公表値がこれらにしか無い。競技の結果資料は D 別の平均しか載せない）: RR-CMA-ES = de Nobel+ 2024 *Avoiding redundant restarts in multimodal global optimization*、TRDE-LR = Wang+ 2024、N-DAM-CMA-ES = Karunarathne+ 2024（[arXiv 2407.00939](https://arxiv.org/pdf/2407.00939)）
 - RS-CMSA-ESII 本文（taboo 距離の適応則）、HillVallEA の core search 選択則
 - Robust Peak Ratio の定義
