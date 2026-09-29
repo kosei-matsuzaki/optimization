@@ -300,6 +300,22 @@ _OPTIMIZERS = {
     "ccmu50":         (MultiChannelEpidemicOptimizer, {"cc_mu_frac": 0.50}),
     "ccmu25":         (MultiChannelEpidemicOptimizer, {"cc_mu_frac": 0.25}),
     "ccmu100":        (MultiChannelEpidemicOptimizer, {"cc_mu_frac": 1.00}),
+    # High-dim arms (2026-09-29, local session). Traces at d10 separated the two
+    # 0%-vs-100% functions into different faults: F12-BentCigar's learned C
+    # grows to the needed cond ~1e6 only at the very end of the budget (learning
+    # speed), F07-StepEllipsoidal freezes on a plateau with σ at the floor (a σ
+    # rule fault, not a C fault).
+    #   npop8        — n_pop = 8·dim (twice the children, hence C samples, per gen)
+    #   npop8_ccmu50 — the same plus the top-half rank-μ selection
+    #   ccmu50_lr10  — more samples per update, so afford twice the rate
+    #   flat         — CMA-ES flat-fitness rule: ties to the best expand σ
+    # All but `flat` are bit-identical to MC-ESO at dim 2.
+    "npop8":          (MultiChannelEpidemicOptimizer, {"n_pop_dim_mult": 8.0}),
+    "npop8_ccmu50":   (MultiChannelEpidemicOptimizer,
+                       {"n_pop_dim_mult": 8.0, "cc_mu_frac": 0.50}),
+    "ccmu50_lr10":    (MultiChannelEpidemicOptimizer,
+                       {"cc_mu_frac": 0.50, "cc_learning_rate": 0.10}),
+    "flat":           (MultiChannelEpidemicOptimizer, {"sigma_flat_expand": True}),
     #  Pre-fix reference: reset the learned covariance on every spillover.
     #  Tracing F12-BentCigar showed that reset destroying a covariance that was
     #  on its way to the extreme elongation the function needs (effective rank

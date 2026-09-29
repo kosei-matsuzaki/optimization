@@ -80,6 +80,9 @@ class _MCESOState:
     # are drawn from C, so only they may update it.
     gen_n_local: int = 0
     gen_parent_f: "np.ndarray | None" = None
+    # len(history_f) when this generation's children started being evaluated —
+    # lets σ adaptation see the generation's own f values (flat-fitness rule).
+    gen_eval_start: int = 0
     # Evaluation count at which σ was last inside the drilling regime. The
     # pathology — σ pinned by its own control law so the precision scale is
     # never reached — shows up as this falling far behind the current count
@@ -201,6 +204,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # CEC2022 G06-Hybrid1 (best_f 2140 → 40 once n_pop reached 40). Low-dim
         # (BBOB dim 2/3) is unchanged. Pass an int to override.
         n_pop: "int | None" = None,
+        # Slope of the dimension-aware default: n_pop = max(20, this · dim).
+        # 4 is the historical default. The 2026-06 sweep that chose it predates
+        # the learned covariance, whose sample supply scales with the children
+        # per generation (kill_fraction · n_pop) — hence re-measured as an arm.
+        # Any value ≤ 10 leaves dim 2 at n_pop = 20 (bit-identical there).
+        n_pop_dim_mult: float = 4.0,
         n_elite_max: int = 6,
         niche_radius_ratio: float = 0.1,       # min mutual elite distance, × span
                                                # (scale-invariant; on BBOB span=10
@@ -437,6 +446,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                                                # (scale-invariant; replaces absolute
                                                # drilling_threshold)
         sigma_drill_down: float = 0.85,        # σ contraction in drilling mode
+        # Flat-fitness rule (CMA-ES's own): on a plateau no child can strictly
+        # improve, so the success rule above shrinks σ every generation until it
+        # is smaller than the plateau and the run freezes (traced on
+        # F07-StepEllipsoidal d10: all 40 hosts share one f value and σ reaches
+        # the 1e-6·span floor, 25 spillovers per run all ending the same way).
+        # When True, a generation that does not improve but where at least half
+        # of the children tie the pre-generation best expands σ instead.
+        # Outside drilling only, so FP-limit ties at deep precision are untouched.
+        sigma_flat_expand: bool = False,
         # ── Misc ───────────────────────────────────────────────────────
         log_slope_threshold: float = 1e-4,     # min log10(f) slope counted as improvement
         # ── h2h binomial crossover (always on) ────────────────────────
@@ -588,7 +606,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
     ):
         super().__init__(benchmark, seed)
         # Dimension-aware population: fixed 20 underfills high-dim search.
-        self.n_pop = n_pop if n_pop is not None else max(20, 4 * self.dim)
+        self.n_pop = (n_pop if n_pop is not None
+                      else max(20, int(round(n_pop_dim_mult * self.dim))))
         self.sigma = sigma
         self.air_ratio = air_ratio
         self.n_elite_max = n_elite_max
@@ -633,6 +652,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.sigma_ceil_ratio = sigma_ceil_ratio
         self.precision_sigma_ratio = precision_sigma_ratio
         self.sigma_drill_down = sigma_drill_down
+        self.sigma_flat_expand = sigma_flat_expand
         self.h2h_CR = h2h_CR
         self.empirical_cov_floor = empirical_cov_floor
         self.cov_floor_low = cov_floor_low
@@ -1522,6 +1542,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Evaluate offspring and resolve host competition (placement + rollback +
         # aging). Factored into a hook so niching variants can swap the *global*
         # competition rule for a local (crowding) one without touching channels.
+        st.gen_eval_start = len(st.history_f)
         self._place_and_compete(
             st, new_xs, _sigma_children, n_dead,
             dead_global, dead_orig_x, dead_orig_f)
@@ -1541,9 +1562,22 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.last_drill_eval = len(st.history_f)
         if st.best_so_far < gen_best_before:
             st.sigma *= self._sigma_up_eff(st)
+        elif (self.sigma_flat_expand and not in_drilling
+              and self._generation_is_flat(st, gen_best_before)):
+            st.sigma *= self.sigma_up
         else:
             st.sigma *= self.sigma_drill_down if in_drilling else self.sigma_down
         st.sigma = max(sigma_floor_eff, min(st.sigma, span * self.sigma_ceil_ratio))
+
+    @staticmethod
+    def _generation_is_flat(st: _MCESOState, gen_best_before: float) -> bool:
+        """At least half of this generation's children tie the pre-generation
+        best exactly (the plateau signature; CMA-ES tests f[0] == f[0.7λ])."""
+        fs = st.history_f[st.gen_eval_start:]
+        if not fs:
+            return False
+        n_tie = sum(1 for f in fs if f == gen_best_before)
+        return 2 * n_tie >= len(fs)
 
     # ── host competition (overridable for niching variants) ──────────────────
     def _record_eval(self, st: _MCESOState, x: np.ndarray, f: float,
