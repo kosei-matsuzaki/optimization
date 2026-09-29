@@ -290,6 +290,16 @@ _OPTIMIZERS = {
     # sample-starved. dim10 SR@1e-10 13.3 → 25.4 at n=10.
     "split70":        (MultiChannelEpidemicOptimizer,
                        {"cc_learning_rate": 0.05, "cc_persist_frac": 0.5}),
+    # Learned-C sample starvation (2026-09-29, その182): the rank-μ update is fed
+    # only by close-contact children that beat their own parent (~1 sample per
+    # generation at dim 20), which is the diagnosed cause of the ill-conditioned
+    # functions staying at 0% at dim 5/10/20. These arms replace the
+    # beat-your-parent test by CMA-ES's own rule — the best μ share of this
+    # generation's placed close-contact children. Bit-identical to MC-ESO at
+    # dim 2 (_cc_dim_gate() is exactly 0 there).
+    "ccmu50":         (MultiChannelEpidemicOptimizer, {"cc_mu_frac": 0.50}),
+    "ccmu25":         (MultiChannelEpidemicOptimizer, {"cc_mu_frac": 0.25}),
+    "ccmu100":        (MultiChannelEpidemicOptimizer, {"cc_mu_frac": 1.00}),
     #  Pre-fix reference: reset the learned covariance on every spillover.
     #  Tracing F12-BentCigar showed that reset destroying a covariance that was
     #  on its way to the extreme elongation the function needs (effective rank

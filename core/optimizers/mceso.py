@@ -71,12 +71,6 @@ class _MCESOState:
     # by construction — unlike C_pop, which is re-estimated every generation from
     # a population drawn from it and collapses to rank ≈ 2 of 10 in high dim.
     cc_C: "np.ndarray | None" = None
-    # Evolution path: an exponentially-weighted sum of recent successful step
-    # directions. Rank-μ needs many samples per generation to estimate a shape;
-    # close-contact supplies only ~0.1-0.3 successful steps per generation
-    # (measured), which is exactly the sample-starved regime the path is designed
-    # for — it accumulates one direction across generations instead.
-    cc_path: "np.ndarray | None" = None
     # Parent positions of this generation's offspring (same order as the
     # concatenated children) and the σ used, so the accepted steps can be
     # recovered for the update. Written only when the persistent covariance is on.
@@ -519,6 +513,20 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # rank weighting suppresses. 0 = uniform over successes (previous
         # behaviour); > 0 = weight ∝ exp(−this × rank/count).
         cc_rank_weight: float = 0.0,
+        # Adoption rule for the rank-μ update (2026-09-29, arm only — default 0.0
+        # keeps the historical rule bit-for-bit). The learned C is currently fed
+        # only by close-contact children that BEAT THEIR OWN PARENT, which at
+        # dim 20 leaves ~1 sample per generation (measured 0.1-0.3 successful
+        # steps/generation) — far below what a rank-μ estimate of a dim×dim shape
+        # needs, and the diagnosed cause of the ill-conditioned functions staying
+        # at 0% (docs/history.md 2026-08-29). CMA-ES does not use a
+        # beat-your-parent test at all: it takes the best μ of the λ offspring
+        # unconditionally. > 0 replaces the parent test by exactly that — the
+        # best `cc_mu_frac` share of THIS generation's placed close-contact
+        # children, ranked by f — which raises the sample count instead of
+        # squeezing more out of the same one or two samples (the four rejected
+        # attempts, docs/history.md:865 / :979 / :1041, all did the latter).
+        cc_mu_frac: float = 0.0,
         # Keep the learned covariance across ordinary spillovers (reset only on a
         # full basin switch). See the note at the reset site.
         cc_keep_on_spillover: bool = True,
@@ -560,12 +568,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # functions are 0% for MC-ESO and 100% for every CMA-ES variant at dim
         # 5/10/20, and they account for most of the remaining gap.
         cc_cov_floor: float = 1e-11,
-        # Rank-1 (evolution path) weight and the path's own decay. c_path ≈ 4/dim
-        # follows CMA-ES's cumulation time constant; the rank-1 term is what makes
-        # ill-conditioned valleys tractable when only a handful of samples arrive
-        # per generation.
-        cc_rank1_weight: float = 0.0,
-        cc_path_decay: float = 0.0,            # 0 → 4/dim
         # ── Informed restart (reservoir re-ignition + herd-immunity repulsion) ─
         # The spillover re-seed is *informed*, not a blind uniform draw: a
         # persistent niche-separated strain archive is harvested at every
@@ -640,13 +642,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.cc_dim_ref = cc_dim_ref
         self.cc_learning_rate = cc_learning_rate
         self.cc_rank_weight = cc_rank_weight
+        self.cc_mu_frac = cc_mu_frac
         self.cc_keep_on_spillover = cc_keep_on_spillover
         self.cc_persist_frac = cc_persist_frac
         self.cc_air_ratio = cc_air_ratio
         self.cc_h2h_ratio = cc_h2h_ratio
         self.cc_cov_floor = cc_cov_floor
-        self.cc_rank1_weight = cc_rank1_weight
-        self.cc_path_decay = cc_path_decay
         self.ir_archive_frac = ir_archive_frac
         self.ir_reignite_sigma_ratio = ir_reignite_sigma_ratio
         self.ir_repel_radius_ratio = ir_repel_radius_ratio
@@ -837,7 +838,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # to rank 9.08 just as it was getting there, and cycles forever at
             # median f 37.8.
             st.cc_C = np.eye(self.dim)
-            st.cc_path = np.zeros(self.dim)
         # Remember the basin we are about to abandon (its current best location).
         best_i = int(np.argmin(st.pop_f))
         st.ir_basin_centroids.append(st.pop_x[best_i].copy())
@@ -1633,24 +1633,40 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             return
         parents = np.concatenate(st.gen_parent_x, axis=0)
         sigmas = np.concatenate(st.gen_sigma_used, axis=0)
-        ys = []
-        fs = []
+        cand_y = []
+        cand_f = []
+        cand_beat = []
         pf = st.gen_parent_f
         for k, child_x, child_f in survived:
             # Only close-contact children are drawn from C; droplet and airborne
-            # follow different distributions and would bias the estimate. And the
-            # step must be a genuine success — better than the host that spawned
-            # it — because the placement test only asks it to beat a worst-quartile
-            # host, which is not a success criterion (measured acceptance 0.47).
+            # follow different distributions and would bias the estimate.
             if k >= st.gen_n_local or k >= len(parents) or k >= len(sigmas):
-                continue
-            if pf is not None and k < len(pf) and not (child_f < pf[k]):
                 continue
             sig = float(sigmas[k])
             if sig <= 1e-300:
                 continue
-            ys.append((child_x - parents[k]) / sig)
-            fs.append(child_f)
+            # Historical rule: the step must be a genuine success — better than the
+            # host that spawned it — because the placement test only asks it to beat
+            # a worst-quartile host, which is not a success criterion (measured
+            # acceptance 0.47). cc_mu_frac > 0 replaces this test by a rank cut over
+            # the whole generation (below); see the constructor note.
+            beat = not (pf is not None and k < len(pf) and not (child_f < pf[k]))
+            cand_y.append((child_x - parents[k]) / sig)
+            cand_f.append(child_f)
+            cand_beat.append(beat)
+        if not cand_y:
+            return
+        if self.cc_mu_frac > 0.0:
+            # Top-μ of this generation's placed close-contact children, by f.
+            # Selection only, in the generation's own order so the estimate does
+            # not depend on the sort being stable.
+            mu = max(1, int(math.ceil(min(1.0, self.cc_mu_frac) * len(cand_f))))
+            keep = set(int(i) for i in np.argsort(np.asarray(cand_f))[:mu])
+            sel = [i for i in range(len(cand_f)) if i in keep]
+        else:
+            sel = [i for i in range(len(cand_f)) if cand_beat[i]]
+        ys = [cand_y[i] for i in sel]
+        fs = [cand_f[i] for i in sel]
         if not ys:
             return
         Y = np.asarray(ys)
@@ -1665,17 +1681,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             rank_mu = (Y.T @ Y) / len(Y)
         c = min(1.0, self.cc_learning_rate)
         C = (1.0 - c) * st.cc_C + c * rank_mu
-        if False:
-            # Evolution path: cumulate the mean successful direction so a single
-            # sample per generation still builds a usable rank-1 term.
-            cp = self.cc_path_decay if self.cc_path_decay > 0.0 else 4.0 / self.dim
-            cp = min(1.0, cp)
-            step = Y.mean(axis=0)
-            if st.cc_path is None:
-                st.cc_path = np.zeros(self.dim)
-            st.cc_path = ((1.0 - cp) * st.cc_path
-                          + math.sqrt(cp * (2.0 - cp) * len(Y)) * step)
-            C = C + c1 * np.outer(st.cc_path, st.cc_path)
         tr = float(np.trace(C))
         if tr > 1e-300 and np.all(np.isfinite(C)):
             st.cc_C = C * (self.dim / tr)      # mean eigenvalue 1
