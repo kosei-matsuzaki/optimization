@@ -89,7 +89,7 @@
 **書くのは対話セッション。** 各ジョブは、コマンド・集計・記録先まで書き切る。測定ルーチンが判断を足さなくて済むようにするため。
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 
-1. **10D でスピルオーバー後の学習 C 凍結（`ccfrz`）を測る。**
+1. **10D でスピルオーバー後の学習 C 凍結（`ccfrz`）を測る。** (claimed 2026-10-05 18:30 UTC)
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`（関数で shard に割ってよい。24/24 そろえること）。
    **背景**: ローカルの軽量検証（[history.md](history.md) 2026-10-05）で、15 関数平均 +5.3pt・悪化ゼロ・F12 の median `best_f` が 3 桁減。正準環境の 24 関数で確かめる。
    **集計**: `scripts/analyze_quick.py --dim 10` の [1] 全体表、関数別の SR@1e-10 の変化（全関数）、F07 / F10 / F12 / F14 の SR@1e-10 と median `best_f`、Wilcoxon の有意な関数（両方向）。
