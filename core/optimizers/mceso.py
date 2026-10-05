@@ -83,6 +83,9 @@ class _MCESOState:
     # len(history_f) when this generation's children started being evaluated —
     # lets σ adaptation see the generation's own f values (flat-fitness rule).
     gen_eval_start: int = 0
+    # Generation index (len(history_sigma_global)) before which the learned C
+    # is frozen after a spillover (cc_spill_freeze_gens).
+    cc_freeze_until: int = 0
     # Evaluation count at which σ was last inside the drilling regime. The
     # pathology — σ pinned by its own control law so the precision scale is
     # never reached — shows up as this falling far behind the current count
@@ -210,6 +213,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # per generation (kill_fraction · n_pop) — hence re-measured as an arm.
         # Any value ≤ 10 leaves dim 2 at n_pop = 20 (bit-identical there).
         n_pop_dim_mult: float = 4.0,
+        # IPOP-style growth: each basin switch multiplies n_pop by this (1.0 = off),
+        # up to ipop_max_mult × the initial n_pop. A larger population opened
+        # F07-StepEllipsoidal at d10 (5% → 40% at n_pop 80) but a fixed larger
+        # population halves the generations on easy functions; those never
+        # basin-switch, so growing only on a switch charges only the runs that stall.
+        ipop_growth: float = 1.0,
+        ipop_max_mult: float = 8.0,
+        # What grows the population: "switch" (basin switch only) or "spillover"
+        # (any spillover). On F07 d10 most restarts are ordinary spillovers —
+        # 2 of 3 probed seeds never basin-switched — so "switch" rarely fires there.
+        ipop_trigger: str = "switch",
         n_elite_max: int = 6,
         niche_radius_ratio: float = 0.1,       # min mutual elite distance, × span
                                                # (scale-invariant; on BBOB span=10
@@ -545,6 +559,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # squeezing more out of the same one or two samples (the four rejected
         # attempts, docs/history.md:865 / :979 / :1041, all did the latter).
         cc_mu_frac: float = 0.0,
+        # Apply cc_mu_frac only in runs the channel router committed to the
+        # droplet (ill-conditioned) route. At d5 the top-μ rule lifted the
+        # ill-conditioned group (+9pt) but cost the Rastrigin family (F03 15→0%,
+        # その183); gating by route keeps it off the multimodal runs.
+        cc_mu_droplet_only: bool = False,
+        # Generations after an ordinary spillover during which the learned C is
+        # not updated (0 = off). On F12-BentCigar d10 the learned C reaches cond
+        # 1e5-1e6 when spillovers are disabled, but with them (33 per run) it
+        # oscillates at 1e2-1e4: the steps that succeed right after a uniform
+        # reseed come from far-off, high-f hosts and say nothing about the basin.
+        cc_spill_freeze_gens: int = 0,
         # Keep the learned covariance across ordinary spillovers (reset only on a
         # full basin switch). See the note at the reset site.
         cc_keep_on_spillover: bool = True,
@@ -608,6 +633,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Dimension-aware population: fixed 20 underfills high-dim search.
         self.n_pop = (n_pop if n_pop is not None
                       else max(20, int(round(n_pop_dim_mult * self.dim))))
+        self._n_pop0 = self.n_pop          # ipop_growth restores this at each run start
+        self.ipop_growth = ipop_growth
+        self.ipop_max_mult = ipop_max_mult
+        self.ipop_trigger = ipop_trigger
         self.sigma = sigma
         self.air_ratio = air_ratio
         self.n_elite_max = n_elite_max
@@ -663,6 +692,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.cc_learning_rate = cc_learning_rate
         self.cc_rank_weight = cc_rank_weight
         self.cc_mu_frac = cc_mu_frac
+        self.cc_mu_droplet_only = cc_mu_droplet_only
+        self.cc_spill_freeze_gens = cc_spill_freeze_gens
         self.cc_keep_on_spillover = cc_keep_on_spillover
         self.cc_persist_frac = cc_persist_frac
         self.cc_air_ratio = cc_air_ratio
@@ -791,6 +822,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         """Seed the RNG, draw the initial host pool, and prime the history
         buffers / bookkeeping scalars for one run."""
         rng = np.random.default_rng(self.seed)
+        self.n_pop = self._n_pop0
         lo, hi = self.bounds
         span = hi - lo
         sigma = self.sigma * span        # σ_init (scalar; per-dim bounds not supported)
@@ -1080,6 +1112,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         div_ratio = 1.0
 
         best_pre_spillover = st.best_so_far
+        if self.ipop_growth > 1.0 and (basin_switch or self.ipop_trigger == "spillover"):
+            # IPOP-style: grow before the reseed below. np.resize keeps the first
+            # n_pop rows in place (so best_idx_global stays valid); every slot
+            # past them is reseeded, since reseed_idx spans the new n_pop.
+            cap = int(round(self.ipop_max_mult * self._n_pop0))
+            new_n = min(cap, int(round(self.n_pop * self.ipop_growth)))
+            if new_n > self.n_pop:
+                self.n_pop = new_n
+                st.pop_x = np.resize(st.pop_x, (new_n, self.dim))
+                st.pop_f = np.resize(st.pop_f, new_n)
+                st.pop_age = np.zeros(new_n, dtype=int)
         if basin_switch:
             # Wipe everything — including the current best — and re-seed all slots
             # uniformly. best_so_far is preserved as a tracker of the historical
@@ -1127,6 +1170,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         st.evals_since_reset = 0
         if not basin_switch:
             st.pop_age[best_idx_global] = 0
+            if self.cc_spill_freeze_gens > 0:
+                st.cc_freeze_until = (len(st.history_sigma_global)
+                                      + self.cc_spill_freeze_gens)
 
         # Update streak based on whether this spillover improved best
         if st.best_so_far < best_pre_spillover - 1e-12:
@@ -1640,7 +1686,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     st.pop_f[slot] = dead_orig_f[k]
                 elif self._cc_dim_gate() > 0.0:
                     survived.append((k, st.pop_x[slot].copy(), st.pop_f[slot]))
-        if self._cc_dim_gate() > 0.0:
+        if (self._cc_dim_gate() > 0.0
+                and len(st.history_sigma_global) >= st.cc_freeze_until):
             self._update_cc_cov(st, survived)
 
         # Age active survivors (per-generation).
@@ -1690,7 +1737,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             cand_beat.append(beat)
         if not cand_y:
             return
-        if self.cc_mu_frac > 0.0:
+        if self.cc_mu_frac > 0.0 and (not self.cc_mu_droplet_only
+                                      or st.channel_route == "droplet"):
             # Top-μ of this generation's placed close-contact children, by f.
             # Selection only, in the generation's own order so the estimate does
             # not depend on the sort being stable.

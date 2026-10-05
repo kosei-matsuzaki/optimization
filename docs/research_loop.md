@@ -89,16 +89,16 @@
 **書くのは対話セッション。** 各ジョブは、コマンド・集計・記録先まで書き切る。測定ルーチンが判断を足さなくて済むようにするため。
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 
-1. **正準環境で 10D の個体数の腕を再現する（ローカル検証 2026-09-29 の確認）。**
-   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,npop8,npop8_ccmu50"`（関数で shard に割ってよい。24/24 そろえること）。
-   **集計**: `scripts/analyze_quick.py --dim 10` の [1] 全体表、関数別の SR@1e-10 の変化（全関数）、F07 / F09 / F12 / F14 の SR@1e-10 と median `best_f`、Wilcoxon の有意な関数。
-   **比べる相手**: [history.md](history.md) の「2026-09-29 ローカル検証」の表（ローカルは numpy 2.4.6 で base が違うので、差分の向きだけを比べる）。
+1. **10D でスピルオーバー後の学習 C 凍結（`ccfrz`）を測る。**
+   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`（関数で shard に割ってよい。24/24 そろえること）。
+   **背景**: ローカルの軽量検証（[history.md](history.md) 2026-10-05）で、15 関数平均 +5.3pt・悪化ゼロ・F12 の median `best_f` が 3 桁減。正準環境の 24 関数で確かめる。
+   **集計**: `scripts/analyze_quick.py --dim 10` の [1] 全体表、関数別の SR@1e-10 の変化（全関数）、F07 / F10 / F12 / F14 の SR@1e-10 と median `best_f`、Wilcoxon の有意な関数（両方向）。
+   **比べる相手**: CMA-ES / IPOP-CMA-ES の 10D は `analysis/single/e183/` と `analysis/single/e182/`（base が再現するので同一 base 越しに並べてよい）。
    **記録**: 集計 CSV を `analysis/single/j1/` に置き、作業ログに 15 行以内で書く。
-2. **5D で個体数の腕と `ccmu100` を測る。**
-   `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,npop8,npop8_ccmu50,ccmu100"`（約 33 分の見込み）。
-   **注意**: `npop8` は 5D で n_pop が 20 → 40 になる（`max(20, 8·dim)`）。5D は副作用（多峰の関数の悪化）が見える次元なので、F03 / F15 / F19 の変化を必ず書く（その183）。
-   **比べる相手**: `ccmu50` / CMA-ES / IPOP-CMA-ES の 5D は `analysis/single/e183/summary_ccmu50_5d.csv` にある（base が 168/168 で再現するので同一 base 越しに並べてよい）。
-   **集計・記録**: ジョブ 1 と同じ形。`analysis/single/j2/`。
+2. **5D で同じ腕を測る（副作用が見える次元）。**
+   `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`。
+   **注意**: 5D では多峰の関数（F03 / F15 / F19）が base で中間の SR を持つので、悪化が見える（その183）。この 3 関数の変化を必ず書く。
+   **集計・記録**: ジョブ 1 と同じ形。`analysis/single/j2/`。2D は回さない（学習 C は 2D で使われないので構造上 bit 一致）。
 3. **β=0 の 5D / 10D。**
    `--all --methods "MC-ESO,dimf_softmax0"` を `--dim 5 --max-evals 12500` と `--dim 10 --max-evals 25000` で、n=20。
    **理由**: 2D では既定の β=5 が β=0 に −1.25pt 負けている（その181）。β=5 を採った根拠は旧環境の高次元の記録値だけで、この環境では測っていない。
@@ -142,6 +142,11 @@
 
 **測定ルーチンが 1 ジョブ 1 項目で書く（15 行以内）。** 5 件を超えたら、対話セッションが結論を [findings.md](findings.md) か [history.md](history.md) に移して古い項目を消す。
 見出しは `### YYYY-MM-DD ジョブ名 — 一行の結論` の形にする（`scripts/loop_status.py` がこの形を読む）。
+
+### 2026-10-05 ローカル軽量検証（対話セッション）— 学習 C の凍結が有望。IPOP 型とルーター連動は見送り
+F12 の律速は、スピルオーバー直後の子が学習 C を丸めることだった（スピルオーバーを止めると cond が 1e6 まで育つ）。
+`ccfrz25` / `ccfrz50` は 10D 15 関数で +5.3pt・悪化ゼロ → ジョブ 1・2 に入れた。旧ジョブ 1・2（個体数の腕の再現と 5D）は採用候補でなくなったので外した。
+詳細は [history.md](history.md) の 2026-10-05、集計は `analysis/single/local_1005/`。
 
 ### 2026-09-29 その183（旧運用の最後の回）— 5D の `ccmu50` は +1.04pt、10D の `ccmu100` は `ccmu50` と 1 run 差
 停止の直前に起動していた execute が回した。5D の改善は悪条件・単峰、悪化は Rastrigin 系（F03 は有意）。μ = 0.5 と 1.0 は区別できない ＝ 効いているのは本数。

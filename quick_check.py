@@ -316,6 +316,28 @@ _OPTIMIZERS = {
     "ccmu50_lr10":    (MultiChannelEpidemicOptimizer,
                        {"cc_mu_frac": 0.50, "cc_learning_rate": 0.10}),
     "flat":           (MultiChannelEpidemicOptimizer, {"sigma_flat_expand": True}),
+    # 2026-10-05 (local session). npop8 opened F07 but cost every easy function
+    # half its generations; IPOP-style growth enlarges the population only on a
+    # restart. On F07 d10 the restarts are ordinary spillovers (basin switches are
+    # rare), so the growth is triggered by any spillover.
+    "ipopS15":        (MultiChannelEpidemicOptimizer,
+                       {"ipop_growth": 1.5, "ipop_trigger": "spillover", "ipop_max_mult": 4.0}),
+    "ipopS15_ccmu50": (MultiChannelEpidemicOptimizer,
+                       {"ipop_growth": 1.5, "ipop_trigger": "spillover", "ipop_max_mult": 4.0,
+                        "cc_mu_frac": 0.50}),
+    # Freeze the learned C for N generations after an ordinary spillover. On
+    # F12 d10 the uniform reseed's first successes are isotropic and wash the
+    # learned elongation out (cond stuck at 1e2-1e4; 1e5-1e6 without spillovers).
+    "ccfrz25":        (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 25}),
+    "ccfrz50":        (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 50}),
+    "ccfrz50_ccmu50": (MultiChannelEpidemicOptimizer,
+                       {"cc_spill_freeze_gens": 50, "cc_mu_frac": 0.50}),
+    # cc_mu_frac only in runs routed as ill-conditioned (droplet): at d5 the
+    # ungated rule cost the Rastrigin family (その183).
+    "ccmu50_drop":    (MultiChannelEpidemicOptimizer,
+                       {"cc_mu_frac": 0.50, "cc_mu_droplet_only": True}),
+    "ccmu100_drop":   (MultiChannelEpidemicOptimizer,
+                       {"cc_mu_frac": 1.00, "cc_mu_droplet_only": True}),
     #  Pre-fix reference: reset the learned covariance on every spillover.
     #  Tracing F12-BentCigar showed that reset destroying a covariance that was
     #  on its way to the extreme elongation the function needs (effective rank
