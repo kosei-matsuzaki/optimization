@@ -89,21 +89,16 @@
 **書くのは対話セッション。** 各ジョブは、コマンド・集計・記録先まで書き切る。測定ルーチンが判断を足さなくて済むようにするため。
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 
-1. **10D でスピルオーバー後の学習 C 凍結（`ccfrz`）を測る。** (claimed 2026-10-05 18:30 UTC)
-   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`（関数で shard に割ってよい。24/24 そろえること）。
-   **背景**: ローカルの軽量検証（[history.md](history.md) 2026-10-05）で、15 関数平均 +5.3pt・悪化ゼロ・F12 の median `best_f` が 3 桁減。正準環境の 24 関数で確かめる。
-   **集計**: `scripts/analyze_quick.py --dim 10` の [1] 全体表、関数別の SR@1e-10 の変化（全関数）、F07 / F10 / F12 / F14 の SR@1e-10 と median `best_f`、Wilcoxon の有意な関数（両方向）。
-   **比べる相手**: CMA-ES / IPOP-CMA-ES の 10D は `analysis/single/e183/` と `analysis/single/e182/`（base が再現するので同一 base 越しに並べてよい）。
-   **記録**: 集計 CSV を `analysis/single/j1/` に置き、作業ログに 15 行以内で書く。
-2. **5D で同じ腕を測る（副作用が見える次元）。**
+1. **5D で同じ腕を測る（副作用が見える次元）。**
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`。
    **注意**: 5D では多峰の関数（F03 / F15 / F19）が base で中間の SR を持つので、悪化が見える（その183）。この 3 関数の変化を必ず書く。
-   **集計・記録**: ジョブ 1 と同じ形。`analysis/single/j2/`。2D は回さない（学習 C は 2D で使われないので構造上 bit 一致）。
-3. **β=0 の 5D / 10D。**
+   **集計**: `scripts/analyze_quick.py --dim 5` の [1] 全体表、関数別の SR@1e-10 の変化（全関数）、F03 / F15 / F19 の SR@1e-10 と median `best_f`、Wilcoxon の有意な関数（両方向）。
+   **記録**: 集計 CSV を `analysis/single/j2/` に置き、作業ログに 15 行以内で書く。2D は回さない（学習 C は 2D で使われないので構造上 bit 一致）。
+2. **β=0 の 5D / 10D。**
    `--all --methods "MC-ESO,dimf_softmax0"` を `--dim 5 --max-evals 12500` と `--dim 10 --max-evals 25000` で、n=20。
    **理由**: 2D では既定の β=5 が β=0 に −1.25pt 負けている（その181）。β=5 を採った根拠は旧環境の高次元の記録値だけで、この環境では測っていない。
    **集計・記録**: ジョブ 1 と同じ形。`analysis/single/j3/`。
-4. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か。**
+3. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か。**
    10D で予算を 2 倍（50000）と 4 倍（100000）にし、`--methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE"` を回す（比較手法にも同じ予算を与える）。
    40 分に入らなければ関数を絞ってよい。その場合は F07 / F12 / F19 / F22 を必ず含め、絞ったと書く。
    **集計**: `analysis/single/e177/analyze.py` の包絡線計算で「MC-ESO を 6 手法目に加えたときに関数別包絡線が上がる量」を出す（25000 では +0.00pt）。
@@ -142,6 +137,21 @@
 
 **測定ルーチンが 1 ジョブ 1 項目で書く（15 行以内）。** 5 件を超えたら、対話セッションが結論を [findings.md](findings.md) か [history.md](history.md) に移して古い項目を消す。
 見出しは `### YYYY-MM-DD ジョブ名 — 一行の結論` の形にする（`scripts/loop_status.py` がこの形を読む）。
+
+### 2026-10-05 ジョブ1 10D ccfrz — 3 腕すべて base 以上（+0.83〜+1.88pt）、悪化は `ccfrz50_ccmu50` の F21/F22 のみ
+`./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`。24 関数を 6 shard に割って並列し、**24/24 完走**（96 行＝4 手法×24 関数）。wall 22.5 分（18:32→18:55 UTC）。numpy 2.4.6 / cma 4.5.0。base の MC-ESO は `e182` と全 24 関数で bit 一致（SR@1e-10 36.46%）＝ CMA-ES / IPOP を同一 base 越しに並べて可。
+全体（SR@1e-2 / 1e-4 / 1e-7 / **1e-10** / `evals_succ_mean`。evals は base と成功が共通の 13 関数 F01,F02,F05,F06,F08-F14,F21,F22 で平均）:
+- MC-ESO (base) 40.42 / 38.75 / 37.50 / **36.46%** / 8693.5
+- `ccfrz25` 45.21 / 41.67 / 38.33 / **37.29%（+0.83pt）** / 8661.1（−32.5）
+- `ccfrz50` 44.38 / 41.25 / 38.54 / **37.29%（+0.83pt）** / 8694.9（+1.4）
+- `ccfrz50_ccmu50` 46.67 / 44.79 / 41.04 / **38.33%（+1.88pt）** / 7652.7（−1040.8）
+参考（`e182` の 10D、同一 base）: CMA-ES 41.67% / IPOP-CMA-ES 50.00% / `ccmu50` 37.71%。3 腕はいずれも CMA-ES に届かない。
+SR@1e-10 が変わった関数（残り 15 関数は 3 腕とも ±0）: F10 95→100・F14 85→100（3 腕すべて）／F07 0→5・F08 75→85・F09 85→95・F12 0→5・F13 0→5（`ccfrz50_ccmu50` のみ）／**F21 15→10・F22 20→15（`ccfrz50_ccmu50` のみ −5pt）**。`ccfrz25` / `ccfrz50` は悪化関数ゼロ。
+F07/F10/F12/F14 の median `best_f`（base→最良腕）: F07 9.54e-1→7.37e-1、F10 1.74e-13→4.97e-14、**F12 2.42e+0→1.59e-3（3 桁減。ローカル検証の再現）**、F14 2.80e-12→1.86e-12。
+Wilcoxon（ref=MC-ESO、α=0.05 両側、A12 で方向判定）: MC-ESO が有意に優位な関数は **3 腕とも 0 件**。腕が有意に優位 — `ccfrz25` 5 件（F10 large / F12 large / F13 large / F21 negligible / F23 medium）、`ccfrz50` 4 件（F08 negligible / F10 small / F12 large / F13 large）、`ccfrz50_ccmu50` 4 件（F09 medium / F10 medium / F12 large / F13 large）。
+書かれたとおりに回せなかった点はなし。`pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので findings.md の手順（空 stub を `PYTHONPATH`）で代替した。`scripts/check_doc_size.py` は exit 0（`history.md` 1570 行は既存の EXEMPT）。
+`analysis` のファイル数は本ジョブの 2 ファイルで **406**（上限 約 400 を超過）。規則どおり何も消していない。整理は対話セッションへ。
+集計は `analysis/single/j1/{summary,wilcoxon}_ccfrz_10d.csv`。
 
 ### 2026-10-05 ローカル軽量検証（対話セッション）— 学習 C の凍結が有望。IPOP 型とルーター連動は見送り
 F12 の律速は、スピルオーバー直後の子が学習 C を丸めることだった（スピルオーバーを止めると cond が 1e6 まで育つ）。
