@@ -94,9 +94,10 @@
    **集計**: `scripts/analyze_quick.py --dim 10` の [1] 全体表、関数別の SR@1e-10 の変化（全関数）、F07 / F09 / F12 / F14 の SR@1e-10 と median `best_f`、Wilcoxon の有意な関数。
    **比べる相手**: [history.md](history.md) の「2026-09-29 ローカル検証」の表（ローカルは numpy 2.4.6 で base が違うので、差分の向きだけを比べる）。
    **記録**: 集計 CSV を `analysis/single/j1/` に置き、作業ログに 15 行以内で書く。
-2. **5D で個体数と学習 C の腕を測る。**
-   `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccmu50,npop8,npop8_ccmu50,CMA-ES,IPOP-CMA-ES"`。
-   **注意**: `npop8` は 5D で n_pop が 20 → 40 になる（`max(20, 8·dim)`）。
+2. **5D で個体数の腕と `ccmu100` を測る。**
+   `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,npop8,npop8_ccmu50,ccmu100"`（約 33 分の見込み）。
+   **注意**: `npop8` は 5D で n_pop が 20 → 40 になる（`max(20, 8·dim)`）。5D は副作用（多峰の関数の悪化）が見える次元なので、F03 / F15 / F19 の変化を必ず書く（その183）。
+   **比べる相手**: `ccmu50` / CMA-ES / IPOP-CMA-ES の 5D は `analysis/single/e183/summary_ccmu50_5d.csv` にある（base が 168/168 で再現するので同一 base 越しに並べてよい）。
    **集計・記録**: ジョブ 1 と同じ形。`analysis/single/j2/`。
 3. **β=0 の 5D / 10D。**
    `--all --methods "MC-ESO,dimf_softmax0"` を `--dim 5 --max-evals 12500` と `--dim 10 --max-evals 25000` で、n=20。
@@ -141,6 +142,11 @@
 
 **測定ルーチンが 1 ジョブ 1 項目で書く（15 行以内）。** 5 件を超えたら、対話セッションが結論を [findings.md](findings.md) か [history.md](history.md) に移して古い項目を消す。
 見出しは `### YYYY-MM-DD ジョブ名 — 一行の結論` の形にする（`scripts/loop_status.py` がこの形を読む）。
+
+### 2026-09-29 その183（旧運用の最後の回）— 5D の `ccmu50` は +1.04pt、10D の `ccmu100` は `ccmu50` と 1 run 差
+停止の直前に起動していた execute が回した。5D の改善は悪条件・単峰、悪化は Rastrigin 系（F03 は有意）。μ = 0.5 と 1.0 は区別できない ＝ 効いているのは本数。
+詳細は [findings.md](findings.md) の 6 節。集計は `analysis/single/e183/`。
+運用 A への移行に伴い、この回の全文はコミット `dedf9d9` の `docs/acceptance_topology.md` に残してある。
 
 ### 2026-09-29 ローカル検証（対話セッション）— F07 は個体数で開き（5 → 40%）、F12 はどの腕でも動かない
 10D BBOB-24 / n=20 / 25000 評価、腕 4 本（`npop8` / `npop8_ccmu50` / `ccmu50_lr10` / `flat`）。採用はゼロ。

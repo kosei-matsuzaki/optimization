@@ -351,6 +351,23 @@ bit 一致の検査: (i) 改修は既定を bit 変えない（改修前 commit 
 
 ---
 
+## 6. `cc_mu_frac` の 5D と μ 割（その183, `analysis/single/e183/`）
+
+条件: (i) 5D × 4 手法（MC-ESO / `ccmu50` / CMA-ES / IPOP-CMA-ES）× 20 run × 12500 評価、(ii) 10D × 2 手法（MC-ESO / `ccmu100`）× 20 run × 25000 評価。base は 5D・10D とも 168/168 セルで再現。
+
+| | SR@1e-2 | SR@1e-4 | SR@1e-7 | SR@1e-10 |
+|---|---|---|---|---|
+| 5D MC-ESO | 55.42% | 51.88% | 47.08% | 43.12% |
+| 5D `ccmu50` | 55.83% | 51.46% | 46.67% | 44.17%（+1.04pt） |
+| 10D `ccmu100` | 43.33% | 40.83% | 38.54% | 37.50%（+1.04pt。`ccmu50` は 37.71%） |
+
+- 5D の関数別: 改善 F14 35→55 / F13 25→40 / F12 30→40 / F21 30→35、悪化 F03 15→0 / F15 10→5 / F19 5→0。Wilcoxon は腕の有意な勝ち 0 / 負け 1（F03 p=0.04753 A12=0.6450）。`evals_succ_mean` は共通 18 関数で 4680.2 → 4801.7（+2.6%）。
+- 10D で `ccmu100`（選抜なし）と `ccmu50` の差は 1 run。効いているのは順位づけではなく学習 C に入るサンプルの本数。F12 の median `best_f` は 2.4162 → 0.38448 だが SR@1e-10 は 5% のまま。F07 は不動。
+- 方法論: 10D の「有意な悪化ゼロ」（その182）は、悪化しうる多峰の関数（F03 / F15 / F19）がもともと 0% だったことによる。腕の副作用は base が中間の SR を持つ次元（5D）で測る。
+- コスト（クラウド）: 4 手法 × 24 関数 × 20 run は 5D で約 33 分、10D で約 26 分。全文はコミット `dedf9d9` の `docs/acceptance_topology.md`。
+
+---
+
 ## 環境と再現性
 
 ### セットアップ
@@ -358,7 +375,6 @@ bit 一致の検査: (i) 改修は既定を bit 変えない（改修前 commit 
 - `pip install -q --ignore-installed blinker numpy scipy matplotlib cma ioh flask mealpy multiprocess` で入れる。素で叩くと `Cannot uninstall blinker 1.7.0` で `ioh` ごと止まる。
 - `pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので使わない。`matplotlib` は必須（`core/visualize.py` が無条件 import）。
 - `core/optimizers/__init__.py` が `pynmmso` を無条件に import する。BBOB だけを回す回は、`PYTHONPATH` 上に空 stub（`pynmmso/__init__.py` に `Nmmso` 相当のクラスを置き、`__init__` で `RuntimeError` を投げる）を置けば足りる。インスタンス化できないので NMMSO の数字が結果に紛れ込まない。
-- `/usr/bin/time` はこのイメージに無い。計時は `date -u` の前後差で取る。
 
 ### 実行と並列
 
@@ -367,8 +383,6 @@ bit 一致の検査: (i) 改修は既定を bit 変えない（改修前 commit 
 - 完走判定はファイルの存在ではなく関数名のユニーク数（6 手法 × 24 関数で `summary.csv` の関数行 144）か `result.json` の `status` で行う。`summary.csv` は関数ごとに育つ。
 - `run.sh quick` を並列に起動すると `.quick.pid` / `.quick.dir` を取り合い、`./run.sh stop` は最後の 1 本しか止められない（測定値には影響しない）。PID は自分で控える。
 - コンテナは 4 コア。所要の実績: 2D × 6 手法 × 20 run × 5000 評価が 1 proc で 29.0 分、5D が 4 shard で 22.7 分、10D が 6 shard（4 コアに oversubscribe）でほぼ線形。dim10 / 25000 評価の 1 run は MC-ESO 系で約 2.5 秒、CMA-ES 系で約 1 秒。1 seed のプローブからの外挿は下振れするので 2 倍見ておく。
-- 旧 commit を worktree で回すとき、`--no-viz` が無い時代のものは描画で 2.5 倍かかる。`grep -n viz quick_check.py` で確かめる。
-- ライブラリ版を振る arm は `python3 -m venv --system-site-packages` ＋ worktree に `.venv` シンボリックリンクで作れる（`run.sh` が `.venv/bin/python3` を優先する）。
 
 ### 決定性と参照値
 
