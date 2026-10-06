@@ -95,12 +95,6 @@
 **書くのは対話セッション。** 各ジョブは、コマンド・集計・記録先まで書き切る。測定ルーチンが判断を足さなくて済むようにするため。
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 
-1. **2D の部品ごとの ablation（どの部品が 2D の 1 位を支えているか）。** (claimed 2026-10-06 04:30 UTC)
-   `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,abl_noStrain,abl_noHostComp,abl_noSpill,abl_noDrill,abl_noAir,abl_noDroplet,abl_closeOnly,abl_noRouter,abl_isoClose"`（関数で shard に割ってよい。24/24 そろえること）。
-   **腕の中身**: 系統共存なし／宿主競合（rollback）なし／スピルオーバーなし／drilling の加速収縮なし／空気感染なし／飛沫感染なし／接触感染だけ／ルーターなし／接触感染を等方にする（C_pop の形を使わない）。いずれも `quick_check.py` の `abl_*`。
-   **集計**: `scripts/analyze_quick.py`（2D）の [1] 全体表。腕ごとに SR@1e-10 の base との差、関数別の変化（全関数）、Wilcoxon の有意な関数（両方向）。base は その177 の 92.08% / 677.7 を再現するはず（再現したかを書く）。
-   **参考**: 2026-07-08 に同種の ablation がある（[history.md](history.md) の「必要性 ablation」の表。宿主競合 −21.9pt、スピルオーバー −12.7pt など）。その後に既定が変わっているので、値の差も 1 行で書く。
-   **記録**: 集計 CSV を `analysis/single/j3/` に置き、作業ログに 15 行以内で書く。
 2. **10D で学習 C の出自の選別（`ccgate2`）を測る。**
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccgate2,ccgate2_ccmu50"`（関数で shard に割ってよい。24/24 そろえること）。
    **背景**: 凍結（`ccfrz*`）は正準環境で測り済み（作業ログ 2026-10-05 / 10-06、`analysis/single/j1/`・`j2/`）。出自の選別 `ccgate2` はローカルで、停滞窓を 150 / 300 / 600 に振っても凍結より上で、F12 の SR@1e-10 が初めて 0 を抜けた（[history.md](history.md) 2026-10-05）。
@@ -152,6 +146,22 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-06 ジョブ1 2D 部品 ablation — 9 腕すべて base 以下（−0.21〜−25.00pt）。Δ が大きいのは 接触感染だけ −25.00／宿主競合なし −19.79／飛沫感染なし −17.50／スピルオーバーなし −12.08
+`./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,abl_noStrain,abl_noHostComp,abl_noSpill,abl_noDrill,abl_noAir,abl_noDroplet,abl_closeOnly,abl_noRouter,abl_isoClose"`。24 関数を 6 shard に割って並列し、**24/24 完走**（summary 240 行＝10 手法×24 関数、wilcoxon 216 行＝9 腕×24 関数）。wall 11.9 分（04:37→04:49 UTC）。numpy 2.4.6 / cma 4.5.0。**base は その177 の 92.08% / 677.7 を再現**（SR@1e-2 95.42 / 1e-4 95.21 / 1e-7 93.12 も [findings.md](findings.md) の 2D 表と一致）。
+全体（SR@1e-2 / 1e-4 / 1e-7 / **1e-10（Δpt）** / `evals_succ_mean`（base との差）＝ base と腕の両方に成功がある関数で平均。9 腕すべて共通 23 関数で、base 側は 677.7）:
+- Δ が 1.3pt 以内: `abl_noAir`（空気感染なし）95.83 / 95.62 / 93.75 / **91.88（−0.21）** / 731.1（+53.3）、`abl_noStrain`（系統共存なし）96.04 / 95.42 / 93.75 / **91.67（−0.42）** / 756.5（+78.7）、`abl_noDrill`（加速収縮なし）95.62 / 95.62 / 92.29 / **90.83（−1.25）** / 695.9（+18.1）
+- Δ が 4〜6pt: `abl_noRouter`（ルーターなし）95.42 / 95.00 / 91.67 / **87.92（−4.17）** / 682.5（+4.7）、`abl_isoClose`（接触感染を等方）95.83 / 94.79 / 91.25 / **86.88（−5.21）** / 747.6（+69.9）
+- Δ が 12pt 以上: `abl_noSpill`（スピルオーバーなし）82.29 / 81.46 / 80.62 / **80.00（−12.08）** / 494.0（**−183.7** ＝ 唯一の速化）、`abl_noDroplet`（飛沫感染なし）95.83 / 94.38 / 79.58 / **74.58（−17.50）** / 876.7（+199.0）、`abl_noHostComp`（宿主競合なし）93.33 / 87.29 / 77.50 / **72.29（−19.79）** / 1393.3（+715.6）、`abl_closeOnly`（接触感染だけ）93.96 / 91.67 / 72.08 / **67.08（−25.00）** / 1056.1（+378.3）
+2026-07-08 の同種 ablation（当時の base 92.9%）との差: 宿主競合 −21.9→**−19.79**、スピルオーバー −12.7→**−12.08**、系統共存 −2.3→**−0.42**、drilling −1.3→**−1.25**。4 腕の序列は当時と同じで、系統共存の Δ だけ 1.9pt 小さい。
+関数別 SR@1e-10。base は F04 95・F06 95・F17 60・F18 90・F20 95・F23 75・F24 0、残り 17 関数は 100。**F01・F05・F21 は 9 腕すべて ±0**（F22 が動くのは `noHostComp` の −5 だけ）。以下は base からの Δpt（全関数、両方向）:
+- `noAir` 悪化 4: F13 −15、F17 −5、F19 −10、F20 −5 ／ 改善 3: F04 +5、F06 +5、**F24 +20**。`noStrain` 悪化 5: **F04 −35**、F13 −5、F14 −5、F15 −5、F18 −5 ／ 改善 4: F06 +5、F17 +10、F23 +10、**F24 +20**。`noDrill` 悪化 3: F18 −25、F19 −5、F23 −10 ／ 改善 2: F17 +5、F24 +5
+- `noRouter` 悪化 4: F04 −5、**F13 −45**、F14 −25、F18 −25 ／ 改善 0: なし。`isoClose` 悪化 10: F02 −5、F06 −5、F10 −5、**F13 −50**、**F14 −50**、F16 −5、F17 −5、F18 −15、F19 −5、F23 −20 ／ 改善 3: F04 +5、F20 +5、**F24 +30（9 腕で最大）**
+- `noSpill` 悪化 8（多峰・separable に集中）: F03 −45、**F04 −75**、F07 −5、F15 −50、F16 −10、F18 −15、F19 −45、**F20 −65** ／ 改善 2: F06 +5、F23 +15。`noDroplet` 悪化 9: F10 −5、F11 −5、F12 −5、**F13 −100**、**F14 −100**、F17 −60、**F18 −90**、F19 −10、F23 −75 ／ 改善 3: F06 +5、F20 +5、F24 +20
+- `noHostComp` 悪化 15（ill-cond に集中）: F02 −25、F04 −5、F06 −20、F08 −5、F09 −10、F10 −40、F11 −45、F12 −35、**F13 −70**、**F14 −95**、F16 −10、F18 −65、F19 −10、F22 −5、F23 −50 ／ 改善 2: F17 +10、F20 +5。`closeOnly` 悪化 14: F02 −30、F03 −5、F04 −15、F10 −45、F11 −30、F12 −20、**F13 −100**、**F14 −100**、F15 −15、F17 −60、**F18 −90**、F19 −20、F20 −10、F23 −75 ／ 改善 2: F06 +5、F24 +10
+Wilcoxon（ref=MC-ESO、α=0.05 両側、A12 で方向判定）MC-ESO が有意に優位／腕が有意に優位: `closeOnly` **14**／0、`noDroplet` **13**／1（F24 medium 0.31）、`noHostComp` **7**／0、`noSpill` **7**／1（F06 large 0.27）、`noRouter` 3（F13・F14 large／F18 medium）／1（F06 small 0.42）、`isoClose` 2（F13・F14 large）／0、`noStrain` 1（F04 medium 0.67）／1（F06 medium 0.32）、`noDrill` 1（F23 small 0.56）／0、**`noAir` 0／0（どちらの向きにも有意差なし）**。
+書かれたとおりに回せなかった点: `pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので [findings.md](findings.md) の手順（空 stub を `PYTHONPATH`）で代替した。加えてこのコンテナの `python3` は 3.11 で numpy が入っておらず回らないので、`/usr/bin/python3.13` から `.venv` を作り、numpy を正準環境と同じ **2.4.6** に固定した（素で入れると 2.5.3 が入る）。`--funcs` は `F01-Sphere` 形式の正式名で指定した。`scripts/check_doc_size.py` は exit 0（`history.md` 1587 行は既存の EXEMPT）。
+`analysis` のファイル数は本ジョブの 2 ファイルで **412**（上限 約 400 を超過。前回 410 から継続）。規則どおり何も消していない。整理は対話セッションへ。集計は `analysis/single/j3/{summary,wilcoxon}_abl_2d.csv`。
 
 **測定ルーチンが 1 ジョブ 1 項目で書く（15 行以内）。** 5 件を超えたら、対話セッションが結論を [findings.md](findings.md) か [history.md](history.md) に移して古い項目を消す。
 見出しは `### YYYY-MM-DD ジョブ名 — 一行の結論` の形にする（`scripts/loop_status.py` がこの形を読む）。
