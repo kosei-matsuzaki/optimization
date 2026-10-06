@@ -96,7 +96,7 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-5. **改善案を 10D で測る（その 2: ルーター v2・F/CR 適応・局所探索）。**
+5. **改善案を 10D で測る（その 2: ルーター v2・F/CR 適応・局所探索）。** (claimed 2026-10-06 18:30 UTC)
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,rv2,rv2_flat,h2hA,lsfin"`。
    **集計**: 標準の集計。`rv2` と `rv2_flat` の差（ルーターの効果）を関数別に書く。
    **記録**: `analysis/single/j21/`。
