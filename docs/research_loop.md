@@ -96,10 +96,6 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-5. **改善案を 10D で測る（その 2: ルーター v2・F/CR 適応・局所探索）。** (claimed 2026-10-06 18:30 UTC)
-   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,rv2,rv2_flat,h2hA,lsfin"`。
-   **集計**: 標準の集計。`rv2` と `rv2_flat` の差（ルーターの効果）を関数別に書く。
-   **記録**: `analysis/single/j21/`。
 6. **5D の全手法比較（グループ A+B）。** (claimed 2026-10-06 20:32 UTC)
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE,jSO,L-SRTDE,IMODE,LSHADE-cnEpSin,SPS-L-SHADE-EIG,CoBiDE,LSHADE-SPACMA,ELSHADE-SPACMA,APGSK-IMODE,EBOwithCMAR,MOS"`。
    **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。 記録済みの 5D の値（[findings.md](findings.md)）との差も 1 行で書く（CMA 系と L-SHADE は修正前の値）。
@@ -178,6 +174,23 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-06 ジョブ5 10D 改善案その2（ルーター v2・F/CR 適応・局所探索） — ルーター v2 系は 10D で大崩れ（`rv2` **−14.38pt**、`rv2_flat` **−10.00pt**）、`h2hA` −0.21pt・`lsfin` ±0.00pt で実質同着（採否の判断はしない）
+
+`./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,rv2,rv2_flat,h2hA,lsfin"`。24 関数を 6 shard（各 4 関数 × 全 5 手法、6 つおきの交互割り）に割って並列し、**24/24 完走**（連結後 summary 120 行＝5 手法×24、wilcoxon 96 行＝4 腕×24。(関数, 手法) の重複・欠落ともゼロ）。wall 32.3 分（18:38:59→19:11:18 UTC）。numpy 2.4.6 / cma 4.5.0。**base の MC-ESO は [findings.md](findings.md) の 10D 基準値と一致**（40.42 / 38.75 / 37.50 / **36.46**%、`evals_succ_mean` 8693.5、成功のある関数 13/24）。集計は `analysis/single/j21/{summary_10d,wilcoxon_10d,per_function_sr1e10_10d}.csv`。
+
+| 腕 | SR@1e-2 | 1e-4 | 1e-7 | SR@1e-10 | Δ(1e-10) | `evals_succ_mean` 腕/base（両方成功の関数数） | Wilcoxon base勝/腕勝 |
+|---|---|---|---|---|---|---|---|
+| MC-ESO (base) | 40.42 | 38.75 | 37.50 | 36.46 | — | 8693.5（13/24） | — |
+| `rv2` | 30.42 | 28.33 | 23.54 | 22.08 | **−14.38** | 8330.3 / 6432.9（10） | 8 / 2 |
+| `rv2_flat` | 35.00 | 33.33 | 27.71 | 26.46 | **−10.00** | 9568.5 / 7875.2（12） | 6 / 2 |
+| `h2hA` | 41.25 | 39.38 | 37.92 | 36.25 | −0.21 | 9774.2 / 8693.5（13） | 4 / 2 |
+| `lsfin` | 43.96 | 39.79 | 37.92 | 36.46 | ±0.00 | 8909.5 / 8693.5（13） | 1 / 7 |
+
+関数別 SR@1e-10 の変化（base と差のある 10 関数。残り 14 関数は 4 腕すべて差ゼロ）: F06 100→`rv2`45/`rv2_flat`90、F07 0→5（`rv2`/`rv2_flat`/`h2hA`）、F08 75→`rv2`20/`rv2_flat`40/`h2hA`90、F09 85→`rv2`0/`rv2_flat`0/`h2hA`90、F10 95→`rv2`55/`rv2_flat`80/`h2hA`55、F11 100→`rv2`90、F12 0→`h2hA`10、F14 85→`rv2`0/`rv2_flat`0/`h2hA`90、F21 15→`rv2`5/`rv2_flat`5、F22 20→`rv2`10/`rv2_flat`15/`h2hA`15。
+**`rv2` と `rv2_flat` の差（ルーターの効果）**: `rv2_flat` が全体で +4.38pt 上（22.08→26.46）。差が出たのは F06 +45.0、F10 +25.0、F08 +20.0、F11 +10.0、F22 +5.0 の 5 関数で、**すべて `rv2_flat` 側が上**。10D ではルーター v2 の配分が効くどころか符号が逆（平らに配る方が良い）。
+Wilcoxon（p<0.05 両側、A12 つき）: `lsfin` は SR@1e-10 が全関数で base と同一ながら `best_f` では 7 関数で base に有意勝ち（F12 A12=0.18 large、F13 0.34 medium、F22 0.36 small、F08 0.43 small、F09/F20/F21 negligible）、base 勝ちは F14（0.57 small）のみ。`h2hA` は base 勝ち F02/F10/F11（large）・F22（small）、腕勝ち F06（0.24 large）・F01（0.30 medium）。
+書かれたとおりに回せなかった点: なし（コマンド・集計・記録先とも指示どおり）。環境は前回と同じ 2 点（`requirements.txt` は `pynmmso` のビルドで落ちるので [findings.md](findings.md)「環境と再現性」の個別 install ＋ 空 stub、`python3` が 3.11（パッケージ無し）なので `/usr/bin` を PATH 先頭に置き 3.13 で回し、numpy は既存記録と揃えるため 2.4.6 に固定）。`--funcs` は登録名の完全一致なので `F01` では `No matching functions` で落ち、`F01-Sphere` 形式で指定し直した。`scripts/check_doc_size.py` は exit 0、`find analysis -type f` は 85 で目安 400 内。
 
 ### 2026-10-06 ジョブ4 10D 集団サイズ系 — 5D で +15.83pt だった `pop_lin16` は 10D では **−5.00pt**、全 4 腕のうち SR@1e-10 が上がったのは `ipop_fail3` のみ（+1.04pt）（採否の判断はしない）
 
