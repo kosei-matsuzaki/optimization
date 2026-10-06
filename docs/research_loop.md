@@ -96,7 +96,7 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-2. **改善案 4 系統を 2D で測る（2D の規則の確認）。**
+2. **改善案 4 系統を 2D で測る（2D の規則の確認）。** (claimed 2026-10-06 12:30 UTC)
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,pop_lin16,pop_lin8,pop_lin16_2,ipop_fail3,rv2,rv2_flat,h2hA,lsfin"`。
    **背景**: 改善案 4 系統（[history.md](history.md) 2026-10-06）。A 集団サイズ（`pop_lin16` 16·D→4·D、`pop_lin8` 8·D→4·D、`pop_lin16_2` 16·D→2·D、`ipop_fail3` スピルオーバーに 3 回続けて失敗したら 1.5 倍）、B ルーター v2（空気感染なし。`rv2` は経路ごとに飛沫・勢いの配分を変える、`rv2_flat` は全経路で同じ配分の対照）、C `h2hA`（飛沫感染の F / CR を成功履歴で適応）、D `lsfin`（予算の最後 10% で SLSQP）。既定はすべて不変（2D・10D の 16 件で bit 一致を確認済み）。
    **集計**: 標準の集計。2D の SR@1e-10 を下げる腕はどれかを 1 行で書く（2D の規則）。
