@@ -264,6 +264,14 @@ _OPTIMIZERS = {
     "abl_noSpill":    (MCESONoSpillover,               {}),
     #  Drilling OFF: no accelerated σ contraction in drilling mode
     "abl_noDrill":    (MultiChannelEpidemicOptimizer, {"sigma_drill_down": 0.95}),
+    # Channel / router ablations (2026-10-05): which part carries the 2D lead.
+    "abl_noAir":      (MultiChannelEpidemicOptimizer, {"air_ratio": 0.0}),
+    "abl_noDroplet":  (MultiChannelEpidemicOptimizer, {"h2h_ratio": 0.0}),
+    "abl_closeOnly":  (MultiChannelEpidemicOptimizer, {"air_ratio": 0.0, "h2h_ratio": 0.0}),
+    "abl_noRouter":   (MultiChannelEpidemicOptimizer, {"channel_schedule": False}),
+    #  close-contact isotropic: floor every normalised eigenvalue at 1 (no C_pop shape)
+    "abl_isoClose":   (MultiChannelEpidemicOptimizer,
+                       {"empirical_cov_floor": 1.0, "cov_floor_low": 1.0}),
     # Pre-fix reference for the dimension-scaled stagnation window (2026-08-23):
     # the old fixed 300-eval window. Bit-identical to MC-ESO at dim 2 by
     # construction; diverges only at dim ≥ 3. Kept as the regression pin for the
@@ -330,6 +338,12 @@ _OPTIMIZERS = {
     # learned elongation out (cond stuck at 1e2-1e4; 1e5-1e6 without spillovers).
     "ccfrz25":        (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 25}),
     "ccfrz50":        (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 50}),
+    # Provenance gate: learn C only from children of parents within
+    # 2·σ·sqrt(dim) of the best in the learned metric (no timer).
+    "ccgate2":        (MultiChannelEpidemicOptimizer, {"cc_gate_mahal": 2.0}),
+    "ccgate3":        (MultiChannelEpidemicOptimizer, {"cc_gate_mahal": 3.0}),
+    "ccgate2_ccmu50": (MultiChannelEpidemicOptimizer,
+                       {"cc_gate_mahal": 2.0, "cc_mu_frac": 0.50}),
     "ccfrz50_ccmu50": (MultiChannelEpidemicOptimizer,
                        {"cc_spill_freeze_gens": 50, "cc_mu_frac": 0.50}),
     # cc_mu_frac only in runs routed as ill-conditioned (droplet): at d5 the

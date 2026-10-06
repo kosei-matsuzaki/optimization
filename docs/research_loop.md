@@ -29,6 +29,12 @@
 **この欄はユーザーが書く。すべてに優先する。**
 09-08 / 09-11 の決定（多解路線の指示）は路線の一時停止に伴いアーカイブへ移した（[archive/multisolution.md](archive/multisolution.md)）。
 
+### 2026-10-05（ユーザー決定）— 論文は手法の改良で書く／ablation と分析は進めてよい／ルーチンの間隔を一時的に短くする
+
+1. **論文の主題は「診断」にしない。** MC-ESO の改良（性能の向上）を主題にする。負ける機序の測定は、改良の根拠として使う。
+2. **ablation などの分析の実験は進めてよい。** professor の指摘（2D の勝ちがどの部品から来ているかが未測定）を受けて、2D の部品ごとの ablation をジョブ 1 に置いた。
+3. **測定ルーチンの間隔を一時的に 2 時間ごとにする**（キューの 1〜3 が済むまで。済んだら 6 時間ごとに戻す）。
+
 ### 2026-09-29（ユーザー決定）— 運用を A に切り替える／docs の巨大化を止める
 
 1. **運用を上の表のとおりに切り替える。** 手法の設計・判定は対話セッションで行い、クラウドは測定の代行と週 1 回の現況まとめに絞る。
@@ -89,25 +95,31 @@
 **書くのは対話セッション。** 各ジョブは、コマンド・集計・記録先まで書き切る。測定ルーチンが判断を足さなくて済むようにするため。
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 
-1. **10D でスピルオーバー後の学習 C 凍結（`ccfrz`）を測る。**
-   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`（関数で shard に割ってよい。24/24 そろえること）。
-   **背景**: ローカルの軽量検証（[history.md](history.md) 2026-10-05）で、15 関数平均 +5.3pt・悪化ゼロ・F12 の median `best_f` が 3 桁減。正準環境の 24 関数で確かめる。
+1. **2D の部品ごとの ablation（どの部品が 2D の 1 位を支えているか）。**
+   `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,abl_noStrain,abl_noHostComp,abl_noSpill,abl_noDrill,abl_noAir,abl_noDroplet,abl_closeOnly,abl_noRouter,abl_isoClose"`（関数で shard に割ってよい。24/24 そろえること）。
+   **腕の中身**: 系統共存なし／宿主競合（rollback）なし／スピルオーバーなし／drilling の加速収縮なし／空気感染なし／飛沫感染なし／接触感染だけ／ルーターなし／接触感染を等方にする（C_pop の形を使わない）。いずれも `quick_check.py` の `abl_*`。
+   **集計**: `scripts/analyze_quick.py`（2D）の [1] 全体表。腕ごとに SR@1e-10 の base との差、関数別の変化（全関数）、Wilcoxon の有意な関数（両方向）。base は その177 の 92.08% / 677.7 を再現するはず（再現したかを書く）。
+   **参考**: 2026-07-08 に同種の ablation がある（[history.md](history.md) の「必要性 ablation」の表。宿主競合 −21.9pt、スピルオーバー −12.7pt など）。その後に既定が変わっているので、値の差も 1 行で書く。
+   **記録**: 集計 CSV を `analysis/single/j1/` に置き、作業ログに 15 行以内で書く。
+2. **10D で学習 C の汚染対策（凍結 `ccfrz50` と出自の選別 `ccgate2`）を測る。**
+   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccfrz50,ccgate2,ccgate2_ccmu50"`（関数で shard に割ってよい。24/24 そろえること）。
+   **背景**: ローカルの軽量検証（[history.md](history.md) 2026-10-05）で、凍結は 15 関数平均 +5.3pt・悪化ゼロ。出自の選別 `ccgate2` は停滞窓を 150 / 300 / 600 に振っても凍結より上で、F12 の SR@1e-10 が初めて 0 を抜けた。正準環境の 24 関数で確かめる。
    **集計**: `scripts/analyze_quick.py --dim 10` の [1] 全体表、関数別の SR@1e-10 の変化（全関数）、F07 / F10 / F12 / F14 の SR@1e-10 と median `best_f`、Wilcoxon の有意な関数（両方向）。
    **比べる相手**: CMA-ES / IPOP-CMA-ES の 10D は `analysis/single/e183/` と `analysis/single/e182/`（base が再現するので同一 base 越しに並べてよい）。
-   **記録**: 集計 CSV を `analysis/single/j1/` に置き、作業ログに 15 行以内で書く。
-2. **5D で同じ腕を測る（副作用が見える次元）。**
-   `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`。
+   **記録**: 集計 CSV を `analysis/single/j2/` に置き、作業ログに 15 行以内で書く。
+3. **5D で同じ腕を測る（副作用が見える次元）。**
+   `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccfrz50,ccgate2,ccgate2_ccmu50"`。
    **注意**: 5D では多峰の関数（F03 / F15 / F19）が base で中間の SR を持つので、悪化が見える（その183）。この 3 関数の変化を必ず書く。
-   **集計・記録**: ジョブ 1 と同じ形。`analysis/single/j2/`。2D は回さない（学習 C は 2D で使われないので構造上 bit 一致）。
-3. **β=0 の 5D / 10D。**
+   **集計・記録**: ジョブ 2 と同じ形。`analysis/single/j3/`。2D は回さない（学習 C は 2D で使われないので構造上 bit 一致）。
+4. **β=0 の 5D / 10D。**
    `--all --methods "MC-ESO,dimf_softmax0"` を `--dim 5 --max-evals 12500` と `--dim 10 --max-evals 25000` で、n=20。
    **理由**: 2D では既定の β=5 が β=0 に −1.25pt 負けている（その181）。β=5 を採った根拠は旧環境の高次元の記録値だけで、この環境では測っていない。
-   **集計・記録**: ジョブ 1 と同じ形。`analysis/single/j3/`。
-4. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か。**
+   **集計・記録**: ジョブ 2 と同じ形。`analysis/single/j4/`。
+5. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か。**
    10D で予算を 2 倍（50000）と 4 倍（100000）にし、`--methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE"` を回す（比較手法にも同じ予算を与える）。
    40 分に入らなければ関数を絞ってよい。その場合は F07 / F12 / F19 / F22 を必ず含め、絞ったと書く。
    **集計**: `analysis/single/e177/analyze.py` の包絡線計算で「MC-ESO を 6 手法目に加えたときに関数別包絡線が上がる量」を出す（25000 では +0.00pt）。
-   **記録**: `analysis/single/j4/`。
+   **記録**: `analysis/single/j5/`。
 
 **対話セッションでやること（測定ルーチンは取らない）**
 - 記述とコードのずれ 2 件: `--all` の help の「2D」表記（`quick_check.py` と `run.sh`）、結果 UI の「PR」列（`web/app_lib/results.py`）。→ `/docs-check`

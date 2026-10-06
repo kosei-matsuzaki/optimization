@@ -570,6 +570,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # oscillates at 1e2-1e4: the steps that succeed right after a uniform
         # reseed come from far-off, high-f hosts and say nothing about the basin.
         cc_spill_freeze_gens: int = 0,
+        # Provenance gate (intrinsic alternative to the freeze timer): only
+        # children whose parent lies within this many σ·sqrt(dim) of the
+        # incumbent best, measured in the learned C's metric, update C (0 = off).
+        # Right after a uniform reseed the far-off parents fall outside; in the
+        # steady state the population's own spread stays inside.
+        cc_gate_mahal: float = 0.0,
         # Keep the learned covariance across ordinary spillovers (reset only on a
         # full basin switch). See the note at the reset site.
         cc_keep_on_spillover: bool = True,
@@ -694,6 +700,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.cc_mu_frac = cc_mu_frac
         self.cc_mu_droplet_only = cc_mu_droplet_only
         self.cc_spill_freeze_gens = cc_spill_freeze_gens
+        self.cc_gate_mahal = cc_gate_mahal
         self.cc_keep_on_spillover = cc_keep_on_spillover
         self.cc_persist_frac = cc_persist_frac
         self.cc_air_ratio = cc_air_ratio
@@ -1718,6 +1725,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         cand_f = []
         cand_beat = []
         pf = st.gen_parent_f
+        gate_cinv = None
+        if self.cc_gate_mahal > 0.0:
+            gate_cinv = np.linalg.inv(st.cc_C)
+            gate_best = st.pop_x[int(np.argmin(st.pop_f))]
+            gate_r2 = (self.cc_gate_mahal * st.sigma) ** 2 * self.dim
         for k, child_x, child_f in survived:
             # Only close-contact children are drawn from C; droplet and airborne
             # follow different distributions and would bias the estimate.
@@ -1726,6 +1738,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             sig = float(sigmas[k])
             if sig <= 1e-300:
                 continue
+            if gate_cinv is not None:
+                dp = parents[k] - gate_best
+                if float(dp @ gate_cinv @ dp) > gate_r2:
+                    continue
             # Historical rule: the step must be a genuine success — better than the
             # host that spawned it — because the placement test only asks it to beat
             # a worst-quartile host, which is not a success criterion (measured

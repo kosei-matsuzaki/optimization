@@ -1,0 +1,30 @@
+F07-StepEllipsoidal {} 0 5.5629e-01 final n_pop 40
+SR@1e-10 (n=10) per window 150/300/600   | median best_f per window
+F10-Ellipsoid base   SR 0.7/0.7/1.0   med 3.8e-13/2.6e-13/4.6e-14
+F10-Ellipsoid frz50  SR 1.0/1.0/1.0   med 1.3e-13/6.8e-14/4.6e-14
+F10-Ellipsoid gate2  SR 1.0/1.0/1.0   med 3.4e-13/7.1e-14/4.6e-14
+F10-Ellipsoid gate3  SR 0.9/1.0/1.0   med 2.1e-13/1.4e-13/4.6e-14
+F10-Ellipsoid gate5  SR 0.6/1.0/1.0   med 4.0e-13/9.2e-14/4.6e-14
+F11-Discus    base   SR 0.9/1.0/1.0   med 5.7e-14/1.4e-14/1.4e-14
+F11-Discus    frz50  SR 1.0/1.0/1.0   med 7.1e-14/0.0e+00/1.4e-14
+F11-Discus    gate2  SR 1.0/1.0/1.0   med 2.8e-14/1.4e-14/1.4e-14
+F11-Discus    gate3  SR 0.9/1.0/1.0   med 7.1e-14/1.4e-14/1.4e-14
+F11-Discus    gate5  SR 0.9/1.0/1.0   med 2.8e-14/1.4e-14/1.4e-14
+F12-BentCigar base   SR 0.0/0.0/0.0   med 2.8e+00/2.2e+00/5.4e-01
+F12-BentCigar frz50  SR 0.0/0.0/0.0   med 2.8e+00/6.1e-03/1.5e-04
+F12-BentCigar gate2  SR 0.1/0.2/0.2   med 5.5e-01/2.6e-05/6.2e-06
+F12-BentCigar gate3  SR 0.0/0.0/0.0   med 2.8e+00/1.8e-02/1.5e-04
+F12-BentCigar gate5  SR 0.0/0.0/0.0   med 2.8e+00/2.5e-02/9.8e-05
+F14-DiffPower base   SR 0.4/0.5/0.9   med 8.4e-07/8.9e-08/1.4e-12
+F14-DiffPower frz50  SR 0.4/1.0/1.0   med 7.0e-07/2.2e-12/1.2e-12
+F14-DiffPower gate2  SR 0.7/1.0/1.0   med 9.1e-12/1.7e-12/1.5e-12
+F14-DiffPower gate3  SR 0.4/1.0/1.0   med 1.6e-07/1.4e-12/1.4e-12
+F14-DiffPower gate5  SR 0.4/1.0/1.0   med 8.4e-07/1.4e-12/1.4e-12
+mean SR over 4 funcs per window:
+  base   0.500/0.550/0.725  spread 0.225
+  frz50  0.600/0.750/0.750  spread 0.150
+  gate2  0.700/0.800/0.800  spread 0.100
+  gate3  0.550/0.750/0.750  spread 0.200
+  gate5  0.475/0.750/0.750  spread 0.275
+
+[exited with code 0]
