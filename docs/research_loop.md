@@ -96,10 +96,6 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-7. **5D の全手法比較（グループ C+D）。** (claimed 2026-10-06 22:30 UTC)
-   `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,EA4eig,EA4eig-jSO-IDEbd,EA4eig-Simpl,AMALGAM-SO,AMALGAM-SO-DE,HSES,ICMAES-ILS,UMOEA-II,HMHH,HMHH-random,PS-CMA-ES,DEPSO,PSO,SaVOA,NM-Restart"`。
-   **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。 記録済みの 5D の値（[findings.md](findings.md)）との差も 1 行で書く（CMA 系と L-SHADE は修正前の値）。
-   **記録**: `analysis/single/j13/`。
 8. **10D の全手法比較（グループ A）。**
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE,jSO,L-SRTDE,IMODE"`。
    **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。 記録済みの 10D の値（[findings.md](findings.md)）との差も 1 行で書く（CMA 系と L-SHADE は修正前の値）。
@@ -170,6 +166,18 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-06 ジョブ7 5D 全手法比較（グループ C+D, 16 手法） — MC-ESO は SR@1e-10 43.12% で **8 位 / 16**。1 位は AMALGAM-SO 57.71%、2 位 AMALGAM-SO-DE 57.08%、3 位 ICMAES-ILS 54.17%。単独 1 位の関数は F19 のみ（採否の判断はしない）
+
+`./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "<ジョブ記載の 16 手法>"`。24 関数を 8 shard（各 3 関数 × 全 16 手法、8 つおきの交互割り）に割って並列し、**24/24 完走**（連結後 summary 384 行＝16 手法×24、wilcoxon 360 行＝15 手法×24。(関数, 手法) の重複・欠落ともゼロ）。wall 22.8 分（22:38:14→23:00:59 UTC）。numpy 2.4.6 / cma 4.5.0。**MC-ESO の行はジョブ6（`analysis/single/j12/`）と 24 関数 × 7 列すべて bit 一致し、[findings.md](findings.md) の 5D 基準値とも完全一致**（55.42 / 51.88 / 47.08 / **43.12**%、`evals_succ_mean` 5240.9、成功のある関数 20/24）＝決定性どおり。集計は `analysis/single/j13/{summary_5d,wilcoxon_5d,ranking_5d,per_function_sr1e10_5d,per_function_evals_5d,diff_vs_recorded_5d}`。
+
+**順位表**（`SR@1e-2/1e-4/1e-7/`**`1e-10`** ／ `evals_succ_mean`＝MC-ESO と両方で成功のある関数での対応平均（括弧内は同じ関数集合での MC-ESO 側と関数数）／ Wilcoxon の MC-ESO 勝ち-負け）: 1 **AMALGAM-SO** 70.42/67.08/65.00/**57.71** ｜ 3003.9（5022.4, 18）｜ 3-12 ／ 2 **AMALGAM-SO-DE** 68.12/66.67/64.79/**57.08** ｜ 3190.8（5022.4, 18）｜ 4-13 ／ 3 **ICMAES-ILS** 67.08/64.58/58.96/**54.17** ｜ 3636.0（4680.2, 18）｜ 5-11 ／ 4 UMOEA-II 78.54/71.04/59.38/**47.08** ｜ 7881.9（4902.3, 17）｜ 9-11 ／ 5 EA4eig 79.17/73.75/60.42/**45.21** ｜ 7927.1（4902.3, 17）｜ 9-11 ／ 6 HMHH 66.67/63.54/55.83/**44.58** ｜ 6333.5（4590.1, 16）｜ 9-8 ／ 7 NM-Restart 47.92/47.50/46.04/**43.75** ｜ **2678.5**（3627.5, 13）｜ 12-4 ／ **8 MC-ESO 55.42/51.88/47.08/43.12 ｜ 5240.9（20 関数）** ／ 9 EA4eig-jSO-IDEbd 73.33/65.42/51.25/**40.21** ｜ 7487.2（4590.1, 16）｜ 9-10 ／ 10 EA4eig-Simpl 69.17/64.38/50.00/**37.92** ｜ 6491.8（4816.0, 17）｜ 8-9 ／ 11 HMHH-random 70.21/64.79/45.21/**28.12** ｜ 7099.3（5022.4, 18）｜ 7-7 ／ 12 DEPSO 42.50/36.04/28.54/**25.21** ｜ 5854.3（4778.9, 11）｜ 13-5 ／ 13 PSO 28.75/24.38/18.96/**17.08** ｜ 3439.6（4521.3, 11）｜ 13-2 ／ 14 PS-CMA-ES 38.75/23.54/17.50/**16.25** ｜ 8036.4（4484.8, 9）｜ 10-5 ／ 15 SaVOA 26.46/22.29/16.88/**15.42** ｜ 5136.1（2340.9, 7）｜ 19-0 ／ 16 HSES 30.21/23.12/9.17/**8.33** ｜ 8382.1（3868.0, 7）｜ 15-4。速さは NM-Restart が 1 位（2678.5）、AMALGAM-SO 系・ICMAES-ILS も MC-ESO より速い。グループ A+B の 1 位 ELSHADE-SPACMA 74.58%（ジョブ6）には C+D のどの手法も届かない。
+
+**関数別 SR@1e-10 の変化**: MC-ESO は **0 関数（±0.00pt、43.12 → 43.12）** でジョブ6・findings.md と同値。他の 15 手法は [findings.md](findings.md) の 5D 表（MC-ESO / CMA-ES / IPOP / BIPOP / DE / L-SHADE のみ）に記録が無く、**今回が正準環境での初回測定**なので差分は取れない（`diff_vs_recorded_5d.txt` に明記）。 **関数別の位置**: MC-ESO が**単独 1 位は F19-GriewankRosenbrock（5%）の 1 関数**、同率 1 位は 8 関数（F01・F02・F05・F06・F10・F11、および 16 手法すべてが 0% の F23・F24）、劣位は 15 関数で、関数別 1 位との合計差は **31.67pt**。赤字の大きい順に F04（0 対 UMOEA-II 100、4.167pt）・F03（15 対 UMOEA-II/DEPSO 100、3.542）・F13（25 対 HMHH 100、3.125）・F20（0 対 UMOEA-II 75、3.125）・F12（30 対 AMALGAM-SO 100、2.917）・F14（35 対 EA4eig 100、2.708）・F21（30 対 EA4eig 95、2.708）・F07（55 対 EA4eig 100、1.875）・F22（55 対 EA4eig-jSO-IDEbd 100、1.875）・F17（0 対 ICMAES-ILS 40、1.667）。ジョブ6 の 40.42pt より赤字は小さい。
+
+**Wilcoxon**（ref=MC-ESO、α=0.05 両側、A12 で方向判定）: 15 手法合計で **MC-ESO の有意勝ち 145 / 有意負け 112**（ジョブ6 は 97 勝 158 負）。負けが多い関数は F20（14 手法）・F17（12）・F07（11）・F18（11）・F04（10）・F13（9）・F14（8）・F03（7）・F21（7）・F22（7）・F09（4）・F12（4）・F06（3）・F10（3）・F15（2）で、**残り 9 関数（F01・F02・F05・F08・F11・F16・F19・F23・F24）では 1 手法にも有意に負けない**（ジョブ6 と同一の 9 関数）。F20・F21・F22 では有意勝ちがゼロ。MC-ESO の負けが最も多い相手は AMALGAM-SO-DE（13）・AMALGAM-SO（12）・ICMAES-ILS（11）・UMOEA-II（11）・EA4eig（11）、ゼロなのは SaVOA。全 run 同値で p=nan になるのは手法ごとに 1〜4 関数。
+
+**書かれたとおりに行かなかった点**: コマンド・集計・記録先は指示どおり（shard は許された関数分割で 8 本）。環境を 3 点記録する: (1) `python3` は 3.11（パッケージ無し）で pip も 3.13 を向くため `/usr/bin/python3.13` から `.venv` を作った。(2) `pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので [findings.md](findings.md)「環境と再現性」の個別 install ＋ 空 stub を `PYTHONPATH` に置く手順で代替。素では numpy 2.5.3 が入るので既存記録と揃えるため **2.4.6 に固定**。このジョブの 16 手法はすべてリポジトリ内実装なので `mealpy` / `minionpy` は不要（入れていない）。(3) shard 6〜8 を二重に起動しかけたが、重複プロセスは開始 1 分で kill し結果ディレクトリも削除した（集計に使った 8 shard は 1 本ずつ）。`find analysis -type f` は 97 で目安 400 内。(4) **`scripts/check_doc_size.py` が exit 1: `docs/research_loop.md` が 307 / 300 行で上限超過**（この記録を足した結果。ジョブ7 の 4 行は消した）。規則どおり統合はせず commit する（折り畳みは対話セッションの担当）。
 
 ### 2026-10-06 ジョブ6 5D 全手法比較（グループ A+B, 17 手法） — MC-ESO は SR@1e-10 43.12% で **13 位 / 17**。1 位は ELSHADE-SPACMA 74.58%、2 位 LSHADE-SPACMA 72.29%。単独 1 位の関数はゼロ（採否の判断はしない）
 

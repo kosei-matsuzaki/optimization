@@ -1,0 +1,12 @@
+Job 7 (5D, group C+D, 16 methods) vs docs/findings.md section 2 (5D baseline, 6 methods).
+
+MC-ESO: 0 funcs changed, overall 43.12 -> 43.12 (+0.00pt)
+  24 funcs x 7 cols (median_best_f / mean_best_f / evals_succ_mean / SR@1e-2/1e-4/1e-7/1e-10)
+  are bit-identical to job 6 (analysis/single/j12/summary_5d.csv). MC-ESO is deterministic.
+  evals_succ_mean 5240.9 over the 20/24 functions with successes -- matches findings.md.
+
+The other 15 methods of this job (EA4eig / EA4eig-jSO-IDEbd / EA4eig-Simpl / AMALGAM-SO /
+AMALGAM-SO-DE / HSES / ICMAES-ILS / UMOEA-II / HMHH / HMHH-random / PS-CMA-ES / DEPSO /
+PSO / SaVOA / NM-Restart) do not appear in the findings.md 5D table (which holds only
+MC-ESO / CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE), so there is no recorded 5D
+value to diff them against. This job is their first 5D measurement on the canonical env.
