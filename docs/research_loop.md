@@ -95,7 +95,7 @@
 **書くのは対話セッション。** 各ジョブは、コマンド・集計・記録先まで書き切る。測定ルーチンが判断を足さなくて済むようにするため。
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 
-1. **2D の部品ごとの ablation（どの部品が 2D の 1 位を支えているか）。**
+1. **2D の部品ごとの ablation（どの部品が 2D の 1 位を支えているか）。** (claimed 2026-10-06 04:30 UTC)
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,abl_noStrain,abl_noHostComp,abl_noSpill,abl_noDrill,abl_noAir,abl_noDroplet,abl_closeOnly,abl_noRouter,abl_isoClose"`（関数で shard に割ってよい。24/24 そろえること）。
    **腕の中身**: 系統共存なし／宿主競合（rollback）なし／スピルオーバーなし／drilling の加速収縮なし／空気感染なし／飛沫感染なし／接触感染だけ／ルーターなし／接触感染を等方にする（C_pop の形を使わない）。いずれも `quick_check.py` の `abl_*`。
    **集計**: `scripts/analyze_quick.py`（2D）の [1] 全体表。腕ごとに SR@1e-10 の base との差、関数別の変化（全関数）、Wilcoxon の有意な関数（両方向）。base は その177 の 92.08% / 677.7 を再現するはず（再現したかを書く）。
