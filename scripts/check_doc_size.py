@@ -28,9 +28,7 @@ CAPS: list[tuple[str, int]] = [
 
 # Temporarily over the cap, with the date the exemption was granted. Remove the
 # entry once the file is folded back under its cap.
-EXEMPT: dict[str, str] = {
-    "docs/history.md": "2026-09-29 — 1555 lines; fold to 1000 in an interactive session",
-}
+EXEMPT: dict[str, str] = {}
 
 
 def cap_for(path: Path) -> int | None:
