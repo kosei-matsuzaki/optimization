@@ -96,7 +96,7 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-1. **2D の全手法比較（正準環境での確認）。**
+1. **2D の全手法比較（正準環境での確認）。** (claimed 2026-10-06 10:30 UTC)
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE,jSO,L-SRTDE,IMODE,LSHADE-cnEpSin,SPS-L-SHADE-EIG,CoBiDE,LSHADE-SPACMA,ELSHADE-SPACMA,APGSK-IMODE,EBOwithCMAR,MOS,EA4eig,EA4eig-jSO-IDEbd,EA4eig-Simpl,AMALGAM-SO,AMALGAM-SO-DE,HSES,ICMAES-ILS,UMOEA-II,HMHH,HMHH-random,PS-CMA-ES,DEPSO,PSO,SaVOA,NM-Restart"`（手法のグループで shard に割り、各 shard に MC-ESO を入れてよい）。
    **背景**: ローカル（macOS）の 2D 全手法比較で、MC-ESO は IMODE と同率 1 位（SR@1e-10 92.50%）、評価回数は上位手法で最少（799）、単独 1 位の関数はゼロ（[history.md](history.md) 2026-10-06）。NGOpt / NG-Portfolio は遅いので除く（ローカルの値は `analysis/single/local_all2d/`）。比較手法の不具合修正（CMA 系 3 手法・L-SHADE の差し替え）後の初の正準測定を兼ねる。
    **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。
