@@ -217,7 +217,7 @@ niching 手法が「協調している」ことの値打ちを測るための、
 | `LSHADE-cnEpSin` | `lib_wrappers.py` | mealpy 3.0.3 | — | 集団を論文の 18·D → 4 に直した |
 | `NGOpt` / `NG-Portfolio` | `lib_wrappers.py` | nevergrad 1.0.12 | — | NGOpt は遅い（10D で 1 run 40〜240 秒）。Portfolio は Sphere でも弱い（ライブラリ側の性質） |
 
-**この作業で見つかった既存の比較手法の問題（未修正。直すかはユーザーの判断待ち）**
-- `cmaes.py` / `restart_cmaes.py`（CMA-ES / IPOP / BIPOP）: (1) run 0 のシードが 0 になり、pycma が 0 を「時刻から乱数」と解釈するので run 0 だけ再現しない（[findings.md](findings.md) の「cma ライブラリは run 間で決定的でない」の少なくとも一部はこれ）。(2) 最後の世代を丸ごと評価するので、評価回数の上限を最大で集団サイズ − 1 回超える。
-- `lshade.py`（L-SHADE, mealpy）: mealpy は F / CR を NumPy の共通乱数から引くが、実行器はそれを初期化しないので、シードから再現しない可能性がある。10D の F10 で誤差 2.0e3 と、論文どおりの jSO / L-SRTDE の移植（1e-10 以下）に比べて大幅に弱い。
+**この作業で見つかった既存の比較手法の問題（2026-10-06 に修正。修正前の記録値は測り直し待ち）**
+- `cmaes.py` / `restart_cmaes.py`（CMA-ES / IPOP / BIPOP）→ **修正済み**（`pycma_seed` で 0 だけを固定の非ゼロ値に置き換え、最後の世代は残りの予算分だけ評価して止める。seed 100・200 の run は予算内の best が修正前と完全一致することを 3 手法 × 3 関数で確認）。修正前の内容: (1) run 0 のシードが 0 になり、pycma が 0 を「時刻から乱数」と解釈するので run 0 だけ再現しない（[findings.md](findings.md) の「cma ライブラリは run 間で決定的でない」の少なくとも一部はこれ）。(2) 最後の世代を丸ごと評価するので、評価回数の上限を最大で集団サイズ − 1 回超える。
+- `lshade.py`（L-SHADE, mealpy）→ **`lshade_port.py`（論文どおりの numpy 移植）に差し替えた**（`quick_check.py` の `L-SHADE`。旧版は `L-SHADE-mealpy`）。移植は 10D の F08 9.7e-10、F10 3.0e-10、F12 3.3e-3、F15 5.6（5 seed の median、jSO の移植と同水準）。旧版の説明: mealpy は F / CR を NumPy の共通乱数から引くが、実行器はそれを初期化しないので、シードから再現しない可能性がある。10D の F10 で誤差 2.0e3 と、論文どおりの jSO / L-SRTDE の移植（1e-10 以下）に比べて大幅に弱い。
 - 手元の CEC2022（ioh）は、公式の C コードと比べて F3（Schaffer F7）・F5（Levy）が最適解から離れた点で値が違い、F9 もわずかに違う（f* は同じ）。

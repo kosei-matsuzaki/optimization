@@ -36,6 +36,7 @@ from core.optimizers.mceso_phased_accept import PhasedAcceptMCESO
 from core.optimizers.ea4eig import (EA4eigOptimizer, EA4eigJsoIdebdOptimizer,
                                     EA4eigSimplifiedOptimizer)
 from core.optimizers.lshade_spacma import LSHADESPACMAOptimizer
+from core.optimizers.lshade_port import LSHADEPortOptimizer
 from core.optimizers.amalgam_so import AMALGAMSOOptimizer
 from core.optimizers.hses import HSESOptimizer
 from core.optimizers.icmaes_ils import ICMAESILSOptimizer
@@ -258,7 +259,10 @@ _OPTIMIZERS = {
     "BIPOP-CMA-ES": (BIPOPCMAESOptimizer,           {}),
     "PSO":          (PSOOptimizer,                  {}),
     "DE":           (DEOptimizer,                   {}),
-    "L-SHADE":      (LSHADEOptimizer,               {}),
+    # Faithful numpy port (2026-10-06). The mealpy wrapper drew F/CR from the
+    # unseeded global RNG and stalled on 10D F10 at ~1e3; kept for reference.
+    "L-SHADE":        (LSHADEPortOptimizer,         {}),
+    "L-SHADE-mealpy": (LSHADEOptimizer,             {}),
     "SaVOA":        (SaVOAOptimizer,                {}),
     # Multistart local-search floor: in 2D BBOB a restarted Nelder-Mead is a
     # strong reference — any metaheuristic gain must clear this bar.

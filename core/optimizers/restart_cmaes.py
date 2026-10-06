@@ -11,6 +11,7 @@ import numpy as np
 import cma
 
 from ..benchmarks import BenchmarkFunction
+from .cmaes import pycma_seed
 from .base import BaseOptimizer, OptimizeResult
 
 
@@ -111,7 +112,7 @@ class _RestartCMAESBase(BaseOptimizer):
                 regime = "large"
 
             opts = cma.CMAOptions()
-            opts["seed"] = int(self.seed) + 1000 * restart_idx
+            opts["seed"] = pycma_seed(int(self.seed) + 1000 * restart_idx)
             opts["bounds"] = [[lo] * self.dim, [hi] * self.dim]
             opts["maxfevals"] = remaining
             opts["popsize"] = int(popsize)
@@ -126,6 +127,17 @@ class _RestartCMAESBase(BaseOptimizer):
                 solutions = es.ask()
                 if self.repelling:
                     solutions = self._repel(solutions, restart_bests, taboo_rejections, es)
+                # Never spend more than the budget: evaluate only what is left
+                # of the last generation and stop without a (partial) tell.
+                left = max_evals - len(history_f)
+                if len(solutions) > left:
+                    solutions = solutions[:left]
+                    fitnesses = [float(self.func(np.asarray(s))) for s in solutions]
+                    history_pop.append(np.array(solutions))
+                    for s, f in zip(solutions, fitnesses):
+                        history_x.append(np.asarray(s))
+                        history_f.append(f)
+                    break
                 fitnesses = [float(self.func(np.asarray(s))) for s in solutions]
                 es.tell(solutions, fitnesses)
                 history_pop.append(np.array(solutions))

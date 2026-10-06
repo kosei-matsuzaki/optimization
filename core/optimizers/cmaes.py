@@ -8,6 +8,14 @@ from ..benchmarks import BenchmarkFunction
 from .base import BaseOptimizer, OptimizeResult
 
 
+def pycma_seed(seed: int) -> int:
+    """Seed to hand to pycma. pycma treats 0 (and None) as "seed from the
+    clock", so the runner's run 0 (seed = 0 × 100) was not reproducible. Map
+    only 0 to a fixed non-zero value so every other seed stays bit-identical."""
+    s = int(seed)
+    return 999_999_937 if s == 0 else s
+
+
 class CMAESOptimizer(BaseOptimizer):
     def __init__(
         self,
@@ -38,7 +46,7 @@ class CMAESOptimizer(BaseOptimizer):
         while len(history_f) < max_evals:
             remaining = max_evals - len(history_f)
             opts = cma.CMAOptions()
-            opts["seed"] = restart_seed
+            opts["seed"] = pycma_seed(restart_seed)
             opts["bounds"] = [[lo] * self.dim, [hi] * self.dim]
             opts["maxfevals"] = remaining
             opts["verbose"] = -9
@@ -47,6 +55,17 @@ class CMAESOptimizer(BaseOptimizer):
 
             while len(history_f) < max_evals and not es.stop():
                 solutions = es.ask()
+                # Never spend more than the budget: evaluate only what is left
+                # of the last generation and stop without a (partial) tell.
+                left = max_evals - len(history_f)
+                if len(solutions) > left:
+                    solutions = solutions[:left]
+                    fitnesses = [self.func(np.array(s)) for s in solutions]
+                    history_pop.append(np.array(solutions))
+                    for s, f in zip(solutions, fitnesses):
+                        history_x.append(np.array(s))
+                        history_f.append(f)
+                    break
                 fitnesses = [self.func(np.array(s)) for s in solutions]
                 es.tell(solutions, fitnesses)
                 history_pop.append(np.array(solutions))

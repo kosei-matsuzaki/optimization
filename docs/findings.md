@@ -387,7 +387,7 @@ bit 一致の検査: (i) 改修は既定を bit 変えない（改修前 commit 
 ### 決定性と参照値
 
 - MC-ESO は決定的である。その182 で base は その179 を 24 関数 × 7 列（`median_best_f` / `mean_best_f` / `evals_succ_mean` / SR 4 水準）で 1 セルも違わずに再現した。
-- `cma` ライブラリ側（CMA-ES / IPOP-CMA-ES）は run 間で決定的でない。同じ列で CMA-ES 39 セル / IPOP 25 セルが動き、CMA-ES の SR@1e-10 は 41.88 → 41.67（F08 が 85% → 80% の 1 run）。比較手法の 1 関数 5pt 程度の動きをコード差の証拠に使わない。
+- CMA-ES / IPOP-CMA-ES の値が run 間で動いた（同じ列で CMA-ES 39 セル / IPOP 25 セル、CMA-ES の SR@1e-10 は 41.88 → 41.67）のは、`cma` ライブラリの性質ではなく**こちらの包みの不具合**だった（2026-10-06 訂正）。run 0 で pycma にシード 0 が渡り、pycma は 0 を「時刻から乱数」と解釈していた。あわせて最後の世代を丸ごと評価し、評価回数の上限を最大 270 回超えていた。どちらも修正済みで、修正後の測り直しは測定ジョブ（[research_loop.md](research_loop.md)）。L-SHADE も、mealpy 版（10D F10 で 1.2e3）を論文どおりの移植に差し替えた。**この節の比較手法の値は修正前のもの。**
 - MC-ESO の乱数は `np.random.default_rng` 1 箇所。ioh / numpy の版差は BBOB の定義を動かさず、MC-ESO 内部の最下位桁を通じて深い水準の 1 run を跨がせる程度（dim2 で F23・F24 が各 +1 run）。
 - ローカル PC（macOS）では base がクラウドと一致しない（2026-09-29、10D で 138 セル中 54 セルが違う。2D は SR@1e-10 92.5%）。クラウドも numpy 2.4.6 で base を bit 一致で再現しているので、numpy の版は原因ではない。線形代数ライブラリ（Accelerate と OpenBLAS）の差が候補で、未確認。クラウドを正準環境とし、ローカルの quick は同じ run の中の base と腕の比較にだけ使う（[history.md](history.md) の 2026-09-29 ローカル検証）。
 - BBOB-24 dim2 / n=20 の MC-ESO はこの環境で SR@1e-10 92.08% / `evals_succ_mean` 677.7（その26・その29・その177・その181 で 5 回独立に再現）。`CLAUDE.md` の pin 93.5% / 798 とは一致しない（理由は 4 節）。pin の絶対値を引用するときは注意する。

@@ -94,30 +94,38 @@
 
 **書くのは対話セッション。** 各ジョブは、コマンド・集計・記録先まで書き切る。測定ルーチンが判断を足さなくて済むようにするため。
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
-
-2. **5D で同じ腕を測る（副作用が見える次元）。**
+**標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
+1. **5D で同じ腕を測る（副作用が見える次元）。**
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccgate2,ccgate2_ccmu50"`。凍結の 5D は `analysis/single/j2/summary_ccfrz_5d.csv`。
    **注意**: 5D では多峰の関数（F03 / F15 / F19）が base で中間の SR を持つので、悪化が見える（その183。凍結でも 5〜15pt 落ちた）。この 3 関数の変化を必ず書く。
-   **集計・記録**: ジョブ 1 と同じ形。`analysis/single/j5/`。2D は回さない（学習 C は 2D で使われないので構造上 bit 一致）。
-3. **空気感染を外す（`abl_noAir`）を 5D と 10D で測る。**
+   **集計・記録**: 標準の集計。`analysis/single/j5/`。2D は回さない（学習 C は 2D で使われないので構造上 bit 一致）。
+2. **比較手法の測り直し（2D と 5D）: CMA 系 3 手法の不具合修正と L-SHADE の作り直しを受けて。**
+   `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE"`（2D）と、同じ手法を `--dim 5 --max-evals 12500`（5D）。
+   **背景**: 2026-10-06 に、CMA-ES / IPOP / BIPOP の包み（`cmaes.py` / `restart_cmaes.py`）の 2 つの不具合を直した（run 0 で pycma にシード 0 が渡り時刻から乱数を取っていた、最後の世代を丸ごと評価して上限を最大 270 評価超えていた）。L-SHADE は論文どおりの numpy 移植 `lshade_port.py` に差し替えた（旧 mealpy 版は 10D F10 で 1.2e3、移植は 3.0e-10）。記録済みの比較値（その177〜179）は旧版のもの。
+   **集計**: 次元ごとに [1] 全体表、関数別の SR@1e-10（全関数）、記録済みの値（[findings.md](findings.md) の 1・2 節）との差。MC-ESO の行は記録と一致するはず（一致したかを書く）。CMA 系は seed 100 以降の run は修正前と同じで、run 0 と最終世代だけが変わる見込み。
+   **記録**: `analysis/single/j11/`（2D と 5D を別ファイルに）。
+3. **比較手法の測り直し（10D）。**
+   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE"`。
+   **集計・記録**: 上と同じ形。記録済みの 10D の値（[findings.md](findings.md) の 3 節、IPOP 50.00% など）との差を必ず書く。`analysis/single/j12/`。
+4. **空気感染を外す（`abl_noAir`）を 5D と 10D で測る。**
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,abl_noAir"` と `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,abl_noAir"`。
    **背景**: 2D の ablation（作業ログ 2026-10-06、`analysis/single/j3/`）で、空気感染を外しても SR@1e-10 は −0.21pt で有意差ゼロ、F24 は +20pt。高次元でも枠を使うだけなら、外して接触・飛沫に回す改良候補になる。
-   **集計**: 次元ごとにジョブ 1 と同じ形。多峰の関数（F03 / F15 / F16 / F17 / F19 / F20 / F21 / F24）の変化を必ず書く（空気感染は遠方探索の担当なので、悪化するならここに出る）。
+   **集計**: 次元ごとに標準の集計。多峰の関数（F03 / F15 / F16 / F17 / F19 / F20 / F21 / F24）の変化を必ず書く（空気感染は遠方探索の担当なので、悪化するならここに出る）。
    **記録**: `analysis/single/j8/`（5D と 10D を別ファイルに）。
-4. **勢いのチャネル（空気感染と差し替え）を 2D と 5D で測る。**
+5. **勢いのチャネル（空気感染と差し替え）を 2D と 5D で測る。**
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,mom10_noAir"`（2D）と `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,mom10_noAir,mom10_noAir_gate2"`（5D）。
    **背景**: 勢いのチャネル（`mom_ratio`: 宿主が生まれたときの変位を κ ~ U(1,2) 倍だけ延長した点に子を置く）を空気感染の枠に置き換えると、ローカルで 2D 92.50% → 93.54%（base 有意勝ちゼロ）、10D 15 関数 55.33% → 60.00%（[history.md](history.md) 2026-10-06）。2D の規則（SR@1e-10 を下げない）を正準環境で確かめる。
    **比べる相手**: 空気感染だけを外した `abl_noAir` の 2D は `analysis/single/j3/`、5D はジョブ 3。勢いの効果と空気感染を外した効果を分けるため、関数ごとに `mom10_noAir` と `abl_noAir` を並べた表を作る。
-   **集計**: 次元ごとにジョブ 1 と同じ形。2D は F16 / F17 / F18 / F19 / F20 / F23 の変化を必ず書く（ローカルで動いた関数）。
+   **集計**: 次元ごとに標準の集計。2D は F16 / F17 / F18 / F19 / F20 / F23 の変化を必ず書く（ローカルで動いた関数）。
    **記録**: `analysis/single/j9/`（2D と 5D を別ファイルに）。
-5. **勢いのチャネルを 10D で測る。**
+6. **勢いのチャネルを 10D で測る。**
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,mom10_noAir,mom10_noAir_gate2"`。
-   **集計・記録**: ジョブ 1 と同じ形。F08 / F09 / F10 / F13 / F14 / F21 の変化を必ず書く（ローカルで動いた関数）。`ccgate2` 単独の 10D はジョブ 1 の結果と並べる。`analysis/single/j10/`。
-6. **β=0 の 5D / 10D。**
+   **集計・記録**: 標準の集計。F08 / F09 / F10 / F13 / F14 / F21 の変化を必ず書く（ローカルで動いた関数）。`ccgate2` 単独の 10D は作業ログ 2026-10-06 の結果（`analysis/single/j4/`）と並べる。`analysis/single/j10/`。
+7. **β=0 の 5D / 10D。**
    `--all --methods "MC-ESO,dimf_softmax0"` を `--dim 5 --max-evals 12500` と `--dim 10 --max-evals 25000` で、n=20。
    **理由**: 2D では既定の β=5 が β=0 に −1.25pt 負けている（その181）。β=5 を採った根拠は旧環境の高次元の記録値だけで、この環境では測っていない。
-   **集計・記録**: ジョブ 1 と同じ形。`analysis/single/j6/`。
-7. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か。**
+   **集計・記録**: 標準の集計。`analysis/single/j6/`。
+8. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か。**
    10D で予算を 2 倍（50000）と 4 倍（100000）にし、`--methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE"` を回す（比較手法にも同じ予算を与える）。
    40 分に入らなければ関数を絞ってよい。その場合は F07 / F12 / F19 / F22 を必ず含め、絞ったと書く。
    **集計**: `analysis/single/e177/analyze.py` の包絡線計算で「MC-ESO を 6 手法目に加えたときに関数別包絡線が上がる量」を出す（25000 では +0.00pt）。
