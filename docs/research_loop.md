@@ -95,7 +95,7 @@
 **書くのは対話セッション。** 各ジョブは、コマンド・集計・記録先まで書き切る。測定ルーチンが判断を足さなくて済むようにするため。
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 
-1. **10D で学習 C の出自の選別（`ccgate2`）を測る。**
+1. **10D で学習 C の出自の選別（`ccgate2`）を測る。** (claimed 2026-10-06 06:30 UTC)
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccgate2,ccgate2_ccmu50"`（関数で shard に割ってよい。24/24 そろえること）。
    **背景**: 凍結（`ccfrz*`）は正準環境で測り済み（作業ログ 2026-10-05 / 10-06、`analysis/single/j1/`・`j2/`）。出自の選別 `ccgate2` はローカルで、停滞窓を 150 / 300 / 600 に振っても凍結より上で、F12 の SR@1e-10 が初めて 0 を抜けた（[history.md](history.md) 2026-10-05）。
    **比べる相手**: 凍結の腕は `analysis/single/j1/summary_ccfrz_10d.csv`（base が bit 一致するので同一 base 越しに並べてよい）。
