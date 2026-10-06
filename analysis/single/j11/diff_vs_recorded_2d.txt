@@ -1,0 +1,13 @@
+parsed recorded MC-ESO         mean=92.08%
+parsed recorded CMA-ES         mean=59.58%
+parsed recorded IPOP-CMA-ES    mean=83.12%
+parsed recorded BIPOP-CMA-ES   mean=77.50%
+parsed recorded DE             mean=89.38%
+parsed recorded L-SHADE        mean=76.88%
+
+MC-ESO          92.08% ->  92.08%  (+0.00pt)  changed on  0: 
+CMA-ES          59.58% ->  59.79%  (+0.21pt)  changed on  3: F03 25->20(-5), F04 10->15(+5), F13 85->90(+5)
+IPOP-CMA-ES     83.12% ->  82.92%  (-0.21pt)  changed on  1: F20 70->65(-5)
+BIPOP-CMA-ES    77.50% ->  77.50%  (+0.00pt)  changed on  2: F04 25->20(-5), F20 40->45(+5)
+DE              89.38% ->  89.38%  (+0.00pt)  changed on  0: 
+L-SHADE         76.88% ->  91.25%  (+14.38pt)  changed on  9: F08 95->100(+5), F13 95->100(+5), F15 75->100(+25), F16 35->100(+65), F17 5->100(+95), F18 0->100(+100), F19 40->85(+45), F20 100->90(-10), F24 0->15(+15)

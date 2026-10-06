@@ -96,11 +96,6 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-1. **2D の全手法比較（正準環境での確認）。** (claimed 2026-10-06 10:30 UTC)
-   `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE,jSO,L-SRTDE,IMODE,LSHADE-cnEpSin,SPS-L-SHADE-EIG,CoBiDE,LSHADE-SPACMA,ELSHADE-SPACMA,APGSK-IMODE,EBOwithCMAR,MOS,EA4eig,EA4eig-jSO-IDEbd,EA4eig-Simpl,AMALGAM-SO,AMALGAM-SO-DE,HSES,ICMAES-ILS,UMOEA-II,HMHH,HMHH-random,PS-CMA-ES,DEPSO,PSO,SaVOA,NM-Restart"`（手法のグループで shard に割り、各 shard に MC-ESO を入れてよい）。
-   **背景**: ローカル（macOS）の 2D 全手法比較で、MC-ESO は IMODE と同率 1 位（SR@1e-10 92.50%）、評価回数は上位手法で最少（799）、単独 1 位の関数はゼロ（[history.md](history.md) 2026-10-06）。NGOpt / NG-Portfolio は遅いので除く（ローカルの値は `analysis/single/local_all2d/`）。比較手法の不具合修正（CMA 系 3 手法・L-SHADE の差し替え）後の初の正準測定を兼ねる。
-   **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。
-   **記録**: `analysis/single/j11/`。
 2. **改善案 4 系統を 2D で測る（2D の規則の確認）。**
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,pop_lin16,pop_lin8,pop_lin16_2,ipop_fail3,rv2,rv2_flat,h2hA,lsfin"`。
    **背景**: 改善案 4 系統（[history.md](history.md) 2026-10-06）。A 集団サイズ（`pop_lin16` 16·D→4·D、`pop_lin8` 8·D→4·D、`pop_lin16_2` 16·D→2·D、`ipop_fail3` スピルオーバーに 3 回続けて失敗したら 1.5 倍）、B ルーター v2（空気感染なし。`rv2` は経路ごとに飛沫・勢いの配分を変える、`rv2_flat` は全経路で同じ配分の対照）、C `h2hA`（飛沫感染の F / CR を成功履歴で適応）、D `lsfin`（予算の最後 10% で SLSQP）。既定はすべて不変（2D・10D の 16 件で bit 一致を確認済み）。
@@ -214,3 +209,23 @@ SR@1e-10 が変わった関数（残り 13 関数は両腕とも ±0: F01,F02,F0
 Wilcoxon（ref=MC-ESO、α=0.05 両側、A12 で方向判定）: **base が有意に勝つ関数が両腕で各 1 件出た** — `ccgate2` は F19（p=0.00085, A12=0.83 large）、`ccgate2_ccmu50` は F01（p=0.046, A12=0.60 small）。腕が有意に勝つのは `ccgate2` が F18（p=0.020, A12=0.36 small、ただし SR@1e-10 は両者 0%）、`ccgate2_ccmu50` が F13（p=0.024, A12=0.38 small）・F14（p=0.036, A12=0.28 large）。F02/F05（＋`ccgate2_ccmu50` は F11）は全 run 同値で p=nan。
 書かれたとおりに回せなかった点: `pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので [findings.md](findings.md) の手順（空 stub を `PYTHONPATH`）で代替。このコンテナの `python3` も 3.11 で numpy 無しなので `/usr/bin/python3.13` から `.venv` を作り numpy を 2.4.6 に固定した（素では 2.5.3 が入る）。`--funcs` は正式名で指定し、6 shard を `--label j5s1..j5s6` で分けて summary / wilcoxon を連結した。`scripts/check_doc_size.py` は exit 0（`history.md` 1598 行は既存の EXEMPT）。**`find analysis -type f` は 420（私の出力 2 件の前から 418）で目安 400 を超えている。削除は行っていない。**
 10D（その165）との並び: `ccgate2` は 10D +1.46pt / 5D +0.21pt、`ccgate2_ccmu50` は 10D +1.04pt / 5D +3.13pt（5D では `ccmu50` を足した側が上。F14 は 5D・10D の両方で両腕が改善）。集計は `analysis/single/j5/{summary,wilcoxon}_ccgate2_5d.csv`。
+
+### 2026-10-06 ジョブ1 2D 全手法比較（32 手法）— MC-ESO は SR@1e-10 92.08% で IMODE と同率 1 位、評価回数は上位勢で最少（677.7 対 IMODE 1703.7）。単独 1 位の関数はゼロ
+
+`./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "<ジョブ記載の 32 手法>"`。24 関数を 6 shard に割って並列（**関数で分割**し各 shard に全 32 手法。ジョブは手法グループでの分割も許したが、関数分割なら MC-ESO の重複実行が出ないので採った）。**24/24 完走**（連結後 summary 768 行＝32 手法×24 関数、wilcoxon 744 行＝31 手法×24。(関数, 手法) の重複・欠落ともゼロを確認）。wall 19.7 分（10:40:47→11:00:30 UTC）。numpy 2.4.6 / cma 4.5.0 / mealpy 3.0.3。**MC-ESO の行は [findings.md](findings.md) の 2D 基準値と完全一致**（SR@1e-2/1e-4/1e-7/1e-10 ＝ 95.42 / 95.21 / 93.12 / **92.08**%、`evals_succ_mean` 677.7、関数別も 24/24 で差ゼロ＝決定性どおり）。
+
+| 順位 | 手法 | SR@1e-2 | 1e-4 | 1e-7 | SR@1e-10 | `evals_succ_mean`（MC-ESO と両方成功の関数で対応平均） | Wilcoxon 勝ち/負け |
+|---|---|---|---|---|---|---|
+| 1 | **MC-ESO** | 95.42% | 95.21% | 93.12% | **92.08%** | **677.7**（23 関数） | — |
+| 2 | IMODE | 96.46% | 94.79% | 92.50% | **92.08%** | 1703.7（23） | 1 / 2 |
+| 3 | jSO | 91.88% | 91.46% | 91.25% | 91.25% | 1294.6（22） | 1 / 3 |
+| 3 | EBOwithCMAR | 96.25% | 95.21% | 92.92% | 91.25% | 1910.0（23） | 3 / 2 |
+| 3 | L-SHADE | 92.29% | 92.08% | 91.25% | 91.25% | 2018.7（23） | 1 / 2 |
+| 6 | LSHADE-cnEpSin | 94.17% | 93.12% | 91.04% | 91.04% | 1701.4（23） | 1 / 3 |
+| 7 | ELSHADE-SPACMA | 92.50% | 91.46% | 91.04% | 90.21% | 1439.9（23） | 1 / 3 |
+
+全 32 手法は `analysis/single/j11/ranking_2d.csv`（最下位は HSES 11.04% / CoBiDE 20.62% / PS-CMA-ES 20.83%）、関数別 SR@1e-10 の全手法×全関数は `per_function_sr1e10.csv`。
+記録値（[findings.md](findings.md) の 2D 表、CMA 系と L-SHADE は修正前）との関数別 SR@1e-10 の変化 ＝ **MC-ESO 0 関数（±0.00pt）、DE 0 関数（±0.00pt）、CMA-ES 3 関数（+0.21pt: F03 25→20、F04 10→15、F13 85→90）、IPOP 1 関数（−0.21pt: F20 70→65）、BIPOP 2 関数（±0.00pt: F04 25→20、F20 40→45）、L-SHADE 9 関数（+14.38pt、76.88→91.25%: F18 0→100、F17 5→100、F16 35→100、F19 40→85、F15 75→100、F24 0→15、F08・F13 各 +5、F20 100→90 のみ悪化）**。CMA 系 3 手法の修正は 2D の SR@1e-10 を動かしていない（±0.21pt ＝ 1 関数 5pt の揺れの範囲、規則どおりコード差の証拠にしない）。差し替えが効いたのは L-SHADE で、5 位から 3 位同着へ。
+Wilcoxon（ref=MC-ESO、α=0.05 両側、A12 で方向判定）: MC-ESO の勝ち/負けは 31 手法合計で **254 / 42**。負けが最も多いのは jSO・LSHADE-cnEpSin・ELSHADE-SPACMA・LSHADE-SPACMA・L-SRTDE・MOS（各 3）。MC-ESO が有意に負ける関数は **F06（20 手法に負け、A12 0.17〜0.34）・F17（14 手法、A12 0.00〜0.45）・F18（6 手法、A12 0.00〜0.10）・F24（2 手法: APGSK-IMODE p=0.0042 / DE p=0.017）** の 4 関数に集中し、他 20 関数では 1 手法にも有意に負けない。
+関数別の位置: **MC-ESO が単独 1 位の関数はゼロ**（17 関数で同率 1 位、7 関数で劣位）。劣位は（括弧内は SR@1e-10 が 100% に達した手法の数）F04 95%（10）・F06 95%（22）・F17 60%（13）・F18 90%（8）・F20 95%（6）・**F23 75%（NM-Restart が 80% で単独上位 ＝ 「F23 は MC-ESO だけが解く」という 6 手法時代の所見は 32 手法では成り立たない）**・F24 0%（DE 45% 以下 14 手法が非ゼロ）。
+書かれたとおりに回せなかった点: (1) `pip install -r requirements.txt` は今回 `pynmmso` も含め全部通った（`python3` が 3.11 で numpy 無しなので `/usr/bin/python3.13` から `.venv` を作り、既存記録と揃えるため numpy を 2.4.6 に固定。素では 2.5.3）。(2) **`LSHADE-cnEpSin` が `ModuleNotFoundError: mealpy.sota_based` で落ちた**。`requirements.txt` の `mealpy` が未固定で pip が 3.0.2 を選ぶが、`sota_based`（`LSHADEcnEpSin` / `IMODE`）があるのは 3.0.3 だけ。3.0.3 は旧 numpy をビルドしようとして失敗するので `--no-deps` で入れた。**`requirements.txt` に `mealpy==3.0.3` を固定するかは対話セッションの判断**（私は手を付けていない）。(3) `scripts/check_doc_size.py` は exit 0。`find analysis -type f` は 73（私の出力 5 件を含む）で目安 400 内。
