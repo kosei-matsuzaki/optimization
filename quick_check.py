@@ -31,6 +31,26 @@ from core.optimizers.mceso_ablations import (
 )
 from core.optimizers.mceso_commit_reseed import CommitReseedMCESO
 from core.optimizers.mceso_phased_accept import PhasedAcceptMCESO
+# Hybrid / state-of-the-art comparison candidates (2026-10-06). Registered so
+# they can be run by name; not in any default method list yet.
+from core.optimizers.ea4eig import (EA4eigOptimizer, EA4eigJsoIdebdOptimizer,
+                                    EA4eigSimplifiedOptimizer)
+from core.optimizers.lshade_spacma import LSHADESPACMAOptimizer
+from core.optimizers.amalgam_so import AMALGAMSOOptimizer
+from core.optimizers.hses import HSESOptimizer
+from core.optimizers.icmaes_ils import ICMAESILSOptimizer
+from core.optimizers.mos import MOSOptimizer
+from core.optimizers.umoea import UMOEAIIOptimizer
+from core.optimizers.ebowithcmar import EBOwithCMAROptimizer
+from core.optimizers.hmhh import HMHHOptimizer
+from core.optimizers.ps_cmaes import PSCMAESOptimizer
+from core.optimizers.depso import DEPSOOptimizer
+from core.optimizers.jso import JSOPortOptimizer
+from core.optimizers.lsrtde import LSRTDEOptimizer as LSRTDEPortOptimizer
+from core.optimizers.lib_wrappers import (IMODEOptimizer, LSHADEcnEpSinOptimizer,
+                                          JSOOptimizer as JSOLibOptimizer,
+                                          LSRTDEOptimizer as LSRTDELibOptimizer,
+                                          NGOptOptimizer, NGPortfolioOptimizer)
 from core.runner import (run_experiment, summarize, wilcoxon_vs_reference,
                          peak_metrics, niching_peak_metrics, niching_peak_counts)
 from core.visualize import (
@@ -209,6 +229,30 @@ _DIM_REGISTRIES: dict[int, dict[str, object]] = {
 # registered here (they live in core/optimizers/mceso_ablations.py and can be
 # added back temporarily when isolating a mechanism's contribution).
 _OPTIMIZERS = {
+    # ── Hybrid / SOTA comparison candidates (2026-10-06; docs/baselines.md) ──
+    "EA4eig":           (EA4eigOptimizer,           {}),
+    "EA4eig-jSO-IDEbd": (EA4eigJsoIdebdOptimizer,   {}),
+    "EA4eig-Simpl":     (EA4eigSimplifiedOptimizer, {}),
+    "LSHADE-SPACMA":    (LSHADESPACMAOptimizer,     {}),
+    "AMALGAM-SO":       (AMALGAMSOOptimizer,        {}),
+    "AMALGAM-SO-DE":    (AMALGAMSOOptimizer,        {"methods": ("CMA", "GA", "DE")}),
+    "HSES":             (HSESOptimizer,             {}),
+    "ICMAES-ILS":       (ICMAESILSOptimizer,        {}),
+    "MOS":              (MOSOptimizer,              {}),
+    "UMOEA-II":         (UMOEAIIOptimizer,          {}),
+    "EBOwithCMAR":      (EBOwithCMAROptimizer,      {}),
+    "HMHH":             (HMHHOptimizer,             {}),
+    "HMHH-random":      (HMHHOptimizer,             {"allocation": "random"}),
+    "PS-CMA-ES":        (PSCMAESOptimizer,          {}),
+    "DEPSO":            (DEPSOOptimizer,            {}),
+    "jSO":              (JSOPortOptimizer,          {}),
+    "jSO-minionpy":     (JSOLibOptimizer,           {"backend": "minionpy"}),
+    "L-SRTDE":          (LSRTDEPortOptimizer,       {}),
+    "L-SRTDE-minionpy": (LSRTDELibOptimizer,        {}),
+    "IMODE-mealpy":     (IMODEOptimizer,            {}),
+    "LSHADE-cnEpSin":   (LSHADEcnEpSinOptimizer,    {}),
+    "NGOpt":            (NGOptOptimizer,            {}),
+    "NG-Portfolio":     (NGPortfolioOptimizer,      {}),
     "CMA-ES":       (CMAESOptimizer,                {}),
     "IPOP-CMA-ES":  (IPOPCMAESOptimizer,            {}),
     "BIPOP-CMA-ES": (BIPOPCMAESOptimizer,           {}),

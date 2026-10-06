@@ -6,3 +6,5 @@ ioh
 flask
 mealpy
 pynmmso
+nevergrad==1.0.12
+minionpy==1.9.1

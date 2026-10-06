@@ -192,3 +192,32 @@ niching 手法が「協調している」ことの値打ちを測るための、
 
 **ダンプの有無・列の増減は探索経路を変えない**（`_dump` は run 終了時に 1 回書き出すだけ）。
 座標列を足す前後で `best_f` 列が 32/32 run 完全一致することを その115 が確認している。
+
+## ハイブリッド・最新手法の比較候補（2026-10-06 実装。まだ比較手法のリストには入れていない）
+
+`quick_check.py` の `_OPTIMIZERS` に名前で登録してあり、`--methods` で指定すれば回せる。既定の比較リストには入っていない。どれも評価回数を上限ちょうどで止め、同じシードで同じ結果になることを確認した（BBOB 2D F02、1000 評価）。調査の経緯は [related_work.md](related_work.md) の「比較手法の候補の洗い出し」。
+
+| 名前 | ファイル | 出典 | 原典との突き合わせ | 推測・注意 |
+|---|---|---|---|---|
+| `EA4eig` / `EA4eig-jSO-IDEbd` / `EA4eig-Simpl` | `ea4eig.py` | Bujok ら CEC 2022 優勝、Biedrzycki（*Evol. Comput.*）の解析 | Biedrzycki の補足資料の MATLAB / C++ を行番号つきで転写。CEC2022 10D・200k 評価で公表値（30 run）と 5 run の揺らぎの範囲で一致（F9 229、F12 164 など） | 原典の不具合 3 件は既定で修正（フラグで再現可）。CMA-ES の条件数 1e14 で全体が止まる挙動は既定で無効（`cma_cond_stop`）。`EA4eig-Simpl` は IDEbd 単体 |
+| `LSHADE-SPACMA` | `lshade_spacma.py` | Mohamed ら CEC 2017（3 位） | 元コードは非公開。mLSHADE-SPACMA リポジトリ内に残る元の行に従った。公表値との比較なし | CMA-ES の破綻判定は `eigh` の非正固有値で代用 |
+| `AMALGAM-SO` / `AMALGAM-SO-DE` | `amalgam_so.py` | Vrugt, Robinson & Hyman, IEEE TEC 2009 | 自作のずらした CEC2005 相当（10D）で論文と同等以上（Sphere 1e-6 まで 1236 評価、論文 1756） | 単目的版のコードは非公開で、PDF の数式は画像から読んだ。CMA の更新（共有集団の上位から学ぶ）と境界処理は推測で、論文より速い原因かもしれない |
+| `HSES` | `hses.py` | Zhang & Shi CEC 2018 優勝 | 作者の HSES.m の MATLAB 移植から | 第 1 段階だけで 20,200 評価を使うので、2D / 5000 では第 1 段階しか動かない（`stage1_frac` は論文外の選択肢） |
+| `ICMAES-ILS` | `icmaes_ils.py` | Liao & Stützle CEC 2013 優勝 | Liao の博士論文（Alg. 3–4、Table 4.1） | 内部の CMA-ES は pycma |
+| `MOS` | `mos.py` | LaTorre ら BBOB-2010 | 論文の式 1–3 | 成績の測り方に推測があり、Sphere でも配分が DE に寄る |
+| `UMOEA-II` | `umoea.py` | Elsayed ら CEC 2016（2 位） | 論文の全文から | 局所探索（scipy `trust-constr` で代用）は予算の最後の 25% のみ。25k 評価では F10 が 1e-8 に届かない |
+| `EBOwithCMAR` | `ebowithcmar.py` | Kumar ら CEC 2017 優勝 | 作者の公開 MATLAB を行単位で移植 | 範囲外の点は評価前に修復、SQP は SciPy SLSQP。CMA の重みが f の生の値に比例する癖を残した（`cma_weights="uniform"` で変更可） |
+| `HMHH` / `HMHH-random` | `hmhh.py` | Grobler ら CEC 2010 / *Inf. Sci.* 2015 | 論文の表と擬似コードから | 推測が多い（docstring に列挙）。10D F15 ではタブー割当（既定）がランダム割当より悪い |
+| `PS-CMA-ES` | `ps_cmaes.py` | Müller ら CEC 2009 | 論文の Alg. 1–2 | 情報交換は 200 世代ごとなので、10D / 25k では一度も起きない（実質 15 個の独立 CMA-ES） |
+| `DEPSO` | `depso.py` | Zhang & Xie, IEEE SMC 2003 | 全文が入手できず、要旨と二次資料から | 推測が多い |
+| `jSO` | `jso.py` | Brest ら CEC 2017（2 位） | 論文どおりの numpy 移植 | pyade の jSO は論文から外れる（記憶サイズ、初期値ほか）ので使わない |
+| `L-SRTDE` | `lsrtde.py` | Stanovov & Semenkin CEC 2024 優勝 | 作者の C++ を行単位で移植。公式 CEC2022 10D の全 12 関数で C++ 実行と平均誤差が一致 | — |
+| `jSO-minionpy` / `L-SRTDE-minionpy` | `lib_wrappers.py` | minionpy 1.9.1 | — | 参照用。比較には移植版を使う |
+| `IMODE-mealpy` | `lib_wrappers.py` | mealpy 3.0.3 | — | mealpy の実装に不具合（評価後に演算子の割当を引き直し、成績が別の演算子に付く）と SQP 欠落。10D F10 で 10〜67。比較に使うなら移植が要る |
+| `LSHADE-cnEpSin` | `lib_wrappers.py` | mealpy 3.0.3 | — | 集団を論文の 18·D → 4 に直した |
+| `NGOpt` / `NG-Portfolio` | `lib_wrappers.py` | nevergrad 1.0.12 | — | NGOpt は遅い（10D で 1 run 40〜240 秒）。Portfolio は Sphere でも弱い（ライブラリ側の性質） |
+
+**この作業で見つかった既存の比較手法の問題（未修正。直すかはユーザーの判断待ち）**
+- `cmaes.py` / `restart_cmaes.py`（CMA-ES / IPOP / BIPOP）: (1) run 0 のシードが 0 になり、pycma が 0 を「時刻から乱数」と解釈するので run 0 だけ再現しない（[findings.md](findings.md) の「cma ライブラリは run 間で決定的でない」の少なくとも一部はこれ）。(2) 最後の世代を丸ごと評価するので、評価回数の上限を最大で集団サイズ − 1 回超える。
+- `lshade.py`（L-SHADE, mealpy）: mealpy は F / CR を NumPy の共通乱数から引くが、実行器はそれを初期化しないので、シードから再現しない可能性がある。10D の F10 で誤差 2.0e3 と、論文どおりの jSO / L-SRTDE の移植（1e-10 以下）に比べて大幅に弱い。
+- 手元の CEC2022（ioh）は、公式の C コードと比べて F3（Schaffer F7）・F5（Levy）が最適解から離れた点で値が違い、F9 もわずかに違う（f* は同じ）。
