@@ -246,7 +246,7 @@
 
 ### 5.3 データと道具の在り処（2026-09-29 時点の作業ツリー）
 
-- `analysis/mmo2024/` — 新 suite と CEC2013 後半の保存物。e92〜e176 のうち約 50 ディレクトリが残る。2026-09-27 のユーザー決定で消さないことになっている。主な再利用点:
+- `analysis/mmo2024/` — 新 suite と CEC2013 後半の保存物。e92〜e176 のうち約 50 ディレクトリが残る。2026-09-27 のユーザー決定で消さないことになっており、2026-10-06 にタグ `archive/multisolution-2026-09-29` へ移した（下の「データ」）。主な再利用点:
   - `e92/refs/`（de Nobel+ 2024 と arXiv 2407.00939 の本文）、`e134/refs/`（Fieldsend 2014 の NMMSO 表など）、`e141/refs/`（r3pso の Li 2010）、`e159/`（`survey.md` と MLSL 系の本文）。
   - `e115/descents/`（D=10 PIN01 seed 0 の RL 降下ダンプ。唯一の控え）、`e151/descents.csv.gz`（D=20 RL）、`e153` / `e157`（D=5 RL）、`e170/`（CF3 の RL 降下・報告集合と null）、`e175` / `e176`（NMMSO の D=5 / D=20 報告集合）。
   - `e139/` と `e142/` の `analyze.py` は NMMSO / 手法軸の採点器。各ディレクトリに `prereg.md` と `run.sh` があり、削除済みの生データは `DUMPS_REMOVED.md` が台帳。
@@ -258,6 +258,8 @@
 - 環境: コンテナが変わるたびに `pynmmso` などの再適用が要る。BBOB 用の手順は [findings.md](../findings.md) の「環境と再現性」、niching 用を含む全文はタグ側の `docs/acceptance_topology.md`「環境の再構築」節。
 
 ---
+
+**データ（2026-10-06）**: `analysis/mmo2024/`（354 ファイル）も作業ツリーから外した。タグと同一。取り出すには `git checkout archive/multisolution-2026-09-29 -- analysis/mmo2024`。`analysis/hm/` と `analysis/audit/` は現行のスクリプトが読むので残している。
 
 ## 6. 全文の取り出し方
 
