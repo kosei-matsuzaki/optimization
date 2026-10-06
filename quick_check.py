@@ -344,6 +344,16 @@ _OPTIMIZERS = {
     "ccgate3":        (MultiChannelEpidemicOptimizer, {"cc_gate_mahal": 3.0}),
     "ccgate2_ccmu50": (MultiChannelEpidemicOptimizer,
                        {"cc_gate_mahal": 2.0, "cc_mu_frac": 0.50}),
+    # 2026-10-06 (local session). Cross-channel learning: droplet successes also
+    # update the learned C (sample starvation: close-contact alone yields
+    # 0.1-0.3 successes per generation at d10).
+    "ccdrop":         (MultiChannelEpidemicOptimizer, {"cc_learn_droplet": True}),
+    "ccdrop_gate2":   (MultiChannelEpidemicOptimizer,
+                       {"cc_learn_droplet": True, "cc_gate_mahal": 2.0}),
+    # Momentum channel: continue a lineage's last move (κ·dx, κ ~ U(1, 2)).
+    "mom10":          (MultiChannelEpidemicOptimizer, {"mom_ratio": 0.10}),
+    "mom10_noAir":    (MultiChannelEpidemicOptimizer,
+                       {"mom_ratio": 0.10, "air_ratio": 0.0, "cc_air_ratio": 0.0}),
     "ccfrz50_ccmu50": (MultiChannelEpidemicOptimizer,
                        {"cc_spill_freeze_gens": 50, "cc_mu_frac": 0.50}),
     # cc_mu_frac only in runs routed as ill-conditioned (droplet): at d5 the

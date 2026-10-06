@@ -86,6 +86,14 @@ class _MCESOState:
     # Generation index (len(history_sigma_global)) before which the learned C
     # is frozen after a spillover (cc_spill_freeze_gens).
     cc_freeze_until: int = 0
+    # cc_learn_droplet: how many children came from the droplet channel, and
+    # their parents' f (the "beat your parent" test for droplet steps).
+    gen_n_h2h: int = 0
+    gen_h2h_parent_f: "np.ndarray | None" = None
+    # mom_ratio: each host's birth displacement (child − parent), and the
+    # parents of this generation's children in channel order.
+    pop_dx: "np.ndarray | None" = None
+    gen_all_parents: list = field(default_factory=list)
     # Evaluation count at which σ was last inside the drilling regime. The
     # pathology — σ pinned by its own control law so the precision scale is
     # never reached — shows up as this falling far behind the current count
@@ -576,6 +584,20 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Right after a uniform reseed the far-off parents fall outside; in the
         # steady state the population's own spread stays inside.
         cc_gate_mahal: float = 0.0,
+        # Cross-channel learning: surviving droplet (DE-type) children that beat
+        # their parent also update the learned C, as unit-direction samples
+        # scaled to √d (DE steps follow the population spread, not σ). Close-
+        # contact successes alone are 0.1-0.3 per generation at d10 (sample
+        # starvation); droplet takes 40% of the children and is otherwise unused.
+        cc_learn_droplet: bool = False,
+        # How droplet steps are scaled before entering C: "unit" (Euclidean
+        # length √d) or "mahal" (length √d in the current C's metric — the
+        # normalisation a step drawn from σ·C^½·N(0, I) already has).
+        cc_learn_droplet_norm: str = "unit",
+        # Momentum channel: this share of the children (taken from close-contact)
+        # is placed at host + κ·dx, dx = the displacement that created the host,
+        # κ ~ U(1, 2). Continues a lineage's last move; active in drilling too.
+        mom_ratio: float = 0.0,
         # Keep the learned covariance across ordinary spillovers (reset only on a
         # full basin switch). See the note at the reset site.
         cc_keep_on_spillover: bool = True,
@@ -701,6 +723,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.cc_mu_droplet_only = cc_mu_droplet_only
         self.cc_spill_freeze_gens = cc_spill_freeze_gens
         self.cc_gate_mahal = cc_gate_mahal
+        self.cc_learn_droplet = cc_learn_droplet
+        self.cc_learn_droplet_norm = cc_learn_droplet_norm
+        self.mom_ratio = mom_ratio
         self.cc_keep_on_spillover = cc_keep_on_spillover
         self.cc_persist_frac = cc_persist_frac
         self.cc_air_ratio = cc_air_ratio
@@ -1163,6 +1188,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.pop_x[i] = new_x
             st.pop_f[i] = f_new
             st.pop_age[i] = 0
+            if st.pop_dx is not None and st.pop_dx.shape == st.pop_x.shape:
+                st.pop_dx[i] = 0.0
             st.history_x.append(new_x.copy())
             st.history_f.append(f_new)
             st.history_sigma_eval.append(sig_log)
@@ -1238,6 +1265,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         noise = rng.standard_normal((n_local, self.dim))
         raw_noise = noise.copy()   # kept for the persistent-C stream below
         local_parent_x = st.pop_x[gi_arr].copy()
+        if self.mom_ratio > 0.0:
+            st.gen_all_parents.append(local_parent_x.copy())
         sigma_i = st.sigma * host_scale
         if self._cc_dim_gate() > 0.0:
             st.gen_parent_x.append(local_parent_x.copy())
@@ -1343,6 +1372,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if self._cc_dim_gate() > 0.0:
             st.gen_parent_x.append(st.pop_x[h2h_parents_gi].copy())
             st.gen_sigma_used.append(h2h_step_norms.copy())
+            st.gen_n_h2h = n_h2h
+            st.gen_h2h_parent_f = st.pop_f[h2h_parents_gi].copy()
+        if self.mom_ratio > 0.0:
+            st.gen_all_parents.append(st.pop_x[h2h_parents_gi].copy())
         new_h2h = self._reflect(h2h_offspring, st.lo, st.hi)
         return new_h2h, h2h_step_norms
 
@@ -1360,8 +1393,28 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if self._cc_dim_gate() > 0.0:
             st.gen_parent_x.append(st.pop_x[air_parents_gi].copy())
             st.gen_sigma_used.append(np.full(n_air, float(np.max(air_sigma_vec))))
+        if self.mom_ratio > 0.0:
+            st.gen_all_parents.append(st.pop_x[air_parents_gi].copy())
         return self._reflect(st.pop_x[air_parents_gi] + noise_air * air_sigma_vec,
                              st.lo, st.hi)
+
+    def _momentum_children(self, st: _MCESOState, n_mom: int,
+                           weights: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Momentum transmission: x_child = x_host + κ·dx_host, κ ~ U(1, 2), where
+        dx_host is the displacement that created the host. Hosts without one
+        (fresh reseeds) fall back to a close-contact-scale isotropic step."""
+        if n_mom <= 0:
+            return np.empty((0, self.dim)), np.empty(0)
+        rng = st.rng
+        gi = rng.choice(self.n_pop, size=n_mom, p=weights)
+        kappa = rng.uniform(1.0, 2.0, size=n_mom)
+        dx = st.pop_dx[gi]
+        norms = np.linalg.norm(dx, axis=1)
+        iso = rng.standard_normal((n_mom, self.dim)) * st.sigma
+        step = np.where((norms > 0.0)[:, None], kappa[:, None] * dx, iso)
+        st.gen_all_parents.append(st.pop_x[gi].copy())
+        return (self._reflect(st.pop_x[gi] + step, st.lo, st.hi),
+                np.linalg.norm(step, axis=1))
 
     def _migratory_children(self, st: _MCESOState, n_mig: int) -> np.ndarray:
         """Migratory (vector-borne) transmission — stuck-gated structured escape.
@@ -1550,6 +1603,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if n_local < 0:                     # migratory overflow → trim it
             n_mig = max(0, n_mig + n_local)
             n_local = n_dead - n_air - n_h2h - n_mig
+        n_mom = 0
+        if self.mom_ratio > 0.0:
+            n_mom = min(n_local, max(1, int(round(self.mom_ratio * n_dead))))
+            n_local -= n_mom
+            st.gen_all_parents = []
+            if st.pop_dx is None or st.pop_dx.shape != st.pop_x.shape:
+                st.pop_dx = np.zeros_like(st.pop_x)
 
         # Log-scale quality anchored to the global (history-wide) best. When the
         # population converges to a local optimum, all f_i ≈ f_pop_max but
@@ -1569,16 +1629,18 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.gen_parent_x = []
             st.gen_sigma_used = []
             st.gen_n_local = 0
+            st.gen_n_h2h = 0
             if st.cc_C is None:
                 st.cc_C = np.eye(self.dim)
         new_local, sigma_i = self._close_contact_children(
             st, n_local, weights, log_f_max, log_f_spread)
         new_h2h, h2h_step_norms = self._droplet_children(st, n_h2h, weights, elite_arr)
         new_air = self._airborne_children(st, n_air, air_sigma_vec)
+        new_mom, mom_step_norms = self._momentum_children(st, n_mom, weights)
         # Migratory is generated last so that when the channel is off (n_mig = 0)
         # no RNG is drawn and the run stays bit-identical to base.
         new_mig = self._migratory_children(st, n_mig)
-        new_xs = np.concatenate([new_local, new_h2h, new_air, new_mig], axis=0)
+        new_xs = np.concatenate([new_local, new_h2h, new_air, new_mom, new_mig], axis=0)
 
         # Per-child sigma: local→σ_i, h2h→|step|, air→air_sigma_vec, mig→jump
         _sc: list[np.ndarray] = []
@@ -1588,6 +1650,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             _sc.append(h2h_step_norms)
         if n_air > 0:
             _sc.append(np.full(n_air, float(air_sigma_vec)))
+        if n_mom > 0:
+            _sc.append(mom_step_norms)
         if n_mig > 0:
             _sc.append(np.full(n_mig, float(self.migratory_jump_ratio * span)))
         _sigma_children = np.concatenate(_sc) if _sc else np.array([])
@@ -1670,9 +1734,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         spatially separated basins survive simultaneously.
         """
         replaced_slots: list[int] = []
+        track_dx = self.mom_ratio > 0.0 and st.pop_dx is not None
+        if track_dx:
+            all_par = (np.concatenate(st.gen_all_parents, axis=0)
+                       if st.gen_all_parents else np.empty((0, self.dim)))
+            old_dx: list[np.ndarray] = []
         for k in range(min(n_dead, len(new_xs))):
             slot = int(dead_global[k])
             x = new_xs[k]
+            if track_dx:
+                old_dx.append(st.pop_dx[slot].copy())
+                st.pop_dx[slot] = (x - all_par[k]) if k < len(all_par) else 0.0
             f = float(self.func(x))
             st.pop_x[slot] = x
             st.pop_f[slot] = f
@@ -1691,6 +1763,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 if dead_orig_f[k] < st.pop_f[slot]:
                     st.pop_x[slot] = dead_orig_x[k]
                     st.pop_f[slot] = dead_orig_f[k]
+                    if track_dx:
+                        st.pop_dx[slot] = old_dx[k]
                 elif self._cc_dim_gate() > 0.0:
                     survived.append((k, st.pop_x[slot].copy(), st.pop_f[slot]))
         if (self._cc_dim_gate() > 0.0
@@ -1733,7 +1807,27 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         for k, child_x, child_f in survived:
             # Only close-contact children are drawn from C; droplet and airborne
             # follow different distributions and would bias the estimate.
-            if k >= st.gen_n_local or k >= len(parents) or k >= len(sigmas):
+            is_drop = (self.cc_learn_droplet
+                       and st.gen_n_local <= k < st.gen_n_local + st.gen_n_h2h)
+            if (k >= st.gen_n_local and not is_drop) or k >= len(parents) or k >= len(sigmas):
+                continue
+            if is_drop:
+                d = child_x - parents[k]
+                nd = float(np.linalg.norm(d))
+                hf = st.gen_h2h_parent_f
+                j = k - st.gen_n_local
+                if nd <= 1e-300 or hf is None or j >= len(hf) or not (child_f < hf[j]):
+                    continue
+                if self.cc_learn_droplet_norm == "mahal":
+                    if gate_cinv is None:
+                        gate_cinv = np.linalg.inv(st.cc_C)
+                        if self.cc_gate_mahal <= 0.0:
+                            gate_r2 = float("inf")
+                            gate_best = parents[k]
+                    nd = math.sqrt(max(float(d @ gate_cinv @ d), 1e-300))
+                cand_y.append(d * (math.sqrt(self.dim) / nd))
+                cand_f.append(child_f)
+                cand_beat.append(True)
                 continue
             sig = float(sigmas[k])
             if sig <= 1e-300:
