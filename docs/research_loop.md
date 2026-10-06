@@ -96,54 +96,71 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-2. **2D の全手法比較（正準環境での確認）。**
+1. **2D の全手法比較（正準環境での確認）。**
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE,jSO,L-SRTDE,IMODE,LSHADE-cnEpSin,SPS-L-SHADE-EIG,CoBiDE,LSHADE-SPACMA,ELSHADE-SPACMA,APGSK-IMODE,EBOwithCMAR,MOS,EA4eig,EA4eig-jSO-IDEbd,EA4eig-Simpl,AMALGAM-SO,AMALGAM-SO-DE,HSES,ICMAES-ILS,UMOEA-II,HMHH,HMHH-random,PS-CMA-ES,DEPSO,PSO,SaVOA,NM-Restart"`（手法のグループで shard に割り、各 shard に MC-ESO を入れてよい）。
    **背景**: ローカル（macOS）の 2D 全手法比較で、MC-ESO は IMODE と同率 1 位（SR@1e-10 92.50%）、評価回数は上位手法で最少（799）、単独 1 位の関数はゼロ（[history.md](history.md) 2026-10-06）。NGOpt / NG-Portfolio は遅いので除く（ローカルの値は `analysis/single/local_all2d/`）。比較手法の不具合修正（CMA 系 3 手法・L-SHADE の差し替え）後の初の正準測定を兼ねる。
    **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。
    **記録**: `analysis/single/j11/`。
-3. **5D の全手法比較（グループ A+B）。**
+2. **改善案 4 系統を 2D で測る（2D の規則の確認）。**
+   `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,pop_lin16,pop_lin8,pop_lin16_2,ipop_fail3,rv2,rv2_flat,h2hA,lsfin"`。
+   **背景**: 改善案 4 系統（[history.md](history.md) 2026-10-06）。A 集団サイズ（`pop_lin16` 16·D→4·D、`pop_lin8` 8·D→4·D、`pop_lin16_2` 16·D→2·D、`ipop_fail3` スピルオーバーに 3 回続けて失敗したら 1.5 倍）、B ルーター v2（空気感染なし。`rv2` は経路ごとに飛沫・勢いの配分を変える、`rv2_flat` は全経路で同じ配分の対照）、C `h2hA`（飛沫感染の F / CR を成功履歴で適応）、D `lsfin`（予算の最後 10% で SLSQP）。既定はすべて不変（2D・10D の 16 件で bit 一致を確認済み）。
+   **集計**: 標準の集計。2D の SR@1e-10 を下げる腕はどれかを 1 行で書く（2D の規則）。
+   **記録**: `analysis/single/j18/`。
+3. **改善案 4 系統を 5D で測る。**
+   `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,pop_lin16,pop_lin8,pop_lin16_2,ipop_fail3,rv2,rv2_flat,h2hA,lsfin"`。
+   **集計**: 標準の集計。多峰の関数（F03 / F15 / F19 など）の悪化を必ず書く。
+   **記録**: `analysis/single/j19/`。
+4. **改善案を 10D で測る（その 1: 集団サイズ）。**
+   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,pop_lin16,pop_lin8,pop_lin16_2,ipop_fail3"`。
+   **集計**: 標準の集計。F07 / F09 / F12 と、易しい関数（F01 / F02 / F05 / F06）の `evals_succ_mean` の変化を必ず書く（集団を大きくした代償が出る場所）。
+   **記録**: `analysis/single/j20/`。
+5. **改善案を 10D で測る（その 2: ルーター v2・F/CR 適応・局所探索）。**
+   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,rv2,rv2_flat,h2hA,lsfin"`。
+   **集計**: 標準の集計。`rv2` と `rv2_flat` の差（ルーターの効果）を関数別に書く。
+   **記録**: `analysis/single/j21/`。
+6. **5D の全手法比較（グループ A+B）。**
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE,jSO,L-SRTDE,IMODE,LSHADE-cnEpSin,SPS-L-SHADE-EIG,CoBiDE,LSHADE-SPACMA,ELSHADE-SPACMA,APGSK-IMODE,EBOwithCMAR,MOS"`。
    **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。 記録済みの 5D の値（[findings.md](findings.md)）との差も 1 行で書く（CMA 系と L-SHADE は修正前の値）。
    **記録**: `analysis/single/j12/`。
-4. **5D の全手法比較（グループ C+D）。**
+7. **5D の全手法比較（グループ C+D）。**
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,EA4eig,EA4eig-jSO-IDEbd,EA4eig-Simpl,AMALGAM-SO,AMALGAM-SO-DE,HSES,ICMAES-ILS,UMOEA-II,HMHH,HMHH-random,PS-CMA-ES,DEPSO,PSO,SaVOA,NM-Restart"`。
    **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。 記録済みの 5D の値（[findings.md](findings.md)）との差も 1 行で書く（CMA 系と L-SHADE は修正前の値）。
    **記録**: `analysis/single/j13/`。
-5. **10D の全手法比較（グループ A）。**
+8. **10D の全手法比較（グループ A）。**
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE,jSO,L-SRTDE,IMODE"`。
    **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。 記録済みの 10D の値（[findings.md](findings.md)）との差も 1 行で書く（CMA 系と L-SHADE は修正前の値）。
    **記録**: `analysis/single/j14/`。
-6. **10D の全手法比較（グループ B）。**
+9. **10D の全手法比較（グループ B）。**
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,LSHADE-cnEpSin,SPS-L-SHADE-EIG,CoBiDE,LSHADE-SPACMA,ELSHADE-SPACMA,APGSK-IMODE,EBOwithCMAR,MOS"`。
    **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。 記録済みの 10D の値（[findings.md](findings.md)）との差も 1 行で書く（CMA 系と L-SHADE は修正前の値）。
    **記録**: `analysis/single/j15/`。
-7. **10D の全手法比較（グループ C）。**
+10. **10D の全手法比較（グループ C）。**
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,EA4eig,EA4eig-jSO-IDEbd,EA4eig-Simpl,AMALGAM-SO,AMALGAM-SO-DE,HSES,ICMAES-ILS,UMOEA-II"`。
    **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。 記録済みの 10D の値（[findings.md](findings.md)）との差も 1 行で書く（CMA 系と L-SHADE は修正前の値）。
    **記録**: `analysis/single/j16/`。
-8. **10D の全手法比較（グループ D）。**
+11. **10D の全手法比較（グループ D）。**
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,HMHH,HMHH-random,PS-CMA-ES,DEPSO,PSO,SaVOA,NM-Restart"`。
    **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。 記録済みの 10D の値（[findings.md](findings.md)）との差も 1 行で書く（CMA 系と L-SHADE は修正前の値）。
    **記録**: `analysis/single/j17/`。
-9. **空気感染を外す（`abl_noAir`）を 5D と 10D で測る。**
+12. **空気感染を外す（`abl_noAir`）を 5D と 10D で測る。**
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,abl_noAir"` と `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,abl_noAir"`。
    **背景**: 2D の ablation（作業ログ 2026-10-06、`analysis/single/j3/`）で、空気感染を外しても SR@1e-10 は −0.21pt で有意差ゼロ、F24 は +20pt。高次元でも枠を使うだけなら、外して接触・飛沫に回す改良候補になる。
    **集計**: 次元ごとに標準の集計。多峰の関数（F03 / F15 / F16 / F17 / F19 / F20 / F21 / F24）の変化を必ず書く（空気感染は遠方探索の担当なので、悪化するならここに出る）。
    **記録**: `analysis/single/j8/`（5D と 10D を別ファイルに）。
-10. **勢いのチャネル（空気感染と差し替え）を 2D と 5D で測る。**
+13. **勢いのチャネル（空気感染と差し替え）を 2D と 5D で測る。**
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,mom10_noAir"`（2D）と `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,mom10_noAir,mom10_noAir_gate2"`（5D）。
    **背景**: 勢いのチャネル（`mom_ratio`: 宿主が生まれたときの変位を κ ~ U(1,2) 倍だけ延長した点に子を置く）を空気感染の枠に置き換えると、ローカルで 2D 92.50% → 93.54%（base 有意勝ちゼロ）、10D 15 関数 55.33% → 60.00%（[history.md](history.md) 2026-10-06）。2D の規則（SR@1e-10 を下げない）を正準環境で確かめる。
    **比べる相手**: 空気感染だけを外した `abl_noAir` の 2D は `analysis/single/j3/`、5D はジョブ 3。勢いの効果と空気感染を外した効果を分けるため、関数ごとに `mom10_noAir` と `abl_noAir` を並べた表を作る。
    **集計**: 次元ごとに標準の集計。2D は F16 / F17 / F18 / F19 / F20 / F23 の変化を必ず書く（ローカルで動いた関数）。
    **記録**: `analysis/single/j9/`（2D と 5D を別ファイルに）。
-11. **勢いのチャネルを 10D で測る。**
+14. **勢いのチャネルを 10D で測る。**
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,mom10_noAir,mom10_noAir_gate2"`。
    **集計・記録**: 標準の集計。F08 / F09 / F10 / F13 / F14 / F21 の変化を必ず書く（ローカルで動いた関数）。`ccgate2` 単独の 10D は作業ログ 2026-10-06 の結果（`analysis/single/j4/`）と並べる。`analysis/single/j10/`。
-12. **β=0 の 5D / 10D。**
+15. **β=0 の 5D / 10D。**
    `--all --methods "MC-ESO,dimf_softmax0"` を `--dim 5 --max-evals 12500` と `--dim 10 --max-evals 25000` で、n=20。
    **理由**: 2D では既定の β=5 が β=0 に −1.25pt 負けている（その181）。β=5 を採った根拠は旧環境の高次元の記録値だけで、この環境では測っていない。
    **集計・記録**: 標準の集計。`analysis/single/j6/`。
-13. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か。**
+16. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か。**
    10D で予算を 2 倍（50000）と 4 倍（100000）にし、`--methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE"` を回す（比較手法にも同じ予算を与える）。
    40 分に入らなければ関数を絞ってよい。その場合は F07 / F12 / F19 / F22 を必ず含め、絞ったと書く。
    **集計**: `analysis/single/e177/analyze.py` の包絡線計算で「MC-ESO を 6 手法目に加えたときに関数別包絡線が上がる量」を出す（25000 では +0.00pt）。
@@ -197,69 +214,3 @@ SR@1e-10 が変わった関数（残り 13 関数は両腕とも ±0: F01,F02,F0
 Wilcoxon（ref=MC-ESO、α=0.05 両側、A12 で方向判定）: **base が有意に勝つ関数が両腕で各 1 件出た** — `ccgate2` は F19（p=0.00085, A12=0.83 large）、`ccgate2_ccmu50` は F01（p=0.046, A12=0.60 small）。腕が有意に勝つのは `ccgate2` が F18（p=0.020, A12=0.36 small、ただし SR@1e-10 は両者 0%）、`ccgate2_ccmu50` が F13（p=0.024, A12=0.38 small）・F14（p=0.036, A12=0.28 large）。F02/F05（＋`ccgate2_ccmu50` は F11）は全 run 同値で p=nan。
 書かれたとおりに回せなかった点: `pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので [findings.md](findings.md) の手順（空 stub を `PYTHONPATH`）で代替。このコンテナの `python3` も 3.11 で numpy 無しなので `/usr/bin/python3.13` から `.venv` を作り numpy を 2.4.6 に固定した（素では 2.5.3 が入る）。`--funcs` は正式名で指定し、6 shard を `--label j5s1..j5s6` で分けて summary / wilcoxon を連結した。`scripts/check_doc_size.py` は exit 0（`history.md` 1598 行は既存の EXEMPT）。**`find analysis -type f` は 420（私の出力 2 件の前から 418）で目安 400 を超えている。削除は行っていない。**
 10D（その165）との並び: `ccgate2` は 10D +1.46pt / 5D +0.21pt、`ccgate2_ccmu50` は 10D +1.04pt / 5D +3.13pt（5D では `ccmu50` を足した側が上。F14 は 5D・10D の両方で両腕が改善）。集計は `analysis/single/j5/{summary,wilcoxon}_ccgate2_5d.csv`。
-
-### 2026-10-06 ジョブ1 10D ccgate2 — 2 腕とも base 以上（+1.46 / +1.04pt）、base の有意勝ちゼロ。F14 は両腕 +15pt、F12 の SR@1e-10 が正準環境でも初めて 0 を抜けた（`ccgate2` 5%）
-
-`./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccgate2,ccgate2_ccmu50"`。24 関数を 6 shard に割って並列し、**24/24 完走**（summary 72 行＝3 手法×24 関数、wilcoxon 48 行＝2 腕×24）。wall 25.1 分（06:37→07:03 UTC）。numpy 2.4.6 / cma 4.5.0。base は `analysis/single/j1`（凍結 10D）・`e182`・`e183` の MC-ESO と 24/24 一致（`sr_1e-10` ＋ `median_best_f`）＝ 凍結の腕・CMA-ES・IPOP を同一 base 越しに並べて可。
-
-| 手法 | SR@1e-2 | 1e-4 | 1e-7 | SR@1e-10 | `evals_succ_mean`（両者成功の 13 関数で対応平均） | Wilcoxon base 勝ち/負け |
-|---|---|---|---|---|---|---|
-| MC-ESO（base） | 40.42% | 38.75% | 37.50% | 36.46% | 8693.5 | — |
-| `ccgate2` | 43.54% | 40.83% | 39.38% | **37.92%（+1.46pt）** | 8535.3（−158.2） | 0 / 2 |
-| `ccgate2_ccmu50` | 43.75% | 41.46% | 39.17% | **37.50%（+1.04pt）** | 7462.9（−1230.6） | 0 / 4 |
-
-- SR@1e-10 が変わった関数（他は不変）— `ccgate2`（6 関数）: F08 75→70（−5）／F09 85→95（+10）／F10 95→100（+5）／F12 0→5（+5）／F14 85→100（+15）／F21 15→20（+5）。`ccgate2_ccmu50`（7 関数）: F07 0→15（+15）／F09 85→80（−5）／F10 95→100（+5）／F13 0→5（+5）／F14 85→100（+15）／F21 15→10（−5）／F22 20→15（−5）。
-- Wilcoxon（α=0.05 両側、base を reference）: **base が有意に勝つ関数はどちらの腕に対しても 0**。腕が有意に勝つのは `ccgate2` が F10（p=0.011, A12=0.30 medium）・F12（p=0.00034, A12=0.22 large）の 2 関数、`ccgate2_ccmu50` が F04（p=0.030, A12=0.34）・F10（p=0.040, A12=0.33）・F13（p=0.00017, A12=0.15 large）・F19（p=0.036, A12=0.31）の 4 関数。
-- 指定 4 関数の SR@1e-10 と median `best_f`（base → `ccgate2` → `ccgate2_ccmu50`）: F07 0%/9.54e-01 → 0%/8.10e-01 → 15%/7.31e-01、F10 95%/1.74e-13 → 100%/5.33e-14 → 100%/6.75e-14、F12 0%/2.42e+00 → 5%/1.73e-03 → 0%/7.67e-01、F14 85%/2.80e-12 → 100%/1.44e-12 → 100%/2.70e-12。
-- 同一 base 越しの並び（24 関数平均 SR@1e-10）: IPOP-CMA-ES 50.00%（`e182`）＞ CMA-ES 41.67%（`e182`）＞ `ccfrz50_ccmu50` 38.33%（`j1`、+1.88pt）＞ `ccgate2` 37.92% ＞ `ccmu50` 37.71% ＞ `ccgate2_ccmu50`・`ccmu100` 37.50% ＞ `ccfrz25`・`ccfrz50` 37.29% ＞ base 36.46%。凍結の最良（`ccfrz50_ccmu50` +1.88pt）は `ccgate2`（+1.46pt）より上。
-- 書かれたとおりに回せなかった点: `pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので [findings.md](findings.md) の手順（空 stub を `PYTHONPATH`）で代替。このコンテナの `python3` も 3.11 で numpy 無しなので `/usr/bin/python3.13` から `.venv` を作り numpy を 2.4.6 に固定した（素では 2.5.3 が入る）。`--funcs` は正式名で指定し、6 shard を `--label j4s1..j4s6` で分けて summary / wilcoxon を連結した。`scripts/check_doc_size.py` は exit 0（`history.md` 1598 行は既存の EXEMPT）。**`find analysis -type f` は 418（私の出力 2 件の前から 416）で目安 400 を超えている。削除は行っていない。**
-
-**測定ルーチンが 1 ジョブ 1 項目で書く（15 行以内）。** 5 件を超えたら、対話セッションが結論を [findings.md](findings.md) か [history.md](history.md) に移して古い項目を消す。
-見出しは `### YYYY-MM-DD ジョブ名 — 一行の結論` の形にする（`scripts/loop_status.py` がこの形を読む）。
-
-### 2026-10-06 ジョブ1 2D 部品 ablation — 9 腕すべて base 以下（−0.21〜−25.00pt）。Δ が大きいのは 接触感染だけ −25.00／宿主競合なし −19.79／飛沫感染なし −17.50／スピルオーバーなし −12.08
-`./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,abl_noStrain,abl_noHostComp,abl_noSpill,abl_noDrill,abl_noAir,abl_noDroplet,abl_closeOnly,abl_noRouter,abl_isoClose"`。24 関数を 6 shard に割って並列し、**24/24 完走**（summary 240 行＝10 手法×24 関数、wilcoxon 216 行＝9 腕×24 関数）。wall 11.9 分（04:37→04:49 UTC）。numpy 2.4.6 / cma 4.5.0。**base は その177 の 92.08% / 677.7 を再現**（SR@1e-2 95.42 / 1e-4 95.21 / 1e-7 93.12 も [findings.md](findings.md) の 2D 表と一致）。
-全体（SR@1e-2 / 1e-4 / 1e-7 / **1e-10（Δpt）** / `evals_succ_mean`（base との差）＝ base と腕の両方に成功がある関数で平均。9 腕すべて共通 23 関数で、base 側は 677.7）:
-- Δ が 1.3pt 以内: `abl_noAir`（空気感染なし）95.83 / 95.62 / 93.75 / **91.88（−0.21）** / 731.1（+53.3）、`abl_noStrain`（系統共存なし）96.04 / 95.42 / 93.75 / **91.67（−0.42）** / 756.5（+78.7）、`abl_noDrill`（加速収縮なし）95.62 / 95.62 / 92.29 / **90.83（−1.25）** / 695.9（+18.1）
-- Δ が 4〜6pt: `abl_noRouter`（ルーターなし）95.42 / 95.00 / 91.67 / **87.92（−4.17）** / 682.5（+4.7）、`abl_isoClose`（接触感染を等方）95.83 / 94.79 / 91.25 / **86.88（−5.21）** / 747.6（+69.9）
-- Δ が 12pt 以上: `abl_noSpill`（スピルオーバーなし）82.29 / 81.46 / 80.62 / **80.00（−12.08）** / 494.0（**−183.7** ＝ 唯一の速化）、`abl_noDroplet`（飛沫感染なし）95.83 / 94.38 / 79.58 / **74.58（−17.50）** / 876.7（+199.0）、`abl_noHostComp`（宿主競合なし）93.33 / 87.29 / 77.50 / **72.29（−19.79）** / 1393.3（+715.6）、`abl_closeOnly`（接触感染だけ）93.96 / 91.67 / 72.08 / **67.08（−25.00）** / 1056.1（+378.3）
-2026-07-08 の同種 ablation（当時の base 92.9%）との差: 宿主競合 −21.9→**−19.79**、スピルオーバー −12.7→**−12.08**、系統共存 −2.3→**−0.42**、drilling −1.3→**−1.25**。4 腕の序列は当時と同じで、系統共存の Δ だけ 1.9pt 小さい。
-関数別 SR@1e-10。base は F04 95・F06 95・F17 60・F18 90・F20 95・F23 75・F24 0、残り 17 関数は 100。**F01・F05・F21 は 9 腕すべて ±0**（F22 が動くのは `noHostComp` の −5 だけ）。以下は base からの Δpt（全関数、両方向）:
-- `noAir` 悪化 4: F13 −15、F17 −5、F19 −10、F20 −5 ／ 改善 3: F04 +5、F06 +5、**F24 +20**。`noStrain` 悪化 5: **F04 −35**、F13 −5、F14 −5、F15 −5、F18 −5 ／ 改善 4: F06 +5、F17 +10、F23 +10、**F24 +20**。`noDrill` 悪化 3: F18 −25、F19 −5、F23 −10 ／ 改善 2: F17 +5、F24 +5
-- `noRouter` 悪化 4: F04 −5、**F13 −45**、F14 −25、F18 −25 ／ 改善 0: なし。`isoClose` 悪化 10: F02 −5、F06 −5、F10 −5、**F13 −50**、**F14 −50**、F16 −5、F17 −5、F18 −15、F19 −5、F23 −20 ／ 改善 3: F04 +5、F20 +5、**F24 +30（9 腕で最大）**
-- `noSpill` 悪化 8（多峰・separable に集中）: F03 −45、**F04 −75**、F07 −5、F15 −50、F16 −10、F18 −15、F19 −45、**F20 −65** ／ 改善 2: F06 +5、F23 +15。`noDroplet` 悪化 9: F10 −5、F11 −5、F12 −5、**F13 −100**、**F14 −100**、F17 −60、**F18 −90**、F19 −10、F23 −75 ／ 改善 3: F06 +5、F20 +5、F24 +20
-- `noHostComp` 悪化 15（ill-cond に集中）: F02 −25、F04 −5、F06 −20、F08 −5、F09 −10、F10 −40、F11 −45、F12 −35、**F13 −70**、**F14 −95**、F16 −10、F18 −65、F19 −10、F22 −5、F23 −50 ／ 改善 2: F17 +10、F20 +5。`closeOnly` 悪化 14: F02 −30、F03 −5、F04 −15、F10 −45、F11 −30、F12 −20、**F13 −100**、**F14 −100**、F15 −15、F17 −60、**F18 −90**、F19 −20、F20 −10、F23 −75 ／ 改善 2: F06 +5、F24 +10
-Wilcoxon（ref=MC-ESO、α=0.05 両側、A12 で方向判定）MC-ESO が有意に優位／腕が有意に優位: `closeOnly` **14**／0、`noDroplet` **13**／1（F24 medium 0.31）、`noHostComp` **7**／0、`noSpill` **7**／1（F06 large 0.27）、`noRouter` 3（F13・F14 large／F18 medium）／1（F06 small 0.42）、`isoClose` 2（F13・F14 large）／0、`noStrain` 1（F04 medium 0.67）／1（F06 medium 0.32）、`noDrill` 1（F23 small 0.56）／0、**`noAir` 0／0（どちらの向きにも有意差なし）**。
-書かれたとおりに回せなかった点: `pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので [findings.md](findings.md) の手順（空 stub を `PYTHONPATH`）で代替した。加えてこのコンテナの `python3` は 3.11 で numpy が入っておらず回らないので、`/usr/bin/python3.13` から `.venv` を作り、numpy を正準環境と同じ **2.4.6** に固定した（素で入れると 2.5.3 が入る）。`--funcs` は `F01-Sphere` 形式の正式名で指定した。`scripts/check_doc_size.py` は exit 0（`history.md` 1587 行は既存の EXEMPT）。
-`analysis` のファイル数は本ジョブの 2 ファイルで **412**（上限 約 400 を超過。前回 410 から継続）。規則どおり何も消していない。整理は対話セッションへ。集計は `analysis/single/j3/{summary,wilcoxon}_abl_2d.csv`。
-
-### 2026-10-06 ジョブ1 5D ccfrz — 3 腕すべて base 以上（+0.42〜+4.17pt）。悪化は多峰の F03（−15／−15／−5pt）と F15・F19（3 腕とも −5pt）
-`./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`。24 関数を 6 shard に割って並列し、**24/24 完走**（96 行＝4 手法×24 関数、wilcoxon 72 行）。wall 15.5 分（00:33→00:48 UTC）。numpy 2.4.6 / cma 4.5.0。base の MC-ESO は SR@1e-10 43.12% で [findings.md](findings.md) の 5D 基準値と一致。
-全体（SR@1e-2 / 1e-4 / 1e-7 / **1e-10** / `evals_succ_mean` ＝ base と腕の両方に成功がある関数だけで平均。n は腕ごとに違う）:
-- MC-ESO (base) 55.42 / 51.88 / 47.08 / **43.12%** / —
-- `ccfrz25` 57.08 / 51.46 / 46.67 / **43.54%（+0.42pt）** / 4378.4 vs base 4283.7（**+94.7**、共通 15 関数）
-- `ccfrz50` 55.42 / 51.25 / 47.08 / **44.38%（+1.26pt）** / 4633.3 vs base 4457.4（**+175.9**、共通 16 関数）
-- `ccfrz50_ccmu50` 56.04 / 51.46 / 48.33 / **47.29%（+4.17pt）** / 4470.0 vs base 4857.5（**−387.5**、共通 17 関数）
-SR@1e-10 が変わった関数（残り 15 関数は 3 腕とも ±0: F01,F02,F04,F05,F06,F08,F09,F10,F11,F17,F18,F20,F22,F23,F24）。括弧内は `ccfrz25` / `ccfrz50` / `ccfrz50_ccmu50`:
-- 改善: **F14 35→70/70/90%（+35/+35/+55）**、F13 25→25/30/55%（+0/+5/+30）、F12 30→30/30/45%（+0/+0/+15）、F21 30→30/30/40%、F07 55→60/55/60%、F16 5→0/20/5%（`ccfrz50` のみ +15）
-- **悪化: F03 15→0/0/10%（−15/−15/−5）、F15 10→5/5/5%（3 腕とも −5）、F19 5→0/0/0%（3 腕とも −5）、F16 は `ccfrz25` のみ 5→0%（−5）**。10D では悪化ゼロだった `ccfrz25`/`ccfrz50` が、5D では多峰で負ける。
-注意された 3 関数の median `best_f`（base→ccfrz25/ccfrz50/ccfrz50_ccmu50）: F03 9.95e-1→9.95e-1/9.95e-1/9.95e-1（不変）、F15 1.50e+0→1.17e+0/1.99e+0/1.99e+0、F19 6.10e-2→9.44e-2/9.62e-2/8.25e-2。F03 の SR 低下は median では見えない（上位 run だけが 1e-10 を落とす）。
-Wilcoxon（ref=MC-ESO、α=0.05 両側、A12 で方向判定）: **MC-ESO が有意に優位な関数は 3 腕とも 0 件**。腕が有意に優位 — `ccfrz25` 3 件（F14 large A12=0.28 / F21 negligible 0.48 / F23 small 0.40）、`ccfrz50` 1 件（F14 large 0.28）、`ccfrz50_ccmu50` 1 件（F14 large 0.18）。F01/F02/F05/F11 は全 run 同値（p=nan）で有意ではない。
-書かれたとおりに回せなかった点: 最初の shard 起動は `--funcs F01,...` の短縮名で `No matching functions` になったので、`F01-Sphere` 形式の正式名で回し直した（測定条件は不変）。`pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので findings.md の手順（空 stub を `PYTHONPATH`）で代替した。`scripts/check_doc_size.py` は exit 0（`history.md` 1570 行は既存の EXEMPT）。
-`analysis` のファイル数は本ジョブの 2 ファイルで **408**（上限 約 400 を超過。前回 406 から継続）。規則どおり何も消していない。整理は対話セッションへ。
-集計は `analysis/single/j2/{summary,wilcoxon}_ccfrz_5d.csv`。
-
-### 2026-10-05 ジョブ1 10D ccfrz — 3 腕すべて base 以上（+0.83〜+1.88pt）、悪化は `ccfrz50_ccmu50` の F21/F22 のみ
-`./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`。24 関数を 6 shard に割って並列し、**24/24 完走**（96 行＝4 手法×24 関数）。wall 22.5 分（18:32→18:55 UTC）。numpy 2.4.6 / cma 4.5.0。base の MC-ESO は `e182` と全 24 関数で bit 一致（SR@1e-10 36.46%）＝ CMA-ES / IPOP を同一 base 越しに並べて可。
-全体（SR@1e-2 / 1e-4 / 1e-7 / **1e-10** / `evals_succ_mean`。evals は base と成功が共通の 13 関数 F01,F02,F05,F06,F08-F14,F21,F22 で平均）:
-- MC-ESO (base) 40.42 / 38.75 / 37.50 / **36.46%** / 8693.5
-- `ccfrz25` 45.21 / 41.67 / 38.33 / **37.29%（+0.83pt）** / 8661.1（−32.5）
-- `ccfrz50` 44.38 / 41.25 / 38.54 / **37.29%（+0.83pt）** / 8694.9（+1.4）
-- `ccfrz50_ccmu50` 46.67 / 44.79 / 41.04 / **38.33%（+1.88pt）** / 7652.7（−1040.8）
-参考（`e182` の 10D、同一 base）: CMA-ES 41.67% / IPOP-CMA-ES 50.00% / `ccmu50` 37.71%。3 腕はいずれも CMA-ES に届かない。
-SR@1e-10 が変わった関数（残り 15 関数は 3 腕とも ±0）: F10 95→100・F14 85→100（3 腕すべて）／F07 0→5・F08 75→85・F09 85→95・F12 0→5・F13 0→5（`ccfrz50_ccmu50` のみ）／**F21 15→10・F22 20→15（`ccfrz50_ccmu50` のみ −5pt）**。`ccfrz25` / `ccfrz50` は悪化関数ゼロ。
-F07/F10/F12/F14 の median `best_f`（base→最良腕）: F07 9.54e-1→7.37e-1、F10 1.74e-13→4.97e-14、**F12 2.42e+0→1.59e-3（3 桁減。ローカル検証の再現）**、F14 2.80e-12→1.86e-12。
-Wilcoxon（ref=MC-ESO、α=0.05 両側、A12 で方向判定）: MC-ESO が有意に優位な関数は **3 腕とも 0 件**。腕が有意に優位 — `ccfrz25` 5 件（F10 large / F12 large / F13 large / F21 negligible / F23 medium）、`ccfrz50` 4 件（F08 negligible / F10 small / F12 large / F13 large）、`ccfrz50_ccmu50` 4 件（F09 medium / F10 medium / F12 large / F13 large）。
-書かれたとおりに回せなかった点はなし。`pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので findings.md の手順（空 stub を `PYTHONPATH`）で代替した。`scripts/check_doc_size.py` は exit 0（`history.md` 1570 行は既存の EXEMPT）。
-`analysis` のファイル数は本ジョブの 2 ファイルで **406**（上限 約 400 を超過）。規則どおり何も消していない。整理は対話セッションへ。
-集計は `analysis/single/j1/{summary,wilcoxon}_ccfrz_10d.csv`。

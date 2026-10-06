@@ -94,6 +94,16 @@ class _MCESOState:
     # parents of this generation's children in channel order.
     pop_dx: "np.ndarray | None" = None
     gen_all_parents: list = field(default_factory=list)
+    # h2h_adapt: success-history memories for the droplet channel's F / CR, and
+    # this generation's per-child values with the droplet children's index range.
+    h2h_mF: "np.ndarray | None" = None
+    h2h_mCR: "np.ndarray | None" = None
+    h2h_k: int = 0
+    gen_h2h_Fv: "np.ndarray | None" = None
+    gen_h2h_CRv: "np.ndarray | None" = None
+    gen_h2h_start: int = 0
+    gen_h2h_count: int = 0
+    ls_done: bool = False
     # Evaluation count at which σ was last inside the drilling regime. The
     # pathology — σ pinned by its own control law so the precision scale is
     # never reached — shows up as this falling far behind the current count
@@ -232,6 +242,20 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # (any spillover). On F07 d10 most restarts are ordinary spillovers —
         # 2 of 3 probed seeds never basin-switched — so "switch" rarely fires there.
         ipop_trigger: str = "switch",
+        # "failstreak": grow only on a spillover that follows this many
+        # consecutive failed spillovers (F07 stalls with ~13 failed spillovers per
+        # run; F08/F09 have 2-6 in total, mostly while still progressing).
+        ipop_fail_streak: int = 3,
+        # Population-size schedule. "fixed" (default) keeps n_pop. "linear" starts
+        # at max(20, pop_init_mult·D) and shrinks linearly in evaluations to
+        # max(pop_min, pop_final_mult·D), removing the worst hosts (L-SHADE's
+        # LPSR applied to the host pool). A larger pool opened F07 at d10 but cost
+        # easy functions half their generations; shrinking keeps the early breadth
+        # and gives the late phase back its generations.
+        pop_schedule: str = "fixed",
+        pop_init_mult: float = 16.0,
+        pop_final_mult: float = 4.0,
+        pop_min: int = 10,
         n_elite_max: int = 6,
         niche_radius_ratio: float = 0.1,       # min mutual elite distance, × span
                                                # (scale-invariant; on BBOB span=10
@@ -598,6 +622,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # is placed at host + κ·dx, dx = the displacement that created the host,
         # κ ~ U(1, 2). Continues a lineage's last move; active in drilling too.
         mom_ratio: float = 0.0,
+        # Router v2: per-route (droplet share, momentum share), airborne removed.
+        # Keys "pre" (before the route commits), "droplet", "close", "keepair".
+        # The route itself is decided by the existing deterministic router (same
+        # covariance features and thresholds); only what each route does changes.
+        # None (default) keeps the original air-routing behaviour.
+        route_mix: "dict | None" = None,
+        # Droplet F / CR adaptation (SHADE-style success history, H = 6, memories
+        # start at h2h_F / h2h_CR). A success is a droplet child that survives
+        # host competition strictly better than the host it replaced; memories
+        # are updated with Δf-weighted Lehmer means. False keeps fixed F / CR.
+        h2h_adapt: bool = False,
+        # End-phase local search (as in IMODE / EBOwithCMAR / UMOEA-II): once
+        # (1 − ls_final_frac) of the budget is spent, run SciPy SLSQP (finite-
+        # difference gradients, box bounds) from the best host with at most
+        # ls_budget_frac × max_evals evaluations, every one recorded and counted;
+        # its best point replaces the worst host and the run continues. 0 = off.
+        ls_final_frac: float = 0.0,
+        ls_budget_frac: float = 0.05,
         # Keep the learned covariance across ordinary spillovers (reset only on a
         # full basin switch). See the note at the reset site.
         cc_keep_on_spillover: bool = True,
@@ -661,6 +703,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Dimension-aware population: fixed 20 underfills high-dim search.
         self.n_pop = (n_pop if n_pop is not None
                       else max(20, int(round(n_pop_dim_mult * self.dim))))
+        self.pop_schedule = pop_schedule
+        self.pop_init_mult = pop_init_mult
+        self.pop_final_mult = pop_final_mult
+        self.pop_min = pop_min
+        self.ipop_fail_streak = ipop_fail_streak
+        if pop_schedule == "linear":
+            self.n_pop = max(20, int(round(pop_init_mult * self.dim)))
+        self._pop_final = max(pop_min, int(round(pop_final_mult * self.dim)))
         self._n_pop0 = self.n_pop          # ipop_growth restores this at each run start
         self.ipop_growth = ipop_growth
         self.ipop_max_mult = ipop_max_mult
@@ -726,6 +776,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.cc_learn_droplet = cc_learn_droplet
         self.cc_learn_droplet_norm = cc_learn_droplet_norm
         self.mom_ratio = mom_ratio
+        self.route_mix = route_mix
+        self.h2h_adapt = h2h_adapt
+        self.ls_final_frac = ls_final_frac
+        self.ls_budget_frac = ls_budget_frac
+        self._mom_on = mom_ratio > 0.0 or bool(
+            route_mix and any(v[1] > 0.0 for v in route_mix.values()))
         self.cc_keep_on_spillover = cc_keep_on_spillover
         self.cc_persist_frac = cc_persist_frac
         self.cc_air_ratio = cc_air_ratio
@@ -833,6 +889,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 break
             self._run_generation(st)
             self._record_generation(st)
+            if (self.ls_final_frac > 0.0 and not st.ls_done and st.budget_left
+                    and len(st.history_f) >= (1.0 - self.ls_final_frac) * max_evals):
+                st.ls_done = True
+                self._final_local_search(st)
 
         # Reported set: the surviving hosts, the strain reservoir, and the answer
         # archive of every basin drilled and abandoned.
@@ -1144,7 +1204,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         div_ratio = 1.0
 
         best_pre_spillover = st.best_so_far
-        if self.ipop_growth > 1.0 and (basin_switch or self.ipop_trigger == "spillover"):
+        if self.ipop_growth > 1.0 and (
+                basin_switch or self.ipop_trigger == "spillover"
+                or (self.ipop_trigger == "failstreak"
+                    and st.consecutive_failed_spillovers >= self.ipop_fail_streak)):
             # IPOP-style: grow before the reseed below. np.resize keeps the first
             # n_pop rows in place (so best_idx_global stays valid); every slot
             # past them is reseeded, since reseed_idx spans the new n_pop.
@@ -1265,7 +1328,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         noise = rng.standard_normal((n_local, self.dim))
         raw_noise = noise.copy()   # kept for the persistent-C stream below
         local_parent_x = st.pop_x[gi_arr].copy()
-        if self.mom_ratio > 0.0:
+        if self._mom_on:
             st.gen_all_parents.append(local_parent_x.copy())
         sigma_i = st.sigma * host_scale
         if self._cc_dim_gate() > 0.0:
@@ -1356,14 +1419,26 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             c = rng.integers(0, n, size=n_h2h)
             d = rng.integers(0, n, size=n_h2h)
             diff = diff + (st.pop_x[c] - st.pop_x[d])
+        if self.h2h_adapt:
+            if st.h2h_mF is None:
+                st.h2h_mF = np.full(6, float(self.h2h_F))
+                st.h2h_mCR = np.full(6, float(self.h2h_CR))
+            ri = rng.integers(0, 6, n_h2h)
+            Fv = st.h2h_mF[ri] + 0.1 * np.tan(np.pi * (rng.random(n_h2h) - 0.5))
+            Fv = np.where(Fv <= 0.0, 0.05, np.minimum(Fv, 1.0))
+            CRv = np.clip(rng.normal(st.h2h_mCR[ri], 0.1), 0.0, 1.0)
+            st.gen_h2h_Fv, st.gen_h2h_CRv = Fv, CRv
+            Fcol, CRcol = Fv[:, None], CRv[:, None]
+        else:
+            Fcol, CRcol = self.h2h_F, self.h2h_CR
         if len(elite_arr) > 0:
             strain_pos = self._droplet_strain_positions(st, elite_arr, n_h2h)
             best_pull = strain_pos - parents_x
-            h2h_step = self.h2h_F * (best_pull + diff)
+            h2h_step = Fcol * (best_pull + diff)
         else:
-            h2h_step = self.h2h_F * diff
+            h2h_step = Fcol * diff
         h2h_trial = parents_x + h2h_step
-        cr_mask = rng.random((n_h2h, self.dim)) < self.h2h_CR
+        cr_mask = rng.random((n_h2h, self.dim)) < CRcol
         forced = rng.integers(0, self.dim, size=n_h2h)
         cr_mask[np.arange(n_h2h), forced] = True
         h2h_offspring = np.where(cr_mask, h2h_trial, st.pop_x[h2h_parents_gi])
@@ -1374,7 +1449,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.gen_sigma_used.append(h2h_step_norms.copy())
             st.gen_n_h2h = n_h2h
             st.gen_h2h_parent_f = st.pop_f[h2h_parents_gi].copy()
-        if self.mom_ratio > 0.0:
+        if self._mom_on:
             st.gen_all_parents.append(st.pop_x[h2h_parents_gi].copy())
         new_h2h = self._reflect(h2h_offspring, st.lo, st.hi)
         return new_h2h, h2h_step_norms
@@ -1393,7 +1468,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if self._cc_dim_gate() > 0.0:
             st.gen_parent_x.append(st.pop_x[air_parents_gi].copy())
             st.gen_sigma_used.append(np.full(n_air, float(np.max(air_sigma_vec))))
-        if self.mom_ratio > 0.0:
+        if self._mom_on:
             st.gen_all_parents.append(st.pop_x[air_parents_gi].copy())
         return self._reflect(st.pop_x[air_parents_gi] + noise_air * air_sigma_vec,
                              st.lo, st.hi)
@@ -1533,10 +1608,76 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         return air_tapered, h2h_r
 
     # ── one generation (μ+λ greedy step) ────────────────────────────────────
+    def _final_local_search(self, st: _MCESOState) -> None:
+        """SLSQP from the best host; every evaluation goes through the history."""
+        from scipy.optimize import minimize
+
+        class _Out(Exception):
+            pass
+
+        cap = min(int(self.ls_budget_frac * st.max_evals),
+                  st.max_evals - len(st.history_f))
+        if cap <= self.dim + 1:
+            return
+        lo, hi = st.lo, st.hi
+        start = len(st.history_f)
+        best = {"x": None, "f": float("inf")}
+
+        def fun(x):
+            if len(st.history_f) - start >= cap:
+                raise _Out()
+            x = np.clip(np.asarray(x, dtype=float), lo, hi)
+            f = float(self.func(x))
+            st.history_x.append(x.copy())
+            st.history_f.append(f)
+            st.history_sigma_eval.append(float("nan"))
+            if f < st.best_so_far:
+                st.best_so_far = f
+            if f < st.basin_best:
+                st.basin_best = f
+            if f < best["f"]:
+                best["x"], best["f"] = x.copy(), f
+            return f
+
+        x0 = st.pop_x[int(np.argmin(st.pop_f))].copy()
+        try:
+            minimize(fun, x0, method="SLSQP", bounds=[(lo, hi)] * self.dim,
+                     options={"maxiter": 10 ** 6, "ftol": 1e-15})
+        except _Out:
+            pass
+        except (ValueError, FloatingPointError, np.linalg.LinAlgError):
+            pass
+        if best["x"] is not None:
+            w = int(np.argmax(st.pop_f))
+            if best["f"] < st.pop_f[w]:
+                st.pop_x[w] = best["x"]
+                st.pop_f[w] = best["f"]
+                st.pop_age[w] = 0
+                if st.pop_dx is not None and st.pop_dx.shape == st.pop_x.shape:
+                    st.pop_dx[w] = 0.0
+
+    def _shrink_population(self, st: _MCESOState) -> None:
+        """Linear population-size reduction: drop the worst hosts down to the
+        size scheduled for the evaluations spent so far."""
+        frac = len(st.history_f) / max(st.max_evals, 1)
+        target = int(round(self._n_pop0 + (self._pop_final - self._n_pop0) * frac))
+        target = max(self._pop_final, min(self.n_pop, target))
+        if target >= self.n_pop:
+            return
+        keep = np.sort(np.argsort(st.pop_f)[:target])
+        if st.pop_dx is not None and st.pop_dx.shape[0] == st.pop_x.shape[0]:
+            st.pop_dx = st.pop_dx[keep]
+        st.pop_x = st.pop_x[keep]
+        st.pop_f = st.pop_f[keep]
+        st.pop_age = st.pop_age[keep]
+        self.n_pop = target
+
     def _run_generation(self, st: _MCESOState) -> None:
         """One outbreak generation: select strains + the worst-K hosts to kill,
         spawn offspring across the three channels, evaluate them into the dead
         slots with greedy rollback, age survivors, and adapt σ_global."""
+        if self.pop_schedule == "linear":
+            self._shrink_population(st)
         rng, span, n = st.rng, st.span, self.n_pop
         gen_best_before = st.best_so_far  # snapshot for σ adaptation
 
@@ -1586,6 +1727,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # the σ-regime schedule (_channel_ratios) tapers it off as σ contracts so
         # precision grinding isn't disrupted (reaching 0 in drilling mode).
         air_ratio_eff, h2h_ratio_eff = self._channel_ratios(st)
+        mom_share = self.mom_ratio
+        if self.route_mix is not None:
+            mix = self.route_mix.get(st.channel_route or "pre", self.route_mix["pre"])
+            air_ratio_eff, h2h_ratio_eff, mom_share = 0.0, float(mix[0]), float(mix[1])
         n_air = max(0, int(round(air_ratio_eff * n_dead)))
         n_h2h = max(0, int(round(h2h_ratio_eff * n_dead))) if n >= 3 else 0
         # If rounding overflows, trim airborne first (preserves the
@@ -1604,8 +1749,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             n_mig = max(0, n_mig + n_local)
             n_local = n_dead - n_air - n_h2h - n_mig
         n_mom = 0
-        if self.mom_ratio > 0.0:
-            n_mom = min(n_local, max(1, int(round(self.mom_ratio * n_dead))))
+        if self._mom_on:
+            n_mom = (min(n_local, max(1, int(round(mom_share * n_dead))))
+                     if mom_share > 0.0 else 0)
             n_local -= n_mom
             st.gen_all_parents = []
             if st.pop_dx is None or st.pop_dx.shape != st.pop_x.shape:
@@ -1632,6 +1778,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.gen_n_h2h = 0
             if st.cc_C is None:
                 st.cc_C = np.eye(self.dim)
+        st.gen_h2h_start, st.gen_h2h_count = n_local, n_h2h
         new_local, sigma_i = self._close_contact_children(
             st, n_local, weights, log_f_max, log_f_spread)
         new_h2h, h2h_step_norms = self._droplet_children(st, n_h2h, weights, elite_arr)
@@ -1734,7 +1881,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         spatially separated basins survive simultaneously.
         """
         replaced_slots: list[int] = []
-        track_dx = self.mom_ratio > 0.0 and st.pop_dx is not None
+        track_dx = self._mom_on and st.pop_dx is not None
         if track_dx:
             all_par = (np.concatenate(st.gen_all_parents, axis=0)
                        if st.gen_all_parents else np.empty((0, self.dim)))
@@ -1770,6 +1917,21 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if (self._cc_dim_gate() > 0.0
                 and len(st.history_sigma_global) >= st.cc_freeze_until):
             self._update_cc_cov(st, survived)
+        if self.h2h_adapt and st.gen_h2h_Fv is not None and dead_orig_f is not None:
+            sF, sCR, dF = [], [], []
+            for k, slot in enumerate(replaced_slots):
+                j = k - st.gen_h2h_start
+                if 0 <= j < st.gen_h2h_count and st.pop_f[slot] < dead_orig_f[k]:
+                    sF.append(st.gen_h2h_Fv[j]); sCR.append(st.gen_h2h_CRv[j])
+                    dF.append(dead_orig_f[k] - st.pop_f[slot])
+            if sF:
+                w = np.asarray(dF) / np.sum(dF)
+                sF, sCR = np.asarray(sF), np.asarray(sCR)
+                st.h2h_mF[st.h2h_k] = float(np.sum(w * sF ** 2) / np.sum(w * sF))
+                den = float(np.sum(w * sCR))
+                st.h2h_mCR[st.h2h_k] = float(np.sum(w * sCR ** 2) / den) if den > 0 else 0.0
+                st.h2h_k = (st.h2h_k + 1) % 6
+            st.gen_h2h_Fv = None
 
         # Age active survivors (per-generation).
         replaced_mask = np.zeros(self.n_pop, dtype=bool)

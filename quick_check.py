@@ -415,6 +415,29 @@ _OPTIMIZERS = {
     "mom10_noAir_gate2": (MultiChannelEpidemicOptimizer,
                        {"mom_ratio": 0.10, "air_ratio": 0.0, "cc_air_ratio": 0.0,
                         "cc_gate_mahal": 2.0}),
+    # 2026-10-06 improvement candidates (all defaults unchanged).
+    # A. population-size schedules
+    "pop_lin16":      (MultiChannelEpidemicOptimizer,
+                       {"pop_schedule": "linear", "pop_init_mult": 16.0, "pop_final_mult": 4.0}),
+    "pop_lin8":       (MultiChannelEpidemicOptimizer,
+                       {"pop_schedule": "linear", "pop_init_mult": 8.0, "pop_final_mult": 4.0}),
+    "pop_lin16_2":    (MultiChannelEpidemicOptimizer,
+                       {"pop_schedule": "linear", "pop_init_mult": 16.0, "pop_final_mult": 2.0}),
+    "ipop_fail3":     (MultiChannelEpidemicOptimizer,
+                       {"ipop_growth": 1.5, "ipop_trigger": "failstreak",
+                        "ipop_fail_streak": 3, "ipop_max_mult": 4.0}),
+    # B. router v2: no airborne; per-route (droplet, momentum) shares
+    "rv2":            (MultiChannelEpidemicOptimizer,
+                       {"route_mix": {"pre": (0.4, 0.1), "droplet": (0.3, 0.2),
+                                      "close": (0.3, 0.1), "keepair": (0.5, 0.0)}}),
+    "rv2_flat":       (MultiChannelEpidemicOptimizer,
+                       {"route_mix": {"pre": (0.4, 0.1), "droplet": (0.4, 0.1),
+                                      "close": (0.4, 0.1), "keepair": (0.4, 0.1)}}),
+    # C. droplet F / CR success-history adaptation
+    "h2hA":           (MultiChannelEpidemicOptimizer, {"h2h_adapt": True}),
+    # D. end-phase SLSQP local search
+    "lsfin":          (MultiChannelEpidemicOptimizer,
+                       {"ls_final_frac": 0.10, "ls_budget_frac": 0.05}),
     "ccfrz50_ccmu50": (MultiChannelEpidemicOptimizer,
                        {"cc_spill_freeze_gens": 50, "cc_mu_frac": 0.50}),
     # cc_mu_frac only in runs routed as ill-conditioned (droplet): at d5 the
