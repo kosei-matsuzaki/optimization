@@ -256,3 +256,15 @@ CI 経由で取得（`analysis/mmo2024/e134/refs/fieldsend2014_nmmso_cec.txt.gz`
 - **GECCO'2024 競技の参加 3 手法の論文**（問題ごとの公表値がこれらにしか無い。競技の結果資料は D 別の平均しか載せない）: RR-CMA-ES = de Nobel+ 2024 *Avoiding redundant restarts in multimodal global optimization*、TRDE-LR = Wang+ 2024、N-DAM-CMA-ES = Karunarathne+ 2024（[arXiv 2407.00939](https://arxiv.org/pdf/2407.00939)）
 - RS-CMSA-ESII 本文（taboo 距離の適応則）、HillVallEA の core search 選択則
 - Robust Peak Ratio の定義
+
+## 単一解テーマ: 多手法の併用と地形特徴による選択（2026-10-06 調査）
+
+**多手法の併用（共有集団で複数の生成器）**: AMALGAM-SO（Vrugt, Robinson & Hyman, IEEE TEC 2009）と HMHH（Grobler, Engelbrecht, Kendall ら, CEC 2010 / Inf. Sci. 2015）が骨格を占有する（詳細は [research_loop.md](research_loop.md) の「占有されている領域」）。どちらも評価は CEC 2005 で、**BBOB での結果は見つからなかった**。COCO アーカイブの `AMALGAM_bosman` は別物（Bosman, Grahl, Thierens 2009 の AMaLGaM-IDEA、ガウス EDA）。
+- BBOB アーカイブにある混成: MOS（LaTorre ら 2010、DE と IPOP-CMA-ES、参加率を成績で動的に配分。解けた関数 24 / 24 / 24 / 24 / 21 / 20（2 / 3 / 5 / 10 / 20 / 40D）。F3 / F4 は DE との混成で解けるが、評価回数は IPOP-CMA-ES 単体より多いことがあると自認）、HCMA（Loshchilov ら 2013、BIPOP-saACM-k + STEP + NEWUOA。著者は総合最良と述べる）、MEMPSODE、DE-PSO、EDA-PSO など。LSHADE-SPACMA / UMOEAs / HSES / EBOwithCMAR / IMODE は CEC 系のみで BBOB の結果は見当たらない。
+- 推測（未確認）: CMA と DE / PSO の混成が BBOB 5〜20D で BIPOP / IPOP を明確に上回った報告は見つからない。上回ったと言えるのは、CMA に直線探索・局所法を足した HCMA 系。Kerschke & Trautmann 2019 の 12 手法ポートフォリオ（2 / 3 / 5 / 10D）では、単体最良は HCMA（96 問すべてで少なくとも 1 回到達）。
+
+**地形特徴による手法の選択（MC-ESO のルーターとの距離）**
+- 実行前に 1 手法を選ぶ: Kerschke & Trautmann 2019（ELA 特徴を約 50×D の追加サンプルで計算し、学習済みモデルで選ぶ）。
+- 実行中に 1 回切り替える: Vermetten ら GECCO 2020（切り替えの潜在的利得）、Schröder ら 2022、Kostovska ら PPSN 2022（CMA-ES の軌跡から ELA と内部状態の特徴を計算し、学習済みモデルで手法全体を交代、1 回だけ）、Jankovic ら 2022、Vermetten ら 2023（複数時点）。
+- 1 つの集団の中で演算子を選ぶ: Sallam ら, Inf. Sci. 2017（DE の 5 演算子を、地形の指標と成績履歴で数世代ごとに選ぶ）。
+- この調査で見つからなかった組み合わせ: 集団共分散の条件数・軸整列・座標分離性に固定閾値をかけ、1 回だけ決め、共有集団の中で生成器の配分比を変える（学習も成績も使わない）。最も近いのは Kostovska ら 2022、Sallam ら 2017、MOS 2010。
