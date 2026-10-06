@@ -1,0 +1,6 @@
+MC-ESO: 0 funcs changed, overall 43.12 -> 43.12 (+0.00pt)
+CMA-ES: 2 funcs changed, overall 43.33 -> 42.50 (-0.83pt)  [F07 20->15; F13 20->5]
+IPOP-CMA-ES: 2 funcs changed, overall 57.29 -> 57.29 (+0.00pt)  [F17 90->85; F18 30->35]
+BIPOP-CMA-ES: 2 funcs changed, overall 54.17 -> 54.38 (+0.21pt)  [F18 15->25; F21 35->30]
+DE: 0 funcs changed, overall 43.96 -> 43.96 (+0.00pt)
+L-SHADE: 13 funcs changed, overall 15.62 -> 58.54 (+42.92pt)  [F02 75->100; F03 0->100; F04 0->100; F06 0->100; F08 0->100; F09 0->100; F10 0->100; F11 0->100; F13 0->5; F14 0->100; F20 0->30; F21 0->85; F22 0->85]
