@@ -95,13 +95,6 @@
 **書くのは対話セッション。** 各ジョブは、コマンド・集計・記録先まで書き切る。測定ルーチンが判断を足さなくて済むようにするため。
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 
-1. **10D で学習 C の出自の選別（`ccgate2`）を測る。** (claimed 2026-10-06 06:30 UTC)
-   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccgate2,ccgate2_ccmu50"`（関数で shard に割ってよい。24/24 そろえること）。
-   **背景**: 凍結（`ccfrz*`）は正準環境で測り済み（作業ログ 2026-10-05 / 10-06、`analysis/single/j1/`・`j2/`）。出自の選別 `ccgate2` はローカルで、停滞窓を 150 / 300 / 600 に振っても凍結より上で、F12 の SR@1e-10 が初めて 0 を抜けた（[history.md](history.md) 2026-10-05）。
-   **比べる相手**: 凍結の腕は `analysis/single/j1/summary_ccfrz_10d.csv`（base が bit 一致するので同一 base 越しに並べてよい）。
-   **集計**: `scripts/analyze_quick.py --dim 10` の [1] 全体表、関数別の SR@1e-10 の変化（全関数）、F07 / F10 / F12 / F14 の SR@1e-10 と median `best_f`、Wilcoxon の有意な関数（両方向）。
-   **比べる相手**: CMA-ES / IPOP-CMA-ES の 10D は `analysis/single/e183/` と `analysis/single/e182/`（base が再現するので同一 base 越しに並べてよい）。
-   **記録**: 集計 CSV を `analysis/single/j4/` に置き、作業ログに 15 行以内で書く。
 2. **5D で同じ腕を測る（副作用が見える次元）。**
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccgate2,ccgate2_ccmu50"`。凍結の 5D は `analysis/single/j2/summary_ccfrz_5d.csv`。
    **注意**: 5D では多峰の関数（F03 / F15 / F19）が base で中間の SR を持つので、悪化が見える（その183。凍結でも 5〜15pt 落ちた）。この 3 関数の変化を必ず書く。
@@ -160,6 +153,22 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-06 ジョブ1 10D ccgate2 — 2 腕とも base 以上（+1.46 / +1.04pt）、base の有意勝ちゼロ。F14 は両腕 +15pt、F12 の SR@1e-10 が正準環境でも初めて 0 を抜けた（`ccgate2` 5%）
+
+`./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccgate2,ccgate2_ccmu50"`。24 関数を 6 shard に割って並列し、**24/24 完走**（summary 72 行＝3 手法×24 関数、wilcoxon 48 行＝2 腕×24）。wall 25.1 分（06:37→07:03 UTC）。numpy 2.4.6 / cma 4.5.0。base は `analysis/single/j1`（凍結 10D）・`e182`・`e183` の MC-ESO と 24/24 一致（`sr_1e-10` ＋ `median_best_f`）＝ 凍結の腕・CMA-ES・IPOP を同一 base 越しに並べて可。
+
+| 手法 | SR@1e-2 | 1e-4 | 1e-7 | SR@1e-10 | `evals_succ_mean`（両者成功の 13 関数で対応平均） | Wilcoxon base 勝ち/負け |
+|---|---|---|---|---|---|---|
+| MC-ESO（base） | 40.42% | 38.75% | 37.50% | 36.46% | 8693.5 | — |
+| `ccgate2` | 43.54% | 40.83% | 39.38% | **37.92%（+1.46pt）** | 8535.3（−158.2） | 0 / 2 |
+| `ccgate2_ccmu50` | 43.75% | 41.46% | 39.17% | **37.50%（+1.04pt）** | 7462.9（−1230.6） | 0 / 4 |
+
+- SR@1e-10 が変わった関数（他は不変）— `ccgate2`（6 関数）: F08 75→70（−5）／F09 85→95（+10）／F10 95→100（+5）／F12 0→5（+5）／F14 85→100（+15）／F21 15→20（+5）。`ccgate2_ccmu50`（7 関数）: F07 0→15（+15）／F09 85→80（−5）／F10 95→100（+5）／F13 0→5（+5）／F14 85→100（+15）／F21 15→10（−5）／F22 20→15（−5）。
+- Wilcoxon（α=0.05 両側、base を reference）: **base が有意に勝つ関数はどちらの腕に対しても 0**。腕が有意に勝つのは `ccgate2` が F10（p=0.011, A12=0.30 medium）・F12（p=0.00034, A12=0.22 large）の 2 関数、`ccgate2_ccmu50` が F04（p=0.030, A12=0.34）・F10（p=0.040, A12=0.33）・F13（p=0.00017, A12=0.15 large）・F19（p=0.036, A12=0.31）の 4 関数。
+- 指定 4 関数の SR@1e-10 と median `best_f`（base → `ccgate2` → `ccgate2_ccmu50`）: F07 0%/9.54e-01 → 0%/8.10e-01 → 15%/7.31e-01、F10 95%/1.74e-13 → 100%/5.33e-14 → 100%/6.75e-14、F12 0%/2.42e+00 → 5%/1.73e-03 → 0%/7.67e-01、F14 85%/2.80e-12 → 100%/1.44e-12 → 100%/2.70e-12。
+- 同一 base 越しの並び（24 関数平均 SR@1e-10）: IPOP-CMA-ES 50.00%（`e182`）＞ CMA-ES 41.67%（`e182`）＞ `ccfrz50_ccmu50` 38.33%（`j1`、+1.88pt）＞ `ccgate2` 37.92% ＞ `ccmu50` 37.71% ＞ `ccgate2_ccmu50`・`ccmu100` 37.50% ＞ `ccfrz25`・`ccfrz50` 37.29% ＞ base 36.46%。凍結の最良（`ccfrz50_ccmu50` +1.88pt）は `ccgate2`（+1.46pt）より上。
+- 書かれたとおりに回せなかった点: `pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので [findings.md](findings.md) の手順（空 stub を `PYTHONPATH`）で代替。このコンテナの `python3` も 3.11 で numpy 無しなので `/usr/bin/python3.13` から `.venv` を作り numpy を 2.4.6 に固定した（素では 2.5.3 が入る）。`--funcs` は正式名で指定し、6 shard を `--label j4s1..j4s6` で分けて summary / wilcoxon を連結した。`scripts/check_doc_size.py` は exit 0（`history.md` 1598 行は既存の EXEMPT）。**`find analysis -type f` は 418（私の出力 2 件の前から 416）で目安 400 を超えている。削除は行っていない。**
 
 **測定ルーチンが 1 ジョブ 1 項目で書く（15 行以内）。** 5 件を超えたら、対話セッションが結論を [findings.md](findings.md) か [history.md](history.md) に移して古い項目を消す。
 見出しは `### YYYY-MM-DD ジョブ名 — 一行の結論` の形にする（`scripts/loop_status.py` がこの形を読む）。
