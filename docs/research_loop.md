@@ -89,16 +89,11 @@
 **書くのは対話セッション。** 各ジョブは、コマンド・集計・記録先まで書き切る。測定ルーチンが判断を足さなくて済むようにするため。
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 
-1. **5D で同じ腕を測る（副作用が見える次元）。** (claimed 2026-10-06 00:30 UTC)
-   `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`。
-   **注意**: 5D では多峰の関数（F03 / F15 / F19）が base で中間の SR を持つので、悪化が見える（その183）。この 3 関数の変化を必ず書く。
-   **集計**: `scripts/analyze_quick.py --dim 5` の [1] 全体表、関数別の SR@1e-10 の変化（全関数）、F03 / F15 / F19 の SR@1e-10 と median `best_f`、Wilcoxon の有意な関数（両方向）。
-   **記録**: 集計 CSV を `analysis/single/j2/` に置き、作業ログに 15 行以内で書く。2D は回さない（学習 C は 2D で使われないので構造上 bit 一致）。
-2. **β=0 の 5D / 10D。**
+1. **β=0 の 5D / 10D。**
    `--all --methods "MC-ESO,dimf_softmax0"` を `--dim 5 --max-evals 12500` と `--dim 10 --max-evals 25000` で、n=20。
    **理由**: 2D では既定の β=5 が β=0 に −1.25pt 負けている（その181）。β=5 を採った根拠は旧環境の高次元の記録値だけで、この環境では測っていない。
    **集計・記録**: ジョブ 1 と同じ形。`analysis/single/j3/`。
-3. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か。**
+2. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か。**
    10D で予算を 2 倍（50000）と 4 倍（100000）にし、`--methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE"` を回す（比較手法にも同じ予算を与える）。
    40 分に入らなければ関数を絞ってよい。その場合は F07 / F12 / F19 / F22 を必ず含め、絞ったと書く。
    **集計**: `analysis/single/e177/analyze.py` の包絡線計算で「MC-ESO を 6 手法目に加えたときに関数別包絡線が上がる量」を出す（25000 では +0.00pt）。
@@ -137,6 +132,22 @@
 
 **測定ルーチンが 1 ジョブ 1 項目で書く（15 行以内）。** 5 件を超えたら、対話セッションが結論を [findings.md](findings.md) か [history.md](history.md) に移して古い項目を消す。
 見出しは `### YYYY-MM-DD ジョブ名 — 一行の結論` の形にする（`scripts/loop_status.py` がこの形を読む）。
+
+### 2026-10-06 ジョブ1 5D ccfrz — 3 腕すべて base 以上（+0.42〜+4.17pt）。悪化は多峰の F03（−15／−15／−5pt）と F15・F19（3 腕とも −5pt）
+`./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`。24 関数を 6 shard に割って並列し、**24/24 完走**（96 行＝4 手法×24 関数、wilcoxon 72 行）。wall 15.5 分（00:33→00:48 UTC）。numpy 2.4.6 / cma 4.5.0。base の MC-ESO は SR@1e-10 43.12% で [findings.md](findings.md) の 5D 基準値と一致。
+全体（SR@1e-2 / 1e-4 / 1e-7 / **1e-10** / `evals_succ_mean` ＝ base と腕の両方に成功がある関数だけで平均。n は腕ごとに違う）:
+- MC-ESO (base) 55.42 / 51.88 / 47.08 / **43.12%** / —
+- `ccfrz25` 57.08 / 51.46 / 46.67 / **43.54%（+0.42pt）** / 4378.4 vs base 4283.7（**+94.7**、共通 15 関数）
+- `ccfrz50` 55.42 / 51.25 / 47.08 / **44.38%（+1.26pt）** / 4633.3 vs base 4457.4（**+175.9**、共通 16 関数）
+- `ccfrz50_ccmu50` 56.04 / 51.46 / 48.33 / **47.29%（+4.17pt）** / 4470.0 vs base 4857.5（**−387.5**、共通 17 関数）
+SR@1e-10 が変わった関数（残り 15 関数は 3 腕とも ±0: F01,F02,F04,F05,F06,F08,F09,F10,F11,F17,F18,F20,F22,F23,F24）。括弧内は `ccfrz25` / `ccfrz50` / `ccfrz50_ccmu50`:
+- 改善: **F14 35→70/70/90%（+35/+35/+55）**、F13 25→25/30/55%（+0/+5/+30）、F12 30→30/30/45%（+0/+0/+15）、F21 30→30/30/40%、F07 55→60/55/60%、F16 5→0/20/5%（`ccfrz50` のみ +15）
+- **悪化: F03 15→0/0/10%（−15/−15/−5）、F15 10→5/5/5%（3 腕とも −5）、F19 5→0/0/0%（3 腕とも −5）、F16 は `ccfrz25` のみ 5→0%（−5）**。10D では悪化ゼロだった `ccfrz25`/`ccfrz50` が、5D では多峰で負ける。
+注意された 3 関数の median `best_f`（base→ccfrz25/ccfrz50/ccfrz50_ccmu50）: F03 9.95e-1→9.95e-1/9.95e-1/9.95e-1（不変）、F15 1.50e+0→1.17e+0/1.99e+0/1.99e+0、F19 6.10e-2→9.44e-2/9.62e-2/8.25e-2。F03 の SR 低下は median では見えない（上位 run だけが 1e-10 を落とす）。
+Wilcoxon（ref=MC-ESO、α=0.05 両側、A12 で方向判定）: **MC-ESO が有意に優位な関数は 3 腕とも 0 件**。腕が有意に優位 — `ccfrz25` 3 件（F14 large A12=0.28 / F21 negligible 0.48 / F23 small 0.40）、`ccfrz50` 1 件（F14 large 0.28）、`ccfrz50_ccmu50` 1 件（F14 large 0.18）。F01/F02/F05/F11 は全 run 同値（p=nan）で有意ではない。
+書かれたとおりに回せなかった点: 最初の shard 起動は `--funcs F01,...` の短縮名で `No matching functions` になったので、`F01-Sphere` 形式の正式名で回し直した（測定条件は不変）。`pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので findings.md の手順（空 stub を `PYTHONPATH`）で代替した。`scripts/check_doc_size.py` は exit 0（`history.md` 1570 行は既存の EXEMPT）。
+`analysis` のファイル数は本ジョブの 2 ファイルで **408**（上限 約 400 を超過。前回 406 から継続）。規則どおり何も消していない。整理は対話セッションへ。
+集計は `analysis/single/j2/{summary,wilcoxon}_ccfrz_5d.csv`。
 
 ### 2026-10-05 ジョブ1 10D ccfrz — 3 腕すべて base 以上（+0.83〜+1.88pt）、悪化は `ccfrz50_ccmu50` の F21/F22 のみ
 `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,ccfrz25,ccfrz50,ccfrz50_ccmu50"`。24 関数を 6 shard に割って並列し、**24/24 完走**（96 行＝4 手法×24 関数）。wall 22.5 分（18:32→18:55 UTC）。numpy 2.4.6 / cma 4.5.0。base の MC-ESO は `e182` と全 24 関数で bit 一致（SR@1e-10 36.46%）＝ CMA-ES / IPOP を同一 base 越しに並べて可。
