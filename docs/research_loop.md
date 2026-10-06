@@ -95,7 +95,7 @@
 **書くのは対話セッション。** 各ジョブは、コマンド・集計・記録先まで書き切る。測定ルーチンが判断を足さなくて済むようにするため。
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
-1. **5D で同じ腕を測る（副作用が見える次元）。**
+1. **5D で同じ腕を測る（副作用が見える次元）。** (claimed 2026-10-06 08:30 UTC)
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccgate2,ccgate2_ccmu50"`。凍結の 5D は `analysis/single/j2/summary_ccfrz_5d.csv`。
    **注意**: 5D では多峰の関数（F03 / F15 / F19）が base で中間の SR を持つので、悪化が見える（その183。凍結でも 5〜15pt 落ちた）。この 3 関数の変化を必ず書く。
    **集計・記録**: 標準の集計。`analysis/single/j5/`。2D は回さない（学習 C は 2D で使われないので構造上 bit 一致）。
