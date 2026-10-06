@@ -96,10 +96,6 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-1. **5D で同じ腕を測る（副作用が見える次元）。** (claimed 2026-10-06 08:30 UTC)
-   `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccgate2,ccgate2_ccmu50"`。凍結の 5D は `analysis/single/j2/summary_ccfrz_5d.csv`。
-   **注意**: 5D では多峰の関数（F03 / F15 / F19）が base で中間の SR を持つので、悪化が見える（その183。凍結でも 5〜15pt 落ちた）。この 3 関数の変化を必ず書く。
-   **集計・記録**: 標準の集計。`analysis/single/j5/`。2D は回さない（学習 C は 2D で使われないので構造上 bit 一致）。
 2. **2D の全手法比較（正準環境での確認）。**
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE,jSO,L-SRTDE,IMODE,LSHADE-cnEpSin,SPS-L-SHADE-EIG,CoBiDE,LSHADE-SPACMA,ELSHADE-SPACMA,APGSK-IMODE,EBOwithCMAR,MOS,EA4eig,EA4eig-jSO-IDEbd,EA4eig-Simpl,AMALGAM-SO,AMALGAM-SO-DE,HSES,ICMAES-ILS,UMOEA-II,HMHH,HMHH-random,PS-CMA-ES,DEPSO,PSO,SaVOA,NM-Restart"`（手法のグループで shard に割り、各 shard に MC-ESO を入れてよい）。
    **背景**: ローカル（macOS）の 2D 全手法比較で、MC-ESO は IMODE と同率 1 位（SR@1e-10 92.50%）、評価回数は上位手法で最少（799）、単独 1 位の関数はゼロ（[history.md](history.md) 2026-10-06）。NGOpt / NG-Portfolio は遅いので除く（ローカルの値は `analysis/single/local_all2d/`）。比較手法の不具合修正（CMA 系 3 手法・L-SHADE の差し替え）後の初の正準測定を兼ねる。
@@ -183,6 +179,24 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-06 ジョブ1 5D ccgate2 — `ccgate2_ccmu50` が +3.13pt で base 以上、`ccgate2` は +0.21pt の実質同着。悪化は多峰の F03 / F15 / F19（両腕とも −5〜−10pt）
+
+`./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,ccgate2,ccgate2_ccmu50"`。24 関数を 6 shard に割って並列し、**24/24 完走**（summary 72 行＝3 手法×24 関数、wilcoxon 48 行＝2 腕×24）。wall 18.0 分（08:40→08:58 UTC）。numpy 2.4.6 / cma 4.5.0。base の MC-ESO は SR@1e-2/1e-4/1e-7/1e-10 ＝ 55.42 / 51.88 / 47.08 / **43.12%** で [findings.md](findings.md) の 5D 基準値と 4 水準すべて一致。
+
+| 手法 | SR@1e-2 | 1e-4 | 1e-7 | SR@1e-10 | `evals_succ_mean`（両者成功の 18 関数で対応平均） | Wilcoxon base 勝ち/負け |
+|---|---|---|---|---|---|---|
+| MC-ESO（base） | 55.42% | 51.88% | 47.08% | 43.12% | 4755.8 | — |
+| `ccgate2` | 56.88% | 51.04% | 46.46% | **43.33%（+0.21pt）** | 4626.6（**−129.2**） | 1 / 1 |
+| `ccgate2_ccmu50` | 56.25% | 51.67% | 48.54% | **46.25%（+3.13pt）** | 4909.9（**+154.2**） | 1 / 2 |
+
+SR@1e-10 が変わった関数（残り 13 関数は両腕とも ±0: F01,F02,F05,F06,F08,F09,F10,F11,F17,F18,F20,F23,F24）。括弧内は `ccgate2` / `ccgate2_ccmu50`:
+- 改善: **F14 35→60/80%（+25/+45）**、F13 25→25/45%（+0/+20）、F12 30→30/45%（+0/+15）、F16 5→5/15%（+0/+10）、F22 55→60/55%（+5/+0）、F21 30→30/35%（+0/+5）、F04 0→5/0%（+5/+0）、F07 55→45/60%（**−10**/+5）
+- **悪化: F03 15→10/5%（−5/−10）、F15 10→0/0%（両腕 −10）、F19 5→0/0%（両腕 −5）、F07 は `ccgate2` のみ −10pt**。5D の多峰での悪化は凍結の腕（その200）と同じ向き。
+注意された 3 関数の median `best_f`（base→`ccgate2`/`ccgate2_ccmu50`）: F03 9.95e-1→1.03e+0/1.72e+0、F15 1.50e+0→1.00e+0/1.50e+0、F19 6.10e-2→1.21e-1/8.51e-2。F15 は median が下がっているのに SR@1e-10 は 10→0%（深い水準だけ落ちる）。
+Wilcoxon（ref=MC-ESO、α=0.05 両側、A12 で方向判定）: **base が有意に勝つ関数が両腕で各 1 件出た** — `ccgate2` は F19（p=0.00085, A12=0.83 large）、`ccgate2_ccmu50` は F01（p=0.046, A12=0.60 small）。腕が有意に勝つのは `ccgate2` が F18（p=0.020, A12=0.36 small、ただし SR@1e-10 は両者 0%）、`ccgate2_ccmu50` が F13（p=0.024, A12=0.38 small）・F14（p=0.036, A12=0.28 large）。F02/F05（＋`ccgate2_ccmu50` は F11）は全 run 同値で p=nan。
+書かれたとおりに回せなかった点: `pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので [findings.md](findings.md) の手順（空 stub を `PYTHONPATH`）で代替。このコンテナの `python3` も 3.11 で numpy 無しなので `/usr/bin/python3.13` から `.venv` を作り numpy を 2.4.6 に固定した（素では 2.5.3 が入る）。`--funcs` は正式名で指定し、6 shard を `--label j5s1..j5s6` で分けて summary / wilcoxon を連結した。`scripts/check_doc_size.py` は exit 0（`history.md` 1598 行は既存の EXEMPT）。**`find analysis -type f` は 420（私の出力 2 件の前から 418）で目安 400 を超えている。削除は行っていない。**
+10D（その165）との並び: `ccgate2` は 10D +1.46pt / 5D +0.21pt、`ccgate2_ccmu50` は 10D +1.04pt / 5D +3.13pt（5D では `ccmu50` を足した側が上。F14 は 5D・10D の両方で両腕が改善）。集計は `analysis/single/j5/{summary,wilcoxon}_ccgate2_5d.csv`。
 
 ### 2026-10-06 ジョブ1 10D ccgate2 — 2 腕とも base 以上（+1.46 / +1.04pt）、base の有意勝ちゼロ。F14 は両腕 +15pt、F12 の SR@1e-10 が正準環境でも初めて 0 を抜けた（`ccgate2` 5%）
 
