@@ -268,3 +268,12 @@ CI 経由で取得（`analysis/mmo2024/e134/refs/fieldsend2014_nmmso_cec.txt.gz`
 - 実行中に 1 回切り替える: Vermetten ら GECCO 2020（切り替えの潜在的利得）、Schröder ら 2022、Kostovska ら PPSN 2022（CMA-ES の軌跡から ELA と内部状態の特徴を計算し、学習済みモデルで手法全体を交代、1 回だけ）、Jankovic ら 2022、Vermetten ら 2023（複数時点）。
 - 1 つの集団の中で演算子を選ぶ: Sallam ら, Inf. Sci. 2017（DE の 5 演算子を、地形の指標と成績履歴で数世代ごとに選ぶ）。
 - この調査で見つからなかった組み合わせ: 集団共分散の条件数・軸整列・座標分離性に固定閾値をかけ、1 回だけ決め、共有集団の中で生成器の配分比を変える（学習も成績も使わない）。最も近いのは Kostovska ら 2022、Sallam ら 2017、MOS 2010。
+
+### 比較手法の候補の洗い出し（2026-10-06 調査）
+
+**最も近い先行手法: EA4eig**（Bujok, Kolenovsky, Janisch, CEC 2022 優勝）。単一の共有集団で CoBiDE・IDEbd・CMA-ES・jSO を併用し、世代ごとに成功カウンタのルーレットで手法を 1 つ選ぶ（下限 1/20 でリセット）。DE 系は枠ごとに貪欲に置換、CMA-ES は最悪個体と比べて置換。Biedrzycki（*Evolutionary Computation*, 採録版、[PDF](https://staff.elka.pw.edu.pl/~rbiedrzy/publ/Ea4EigSimplifying.pdf)）は成分を削った jSO＋IDEbd（CMA-ES を除く）の方が CEC2022 で良く、BBOB 10D / 40D でも検証、元の MATLAB にバグがあったと報告し C++ 簡略版を公開。**MC-ESO との差は配分の決め方（地形ルーター 対 成功率）にほぼ限られる。**
+- 共有集団の CMA＋DE: LSHADE-SPACMA（CEC2017 3 位）、ELSHADE-SPACMA（CEC2018 3 位）。
+- 3 手法以上の枠組み: AMALGAM-SO、HMHH、MOS（BBOB-2010 データあり）、UMOEA-II（CEC2016 2 位）、EBOwithCMAR（CEC2017 1 位）、HSES（CEC2018 1 位、段階的）、IMODE（CEC2020 1 位、mealpy に実装）、APGSK-IMODE（CEC2021 3 位）、ICMAES-ILS（CEC2013 1 位）。nevergrad の Portfolio / NGOpt（pip で入る）。
+- 混成でない最新の DE: jSO（CEC2017 2 位）、L-SRTDE（CEC2024 1 位）。minionpy / pyade に実装。
+- COCO アーカイブにある混成: DE-PSO、EDA-PSO、MA-LS-CHAIN（2009）、MOS（2010）、HCMA、BIPOP-aCMA-STEP、MEMPSODE、OQNLP（2013）、cocopf ポートフォリオ（2014）。EA4eig・LSHADE-SPACMA・IMODE・jSO は見当たらない。COCO の最細目標は 1e-8、15 インスタンス × 1 回なので、SR@1e-10 の主指標とは直接比べられない（補助比較のみ）。
+- CEC の年別上位は [arXiv 2603.24140](https://arxiv.org/html/2603.24140v1) の表による（公式ランキングとは未照合）。
