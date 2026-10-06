@@ -213,6 +213,11 @@ niching 手法が「協調している」ことの値打ちを測るための、
 | `jSO` | `jso.py` | Brest ら CEC 2017（2 位） | 論文どおりの numpy 移植 | pyade の jSO は論文から外れる（記憶サイズ、初期値ほか）ので使わない |
 | `L-SRTDE` | `lsrtde.py` | Stanovov & Semenkin CEC 2024 優勝 | 作者の C++ を行単位で移植。公式 CEC2022 10D の全 12 関数で C++ 実行と平均誤差が一致 | — |
 | `jSO-minionpy` / `L-SRTDE-minionpy` | `lib_wrappers.py` | minionpy 1.9.1 | — | 参照用。比較には移植版を使う |
+| `IMODE` | `imode.py` | Sallam ら CEC 2020 優勝 | 作者の競技提出コード（`P-N-Suganthan/2020-Bound-Constrained-Opt-Benchmark`）を行番号つきで移植。各子の成績は実際に作った演算子に付く（mealpy 版の不具合を解消）。公表値との比較はできていない（CEC2020 10D の予算は 1e6、CEC2022 の IMODE の表は入手できず） | 配分は元コードどおり改善率のみ（`allocation="paper"` で論文の「質と多様性」を推測で再現、未検証）。SQP は SciPy SLSQP で勾配評価も予算に数える。元コードの終了規則（残り < 4·N で停止）を再現するので、予算を少し残して止まる。初期集団 6·D² が大きく、10D / 25k の F15 は mealpy 版より悪い |
+| `ELSHADE-SPACMA` | `elshade_spacma.py` | Hadi ら CEC 2018（3 位） | 主催者が公開する作者の MATLAB（`P-N-Suganthan/CEC2018`）を行単位で移植 | LSHADE-SPACMA の 1 世代と EADE の 1 世代を交互に回す。公表値との比較なし |
+| `APGSK-IMODE` | `apgsk_imode.py` | Mohamed ら CEC 2021（3 位） | 主催者が公開する作者の MATLAB（`P-N-Suganthan/2021-SO-BCO`）を行単位で移植。作者同梱の CEC2022 結果と定性的に同じ範囲（予算が違う可能性） | 元コードの不具合（IMODE のアーカイブが常に空、など）を意図的に再現（docstring に列挙）。集団 30·D が大きく、10D / 25k の F10 / F15 は弱い |
+| `SPS-L-SHADE-EIG` | `sps_lshade_eig.py` | Guo ら CEC 2015 優勝 | 共著者のコード（`ChinChangYang/RobustOptimizer`）の移植 | 名前の「自己最適化」は競技の関数ごとの事前調整なので再現せず、作者の未調整の既定値を使う。元コードの癖 2 件は既定で残す（`fixed_cauchy_table`、`archive_parent`） |
+| `CoBiDE` | `cobide.py` | Wang ら *Appl. Soft Comput.* 2014 | 論文と公式 `CoBiDE.m` | EA4eig の中の CoBiDE とは 5 点違う（境界処理、共分散の安全策、F の引き直し、交叉、集団の縮小）。単体版は元論文に従う |
 | `IMODE-mealpy` | `lib_wrappers.py` | mealpy 3.0.3 | — | mealpy の実装に不具合（評価後に演算子の割当を引き直し、成績が別の演算子に付く）と SQP 欠落。10D F10 で 10〜67。比較に使うなら移植が要る |
 | `LSHADE-cnEpSin` | `lib_wrappers.py` | mealpy 3.0.3 | — | 集団を論文の 18·D → 4 に直した |
 | `NGOpt` / `NG-Portfolio` | `lib_wrappers.py` | nevergrad 1.0.12 | — | NGOpt は遅い（10D で 1 run 40〜240 秒）。Portfolio は Sphere でも弱い（ライブラリ側の性質） |

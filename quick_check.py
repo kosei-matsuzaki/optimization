@@ -37,6 +37,11 @@ from core.optimizers.ea4eig import (EA4eigOptimizer, EA4eigJsoIdebdOptimizer,
                                     EA4eigSimplifiedOptimizer)
 from core.optimizers.lshade_spacma import LSHADESPACMAOptimizer
 from core.optimizers.lshade_port import LSHADEPortOptimizer
+from core.optimizers.imode import IMODEOptimizer as IMODEPortOptimizer
+from core.optimizers.elshade_spacma import ELSHADESPACMAOptimizer
+from core.optimizers.apgsk_imode import APGSKIMODEOptimizer
+from core.optimizers.sps_lshade_eig import SPSLSHADEEIGOptimizer
+from core.optimizers.cobide import CoBiDEOptimizer
 from core.optimizers.amalgam_so import AMALGAMSOOptimizer
 from core.optimizers.hses import HSESOptimizer
 from core.optimizers.icmaes_ils import ICMAESILSOptimizer
@@ -250,6 +255,11 @@ _OPTIMIZERS = {
     "jSO-minionpy":     (JSOLibOptimizer,           {"backend": "minionpy"}),
     "L-SRTDE":          (LSRTDEPortOptimizer,       {}),
     "L-SRTDE-minionpy": (LSRTDELibOptimizer,        {}),
+    "IMODE":            (IMODEPortOptimizer,        {}),
+    "ELSHADE-SPACMA":   (ELSHADESPACMAOptimizer,    {}),
+    "APGSK-IMODE":      (APGSKIMODEOptimizer,       {}),
+    "SPS-L-SHADE-EIG":  (SPSLSHADEEIGOptimizer,     {}),
+    "CoBiDE":           (CoBiDEOptimizer,           {}),
     "IMODE-mealpy":     (IMODEOptimizer,            {}),
     "LSHADE-cnEpSin":   (LSHADEcnEpSinOptimizer,    {}),
     "NGOpt":            (NGOptOptimizer,            {}),
