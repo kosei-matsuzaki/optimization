@@ -354,6 +354,9 @@ _OPTIMIZERS = {
     "mom10":          (MultiChannelEpidemicOptimizer, {"mom_ratio": 0.10}),
     "mom10_noAir":    (MultiChannelEpidemicOptimizer,
                        {"mom_ratio": 0.10, "air_ratio": 0.0, "cc_air_ratio": 0.0}),
+    "mom10_noAir_gate2": (MultiChannelEpidemicOptimizer,
+                       {"mom_ratio": 0.10, "air_ratio": 0.0, "cc_air_ratio": 0.0,
+                        "cc_gate_mahal": 2.0}),
     "ccfrz50_ccmu50": (MultiChannelEpidemicOptimizer,
                        {"cc_spill_freeze_gens": 50, "cc_mu_frac": 0.50}),
     # cc_mu_frac only in runs routed as ill-conditioned (droplet): at d5 the
