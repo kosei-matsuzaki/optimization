@@ -96,7 +96,7 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-3. **改善案 4 系統を 5D で測る。**
+3. **改善案 4 系統を 5D で測る。** (claimed 2026-10-06 14:30 UTC)
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,pop_lin16,pop_lin8,pop_lin16_2,ipop_fail3,rv2,rv2_flat,h2hA,lsfin"`。
    **集計**: 標準の集計。多峰の関数（F03 / F15 / F19 など）の悪化を必ず書く。
    **記録**: `analysis/single/j19/`。
