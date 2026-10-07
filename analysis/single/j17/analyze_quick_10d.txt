@@ -1,0 +1,77 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: _merged_run
+functions: 24   methods: MC-ESO, HMHH, HMHH-random, PS-CMA-ES, DEPSO, PSO, SaVOA, NM-Restart
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            36.5%   37.5%   38.8%   40.4%        8694            
+  HMHH              33.8%   42.3%   48.8%   52.9%       13950         7/9
+  HMHH-random       13.5%   26.0%   40.6%   50.4%       15192        7/11
+  PS-CMA-ES          9.2%   10.8%   13.1%   32.5%       16538        12/9
+  DEPSO             17.3%   17.7%   18.1%   27.1%       10757        14/5
+  PSO               11.2%   13.1%   15.2%   19.6%        9521        18/2
+  SaVOA              7.5%    7.5%    9.8%   13.1%       12448        20/0
+  NM-Restart        24.0%   25.4%   26.0%   26.9%       10874        16/3
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%            HMHH 100%            2409/5526
+  F02-EllipsoidalSep              100%            HMHH 100%           6282/10396
+  F03-RastriginSep                  0%            DEPSO 95%                    -  <-- ref behind
+  F04-BucheRastrigin                0%             HMHH 35%                    -  <-- ref behind
+  F05-LinearSlope                 100%            HMHH 100%             5083/629
+  F06-AttractiveSector            100%              HMHH 0%           6212/18312
+  F07-StepEllipsoidal               0%             HMHH 85%                    -  <-- ref behind
+  F08-Rosenbrock                   75%       NM-Restart 85%           12123/9835  <-- ref behind
+  F09-RosenbrockRot                85%       NM-Restart 95%           13985/8835  <-- ref behind
+  F10-EllipsoidalRot               95%             HMHH 65%          13786/17206
+  F11-Discus                      100%              HMHH 0%                    -
+  F12-BentCigar                     0%       NM-Restart 50%          18513/16188  <-- ref behind
+  F13-SharpRidge                    0%             HMHH 60%          16189/15064  <-- ref behind
+  F14-DiffPowers                   85%       NM-Restart 90%            4466/8900  <-- ref behind
+  F15-RastriginRot                  0%              HMHH 0%                    -
+  F16-Weierstrass                   0%       HMHH-random 5%                    -  <-- ref behind
+  F17-SchafferF7                    0%             HMHH 60%                    -  <-- ref behind
+  F18-SchafferF7ill                 0%             HMHH 20%                    -  <-- ref behind
+  F19-GriewankRosenbrock            0%              HMHH 0%                    -
+  F20-Schwefel                      0%              HMHH 0%                    -
+  F21-Gallagher101                 15%        PS-CMA-ES 75%           1747/10428  <-- ref behind
+  F22-Gallagher21                  20%       NM-Restart 40%           1946/15614  <-- ref behind
+  F23-Katsuura                      0%              HMHH 0%                    -
+  F24-LunacekRastrigin              0%              HMHH 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F01-Sphere             vs DEPSO          p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs HMHH           p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs HMHH-random    p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs NM-Restart     p=0.00934 A12=0.24 (large)
+  F01-Sphere             vs PSO            p=0.00362 A12=0.13 (large)
+  F02-EllipsoidalSep     vs DEPSO          p=0.00815 A12=0.33 (medium)
+  F03-RastriginSep       vs DEPSO          p=1.91e-06 A12=0.00 (large)
+  F03-RastriginSep       vs HMHH           p=1.91e-06 A12=0.00 (large)
+  F03-RastriginSep       vs HMHH-random    p=1.91e-06 A12=0.00 (large)
+  F04-BucheRastrigin     vs DEPSO          p=1.91e-06 A12=0.00 (large)
+  F04-BucheRastrigin     vs HMHH           p=1.91e-06 A12=0.00 (large)
+  F04-BucheRastrigin     vs HMHH-random    p=1.91e-06 A12=0.00 (large)
+  F07-StepEllipsoidal    vs HMHH           p=5.72e-06 A12=0.02 (large)
+  F07-StepEllipsoidal    vs HMHH-random    p=3.81e-06 A12=0.05 (large)
+  F07-StepEllipsoidal    vs PS-CMA-ES      p=0.000851 A12=0.14 (large)
+  F09-RosenbrockRot      vs NM-Restart     p=0.0132 A12=0.25 (large)
+  F12-BentCigar          vs HMHH           p=0.000168 A12=0.23 (large)
+  F12-BentCigar          vs HMHH-random    p=0.00365 A12=0.27 (large)
+  F12-BentCigar          vs PS-CMA-ES      p=0.000105 A12=0.22 (large)
+  F13-SharpRidge         vs HMHH           p=1.91e-06 A12=0.02 (large)
+  F13-SharpRidge         vs HMHH-random    p=0.00121 A12=0.21 (large)
+  F15-RastriginRot       vs PS-CMA-ES      p=0.0362 A12=0.32 (medium)
+  F16-Weierstrass        vs HMHH-random    p=0.00169 A12=0.22 (large)
+  F16-Weierstrass        vs PS-CMA-ES      p=0.00199 A12=0.21 (large)
+  F17-SchafferF7         vs HMHH           p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs HMHH-random    p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs PS-CMA-ES      p=1.91e-06 A12=0.00 (large)
+  F18-SchafferF7ill      vs HMHH           p=1.91e-06 A12=0.00 (large)

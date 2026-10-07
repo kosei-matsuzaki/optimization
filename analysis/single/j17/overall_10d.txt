@@ -1,0 +1,4 @@
+sr_1e-2: MC-ESO 40.42%  rank 3/8   leader HMHH 52.92%
+sr_1e-4: MC-ESO 38.75%  rank 3/8   leader HMHH 48.75%
+sr_1e-7: MC-ESO 37.50%  rank 2/8   leader HMHH 42.29%
+sr_1e-10: MC-ESO 36.46%  rank 1/8   leader MC-ESO 36.46%

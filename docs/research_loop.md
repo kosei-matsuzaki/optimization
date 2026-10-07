@@ -96,10 +96,6 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-4. **10D の全手法比較（グループ D）。** (claimed 2026-10-07 10:30 UTC)
-   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,HMHH,HMHH-random,PS-CMA-ES,DEPSO,PSO,SaVOA,NM-Restart"`。
-   **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。 記録済みの 10D の値（[findings.md](findings.md)）との差も 1 行で書く（CMA 系と L-SHADE は修正前の値）。
-   **記録**: `analysis/single/j17/`。
 5. **空気感染を外す（`abl_noAir`）を 5D と 10D で測る。**
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,abl_noAir"` と `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,abl_noAir"`。
    **背景**: 2D の ablation（作業ログ 2026-10-06、`analysis/single/j3/`）で、空気感染を外しても SR@1e-10 は −0.21pt で有意差ゼロ、F24 は +20pt。高次元でも枠を使うだけなら、外して接触・飛沫に回す改良候補になる。
@@ -154,6 +150,18 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-07 ジョブ4 10D 全手法比較（グループ D, 8 手法） — MC-ESO は SR@1e-10 36.46% で **1 位 / 8**。2 位 HMHH 33.75%、3 位 NM-Restart 23.96%。`evals_succ_mean` も 8 手法中 1 位（8693.5）で、**7 手法すべてと同じ関数集合で突き合わせても速い**。単独 1 位の関数は 3 つ（採否の判断はしない）
+
+`./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,HMHH,HMHH-random,PS-CMA-ES,DEPSO,PSO,SaVOA,NM-Restart"`。24 関数を 6 shard（各 4 関数 × 全 8 手法、6 つおきの交互割り）に割って並列し、**24/24 完走**（連結後 summary 192 行＝8 手法×24、wilcoxon 168 行＝7 手法×24。(関数, 手法) の重複・欠落ともゼロ。6 shard すべて `status=done`）。wall 13.4 分（10:38:34→10:51:57 UTC）。numpy 2.4.6 / cma 4.5.0。**MC-ESO の行は j16（グループ C）・j20（ジョブ1 の 10D）・j23（ジョブ2 の 10D）の 3 つすべてと 24 関数 × 10 列が一致**（各 0/240 セル差。列は `mean_best_f` / `median_best_f` / SR 7 段 / `evals_succ_mean`）**で、[findings.md](findings.md) の 10D 基準値とも完全一致**（40.42 / 38.75 / 37.50 / **36.46**%、`evals_succ_mean` 8693.5、成功のある関数 13/24）＝決定性どおり。集計は `analysis/single/j17/{summary,wilcoxon,ranking,per_function_sr1e10,per_function_evals,wilcoxon_counts,diff_vs_recorded,overall,analyze_quick}_10d`。
+
+**順位表**（`SR@1e-2/1e-4/1e-7/`**`1e-10`** ／ `evals_succ_mean`＝自手法で成功のある関数での平均（関数数）／ MC-ESO と両方で成功のある関数での対応平均（括弧内は同じ関数集合での MC-ESO 側と関数数）／ Wilcoxon の MC-ESO 勝ち-負け）: **1 MC-ESO 40.42/38.75/37.50/36.46 ｜ 8693.5（13 関数）** ／ 2 **HMHH** 52.92/48.75/42.29/**33.75** ｜ 13950.4（17）｜ 14331.1（8561.8, 12）｜ 7-9 ／ 3 **NM-Restart** 26.88/26.04/25.42/**23.96** ｜ 10874.3（9）｜ 10874.3（8495.7, 9）｜ 16-3 ／ 4 DEPSO 27.08/18.12/17.71/**17.29** ｜ 10756.6（8）｜ 9060.3（3946.5, 6）｜ 14-5 ／ 5 HMHH-random 50.42/40.62/26.04/**13.54** ｜ 15191.5（17）｜ 13726.1（6839.5, 10）｜ 7-11 ／ 6 PSO 19.58/15.21/13.12/**11.25** ｜ 9521.4（7）｜ 9521.4（4020.7, 7）｜ 18-2 ／ 7 PS-CMA-ES 32.50/13.12/10.83/**9.17** ｜ 16538.0（5）｜ 14537.2（2796.2, 4）｜ 12-9 ／ 8 SaVOA 13.12/9.79/7.50/**7.50** ｜ 12448.2（4）｜ 12448.2（4542.5, 4）｜ 20-0。**梯子の形は他グループと同じ**: SR@1e-2 は 3 位（HMHH 52.92 / HMHH-random 50.42 の下）、1e-4 も 3 位、1e-7 で 2 位、1e-10 で 1 位。**速さは 8 手法中 1 位で、しかも 7 手法すべてと同じ関数集合で突き合わせても MC-ESO が速い**（対応平均で +2379〜+11741 評価の差）＝グループ C で AMALGAM-SO に対応平均で負けたのとは逆。
+
+**記録値との関数別 SR@1e-10 の差**: MC-ESO は **0 関数（±0.00pt）**。グループ D の 7 手法は [findings.md](findings.md) の 10D 表（MC-ESO / CMA-ES / IPOP / BIPOP / DE / L-SHADE のみ）に記録が無く、**今回が正準環境での初回測定**なので差分は取れない（`diff_vs_recorded_10d.txt` に明記）。 **関数別の位置**: **単独 1 位は 3 関数**（F06 100% ・F11 100% ＝ ともに他 7 手法すべて 0%、F10 95% 対 HMHH 65%）＝グループ A/B/C ではゼロだったので 4 グループで初。同率 1 位は 8 関数（F01・F02・F05、および 8 手法すべてが 0% の F15・F19・F20・F23・F24）、劣位は 13 関数で関数別 1 位との合計差は **21.46pt**（グループ C 22.50 / B 23.75 / A 15.21 の間）。赤字の大きい順に F03（0 対 DEPSO 95、3.958pt）・F07（0 対 HMHH 85、3.542）・F21（15 対 PS-CMA-ES 75、2.500）・F17（0 対 HMHH 60、2.500）・F13（0 対 HMHH 60、2.500）・F12（0 対 NM-Restart 50、2.083）・F04（0 対 HMHH 35、1.458）・F22（20 対 NM-Restart 40、0.833）・F18（0 対 HMHH 20、0.833）・F09（85 対 NM-Restart 95、0.417）・F08（75 対 NM-Restart 85、0.417）・F16（0 対 HMHH-random 5、0.208）・F14（85 対 NM-Restart 90、0.208）。**F03・F07・F21・F17・F13 の 5 関数で赤字の 68%（15.00pt）**を占める。
+
+**Wilcoxon**（ref=MC-ESO、α=0.05 両側、A12 で方向判定）: 7 手法合計で **MC-ESO の有意勝ち 94 / 有意負け 39**。**4 グループのうちこのグループだけ勝ちが負けを上回る**（グループ A 55 勝 88 負、B 68-87、C 57-102）。p=nan は 3 セル（HMHH・HMHH-random・SaVOA で各 1 関数）。**どの手法にも有意に負けない関数は 9 つ**（F05・F06・F08・F10・F11・F14・F19・F23・F24。グループ C では 2 つ）、**7 手法すべてに有意に負ける関数はゼロ**。有意勝ちがゼロなのは 3 関数（F20・F21・F22）。負けが最も多い相手は HMHH-random（11）・HMHH（9）・PS-CMA-ES（9）、ゼロは SaVOA（20 勝 0 負）。
+
+**書かれたとおりに行かなかった点**: コマンド・集計・記録先は指示どおり（shard は許された関数分割で 6 本。メモリは 15GB 中ピーク約 8GB 使用で OOM なし）。4 点記録する: (1) `python3` は 3.11（パッケージ無し）・`pip` は 3.13 を指す不一致が残っているので、前回と同じく `/usr/bin/python3.13` から `.venv` を作った。**`.venv` 内では `pip install -r requirements.txt` がそのまま通った**（`pynmmso` のビルドも成功したので空 stub は不要。素の `pip install -r requirements.txt` は `pynmmso` のビルドで落ちる）。(2) 素では numpy 2.5.3 が入るので既存記録と揃えるため **2.4.6 に固定**。(3) 投入前に 8 手法すべてを 1 run × 300 評価で起動確認した（`--funcs` は完全名 `F01-Sphere` 形式で渡した）。(4) `scripts/check_doc_size.py` は exit 0（この記録を足した後で `docs/research_loop.md` は 244 / 300 行）。`docs/findings.md` 398 / 400 と `docs/status.md` 116 / 120 は上限に近い。`find analysis -type f` は 147 で目安 400 内。
 
 ### 2026-10-07 ジョブ3 10D 全手法比較（グループ C, 9 手法） — MC-ESO は SR@1e-10 36.46% で **4 位 / 9**。1 位 AMALGAM-SO 52.92%、2 位 AMALGAM-SO-DE 51.67%、3 位 ICMAES-ILS 43.96%。`evals_succ_mean` は 9 手法中 1 位（8693.5）。単独 1 位の関数はゼロ（採否の判断はしない）
 
