@@ -96,7 +96,7 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-1. **集団のべき乗縮小を 2D と 5D で測る。**
+1. **集団のべき乗縮小を 2D と 5D で測る。** (claimed 2026-10-07 04:30 UTC)
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,pop_lin16,pop_pow2,pop_pow3,pop_pow2_frzmu,pop_pow3_frzmu"`（2D）と、同じ手法を `--dim 5 --max-evals 12500`（5D）。
    **背景**: 線形に縮める `pop_lin16` は 5D で +15.83pt だったが 10D で −5.00pt（[history.md](history.md) の 2026-10-06 / 07 のまとめ）。序盤に早く縮めて終盤の世代を確保する形（`pop_shrink_power` 2 / 3）は、ローカル（12 関数、n=10）で 10D +7.5 / +6.7pt、5D +18.3 / +20.8pt、base の有意勝ちゼロ（`analysis/single/local_pop/`）。`*_frzmu` は凍結 50 世代 ＋ `cc_mu_frac` 0.5 を足したもの。2D の挙動も変わるので 2D も測る。
    **集計**: 標準の集計。2D の SR@1e-10 を下げる腕があるかを 1 行で書く。5D は多峰の関数（F03 / F15 / F19 / F21）の変化を必ず書く。`pop_lin16` は正準の値（`analysis/single/j18/`・`j19/`）と一致するはず。
