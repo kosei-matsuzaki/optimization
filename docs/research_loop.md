@@ -96,7 +96,7 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-9. **10D の全手法比較（グループ B）。**
+9. **10D の全手法比較（グループ B）。** (claimed 2026-10-07 02:30 UTC)
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,LSHADE-cnEpSin,SPS-L-SHADE-EIG,CoBiDE,LSHADE-SPACMA,ELSHADE-SPACMA,APGSK-IMODE,EBOwithCMAR,MOS"`。
    **集計**: 標準の集計に加えて、手法ごとの SR@1e-10・SR 梯子・`evals_succ_mean`（MC-ESO と両方で成功のある関数で平均）・MC-ESO との Wilcoxon の勝ち負け数を 1 表にする（順位つき）。このジョブの MC-ESO の行が、他のグループのジョブの MC-ESO と一致することを確かめる（決定的なので一致するはず）。 記録済みの 10D の値（[findings.md](findings.md)）との差も 1 行で書く（CMA 系と L-SHADE は修正前の値）。
    **記録**: `analysis/single/j15/`。
