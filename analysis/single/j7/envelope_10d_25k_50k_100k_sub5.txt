@@ -1,0 +1,75 @@
+=== 10D 25000 (5 関数) ===
+functions: 5  (F01, F07, F12, F19, F22)
+
+[1] 全体平均 SR（%）と evals_succ_mean
+  method            SR@1e-2    SR@1e-4    SR@1e-7   SR@1e-10  evals_succ_mean
+  MC-ESO             28.00%     28.00%     25.00%     24.00%           7622.7  (成功のある関数 3/5)
+  CMA-ES             41.00%     40.00%     40.00%     40.00%           4697.5  (成功のある関数 2/5)
+  IPOP-CMA-ES        60.00%     60.00%     60.00%     60.00%           4864.3  (成功のある関数 3/5)
+  BIPOP-CMA-ES       64.00%     64.00%     64.00%     64.00%           6516.2  (成功のある関数 4/5)
+  DE                 28.00%     28.00%     28.00%     28.00%           7130.5  (成功のある関数 2/5)
+  L-SHADE            53.00%     40.00%     40.00%     40.00%          13195.5  (成功のある関数 2/5)
+
+[2] 関数別包絡線（比較 5 手法の関数別ベスト SR@1e-10）と MC-ESO
+  function                  envelope5   MC-ESO  envelope6      上乗せ  best-of-5
+  F01-Sphere                     100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F07-StepEllipsoidal            100%       0%       100%      +0pt  IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F12-BentCigar                  100%       0%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES
+  F19-GriewankRosenbrock           0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F22-Gallagher21                 20%      20%        20%      +0pt  BIPOP-CMA-ES
+
+  包絡線（比較 5 手法）            64.00%
+  包絡線（MC-ESO を 6 手法目に）   64.00%
+  **包絡線への上乗せ             +0.00pt**
+  MC-ESO 単独 24.00%   包絡線との差 -40.00pt
+  上乗せが出た関数: なし
+=== 10D 50000 (5 関数) ===
+functions: 5  (F01, F07, F12, F19, F22)
+
+[1] 全体平均 SR（%）と evals_succ_mean
+  method            SR@1e-2    SR@1e-4    SR@1e-7   SR@1e-10  evals_succ_mean
+  MC-ESO             32.00%     32.00%     31.00%     31.00%          16917.2  (成功のある関数 4/5)
+  CMA-ES             41.00%     40.00%     40.00%     40.00%           4696.0  (成功のある関数 2/5)
+  IPOP-CMA-ES        60.00%     60.00%     60.00%     60.00%           4807.3  (成功のある関数 3/5)
+  BIPOP-CMA-ES       64.00%     64.00%     64.00%     64.00%           6468.5  (成功のある関数 4/5)
+  DE                 33.00%     33.00%     33.00%     33.00%          11241.0  (成功のある関数 2/5)
+  L-SHADE            60.00%     60.00%     55.00%     40.00%          23081.7  (成功のある関数 3/5)
+
+[2] 関数別包絡線（比較 5 手法の関数別ベスト SR@1e-10）と MC-ESO
+  function                  envelope5   MC-ESO  envelope6      上乗せ  best-of-5
+  F01-Sphere                     100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F07-StepEllipsoidal            100%      10%       100%      +0pt  IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F12-BentCigar                  100%      25%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES
+  F19-GriewankRosenbrock           0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F22-Gallagher21                 20%      20%        20%      +0pt  BIPOP-CMA-ES
+
+  包絡線（比較 5 手法）            64.00%
+  包絡線（MC-ESO を 6 手法目に）   64.00%
+  **包絡線への上乗せ             +0.00pt**
+  MC-ESO 単独 31.00%   包絡線との差 -33.00pt
+  上乗せが出た関数: なし
+=== 10D 100000 (5 関数) ===
+functions: 5  (F01, F07, F12, F19, F22)
+
+[1] 全体平均 SR（%）と evals_succ_mean
+  method            SR@1e-2    SR@1e-4    SR@1e-7   SR@1e-10  evals_succ_mean
+  MC-ESO             35.00%     34.00%     34.00%     33.00%          23876.5  (成功のある関数 4/5)
+  CMA-ES             41.00%     40.00%     40.00%     40.00%           4696.0  (成功のある関数 2/5)
+  IPOP-CMA-ES        60.00%     60.00%     60.00%     60.00%           4807.3  (成功のある関数 3/5)
+  BIPOP-CMA-ES       64.00%     64.00%     64.00%     64.00%           6468.5  (成功のある関数 4/5)
+  DE                 38.00%     38.00%     38.00%     38.00%          18290.0  (成功のある関数 2/5)
+  L-SHADE            60.00%     60.00%     60.00%     60.00%          27750.3  (成功のある関数 3/5)
+
+[2] 関数別包絡線（比較 5 手法の関数別ベスト SR@1e-10）と MC-ESO
+  function                  envelope5   MC-ESO  envelope6      上乗せ  best-of-5
+  F01-Sphere                     100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F07-StepEllipsoidal            100%      15%       100%      +0pt  IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F12-BentCigar                  100%      30%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F19-GriewankRosenbrock           0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F22-Gallagher21                 20%      20%        20%      +0pt  BIPOP-CMA-ES
+
+  包絡線（比較 5 手法）            64.00%
+  包絡線（MC-ESO を 6 手法目に）   64.00%
+  **包絡線への上乗せ             +0.00pt**
+  MC-ESO 単独 33.00%   包絡線との差 -31.00pt
+  上乗せが出た関数: なし

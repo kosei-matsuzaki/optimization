@@ -1,0 +1,51 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: merged
+functions: 5   methods: CMA-ES, IPOP-CMA-ES, BIPOP-CMA-ES, DE, L-SHADE, MC-ESO
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  CMA-ES            40.0%   40.0%   40.0%   41.0%        4696         3/2
+  IPOP-CMA-ES       60.0%   60.0%   60.0%   60.0%        4807         0/2
+  BIPOP-CMA-ES      64.0%   64.0%   64.0%   64.0%        6468         0/3
+  DE                38.0%   38.0%   38.0%   38.0%       18290         1/2
+  L-SHADE           60.0%   60.0%   60.0%   60.0%       27750         1/3
+  MC-ESO            33.0%   34.0%   34.0%   35.0%       23876            
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[2] sr_1e-10 NON-REGRESSION CHECK  (MC-ESO vs baseline)
+  baseline run: base50k (method MC-ESO)
+  overall sr_1e-10: 31.0% -> 33.0% (+2.0%)
+  IMPROVED (2):
+    + F07-StepEllipsoidal    10% -> 15%  (+5%)
+    + F12-BentCigar          25% -> 30%  (+5%)
+  unchanged: 3
+  >>> SR@1e-10 VERDICT: OK
+      Rule: a config that lowers SR@1e-10 is not adopted (docs/experiments.md). Per-function regressions must be justified.
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%          CMA-ES 100%             2409/949
+  F07-StepEllipsoidal              15%     IPOP-CMA-ES 100%           56917/5346  <-- ref behind
+  F12-BentCigar                    30%          CMA-ES 100%           34234/8443  <-- ref behind
+  F19-GriewankRosenbrock            0%            CMA-ES 0%                    -
+  F22-Gallagher21                  20%     BIPOP-CMA-ES 20%            1946/8515
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F01-Sphere             vs CMA-ES         p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs DE             p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs L-SHADE        p=0.000112 A12=0.05 (large)
+  F07-StepEllipsoidal    vs BIPOP-CMA-ES   p=0.000293 A12=0.07 (large)
+  F07-StepEllipsoidal    vs DE             p=0.000492 A12=0.10 (large)
+  F07-StepEllipsoidal    vs IPOP-CMA-ES    p=0.000293 A12=0.07 (large)
+  F07-StepEllipsoidal    vs L-SHADE        p=0.000293 A12=0.07 (large)
+  F12-BentCigar          vs BIPOP-CMA-ES   p=0.000293 A12=0.07 (large)
+  F12-BentCigar          vs CMA-ES         p=8.83e-05 A12=0.01 (large)
+  F12-BentCigar          vs IPOP-CMA-ES    p=0.000253 A12=0.10 (large)
+  F12-BentCigar          vs L-SHADE        p=8.83e-05 A12=0.00 (large)
+  F22-Gallagher21        vs BIPOP-CMA-ES   p=0.00831 A12=0.19 (large)
+
