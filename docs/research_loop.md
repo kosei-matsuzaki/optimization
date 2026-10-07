@@ -96,7 +96,7 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-2. **集団のべき乗縮小を 10D で測る。**
+2. **集団のべき乗縮小を 10D で測る。** (claimed 2026-10-07 06:30 UTC)
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,pop_pow2,pop_pow3,pop_pow2_frzmu,pop_pow3_frzmu"`。
    **集計**: 標準の集計。F07 / F08 / F09 / F14 / F21 と、易しい関数（F01 / F02 / F05 / F06）の `evals_succ_mean` の変化を必ず書く。`pop_lin16`（10D、`analysis/single/j20/`）と並べる。
    **記録**: `analysis/single/j23/`。
