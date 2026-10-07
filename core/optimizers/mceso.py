@@ -256,6 +256,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         pop_init_mult: float = 16.0,
         pop_final_mult: float = 4.0,
         pop_min: int = 10,
+        # Shape of the shrink: size = final + (init − final)·(1 − t)^power, t =
+        # fraction of the budget spent. 1 = linear. Larger values shrink early and
+        # hand the late phase more generations — at d10 the linear 16·D → 4·D
+        # schedule lost 5pt (F08 / F09 / F14) while it gained 15.8pt at d5.
+        pop_shrink_power: float = 1.0,
         n_elite_max: int = 6,
         niche_radius_ratio: float = 0.1,       # min mutual elite distance, × span
                                                # (scale-invariant; on BBOB span=10
@@ -707,6 +712,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.pop_init_mult = pop_init_mult
         self.pop_final_mult = pop_final_mult
         self.pop_min = pop_min
+        self.pop_shrink_power = pop_shrink_power
         self.ipop_fail_streak = ipop_fail_streak
         if pop_schedule == "linear":
             self.n_pop = max(20, int(round(pop_init_mult * self.dim)))
@@ -1660,7 +1666,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         """Linear population-size reduction: drop the worst hosts down to the
         size scheduled for the evaluations spent so far."""
         frac = len(st.history_f) / max(st.max_evals, 1)
-        target = int(round(self._n_pop0 + (self._pop_final - self._n_pop0) * frac))
+        if self.pop_shrink_power == 1.0:
+            # Exactly the formula the canonical pop_lin* runs used.
+            target = int(round(self._n_pop0 + (self._pop_final - self._n_pop0) * frac))
+        else:
+            target = int(round(self._pop_final
+                               + (self._n_pop0 - self._pop_final)
+                               * (1.0 - frac) ** self.pop_shrink_power))
         target = max(self._pop_final, min(self.n_pop, target))
         if target >= self.n_pop:
             return
