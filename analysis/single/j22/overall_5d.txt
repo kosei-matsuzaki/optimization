@@ -1,0 +1,31 @@
+dim=5  functions=24  n_runs=20
+
+method            SR@1e-2  SR@1e-4  SR@1e-7  SR@1e-10  evals_own  (nf)  evals_pair  ref_pair  (nf)   W+   W-
+------------------------------------------------------------------------------------------------------------
+MC-ESO             55.42%   51.88%   47.08%    43.12%     5240.9    20           -         -     -
+pop_lin16          70.21%   68.33%   62.92%    58.96%     4264.7    21      4073.9    5026.4    19    0   13
+pop_pow2           68.75%   66.67%   61.46%    58.54%     4465.5    22      4045.1    5240.9    20    0   11
+pop_pow3           69.79%   66.67%   60.00%    57.08%     3948.7    21      3957.1    5026.4    19    0   11
+pop_pow2_frzmu     70.00%   68.54%   62.71%    59.17%     4202.4    21      4171.1    5240.9    20    0   14
+pop_pow3_frzmu     69.58%   67.08%   60.00%    56.88%     3721.6    22      3730.4    5240.9    20    0   13
+
+evals_own  = evals_succ_mean averaged over functions where THIS method has successes (nf = that count)
+evals_pair = averaged over functions where BOTH this method and MC-ESO have successes; ref_pair = MC-ESO on the same set
+W+ / W-    = #functions where MC-ESO is Wilcoxon-significantly better / worse (p<0.05 two-sided, A12 direction)
+
+Wilcoxon significant functions (ref=MC-ESO, alpha=0.05 two-sided, A12):
+  pop_lin16: MC-ESO better in 0: none
+  pop_lin16: MC-ESO worse  in 13: F04-BucheRastrigin(A12=0.28,large), F06-AttractiveSector(A12=0.24,large), F07-StepEllipsoidal(A12=0.28,large), F09-RosenbrockRot(A12=0.31,medium), F10-EllipsoidalRot(A12=0.38,small), F12-BentCigar(A12=0.13,large), F13-SharpRidge(A12=0.00,large), F14-DiffPowers(A12=0.04,large), F16-Weierstrass(A12=0.26,large), F17-SchafferF7(A12=0.07,large), F18-SchafferF7ill(A12=0.04,large), F20-Schwefel(A12=0.32,medium), F23-Katsuura(A12=0.21,large)
+  pop_lin16: p=nan (all runs tied) in 4 functions
+  pop_pow2: MC-ESO better in 0: none
+  pop_pow2: MC-ESO worse  in 11: F04-BucheRastrigin(A12=0.17,large), F07-StepEllipsoidal(A12=0.28,large), F09-RosenbrockRot(A12=0.29,medium), F10-EllipsoidalRot(A12=0.38,small), F12-BentCigar(A12=0.12,large), F13-SharpRidge(A12=0.01,large), F14-DiffPowers(A12=0.07,large), F16-Weierstrass(A12=0.27,large), F17-SchafferF7(A12=0.08,large), F18-SchafferF7ill(A12=0.04,large), F20-Schwefel(A12=0.20,large)
+  pop_pow2: p=nan (all runs tied) in 4 functions
+  pop_pow3: MC-ESO better in 0: none
+  pop_pow3: MC-ESO worse  in 11: F04-BucheRastrigin(A12=0.26,large), F07-StepEllipsoidal(A12=0.28,large), F10-EllipsoidalRot(A12=0.38,small), F12-BentCigar(A12=0.14,large), F13-SharpRidge(A12=0.04,large), F14-DiffPowers(A12=0.14,large), F17-SchafferF7(A12=0.16,large), F18-SchafferF7ill(A12=0.06,large), F20-Schwefel(A12=0.14,large), F23-Katsuura(A12=0.18,large), F24-LunacekRastrigin(A12=0.34,medium)
+  pop_pow3: p=nan (all runs tied) in 3 functions
+  pop_pow2_frzmu: MC-ESO better in 0: none
+  pop_pow2_frzmu: MC-ESO worse  in 14: F04-BucheRastrigin(A12=0.26,large), F06-AttractiveSector(A12=0.21,large), F07-StepEllipsoidal(A12=0.28,large), F09-RosenbrockRot(A12=0.33,medium), F10-EllipsoidalRot(A12=0.38,small), F12-BentCigar(A12=0.13,large), F13-SharpRidge(A12=0.01,large), F14-DiffPowers(A12=0.06,large), F16-Weierstrass(A12=0.26,large), F17-SchafferF7(A12=0.10,large), F18-SchafferF7ill(A12=0.09,large), F20-Schwefel(A12=0.19,large), F21-Gallagher101(A12=0.36,small), F24-LunacekRastrigin(A12=0.36,small)
+  pop_pow2_frzmu: p=nan (all runs tied) in 4 functions
+  pop_pow3_frzmu: MC-ESO better in 0: none
+  pop_pow3_frzmu: MC-ESO worse  in 13: F04-BucheRastrigin(A12=0.31,medium), F06-AttractiveSector(A12=0.26,large), F07-StepEllipsoidal(A12=0.32,medium), F09-RosenbrockRot(A12=0.30,medium), F10-EllipsoidalRot(A12=0.38,small), F12-BentCigar(A12=0.14,large), F13-SharpRidge(A12=0.03,large), F14-DiffPowers(A12=0.12,large), F17-SchafferF7(A12=0.10,large), F18-SchafferF7ill(A12=0.06,large), F20-Schwefel(A12=0.29,medium), F23-Katsuura(A12=0.17,large), F24-LunacekRastrigin(A12=0.36,small)
+  pop_pow3_frzmu: p=nan (all runs tied) in 3 functions

@@ -1,0 +1,31 @@
+dim=2  functions=24  n_runs=20
+
+method            SR@1e-2  SR@1e-4  SR@1e-7  SR@1e-10  evals_own  (nf)  evals_pair  ref_pair  (nf)   W+   W-
+------------------------------------------------------------------------------------------------------------
+MC-ESO             95.42%   95.21%   93.12%    92.08%      677.7    23           -         -     -
+pop_lin16          95.83%   95.83%   95.21%    93.96%      895.5    24       840.8     677.7    23    0    1
+pop_pow2           95.83%   95.62%   94.79%    93.33%      879.6    24       766.7     677.7    23    0    1
+pop_pow3           95.42%   95.21%   93.33%    90.42%      847.8    24       742.8     677.7    23    0    0
+pop_pow2_frzmu     95.83%   95.62%   94.79%    93.33%      879.6    24       766.7     677.7    23    0    1
+pop_pow3_frzmu     95.42%   95.21%   93.33%    90.42%      847.8    24       742.8     677.7    23    0    0
+
+evals_own  = evals_succ_mean averaged over functions where THIS method has successes (nf = that count)
+evals_pair = averaged over functions where BOTH this method and MC-ESO have successes; ref_pair = MC-ESO on the same set
+W+ / W-    = #functions where MC-ESO is Wilcoxon-significantly better / worse (p<0.05 two-sided, A12 direction)
+
+Wilcoxon significant functions (ref=MC-ESO, alpha=0.05 two-sided, A12):
+  pop_lin16: MC-ESO better in 0: none
+  pop_lin16: MC-ESO worse  in 1: F24-LunacekRastrigin(A12=0.22,large)
+  pop_lin16: p=nan (all runs tied) in 14 functions
+  pop_pow2: MC-ESO better in 0: none
+  pop_pow2: MC-ESO worse  in 1: F17-SchafferF7(A12=0.23,large)
+  pop_pow2: p=nan (all runs tied) in 15 functions
+  pop_pow3: MC-ESO better in 0: none
+  pop_pow3: MC-ESO worse  in 0: none
+  pop_pow3: p=nan (all runs tied) in 14 functions
+  pop_pow2_frzmu: MC-ESO better in 0: none
+  pop_pow2_frzmu: MC-ESO worse  in 1: F17-SchafferF7(A12=0.23,large)
+  pop_pow2_frzmu: p=nan (all runs tied) in 15 functions
+  pop_pow3_frzmu: MC-ESO better in 0: none
+  pop_pow3_frzmu: MC-ESO worse  in 0: none
+  pop_pow3_frzmu: p=nan (all runs tied) in 14 functions
