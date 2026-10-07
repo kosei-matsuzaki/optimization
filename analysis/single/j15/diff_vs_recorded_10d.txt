@@ -1,0 +1,11 @@
+MC-ESO: 0 funcs changed, overall delta +0.00pt | no change
+  (vs findings.md 10D baseline: 40.42/38.75/37.50/36.46%, evals_succ_mean 8693.5, 13/24 support -- exact match)
+  (vs job8 group A, analysis/single/j14/: 0 differing cells over 24 functions x 7 columns -- bit-identical)
+LSHADE-cnEpSin: no 10D record in docs/findings.md (its 10D table holds only MC-ESO / CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE) -- this is the first canonical-environment measurement, so no diff can be taken
+SPS-L-SHADE-EIG: no 10D record in docs/findings.md (its 10D table holds only MC-ESO / CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE) -- this is the first canonical-environment measurement, so no diff can be taken
+CoBiDE: no 10D record in docs/findings.md (its 10D table holds only MC-ESO / CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE) -- this is the first canonical-environment measurement, so no diff can be taken
+LSHADE-SPACMA: no 10D record in docs/findings.md (its 10D table holds only MC-ESO / CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE) -- this is the first canonical-environment measurement, so no diff can be taken
+ELSHADE-SPACMA: no 10D record in docs/findings.md (its 10D table holds only MC-ESO / CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE) -- this is the first canonical-environment measurement, so no diff can be taken
+APGSK-IMODE: no 10D record in docs/findings.md (its 10D table holds only MC-ESO / CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE) -- this is the first canonical-environment measurement, so no diff can be taken
+EBOwithCMAR: no 10D record in docs/findings.md (its 10D table holds only MC-ESO / CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE) -- this is the first canonical-environment measurement, so no diff can be taken
+MOS: no 10D record in docs/findings.md (its 10D table holds only MC-ESO / CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE) -- this is the first canonical-environment measurement, so no diff can be taken
