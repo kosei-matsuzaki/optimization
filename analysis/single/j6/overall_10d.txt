@@ -1,0 +1,84 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: merged
+functions: 24   methods: MC-ESO, dimf_softmax0
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            36.5%   37.5%   38.8%   40.4%        8694            
+  dimf_softmax0      7.7%    8.1%   20.6%   39.2%       10993        10/2
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%    dimf_softmax0 50%            2409/2587
+  F02-EllipsoidalSep              100%     dimf_softmax0 0%            6282/6962
+  F03-RastriginSep                  0%     dimf_softmax0 0%                    -
+  F04-BucheRastrigin                0%     dimf_softmax0 0%                    -
+  F05-LinearSlope                 100%   dimf_softmax0 100%           5083/13217
+  F06-AttractiveSector            100%     dimf_softmax0 0%           6212/15996
+  F07-StepEllipsoidal               0%     dimf_softmax0 5%                    -  <-- ref behind
+  F08-Rosenbrock                   75%     dimf_softmax0 0%          12123/17321
+  F09-RosenbrockRot                85%     dimf_softmax0 0%          13985/20516
+  F10-EllipsoidalRot               95%     dimf_softmax0 0%          13786/15090
+  F11-Discus                      100%     dimf_softmax0 0%          10275/15038
+  F12-BentCigar                     0%     dimf_softmax0 0%                    -
+  F13-SharpRidge                    0%     dimf_softmax0 0%                    -
+  F14-DiffPowers                   85%     dimf_softmax0 0%           4466/13985
+  F15-RastriginRot                  0%     dimf_softmax0 0%                    -
+  F16-Weierstrass                   0%     dimf_softmax0 0%                    -
+  F17-SchafferF7                    0%     dimf_softmax0 0%                    -
+  F18-SchafferF7ill                 0%     dimf_softmax0 0%                    -
+  F19-GriewankRosenbrock            0%     dimf_softmax0 0%                    -
+  F20-Schwefel                      0%     dimf_softmax0 0%                    -
+  F21-Gallagher101                 15%    dimf_softmax0 15%            1747/1905
+  F22-Gallagher21                  20%    dimf_softmax0 15%            1946/3100
+  F23-Katsuura                      0%     dimf_softmax0 0%                    -
+  F24-LunacekRastrigin              0%     dimf_softmax0 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F17-SchafferF7         vs dimf_softmax0  p=0.0328 A12=0.25 (large)
+  F18-SchafferF7ill      vs dimf_softmax0  p=0.0362 A12=0.32 (medium)
+
+--- dim=10  ref=MC-ESO  arm=dimf_softmax0  functions=24 ---
+evals_succ_mean[MC-ESO] own set: 8693.5  (nf=13)
+evals_succ_mean[dimf_softmax0] own set: 10993.2  (nf=12)
+evals_succ_mean[MC-ESO] paired set: 7119.5  (nf=11)
+evals_succ_mean[dimf_softmax0] paired set: 11428.8  (nf=11)
+
+per-function SR@1e-10 (ref -> arm, delta pt):
+  F01-Sphere                 100% ->    50%  (   -50pt)   <-- changed
+  F02-EllipsoidalSep         100% ->     0%  (  -100pt)   <-- changed
+  F03-RastriginSep             0% ->     0%  (    +0pt)
+  F04-BucheRastrigin           0% ->     0%  (    +0pt)
+  F05-LinearSlope            100% ->   100%  (    +0pt)
+  F06-AttractiveSector       100% ->     0%  (  -100pt)   <-- changed
+  F07-StepEllipsoidal          0% ->     5%  (    +5pt)   <-- changed
+  F08-Rosenbrock              75% ->     0%  (   -75pt)   <-- changed
+  F09-RosenbrockRot           85% ->     0%  (   -85pt)   <-- changed
+  F10-EllipsoidalRot          95% ->     0%  (   -95pt)   <-- changed
+  F11-Discus                 100% ->     0%  (  -100pt)   <-- changed
+  F12-BentCigar                0% ->     0%  (    +0pt)
+  F13-SharpRidge               0% ->     0%  (    +0pt)
+  F14-DiffPowers              85% ->     0%  (   -85pt)   <-- changed
+  F15-RastriginRot             0% ->     0%  (    +0pt)
+  F16-Weierstrass              0% ->     0%  (    +0pt)
+  F17-SchafferF7               0% ->     0%  (    +0pt)
+  F18-SchafferF7ill            0% ->     0%  (    +0pt)
+  F19-GriewankRosenbrock       0% ->     0%  (    +0pt)
+  F20-Schwefel                 0% ->     0%  (    +0pt)
+  F21-Gallagher101            15% ->    15%  (    +0pt)
+  F22-Gallagher21             20% ->    15%  (    -5pt)   <-- changed
+  F23-Katsuura                 0% ->     0%  (    +0pt)
+  F24-LunacekRastrigin         0% ->     0%  (    +0pt)
+
+SR@1e-10 changed on 10/24 functions; arm lower on 9, higher on 1
+
+Wilcoxon (ref=MC-ESO, alpha=0.05 two-sided, best_f):
+  MC-ESO better in 10: F01-Sphere(A12=0.79,large), F02-EllipsoidalSep(A12=1.00,large), F14-DiffPowers(A12=1.00,large), F03-RastriginSep(A12=0.88,large), F09-RosenbrockRot(A12=0.86,large), F15-RastriginRot(A12=0.84,large), F10-EllipsoidalRot(A12=1.00,large), F22-Gallagher21(A12=0.68,medium), F11-Discus(A12=1.00,large), F06-AttractiveSector(A12=1.00,large)
+  MC-ESO worse  in 2: F17-SchafferF7(A12=0.25,large), F18-SchafferF7ill(A12=0.32,medium)
+  p=nan (all runs tied) in 1: F05-LinearSlope
