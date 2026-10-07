@@ -96,12 +96,6 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-6. **勢いのチャネル（空気感染と差し替え）を 2D と 5D で測る。** (claimed 2026-10-07 14:30 UTC)
-   `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,mom10_noAir"`（2D）と `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,mom10_noAir,mom10_noAir_gate2"`（5D）。
-   **背景**: 勢いのチャネル（`mom_ratio`: 宿主が生まれたときの変位を κ ~ U(1,2) 倍だけ延長した点に子を置く）を空気感染の枠に置き換えると、ローカルで 2D 92.50% → 93.54%（base 有意勝ちゼロ）、10D 15 関数 55.33% → 60.00%（[history.md](history.md) 2026-10-06）。2D の規則（SR@1e-10 を下げない）を正準環境で確かめる。
-   **比べる相手**: 空気感染だけを外した `abl_noAir` の 2D は `analysis/single/j3/`、5D はジョブ 3。勢いの効果と空気感染を外した効果を分けるため、関数ごとに `mom10_noAir` と `abl_noAir` を並べた表を作る。
-   **集計**: 次元ごとに標準の集計。2D は F16 / F17 / F18 / F19 / F20 / F23 の変化を必ず書く（ローカルで動いた関数）。
-   **記録**: `analysis/single/j9/`（2D と 5D を別ファイルに）。
 7. **勢いのチャネルを 10D で測る。**
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,mom10_noAir,mom10_noAir_gate2"`。
    **集計・記録**: 標準の集計。F08 / F09 / F10 / F13 / F14 / F21 の変化を必ず書く（ローカルで動いた関数）。`ccgate2` 単独の 10D は作業ログ 2026-10-06 の結果（`analysis/single/j4/`）と並べる。`analysis/single/j10/`。
@@ -145,6 +139,26 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-07 ジョブ6 勢いのチャネル（空気感染と差し替え）2D / 5D — **2D は SR@1e-10 +1.46pt（92.08 → 93.54%）で base の有意勝ちゼロ。5D は −9.58pt（43.12 → 33.54%）で base が 4 関数を有意に勝つ。`mom10_noAir_gate2` は 5D で `mom10_noAir` と全指標同値 ＝ この腕では測れていない**（採否の判断はしない）
+
+- 実行: `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,mom10_noAir"`（2D）、`--all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,mom10_noAir,mom10_noAir_gate2"`（5D）。各次元を関数 6 個 × 4 shard に分割。**2D 24/24・5D 24/24 完走**。所要 2D 3.7 分 / 5D 16.1 分。numpy 2.4.6 / cma 4.5.0。
+- 全体（24 関数平均）:
+
+| 次元 | 手法 | SR@1e-2 | SR@1e-4 | SR@1e-7 | SR@1e-10 | `evals_succ_mean`（両成功の関数のみ） |
+|---|---|---|---|---|---|---|
+| 2D | MC-ESO | 95.4% | 95.2% | 93.1% | 92.08% | 677.7（23 関数） |
+| 2D | mom10_noAir | 95.6% | 95.6% | 93.8% | **93.54%** | 708.0（23 関数） |
+| 5D | MC-ESO | 55.4% | 51.9% | 47.1% | **43.12%** | 4719.6（16 関数） |
+| 5D | mom10_noAir | 53.8% | 48.5% | 38.8% | 33.54% | 4496.1（16 関数） |
+| 5D | mom10_noAir_gate2 | 53.8% | 48.5% | 38.8% | 33.54% | 4496.1（16 関数） |
+
+- 2D の関数別 SR@1e-10 の変化（動いた関数のみ、他 18 関数は同値）: F23 +25（75 → 100）/ F17 +15（60 → 75）/ F06 +5（95 → 100）/ F24 +5（0 → 5）/ F18 −5（90 → 85）/ F19 −10（100 → 90）。ジョブが指定した 6 関数のうち **F16 と F20 は変化なし**（100 / 95% のまま）。
+- 5D の関数別 SR@1e-10 の変化（2 腕とも同じ。16 関数が動き、うち 14 関数が悪化）: F11 −70 / F10 −55 / F14 −25 / F22 −25 / F12 −20 / F08 −15 / F13 −15 / F21 −15 / F03 −5 / F06 −5 / F15 −5 / F16 −5 / F19 −5、改善は F07 +15 / F09 +10 / F23 +10。
+- Wilcoxon（MC-ESO を reference、α=0.05、両方向）: **2D は base 勝ち 0 / 腕勝ち 2**（F06 A12=0.18 large、F23 A12=0.33 medium）。**5D は base 勝ち 4 / 腕勝ち 0**（F11 A12=0.88 large、F14 A12=0.83 large、F10 A12=0.78 large、F01 A12=0.60 small）。5D の 2 腕は同一の行。
+- 勢いと空気感染の切り分け（2D、`abl_noAir` は `analysis/single/j3/`。base は両 run とも 92.08% で一致）: 空気感染を外すだけの `abl_noAir` は 91.88%（−0.21pt）、勢いに差し替えた `mom10_noAir` は 93.54%（+1.46pt）。関数別では F23（mom +25 / abl ±0）・F17（+15 / −5）・F13（±0 / −15）で両者が分かれ、F19（−10 / −10）・F06（+5 / +5）は一致。F24 は abl のみ +20（mom は +5）。
+- 書かれたとおりに回らなかった点: `mom10_noAir_gate2` が 5D で `mom10_noAir` と `summary.csv` の全列・`wilcoxon.csv` の全行まで同値（`mean_time_s` のみ差）。`cc_gate_mahal=2.0` がこの腕の 5D では 1 件も棄却していないことになる（機序は未確認）。`pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので findings.md の手順どおり空 stub を `PYTHONPATH` に置いた。`pip` が python3.13 を指し `python3` が 3.11 だったので `python3 -m pip` で入れ直した。
+- 記録: `analysis/single/j9/{summary,wilcoxon}_mom_{2d,5d}.csv`。
 
 ### 2026-10-07 ジョブ5 空気感染を外す（`abl_noAir`）5D / 10D — **5D は SR@1e-10 +0.21pt（43.12 → 43.33%）でほぼ動かず、内訳は 12 関数で入れ替わる（F14 +35 / F12 +30pt 対 F13 −20 / F22 −20pt）。10D は `air_ratio` が次元ゲートに打ち消され、24 関数 20 run すべて同値 ＝ この腕では測れていない**（採否の判断はしない）
 - 実行: `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,abl_noAir"` と同じものの `--dim 10 --max-evals 25000`。各次元 **24/24 完走**、関数を 4 shard（6+6+6+6、`--all` 併用）で並列し summary / wilcoxon を連結。両次元あわせて 41 分（12:40→13:21 UTC）。numpy 2.4.6 / cma 4.5.0。
