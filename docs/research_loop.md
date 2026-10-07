@@ -96,7 +96,7 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-6. **勢いのチャネル（空気感染と差し替え）を 2D と 5D で測る。**
+6. **勢いのチャネル（空気感染と差し替え）を 2D と 5D で測る。** (claimed 2026-10-07 14:30 UTC)
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,mom10_noAir"`（2D）と `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,mom10_noAir,mom10_noAir_gate2"`（5D）。
    **背景**: 勢いのチャネル（`mom_ratio`: 宿主が生まれたときの変位を κ ~ U(1,2) 倍だけ延長した点に子を置く）を空気感染の枠に置き換えると、ローカルで 2D 92.50% → 93.54%（base 有意勝ちゼロ）、10D 15 関数 55.33% → 60.00%（[history.md](history.md) 2026-10-06）。2D の規則（SR@1e-10 を下げない）を正準環境で確かめる。
    **比べる相手**: 空気感染だけを外した `abl_noAir` の 2D は `analysis/single/j3/`、5D はジョブ 3。勢いの効果と空気感染を外した効果を分けるため、関数ごとに `mom10_noAir` と `abl_noAir` を並べた表を作る。
