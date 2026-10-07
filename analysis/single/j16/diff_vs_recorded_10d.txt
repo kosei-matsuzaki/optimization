@@ -1,0 +1,9 @@
+MC-ESO vs job9 group B (analysis/single/j15/): 0/168 differing cells over 24 functions x 7 columns -- bit-identical
+MC-ESO vs job1 10D series (analysis/single/j20/): 0/168 differing cells over 24 functions x 7 columns -- bit-identical
+
+MC-ESO overall: 40.42 / 38.75 / 37.50 / 36.46%, evals_succ_mean 8693.5, support 13/24
+findings.md 10D baseline: 40.42 / 38.75 / 37.50 / 36.46%, evals_succ_mean 8693.5, support 13/24
+
+Other 8 methods: no 10D record in docs/findings.md (its 10D table holds only
+MC-ESO / CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE), so no diff can be taken --
+this is the first canonical-environment 10D measurement for all of group C.

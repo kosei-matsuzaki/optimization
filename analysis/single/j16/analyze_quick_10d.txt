@@ -1,0 +1,71 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: merged
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=2c43454
+functions: 24   methods: AMALGAM-SO, AMALGAM-SO-DE, EA4eig, EA4eig-Simpl, EA4eig-jSO-IDEbd, HSES, ICMAES-ILS, MC-ESO, UMOEA-II
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  AMALGAM-SO        52.9%   56.7%   61.0%   64.4%        9545        3/17
+  AMALGAM-SO-DE     51.7%   55.8%   59.4%   63.8%        8890        4/16
+  EA4eig            18.5%   34.0%   47.9%   60.4%       18319        9/12
+  EA4eig-Simpl      14.4%   16.9%   31.2%   46.5%       12861       11/11
+  EA4eig-jSO-IDEbd    23.1%   34.0%   44.4%   58.1%       16312        9/11
+  HSES               8.3%    8.8%   17.5%   29.4%       15907        9/11
+  ICMAES-ILS        44.0%   47.9%   51.0%   55.8%        9281        4/14
+  MC-ESO            36.5%   37.5%   38.8%   40.4%        8694            
+  UMOEA-II          27.9%   34.0%   47.7%   60.8%       18421        8/10
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%      AMALGAM-SO 100%             2409/673
+  F02-EllipsoidalSep              100%      AMALGAM-SO 100%            6282/4318
+  F03-RastriginSep                  0%         UMOEA-II 95%                    -  <-- ref behind
+  F04-BucheRastrigin                0%       AMALGAM-SO 20%                    -  <-- ref behind
+  F05-LinearSlope                 100%      AMALGAM-SO 100%            5083/1671
+  F06-AttractiveSector            100%      AMALGAM-SO 100%            6212/2604
+  F07-StepEllipsoidal               0%      AMALGAM-SO 100%                    -  <-- ref behind
+  F08-Rosenbrock                   75%      AMALGAM-SO 100%           12123/7471  <-- ref behind
+  F09-RosenbrockRot                85%      AMALGAM-SO 100%           13985/7412  <-- ref behind
+  F10-EllipsoidalRot               95%      AMALGAM-SO 100%           13786/7310  <-- ref behind
+  F11-Discus                      100%      AMALGAM-SO 100%           10275/8803
+  F12-BentCigar                     0%       AMALGAM-SO 90%          18513/14566  <-- ref behind
+  F13-SharpRidge                    0%    AMALGAM-SO-DE 70%          16189/10523  <-- ref behind
+  F14-DiffPowers                   85%      AMALGAM-SO 100%            4466/2444  <-- ref behind
+  F15-RastriginRot                  0%        AMALGAM-SO 5%                    -  <-- ref behind
+  F16-Weierstrass                   0%     AMALGAM-SO-DE 5%                    -  <-- ref behind
+  F17-SchafferF7                    0%        ICMAES-ILS 5%                    -  <-- ref behind
+  F18-SchafferF7ill                 0%        AMALGAM-SO 0%                    -
+  F19-GriewankRosenbrock            0%        AMALGAM-SO 0%                    -
+  F20-Schwefel                      0%        AMALGAM-SO 0%                    -
+  F21-Gallagher101                 15%       ICMAES-ILS 70%            1747/8053  <-- ref behind
+  F22-Gallagher21                  20%    AMALGAM-SO-DE 55%            1946/5269  <-- ref behind
+  F23-Katsuura                      0%        AMALGAM-SO 0%                    -
+  F24-LunacekRastrigin              0%        AMALGAM-SO 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F01-Sphere             vs AMALGAM-SO     p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs AMALGAM-SO-DE  p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs EA4eig         p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs EA4eig-Simpl   p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs EA4eig-jSO-IDEbd p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs HSES           p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs ICMAES-ILS     p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs UMOEA-II       p=0.000463 A12=0.10 (large)
+  F02-EllipsoidalSep     vs AMALGAM-SO     p=0.00815 A12=0.33 (medium)
+  F02-EllipsoidalSep     vs AMALGAM-SO-DE  p=0.00815 A12=0.33 (medium)
+  F02-EllipsoidalSep     vs EA4eig         p=0.00815 A12=0.33 (medium)
+  F02-EllipsoidalSep     vs EA4eig-Simpl   p=0.00815 A12=0.33 (medium)
+  F02-EllipsoidalSep     vs EA4eig-jSO-IDEbd p=0.00815 A12=0.33 (medium)
+  F02-EllipsoidalSep     vs ICMAES-ILS     p=0.00815 A12=0.33 (medium)
+  F03-RastriginSep       vs AMALGAM-SO-DE  p=0.0215 A12=0.27 (large)
+  F03-RastriginSep       vs EA4eig         p=1.91e-06 A12=0.00 (large)
+  F03-RastriginSep       vs EA4eig-Simpl   p=1.91e-06 A12=0.00 (large)
+  F03-RastriginSep       vs EA4eig-jSO-IDEbd p=1.91e-06 A12=0.01 (large)
+  F03-RastriginSep       vs HSES           p=0.000168 A12=0.10 (large)
+  F03-RastriginSep       vs UMOEA-II       p=1.91e-06 A12=0.00 (large)
