@@ -96,7 +96,7 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-7. **勢いのチャネルを 10D で測る。**
+7. **勢いのチャネルを 10D で測る。** (claimed 2026-10-07 16:30 UTC)
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,mom10_noAir,mom10_noAir_gate2"`。
    **集計・記録**: 標準の集計。F08 / F09 / F10 / F13 / F14 / F21 の変化を必ず書く（ローカルで動いた関数）。`ccgate2` 単独の 10D は作業ログ 2026-10-06 の結果（`analysis/single/j4/`）と並べる。`analysis/single/j10/`。
 8. **β=0 の 5D / 10D。**
