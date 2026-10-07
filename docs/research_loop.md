@@ -96,7 +96,7 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-5. **空気感染を外す（`abl_noAir`）を 5D と 10D で測る。**
+5. **空気感染を外す（`abl_noAir`）を 5D と 10D で測る。** (claimed 2026-10-07 12:30 UTC)
    `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,abl_noAir"` と `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,abl_noAir"`。
    **背景**: 2D の ablation（作業ログ 2026-10-06、`analysis/single/j3/`）で、空気感染を外しても SR@1e-10 は −0.21pt で有意差ゼロ、F24 は +20pt。高次元でも枠を使うだけなら、外して接触・飛沫に回す改良候補になる。
    **集計**: 次元ごとに標準の集計。多峰の関数（F03 / F15 / F16 / F17 / F19 / F20 / F21 / F24）の変化を必ず書く（空気感染は遠方探索の担当なので、悪化するならここに出る）。
