@@ -1,0 +1,214 @@
+=== merge ===
+  MISSING results/20261007_204104_j9e50ks1_quick/dim10/summary.csv
+  MISSING results/20261007_204104_j9e50ks4_quick/dim10/summary.csv
+  summary.csv: 144 rows, 24 functions, dup=0
+  MISSING results/20261007_204104_j9e50ks1_quick/dim10/wilcoxon.csv
+  MISSING results/20261007_204104_j9e50ks4_quick/dim10/wilcoxon.csv
+  wilcoxon.csv: 120 rows, 24 functions, dup=0
+
+=== coverage check ===
+functions 24/24  methods 6: ['BIPOP-CMA-ES', 'CMA-ES', 'DE', 'IPOP-CMA-ES', 'L-SHADE', 'MC-ESO']
+rows 144  unique (func,method) 144  -> duplicates 0
+missing functions: none
+functions without all 6 methods: none
+
+=== analyze_quick.py (project 3-metric report) ===
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: j9_merged_50k_quick
+functions: 24   methods: BIPOP-CMA-ES, CMA-ES, DE, IPOP-CMA-ES, L-SHADE, MC-ESO
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  BIPOP-CMA-ES      57.5%   61.0%   61.9%   63.3%       10081        2/13
+  CMA-ES            41.7%   44.2%   45.0%   47.7%        3698         9/7
+  DE                17.5%   17.9%   25.4%   30.2%       14407        12/7
+  IPOP-CMA-ES       57.5%   60.6%   62.5%   63.1%        7806        5/14
+  L-SHADE           56.0%   61.5%   68.3%   69.0%       28345        4/18
+  MC-ESO            38.5%   39.0%   39.8%   42.7%       11848            
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%    BIPOP-CMA-ES 100%             2409/942
+  F02-EllipsoidalSep              100%    BIPOP-CMA-ES 100%            6282/3569
+  F03-RastriginSep                  0%         L-SHADE 100%                    -  <-- ref behind
+  F04-BucheRastrigin                0%         L-SHADE 100%                    -  <-- ref behind
+  F05-LinearSlope                 100%    BIPOP-CMA-ES 100%            5083/1222
+  F06-AttractiveSector            100%    BIPOP-CMA-ES 100%            6212/2608
+  F07-StepEllipsoidal              10%    BIPOP-CMA-ES 100%           37662/8283  <-- ref behind
+  F08-Rosenbrock                   75%    BIPOP-CMA-ES 100%           12123/5326  <-- ref behind
+  F09-RosenbrockRot                85%    BIPOP-CMA-ES 100%           13985/6111  <-- ref behind
+  F10-EllipsoidalRot              100%    BIPOP-CMA-ES 100%           13786/6536
+  F11-Discus                      100%    BIPOP-CMA-ES 100%           10275/4711
+  F12-BentCigar                    25%    BIPOP-CMA-ES 100%           25652/8134  <-- ref behind
+  F13-SharpRidge                    0%          L-SHADE 80%          16189/31129  <-- ref behind
+  F14-DiffPowers                   90%    BIPOP-CMA-ES 100%            4466/1803  <-- ref behind
+  F15-RastriginRot                  0%      BIPOP-CMA-ES 0%                    -
+  F16-Weierstrass                   0%      IPOP-CMA-ES 65%                    -  <-- ref behind
+  F17-SchafferF7                    0%      IPOP-CMA-ES 90%                    -  <-- ref behind
+  F18-SchafferF7ill                 0%     BIPOP-CMA-ES 80%                    -  <-- ref behind
+  F19-GriewankRosenbrock            0%      BIPOP-CMA-ES 0%                    -
+  F20-Schwefel                      0%                DE 5%                    -  <-- ref behind
+  F21-Gallagher101                 20%      IPOP-CMA-ES 35%           9807/14976  <-- ref behind
+  F22-Gallagher21                  20%     BIPOP-CMA-ES 20%            1946/8515
+  F23-Katsuura                      0%      BIPOP-CMA-ES 0%                    -
+  F24-LunacekRastrigin              0%      BIPOP-CMA-ES 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F01-Sphere             vs CMA-ES         p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs DE             p=0.000112 A12=0.05 (large)
+  F01-Sphere             vs L-SHADE        p=0.000112 A12=0.05 (large)
+  F02-EllipsoidalSep     vs L-SHADE        p=0.00815 A12=0.33 (medium)
+  F03-RastriginSep       vs DE             p=0.00271 A12=0.14 (large)
+  F03-RastriginSep       vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F04-BucheRastrigin     vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs BIPOP-CMA-ES   p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs CMA-ES         p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F07-StepEllipsoidal    vs BIPOP-CMA-ES   p=0.000196 A12=0.05 (large)
+  F07-StepEllipsoidal    vs DE             p=0.000231 A12=0.08 (large)
+  F07-StepEllipsoidal    vs IPOP-CMA-ES    p=0.000196 A12=0.05 (large)
+  F07-StepEllipsoidal    vs L-SHADE        p=0.000196 A12=0.05 (large)
+  F08-Rosenbrock         vs BIPOP-CMA-ES   p=0.000362 A12=0.10 (large)
+  F08-Rosenbrock         vs CMA-ES         p=0.0311 A12=0.27 (large)
+  F08-Rosenbrock         vs IPOP-CMA-ES    p=0.00197 A12=0.17 (large)
+  F08-Rosenbrock         vs L-SHADE        p=7.62e-05 A12=0.00 (large)
+  F09-RosenbrockRot      vs BIPOP-CMA-ES   p=0.0019 A12=0.23 (large)
+  F09-RosenbrockRot      vs IPOP-CMA-ES    p=0.0285 A12=0.32 (medium)
+  F09-RosenbrockRot      vs L-SHADE        p=0.00012 A12=0.03 (large)
+  F10-EllipsoidalRot     vs BIPOP-CMA-ES   p=0.00293 A12=0.33 (medium)
+  F10-EllipsoidalRot     vs CMA-ES         p=0.0239 A12=0.38 (small)
+  F10-EllipsoidalRot     vs IPOP-CMA-ES    p=0.00769 A12=0.37 (small)
+  F10-EllipsoidalRot     vs L-SHADE        p=0.000129 A12=0.03 (large)
+  F11-Discus             vs L-SHADE        p=0.000217 A12=0.10 (large)
+  F12-BentCigar          vs BIPOP-CMA-ES   p=0.000293 A12=0.06 (large)
+  F12-BentCigar          vs CMA-ES         p=8.84e-05 A12=0.01 (large)
+  F12-BentCigar          vs IPOP-CMA-ES    p=0.000233 A12=0.09 (large)
+  F12-BentCigar          vs L-SHADE        p=0.000261 A12=0.25 (large)
+  F13-SharpRidge         vs BIPOP-CMA-ES   p=3.81e-06 A12=0.03 (large)
+  F13-SharpRidge         vs CMA-ES         p=9.54e-06 A12=0.09 (large)
+  F13-SharpRidge         vs IPOP-CMA-ES    p=1.91e-06 A12=0.04 (large)
+  F13-SharpRidge         vs L-SHADE        p=1.91e-06 A12=0.01 (large)
+  F14-DiffPowers         vs L-SHADE        p=8.84e-05 A12=0.00 (large)
+  F15-RastriginRot       vs IPOP-CMA-ES    p=0.00143 A12=0.16 (large)
+  F15-RastriginRot       vs L-SHADE        p=0.00558 A12=0.22 (large)
+  F16-Weierstrass        vs BIPOP-CMA-ES   p=0.000395 A12=0.12 (large)
+  F16-Weierstrass        vs IPOP-CMA-ES    p=1.91e-06 A12=0.07 (large)
+  F17-SchafferF7         vs BIPOP-CMA-ES   p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs DE             p=1.91e-06 A12=0.05 (large)
+  F17-SchafferF7         vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F18-SchafferF7ill      vs BIPOP-CMA-ES   p=1.91e-06 A12=0.00 (large)
+  F18-SchafferF7ill      vs CMA-ES         p=0.0484 A12=0.21 (large)
+  F18-SchafferF7ill      vs DE             p=1.91e-06 A12=0.00 (large)
+  F18-SchafferF7ill      vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F18-SchafferF7ill      vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F20-Schwefel           vs BIPOP-CMA-ES   p=1.91e-05 A12=0.09 (large)
+  F20-Schwefel           vs DE             p=1.33e-05 A12=0.02 (large)
+  F20-Schwefel           vs IPOP-CMA-ES    p=1.33e-05 A12=0.08 (large)
+  F20-Schwefel           vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F21-Gallagher101       vs DE             p=0.0198 A12=0.31 (medium)
+  F21-Gallagher101       vs IPOP-CMA-ES    p=0.00199 A12=0.20 (large)
+  F21-Gallagher101       vs L-SHADE        p=0.00194 A12=0.16 (large)
+  F22-Gallagher21        vs BIPOP-CMA-ES   p=0.00831 A12=0.20 (large)
+  F24-LunacekRastrigin   vs BIPOP-CMA-ES   p=0.00365 A12=0.17 (large)
+  F24-LunacekRastrigin   vs IPOP-CMA-ES    p=0.00944 A12=0.20 (large)
+
+
+=== envelope add-on, 50000 evals ===
+=== ジョブ9 part1: 10D 50000 評価（2 倍予算） ===
+functions: 24  (F01, F02, F03, F04, F05, F06, F07, F08, F09, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24)
+
+[1] 全体平均 SR（%）と evals_succ_mean
+  method            SR@1e-2    SR@1e-4    SR@1e-7   SR@1e-10  evals_succ_mean
+  MC-ESO             42.71%     39.79%     38.96%     38.54%          11848.4  (成功のある関数 14/24)
+  CMA-ES             47.71%     45.00%     44.17%     41.67%           3698.1  (成功のある関数 12/24)
+  IPOP-CMA-ES        63.12%     62.50%     60.62%     57.50%           7805.9  (成功のある関数 16/24)
+  BIPOP-CMA-ES       63.33%     61.88%     61.04%     57.50%          10081.1  (成功のある関数 18/24)
+  DE                 30.21%     25.42%     17.92%     17.50%          14407.0  (成功のある関数 12/24)
+  L-SHADE            68.96%     68.33%     61.46%     56.04%          28344.8  (成功のある関数 18/24)
+
+[2] 関数別包絡線（比較 5 手法の関数別ベスト SR@1e-10）と MC-ESO
+  function                  envelope5   MC-ESO  envelope6      上乗せ  best-of-5
+  F01-Sphere                     100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F02-EllipsoidalSep             100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F03-RastriginSep               100%       0%       100%      +0pt  L-SHADE
+  F04-BucheRastrigin             100%       0%       100%      +0pt  L-SHADE
+  F05-LinearSlope                100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F06-AttractiveSector           100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F07-StepEllipsoidal            100%      10%       100%      +0pt  IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F08-Rosenbrock                 100%      75%       100%      +0pt  IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F09-RosenbrockRot              100%      85%       100%      +0pt  IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F10-EllipsoidalRot             100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F11-Discus                     100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F12-BentCigar                  100%      25%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES
+  F13-SharpRidge                  80%       0%        80%      +0pt  L-SHADE
+  F14-DiffPowers                 100%      90%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F15-RastriginRot                 0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F16-Weierstrass                 65%       0%        65%      +0pt  IPOP-CMA-ES
+  F17-SchafferF7                  90%       0%        90%      +0pt  IPOP-CMA-ES
+  F18-SchafferF7ill               80%       0%        80%      +0pt  BIPOP-CMA-ES
+  F19-GriewankRosenbrock           0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F20-Schwefel                     5%       0%         5%      +0pt  DE
+  F21-Gallagher101                35%      20%        35%      +0pt  IPOP-CMA-ES
+  F22-Gallagher21                 20%      20%        20%      +0pt  BIPOP-CMA-ES
+  F23-Katsuura                     0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F24-LunacekRastrigin             0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+
+  包絡線（比較 5 手法）            69.79%
+  包絡線（MC-ESO を 6 手法目に）   69.79%
+  **包絡線への上乗せ             +0.00pt**
+  MC-ESO 単独 38.54%   包絡線との差 -31.25pt
+  上乗せが出た関数: なし
+
+=== envelope add-on, 25000 evals (reference, j14) ===
+=== 参照: 10D 25000 評価（j14） ===
+functions: 24  (F01, F02, F03, F04, F05, F06, F07, F08, F09, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24)
+
+[1] 全体平均 SR（%）と evals_succ_mean
+  method            SR@1e-2    SR@1e-4    SR@1e-7   SR@1e-10  evals_succ_mean
+  MC-ESO             40.42%     38.75%     37.50%     36.46%           8693.5  (成功のある関数 13/24)
+  CMA-ES             47.92%     45.21%     44.79%     41.25%           3688.1  (成功のある関数 12/24)
+  IPOP-CMA-ES        61.25%     59.58%     53.33%     49.58%           6670.1  (成功のある関数 16/24)
+  BIPOP-CMA-ES       58.75%     55.42%     53.12%     48.33%           8608.4  (成功のある関数 18/24)
+  DE                 28.54%     22.29%     16.04%     15.42%          10700.9  (成功のある関数 11/24)
+  L-SHADE            66.04%     58.75%     47.92%     32.08%          18590.1  (成功のある関数 16/24)
+
+[2] 関数別包絡線（比較 5 手法の関数別ベスト SR@1e-10）と MC-ESO
+  function                  envelope5   MC-ESO  envelope6      上乗せ  best-of-5
+  F01-Sphere                     100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F02-EllipsoidalSep             100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F03-RastriginSep                10%       0%        10%      +0pt  L-SHADE
+  F04-BucheRastrigin               0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F05-LinearSlope                100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F06-AttractiveSector           100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES
+  F07-StepEllipsoidal            100%       0%       100%      +0pt  IPOP-CMA-ES,BIPOP-CMA-ES,L-SHADE
+  F08-Rosenbrock                 100%      75%       100%      +0pt  IPOP-CMA-ES,BIPOP-CMA-ES
+  F09-RosenbrockRot              100%      85%       100%      +0pt  IPOP-CMA-ES,BIPOP-CMA-ES
+  F10-EllipsoidalRot             100%      95%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES
+  F11-Discus                     100%     100%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES
+  F12-BentCigar                  100%       0%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES
+  F13-SharpRidge                  15%       0%        15%      +0pt  IPOP-CMA-ES
+  F14-DiffPowers                 100%      85%       100%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES
+  F15-RastriginRot                 0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F16-Weierstrass                 40%       0%        40%      +0pt  IPOP-CMA-ES
+  F17-SchafferF7                  15%       0%        15%      +0pt  DE
+  F18-SchafferF7ill                5%       0%         5%      +0pt  IPOP-CMA-ES
+  F19-GriewankRosenbrock           0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F20-Schwefel                     5%       0%         5%      +0pt  DE
+  F21-Gallagher101                25%      15%        25%      +0pt  IPOP-CMA-ES,BIPOP-CMA-ES
+  F22-Gallagher21                 20%      20%        20%      +0pt  BIPOP-CMA-ES
+  F23-Katsuura                     0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+  F24-LunacekRastrigin             0%       0%         0%      +0pt  CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE
+
+  包絡線（比較 5 手法）            51.46%
+  包絡線（MC-ESO を 6 手法目に）   51.46%
+  **包絡線への上乗せ             +0.00pt**
+  MC-ESO 単独 36.46%   包絡線との差 -15.00pt
+  上乗せが出た関数: なし
