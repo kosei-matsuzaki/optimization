@@ -1,0 +1,88 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: j23_merged_10d
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=80e3bc2
+functions: 24   methods: MC-ESO, pop_pow2, pop_pow2_frzmu, pop_pow3, pop_pow3_frzmu
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            36.5%   37.5%   38.8%   40.4%        8694            
+  pop_pow2          36.2%   37.9%   44.4%   51.7%       12314        1/10
+  pop_pow2_frzmu    42.1%   44.0%   49.0%   56.2%       11689        0/13
+  pop_pow3          36.9%   38.5%   43.5%   49.8%       10530         1/6
+  pop_pow3_frzmu    41.0%   44.0%   48.8%   55.2%       11382        0/11
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%        pop_pow2 100%            2409/6135
+  F02-EllipsoidalSep              100%        pop_pow2 100%            6282/9816
+  F03-RastriginSep                  0%          pop_pow2 0%                    -
+  F04-BucheRastrigin                0%          pop_pow2 0%                    -
+  F05-LinearSlope                 100%        pop_pow2 100%           5083/10044
+  F06-AttractiveSector            100%        pop_pow2 100%           6212/12082
+  F07-StepEllipsoidal               0%   pop_pow2_frzmu 85%                    -  <-- ref behind
+  F08-Rosenbrock                   75%   pop_pow2_frzmu 95%          12123/18863  <-- ref behind
+  F09-RosenbrockRot                85%   pop_pow3_frzmu 95%          13985/18417  <-- ref behind
+  F10-EllipsoidalRot               95%  pop_pow2_frzmu 100%          13786/12267  <-- ref behind
+  F11-Discus                      100%        pop_pow2 100%          10275/10714
+  F12-BentCigar                     0%          pop_pow2 0%          18513/20320
+  F13-SharpRidge                    0%    pop_pow2_frzmu 5%          16189/16882  <-- ref behind
+  F14-DiffPowers                   85%  pop_pow2_frzmu 100%            4466/7374  <-- ref behind
+  F15-RastriginRot                  0%          pop_pow2 0%                    -
+  F16-Weierstrass                   0%          pop_pow2 0%                    -
+  F17-SchafferF7                    0%          pop_pow2 0%                    -
+  F18-SchafferF7ill                 0%          pop_pow2 0%                    -
+  F19-GriewankRosenbrock            0%          pop_pow2 0%                    -
+  F20-Schwefel                      0%          pop_pow2 0%                    -
+  F21-Gallagher101                 15%    pop_pow2_frzmu 5%            1747/4048
+  F22-Gallagher21                  20%         pop_pow2 35%            1946/4057  <-- ref behind
+  F23-Katsuura                      0%          pop_pow2 0%                    -
+  F24-LunacekRastrigin              0%          pop_pow2 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F01-Sphere             vs pop_pow2       p=0.000529 A12=0.15 (large)
+  F01-Sphere             vs pop_pow2_frzmu p=0.00744 A12=0.23 (large)
+  F01-Sphere             vs pop_pow3       p=0.00785 A12=0.26 (large)
+  F01-Sphere             vs pop_pow3_frzmu p=0.00729 A12=0.24 (large)
+  F02-EllipsoidalSep     vs pop_pow2       p=0.00815 A12=0.33 (medium)
+  F02-EllipsoidalSep     vs pop_pow2_frzmu p=0.00815 A12=0.33 (medium)
+  F04-BucheRastrigin     vs pop_pow2       p=0.0484 A12=0.37 (small)
+  F04-BucheRastrigin     vs pop_pow2_frzmu p=0.0136 A12=0.29 (medium)
+  F04-BucheRastrigin     vs pop_pow3       p=0.0484 A12=0.35 (medium)
+  F04-BucheRastrigin     vs pop_pow3_frzmu p=0.0215 A12=0.29 (large)
+  F07-StepEllipsoidal    vs pop_pow2       p=1.91e-06 A12=0.04 (large)
+  F07-StepEllipsoidal    vs pop_pow2_frzmu p=1.91e-06 A12=0.02 (large)
+  F07-StepEllipsoidal    vs pop_pow3       p=1.91e-06 A12=0.09 (large)
+  F07-StepEllipsoidal    vs pop_pow3_frzmu p=1.91e-06 A12=0.05 (large)
+  F10-EllipsoidalRot     vs pop_pow2_frzmu p=0.0242 A12=0.34 (medium)
+  F10-EllipsoidalRot     vs pop_pow3_frzmu p=0.0263 A12=0.35 (medium)
+  F11-Discus             vs pop_pow2_frzmu p=0.0183 A12=0.29 (large)
+  F11-Discus             vs pop_pow3_frzmu p=0.0118 A12=0.34 (medium)
+  F12-BentCigar          vs pop_pow2       p=0.000586 A12=0.27 (large)
+  F12-BentCigar          vs pop_pow2_frzmu p=0.000105 A12=0.22 (large)
+  F12-BentCigar          vs pop_pow3       p=0.0296 A12=0.29 (medium)
+  F12-BentCigar          vs pop_pow3_frzmu p=8.2e-05 A12=0.18 (large)
+  F13-SharpRidge         vs pop_pow2       p=0.0192 A12=0.29 (large)
+  F13-SharpRidge         vs pop_pow2_frzmu p=1.91e-06 A12=0.09 (large)
+  F13-SharpRidge         vs pop_pow3_frzmu p=1.91e-06 A12=0.07 (large)
+  F15-RastriginRot       vs pop_pow2       p=0.00639 A12=0.28 (large)
+  F16-Weierstrass        vs pop_pow2       p=0.00558 A12=0.27 (large)
+  F16-Weierstrass        vs pop_pow2_frzmu p=0.0192 A12=0.28 (large)
+  F17-SchafferF7         vs pop_pow2       p=1.91e-06 A12=0.03 (large)
+  F17-SchafferF7         vs pop_pow2_frzmu p=3.81e-06 A12=0.04 (large)
+  F17-SchafferF7         vs pop_pow3       p=0.00102 A12=0.14 (large)
+  F17-SchafferF7         vs pop_pow3_frzmu p=1.91e-06 A12=0.01 (large)
+  F18-SchafferF7ill      vs pop_pow2       p=1.91e-06 A12=0.06 (large)
+  F18-SchafferF7ill      vs pop_pow2_frzmu p=1.91e-06 A12=0.05 (large)
+  F18-SchafferF7ill      vs pop_pow3       p=0.000168 A12=0.07 (large)
+  F18-SchafferF7ill      vs pop_pow3_frzmu p=6.29e-05 A12=0.06 (large)
+  F19-GriewankRosenbrock vs pop_pow3_frzmu p=0.0362 A12=0.35 (medium)
+  F20-Schwefel           vs pop_pow2_frzmu p=0.0121 A12=0.24 (large)
+  F23-Katsuura           vs pop_pow2_frzmu p=0.0484 A12=0.27 (large)
+  F23-Katsuura           vs pop_pow3_frzmu p=0.00271 A12=0.21 (large)
+

@@ -1,0 +1,71 @@
+Job 2 (10D, pop_pow*): overall, 24 functions, n=20, 25000 evals
+
+method | SR@1e-2 | SR@1e-4 | SR@1e-7 | SR@1e-10 | evals_succ_mean (own, nfunc) | paired vs MC-ESO (arm, base, nfunc)
+MC-ESO | 40.42% | 38.75% | 37.50% | 36.46% | 8693.5 (13) | 8693.5 vs 8693.5 (13)
+pop_pow2 | 51.67% | 44.38% | 37.92% | 36.25% | 12314.0 (15) | 12565.4 vs 9272.4 (12)
+pop_pow3 | 49.79% | 43.54% | 38.54% | 36.88% | 10529.6 (16) | 11088.2 vs 8693.5 (13)
+pop_pow2_frzmu | 56.25% | 48.96% | 43.96% | 42.08% | 11689.4 (16) | 11658.1 vs 8693.5 (13)
+pop_pow3_frzmu | 55.21% | 48.75% | 43.96% | 41.04% | 11381.9 (15) | 11509.3 vs 9272.4 (12)
+
+evals_succ_mean on the functions the job names (--- = no success):
+  [F07/F08/F09/F14/F21]
+    F07-StepEllipsoidal: MC-ESO=inf | pop_pow2=6661 | pop_pow3=7639 | pop_pow2_frzmu=5910 | pop_pow3_frzmu=7552
+    F08-Rosenbrock: MC-ESO=12123 | pop_pow2=20215 | pop_pow3=19194 | pop_pow2_frzmu=18863 | pop_pow3_frzmu=17234
+    F09-RosenbrockRot: MC-ESO=13985 | pop_pow2=20913 | pop_pow3=20430 | pop_pow2_frzmu=19220 | pop_pow3_frzmu=18417
+    F14-DiffPowers: MC-ESO=4466 | pop_pow2=7369 | pop_pow3=6946 | pop_pow2_frzmu=7374 | pop_pow3_frzmu=6631
+    F21-Gallagher101: MC-ESO=1747 | pop_pow2=inf | pop_pow3=3598 | pop_pow2_frzmu=4048 | pop_pow3_frzmu=inf
+  [easy: F01/F02/F05/F06]
+    F01-Sphere: MC-ESO=2409 | pop_pow2=6135 | pop_pow3=5704 | pop_pow2_frzmu=6062 | pop_pow3_frzmu=5717
+    F02-EllipsoidalSep: MC-ESO=6282 | pop_pow2=9816 | pop_pow3=9113 | pop_pow2_frzmu=10137 | pop_pow3_frzmu=9059
+    F05-LinearSlope: MC-ESO=5083 | pop_pow2=10044 | pop_pow3=9482 | pop_pow2_frzmu=9838 | pop_pow3_frzmu=8835
+    F06-AttractiveSector: MC-ESO=6212 | pop_pow2=12082 | pop_pow3=10713 | pop_pow2_frzmu=11848 | pop_pow3_frzmu=10875
+
+per-function SR@1e-10 changes vs MC-ESO (pt; functions with any change):
+  F07-StepEllipsoidal (base 0%): pop_pow2 +75, pop_pow3 +60, pop_pow2_frzmu +85, pop_pow3_frzmu +65
+  F08-Rosenbrock (base 75%): pop_pow2 -10, pop_pow3 +20, pop_pow2_frzmu +20, pop_pow3_frzmu +15
+  F09-RosenbrockRot (base 85%): pop_pow2 -5, pop_pow3 +0, pop_pow2_frzmu +5, pop_pow3_frzmu +10
+  F10-EllipsoidalRot (base 95%): pop_pow2 +0, pop_pow3 -10, pop_pow2_frzmu +5, pop_pow3_frzmu +5
+  F13-SharpRidge (base 0%): pop_pow2 +0, pop_pow3 +0, pop_pow2_frzmu +5, pop_pow3_frzmu +0
+  F14-DiffPowers (base 85%): pop_pow2 -65, pop_pow3 -60, pop_pow2_frzmu +15, pop_pow3_frzmu +15
+  F21-Gallagher101 (base 15%): pop_pow2 -15, pop_pow3 -10, pop_pow2_frzmu -10, pop_pow3_frzmu -15
+  F22-Gallagher21 (base 20%): pop_pow2 +15, pop_pow3 +10, pop_pow2_frzmu +10, pop_pow3_frzmu +15
+
+Wilcoxon (ref=MC-ESO, alpha=0.05 two-sided, direction by A12):
+  pop_pow2: MC-ESO wins 1 / loses 10 (p=nan on 1 funcs)
+    wins: F14-DiffPowers(A12=0.86)
+    losses: F01-Sphere(A12=0.15), F02-EllipsoidalSep(A12=0.33), F04-BucheRastrigin(A12=0.37), F07-StepEllipsoidal(A12=0.04), F12-BentCigar(A12=0.27), F13-SharpRidge(A12=0.29), F15-RastriginRot(A12=0.28), F16-Weierstrass(A12=0.27), F17-SchafferF7(A12=0.03), F18-SchafferF7ill(A12=0.06)
+  pop_pow3: MC-ESO wins 1 / loses 6 (p=nan on 1 funcs)
+    wins: F14-DiffPowers(A12=0.85)
+    losses: F01-Sphere(A12=0.26), F04-BucheRastrigin(A12=0.35), F07-StepEllipsoidal(A12=0.09), F12-BentCigar(A12=0.29), F17-SchafferF7(A12=0.14), F18-SchafferF7ill(A12=0.07)
+  pop_pow2_frzmu: MC-ESO wins 0 / loses 13 (p=nan on 1 funcs)
+    losses: F01-Sphere(A12=0.23), F02-EllipsoidalSep(A12=0.33), F04-BucheRastrigin(A12=0.29), F07-StepEllipsoidal(A12=0.02), F10-EllipsoidalRot(A12=0.34), F11-Discus(A12=0.29), F12-BentCigar(A12=0.22), F13-SharpRidge(A12=0.09), F16-Weierstrass(A12=0.28), F17-SchafferF7(A12=0.04), F18-SchafferF7ill(A12=0.05), F20-Schwefel(A12=0.24), F23-Katsuura(A12=0.27)
+  pop_pow3_frzmu: MC-ESO wins 0 / loses 11 (p=nan on 1 funcs)
+    losses: F01-Sphere(A12=0.24), F04-BucheRastrigin(A12=0.29), F07-StepEllipsoidal(A12=0.05), F10-EllipsoidalRot(A12=0.35), F11-Discus(A12=0.34), F12-BentCigar(A12=0.18), F13-SharpRidge(A12=0.07), F17-SchafferF7(A12=0.01), F18-SchafferF7ill(A12=0.06), F19-GriewankRosenbrock(A12=0.35), F23-Katsuura(A12=0.21)
+
+pop_lin16 (10D, analysis/single/j20/) side by side, SR@1e-10 %:
+  function | MC-ESO(j20) | pop_lin16(j20) | MC-ESO | pop_pow2 | pop_pow3 | pop_pow2_frzmu | pop_pow3_frzmu
+  F01-Sphere | 100% | 100% | 100% | 100% | 100% | 100% | 100%
+  F02-EllipsoidalSep | 100% | 100% | 100% | 100% | 100% | 100% | 100%
+  F03-RastriginSep | 0% | 0% | 0% | 0% | 0% | 0% | 0%
+  F04-BucheRastrigin | 0% | 0% | 0% | 0% | 0% | 0% | 0%
+  F05-LinearSlope | 100% | 100% | 100% | 100% | 100% | 100% | 100%
+  F06-AttractiveSector | 100% | 100% | 100% | 100% | 100% | 100% | 100%
+  F07-StepEllipsoidal | 0% | 60% | 0% | 75% | 60% | 85% | 65%
+  F08-Rosenbrock | 75% | 40% | 75% | 65% | 95% | 95% | 90%
+  F09-RosenbrockRot | 85% | 10% | 85% | 80% | 85% | 90% | 95%
+  F10-EllipsoidalRot | 95% | 80% | 95% | 95% | 85% | 100% | 100%
+  F11-Discus | 100% | 100% | 100% | 100% | 100% | 100% | 100%
+  F12-BentCigar | 0% | 0% | 0% | 0% | 0% | 0% | 0%
+  F13-SharpRidge | 0% | 0% | 0% | 0% | 0% | 5% | 0%
+  F14-DiffPowers | 85% | 35% | 85% | 20% | 25% | 100% | 100%
+  F15-RastriginRot | 0% | 0% | 0% | 0% | 0% | 0% | 0%
+  F16-Weierstrass | 0% | 0% | 0% | 0% | 0% | 0% | 0%
+  F17-SchafferF7 | 0% | 0% | 0% | 0% | 0% | 0% | 0%
+  F18-SchafferF7ill | 0% | 0% | 0% | 0% | 0% | 0% | 0%
+  F19-GriewankRosenbrock | 0% | 0% | 0% | 0% | 0% | 0% | 0%
+  F20-Schwefel | 0% | 0% | 0% | 0% | 0% | 0% | 0%
+  F21-Gallagher101 | 15% | 5% | 15% | 0% | 5% | 5% | 0%
+  F22-Gallagher21 | 20% | 25% | 20% | 35% | 30% | 30% | 35%
+  F23-Katsuura | 0% | 0% | 0% | 0% | 0% | 0% | 0%
+  F24-LunacekRastrigin | 0% | 0% | 0% | 0% | 0% | 0% | 0%
+  overall SR@1e-10: MC-ESO(j20)=36.46%, pop_lin16(j20)=31.46%
