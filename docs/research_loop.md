@@ -100,7 +100,7 @@
 
 ---
 
-1. **CR の継承と経路の判定時期を 10D で測る。**
+1. **CR の継承と経路の判定時期を 10D で測る。** (claimed 2026-10-08 14:30 UTC)
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,v1_crher,v1_rcf30,v1_crher_rcf30"`。
    **集計**: 標準の集計。F03 / F04 / F12 / F13 / F14 / F20 / F21 / F22 の変化を必ず書く。
    **記録**: `analysis/single/j27/`。
