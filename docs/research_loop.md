@@ -100,7 +100,7 @@
 
 ---
 
-1. **新しい既定値（2026-10-08）の基準値と ablation（2D と 5D）。**
+1. **新しい既定値（2026-10-08）の基準値と ablation（2D と 5D）。** (claimed 2026-10-08 08:30 UTC)
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,MC-ESO-v0,v1_noPop"`（2D）と `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,MC-ESO-v0,v1_noPop,v1_noFrz,v1_noMu"`（5D）。
    **背景**: 2026-10-08 に `pop_pow2_frzmu`（集団のべき乗縮小 16·D → 4·D、スピルオーバー後 50 世代の学習 C 凍結、`cc_mu_frac` 0.5）を既定値にした。`MC-ESO-v0` は旧既定値。`v1_no*` は新既定値から 1 要素ずつ外したもの（2D では凍結と `cc_mu_frac` が動かないので `v1_noFrz` / `v1_noMu` は回さない）。
    **集計**: 標準の集計。MC-ESO の行は `pop_pow2_frzmu`（`analysis/single/j22/`）と、`MC-ESO-v0` の行は旧基準値（2D 92.08% / 5D 43.12%）と一致するはず（一致したかを書く）。3 要素それぞれを外したときの SR@1e-10 の差を 1 表にする。
