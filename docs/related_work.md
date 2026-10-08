@@ -123,7 +123,7 @@ suite の仕様は下表（**公式表 = 参照実装 `mikeagn/CEC2013` の `get
 出典は **NMMSO の原論文** [Fieldsend, *Running Up Those Hills: Multi-Modal Search with the
 Niching Migratory Multi-Swarm Optimiser*, IEEE CEC 2014, pp. 2593-2600] の **表 IV**。
 本文は [ORE Exeter の handle 10871/15247](https://ore.exeter.ac.uk/repository/handle/10871/15247) から
-CI 経由で取得（`analysis/mmo2024/e134/refs/fieldsend2014_nmmso_cec.txt.gz`、43,216 字）。
+CI 経由で取得（`analysis/mmo2024/e134/refs/fieldsend2014_nmmso_cec.txt.gz`、タグ `archive/multisolution-2026-09-29` 内、43,216 字）。
 **arXiv には無い**ので、その71 以来 5 サイクル分の取得が全部空振りしていた経路がここで開いた。
 **条件**: CEC2013 公式予算・**50 run**・ε ∈ {1e-1 … 1e-5}・r は公式 rho。
 
@@ -142,7 +142,7 @@ CI 経由で取得（`analysis/mmo2024/e134/refs/fieldsend2014_nmmso_cec.txt.gz`
 
 **二次出典（照合の control として使う。主出典と混ぜない）**: [arXiv 2605.18351](https://arxiv.org/abs/2605.18351)
 *Mapping the Fitness Landscape* 表 2 が、**CEC2013 F1-F20 の NMMSO 列**を別途載せている
-（`analysis/mmo2024/e134/refs/nmmso_table_2605.18351.txt.gz`）。
+（`analysis/mmo2024/e134/refs/nmmso_table_2605.18351.txt.gz`、タグ `archive/multisolution-2026-09-29` 内）。
 **ただし採点が違う** —— こちらは**決定空間の閾値 1e-4**で、Fieldsend 表 IV の**目的空間の ε** とは別の量。
 **同じ量として引き算してはいけない。** 高次元側は **F18 0.650 / F19 0.448 / F20 0.172** で、
 **Fieldsend の同 ε=1e-4 行（F18 0.633 / F19 0.447 / F20 0.178）と ±0.02 内**。

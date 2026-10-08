@@ -539,6 +539,17 @@ _OPTIMIZERS = {
                                               "commit_sigma_ratio": 0.1}),
 }
 
+# Every MC-ESO arm defined before the 2026-10-08 default change keeps meaning
+# what it meant when it was measured: the parameters it does not set are filled
+# with the pre-change default (MC-ESO-v0), so its recorded numbers reproduce.
+# Arms of the new default are "MC-ESO" itself and the v1_* ablations.
+_V0_DEFAULTS = {"pop_schedule": "fixed", "pop_shrink_power": 1.0,
+                "cc_spill_freeze_gens": 0, "cc_mu_frac": 0.0}
+for _name, (_cls, _kw) in list(_OPTIMIZERS.items()):
+    if (isinstance(_cls, type) and issubclass(_cls, MultiChannelEpidemicOptimizer)
+            and _name != "MC-ESO" and not _name.startswith("v1_")):
+        _OPTIMIZERS[_name] = (_cls, {**_V0_DEFAULTS, **_kw})
+
 
 def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int,
              optimizers: dict | None = None, noise: str | None = None,
@@ -736,10 +747,13 @@ if __name__ == "__main__":
     parser.add_argument("--max-evals",  type=int, default=5000,                 help="Max function evaluations per run")
     parser.add_argument("--output-dir", type=Path, default=Path("results/quick"), help="Output directory")
     parser.add_argument("--funcs",      type=str, default=None,
-                        help="Comma-separated function names to run (default: all in selected set)")
+                        help="Comma-separated function names to run (default: all in selected set). "
+                             "Filters within the selected set: without --all that is quick-12.")
     parser.add_argument("--all",        action="store_true",
-                        help="Use the full 2D BBOB-24 set (F01-F24) instead of the quick subset. "
-                             "BBOB-only — add --custom to also run the C01-C11 custom benchmarks.")
+                        help="Use the full BBOB-24 set (F01-F24) at the selected --dim instead of "
+                             "the quick-12 subset. BBOB-only — add --custom to also run the "
+                             "C01-C11 custom benchmarks (2D only). Note: --funcs alone only filters "
+                             "within the quick-12 subset; add --all to name functions outside it.")
     parser.add_argument("--custom",     action="store_true",
                         help="Also run the 2D-only custom benchmarks (C01-C11) — opt-in for "
                              "multimodal / multi-optima focus. Ignored for dim != 2.")

@@ -43,7 +43,7 @@ VirusOptimizerV2 (VSO V2) は全廃止しコードから削除した（2026-04-2
 | Drilling mode（`sigma_drill_down=0.85`） | σ < span × 1e-3 で σ 縮小を強化し浮動小数限界まで追込む |
 | 接触感染の経験共分散 (`empirical_cov_floor=0.01`) | `C_pop` の固有分解で接触感染ノイズを瞬間異方化。履歴累積なしで basin 切替に即応 |
 | 適応異方性 floor (`cov_floor_low=1e-3`, 2026-06) | floor を集団共分散の素の固有値比で自動調整（悪条件 比 1e5–1e7 では下げ、rugged 比 3–600 では高く保つ）。全 35 関数で固定 0.01 比 +2.6pt（85.4→88.0）・回帰ゼロ、固定 1e-3（F17/C11/C05 で回帰）も上回る |
-| 次元適応 n_pop (`n_pop=max(20, 4·dim)`, 2026-06) | 固定 20 は高次元で過小。dim=10 で CEC2022 G06-Hybrid1 best_f 2140→40。BBOB dim2/3 は 20 で無変更 |
+| 次元適応 n_pop (`n_pop=max(20, 4·dim)`, 2026-06) | 固定 20 は高次元で過小。dim=10 で CEC2022 G06-Hybrid1 best_f 2140→40。BBOB dim2/3 は 20 で無変更。**2026-10-08 に既定は集団のべき乗縮小（`pop_schedule="linear"`、`max(20, 16·dim)` → `max(10, 4·dim)`）へ置き換わり、この式は `pop_schedule="fixed"` のときだけ使われる**（[mceso.md](mceso.md#パラメータ一覧)） |
 | Drilling 中の空気感染停止 | `σ < span × precision_sigma_ratio` で `air_ratio_eff = 0`。drilling 中の広域雑音による精度劣化を防ぐ |
 | 逐次 niching (`_basin_exhausted`, 2026-06) | σ-exhaustion 検知（f_opt 非依存）で掘り切った basin から restart。SR 無犠牲で多解 PR を改善 |
 | per-landscape チャネルルーター (`channel_schedule=True`, 2026-07) | 3 シグナル（`cond` / `algA` / `mgap`）で air 予算を droplet/close/keep-air の 1 ルートへ（gen120 commit ＋早期 droplet latch）。既定 keep-air=base。BBOB dim2 +0.6pt（87.9→88.4）・dim3 +0.6pt・CEC2022 dim10 G06 364→202 |

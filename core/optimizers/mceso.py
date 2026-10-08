@@ -219,7 +219,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         benchmark: BenchmarkFunction,
         seed: int = 42,
         # ── Population / niching ────────────────────────────────────────
-        # None → dimension-aware default max(20, 4·dim): 20 up to dim 5, then
+        # None → with pop_schedule="linear" (default) the schedule's initial size
+        # max(20, pop_init_mult·dim); with "fixed", max(20, 4·dim): 20 up to dim 5, then
         # scales up (e.g. 40 at dim 10). A fixed 20 underfills the population in
         # higher dimensions — at dim 10 it let niching restarts wander badly on
         # CEC2022 G06-Hybrid1 (best_f 2140 → 40 once n_pop reached 40). Low-dim
@@ -246,8 +247,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # consecutive failed spillovers (F07 stalls with ~13 failed spillovers per
         # run; F08/F09 have 2-6 in total, mostly while still progressing).
         ipop_fail_streak: int = 3,
-        # Population-size schedule. "fixed" (default) keeps n_pop. "linear" starts
-        # at max(20, pop_init_mult·D) and shrinks linearly in evaluations to
+        # Population-size schedule. "linear" (default since 2026-10-08) starts at
+        # max(20, pop_init_mult·D) and shrinks with the budget spent to
         # max(pop_min, pop_final_mult·D), removing the worst hosts (L-SHADE's
         # LPSR applied to the host pool). A larger pool opened F07 at d10 but cost
         # easy functions half their generations; shrinking keeps the early breadth

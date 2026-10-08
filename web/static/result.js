@@ -107,7 +107,7 @@ const OV_SORT_KEYS = {
 const OV_DETAIL_INDICATORS = [
   { key: 'sr_deep', label: 'SR@1e-10', type: 'score', desc: '各関数の最高精度の成功率（主指標）· 赤=低・緑=高' },
   { key: 'sr',      label: 'SR@1e-4',  type: 'score', desc: '各関数の成功率（補助）· 赤=低・緑=高' },
-  { key: 'pr',      label: 'PR@1e-4',  type: 'score', desc: '各関数の多解の最適点発見率 · 赤=低・緑=高' },
+  { key: 'pr',      label: 'PR@1e-4（履歴）',  type: 'score', desc: 'PR@1e-4（履歴ベース）: 既知の大域最適 K 点のうち、評価履歴に半径内かつ f≤1e-4 の点がある割合（summary.csv の pr_1e-4）。BBOB は K=1 なので SR@1e-4 とほぼ同じ値になる。CEC2013 報告集合の cec_pr_* とは別物 · 赤=低・緑=高' },
   { key: 'bf',      label: 'best_f',   type: 'rank',  desc: 'best_f（全 run 平均 mean_best_f）の Friedman ランク · 緑=1位・赤=最下位 · 同着は平均ランク' },
   { key: 'evals',   label: 'Evals',    type: 'rank',  desc: '成功 run のみの平均評価数の Friedman ランク · 緑=1位・赤=最下位' },
 ];
@@ -786,7 +786,7 @@ function _renderLeaderboard(lb) {
       ${sortHdr('evals', 'Mean Rank (Evals)', '成功 run のみの平均評価数の Friedman 平均ランク（低い＝優）')}
       ${sortHdr('sr_deep', 'SR@1e-10', 'SR@1e-10（最高精度・主指標）')}
       ${sortHdr('sr', 'SR@1e-4', 'SR@1e-4（補助）')}
-      ${sortHdr('pr', 'PR@1e-4', 'PR@1e-4（多解の最適点発見率）')}
+      ${sortHdr('pr', 'PR@1e-4（履歴）', 'PR@1e-4（履歴ベース）: 既知の大域最適 K 点のうち、評価履歴に半径内かつ f≤1e-4 の点がある割合（summary.csv の pr_1e-4）。BBOB は K=1 なので SR@1e-4 とほぼ同じ値になる。CEC2013 報告集合の cec_pr_* とは別物')}
       <div>#Best (bf/Evals)</div><div>#Worst (bf/Evals)</div>
     </div>
     <div class="ov-ranking">`;
@@ -814,7 +814,7 @@ function _renderLeaderboard(lb) {
         ${bar(fillEvals, row.mean_rank_evals, row.rank_std_evals)}
         <div class="ov-rank-metric primary" title="SR@1e-10">${srDeep}</div>
         <div class="ov-rank-metric" title="SR@1e-4">${sr}</div>
-        <div class="ov-rank-metric ${row.mean_pr ? '' : 'muted'}" title="PR@1e-4">${pr}</div>
+        <div class="ov-rank-metric ${row.mean_pr ? '' : 'muted'}" title="PR@1e-4（履歴ベース、pr_1e-4）">${pr}</div>
         <div class="ov-rank-metric ${anyBest ? '' : 'muted'}">${bestStr}</div>
         <div class="ov-rank-metric ${anyWorst ? 'danger' : 'muted'}">${worstStr}</div>
       </div>`;

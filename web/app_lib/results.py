@@ -231,7 +231,11 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
         data.setdefault(f, {})[m] = {
             "sr":      parse_sr(row.get("sr_1e-4", "0%")),
             "sr_deep": parse_sr(row.get("sr_1e-10", "0%")),  # primary indicator (deepest)
-            "pr":      parse_frac(row.get("pr_1e-4", "0")),   # multi-optima discovery rate
+            # History-based peak ratio (core/runner.py:peak_metrics): share of the K
+            # known global optima with an evaluated point within radius at f <= 1e-4.
+            # BBOB has K = 1, so this tracks SR@1e-4. Not the CEC2013 report-set
+            # cec_pr_* of the paused niching theme.
+            "pr":      parse_frac(row.get("pr_1e-4", "0")),
             "evals":   parse_float(evals_raw),
             "bf":      parse_float(bf_raw),
             "ecdf":    ecdf_v,
@@ -315,7 +319,7 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
                 "method":       method,
                 "mean_sr":      round(mean_sr, 4),       # SR@1e-4 (auxiliary)
                 "mean_sr_deep": round(mean_sr_deep, 4),  # SR@1e-10 (primary)
-                "mean_pr":      round(mean_pr, 4),       # PR@1e-4 (multi-optima discovery rate)
+                "mean_pr":      round(mean_pr, 4),       # PR@1e-4, history-based (pr_1e-4)
                 "category_sr":  {c: (round(v, 4) if v is not None else None)
                                  for c, v in cat_sr.items()},
             }

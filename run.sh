@@ -255,14 +255,16 @@ Usage: ./run.sh <command> [options]
       「未解決の問い」を並べ替えて research-loop に push する。
 
   quick [--n-runs N] [--max-evals N] [--dim {2|3|5|10|20}] [--methods LIST]
-        [--funcs LIST] [--suite {bbob|cec2022}] [--all] [--custom] [--label NAME] [--viz]
+        [--funcs LIST] [--suite {bbob|cec2022|niching}] [--all] [--custom] [--noise MODE] [--label NAME] [--viz]
       ローカルで手法を検証・評価する（評価の標準: 2D BBOB-24 のみ / n_runs=20, max_evals=5000, --all）
       デフォルト: --n-runs 20 --max-evals 5000 --dim 2
       --methods は比較する手法のコンマ区切り（空欄=全手法）
         例: --methods "MC-ESO,DE,L-SHADE"
-        利用可能: CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,PSO,DE,L-SHADE,SaVOA,MC-ESO
+        主な手法: CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,PSO,DE,L-SHADE,SaVOA,NM-Restart,MC-ESO
+        （登録名の全一覧は .venv/bin/python3 quick_check.py --help の --methods 欄）
       --funcs は対象関数のコンマ区切り（例: F01-Sphere,F03-RastriginSep）
-      --all で 2D BBOB-24 フルセット（未指定時は quick-12 サブセット）※どちらも BBOB のみ
+        ※ --funcs 単独では quick-12 サブセットの中を絞るだけ。quick-12 外の関数は --all も付ける
+      --all で選択中の --dim の BBOB-24 フルセット F01-F24（未指定時は quick-12 サブセット）※どちらも BBOB のみ
       --custom で Custom ベンチ（C01-C11, 2D 限定）を追加＝多峰/多解など特定目的の参照用
       --label で保存フォルダ名を指定（省略時はコミットハッシュ）
       --viz で図（landscape / convergence / アニメーション）も描く。**既定は描かない。**

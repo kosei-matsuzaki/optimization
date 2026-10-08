@@ -39,7 +39,7 @@
 | 系統 | 形状 | 得意 |
 |---|---|---|
 | 瞬時系統 | `C_pop`（従来どおり）| 集団が即座に整列できる関数（F02/F05）|
-| 持続系統 | 学習 `C`：`C ← (1−c)·C + c·mean(y yᵀ)`, `y = (親に勝った接触感染の子の変位)/σ`。単位行列から開始し、**basin 乗換えのときだけ**リセット（`cc_keep_on_spillover`）| 集団が縮退する悪条件・回転系（F06/F08〜F14）|
+| 持続系統 | 学習 `C`：`C ← (1−c)·C + c·mean(y yᵀ)`, `y = (採用した接触感染の子の変位)/σ`。採用するのはその世代の配置済み close 子の f 上位半分（`cc_mu_frac=0.5`、2026-10-08 から。旧既定は「自分の親に勝った子」）。単位行列から開始し、**basin 乗換えのときだけ**リセット（`cc_keep_on_spillover`）、通常のスピルオーバー後 50 世代は更新しない（`cc_spill_freeze_gens`）| 集団が縮退する悪条件・回転系（F06/F08〜F14）|
 
 **行列を混ぜず、判別器も持たない**のが要点。加法混合は最小固有値を `w/dim` に持ち上げて達成可能な異方性を `~dim/w` に制限し、F02（cond 1e6）を失う。完全置換も F02 を失う。2 系統並走なら両方の異方性が保たれ、どちらが正しいかの判定も不要になる。
 
@@ -223,7 +223,7 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
   `<problem>_seed<N>_draws.csv.gz`（再投入直後の集団スロットごとに 1 行。`kind` が `reseed` / `retained`）。
 - **既定にも探索にも影響しない**: 上書きしているのは 2 つのフックだけで、どちらも `super()` を呼んで状態を読むだけ。
   **RNG を 1 度も引かず、評価も 1 回も消費せず、`optimize` は継承したまま。**
-  **恒等検査は `analysis/mmo2024/e113/identity_check.py`。**
+  **恒等検査は `analysis/mmo2024/e113/identity_check.py`（タグ `archive/multisolution-2026-09-29` 内。作業ツリーからは外してある）。**
 - **本体（`mceso.py`）は 1 ビットも変わっていない**（`CLAUDE.md` の「診断用の変種は本体を書き換えず別ファイルに置く」）。
 
 ---
@@ -232,7 +232,7 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 
 | パラメータ | デフォルト | 意味 |
 |---|---|---|
-| `n_pop` | `max(20, 4·dim)` | 集団個体数。**次元適応**（None 指定時）：dim≤5 で 20、高次元でスケール（dim=10→40）。固定 20 は高次元で過小（dim=10 で niching restart が CEC2022 G06-Hybrid1 を彷徨 best_f 2140→40 once n_pop=40）。BBOB dim2/3 は 20 で無変更。int 明示で上書き可 |
+| `n_pop` / `n_pop_dim_mult` | None / 4.0 | 集団個体数。**既定の `pop_schedule="linear"` では None のとき縮小の初期値 `max(20, pop_init_mult·dim)` になり、int を渡すとそれが初期値**（次行）。以下は `pop_schedule="fixed"`（旧既定、〜2026-10-07）のときの意味: None で `max(20, n_pop_dim_mult·dim)`＝dim≤5 で 20、高次元でスケール（dim=10→40）。固定 20 は高次元で過小（dim=10 で niching restart が CEC2022 G06-Hybrid1 を彷徨 best_f 2140→40 once n_pop=40）。BBOB dim2/3 は 20 で無変更。int 明示で上書き可 |
 | `pop_schedule` / `pop_init_mult` / `pop_final_mult` / `pop_min` / `pop_shrink_power` | `"linear"` / 16 / 4 / 10 / 2.0 | **集団サイズの縮小（2026-10-08 から既定）**。初期 `max(20, 16·dim)` 体から、予算の消費割合 t に応じて `final + (init − final)·(1 − t)²` 体（final = `max(10, 4·dim)`）まで、世代の最初に悪い宿主から外す。2D は 32 → 10、5D は 80 → 20、10D は 160 → 40。power = 1 は線形（10D で −5.00pt、早く縮める 2 で +5.62pt）。`"fixed"` で旧挙動（`n_pop` 固定）。**予算を事前に知っている前提**になる（L-SHADE 系と同じ）|
 | `sigma` | 0.2 | 初期探索半径（探索範囲に対する比率） |
 | `host_sigma_min_scale` | 0.05 | 接触感染チャネルにおける per-host σ_i スケーリング下限（高品質・高齢の宿主は σ_i = σ × 0.05 まで縮小して精密探索）|
@@ -256,7 +256,7 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `kill_fraction` | 0.25 | 宿主競合で毎世代排除する割合 |
 | `softmax_beta` | 5.0 | 親（感染源）選択の選択圧。`w ∝ exp(−beta × (f_i − f_min)/(f_max − f_min))` と集団の f 範囲で正規化するため、f のスケールにも次元にも依存しない。0.0 で旧式 `exp(f_max − f_i)`（絶対差依存＝収束後は一様選択に退化）に復帰。β=8 は高次元で更に強いが dim2 を −2.29pt 落とすため不採用 |
 | `restart_no_improve_threshold` | 300 | スピルオーバー発動の no_improve 閾値（dim2 基準。実効値は下記 `restart_window_dim_scale` でスケール）|
-| `restart_window_dim_scale` | 1.0 | 停滞窓の次元スケール指数。実効窓 = `restart_no_improve_threshold × (dim/2)^this`。`no_improve` は**評価回数**カウンタだが 1 世代は `kill_fraction × n_pop` 評価を消費するため（dim2 で 5、dim10 で 10、dim20 で 20）、固定窓は**世代数で見ると高次元ほど縮む**。dim2 では係数が必ず 1.0 になるので低次元は bit-identical、0.0 で旧固定窓に復帰 |
+| `restart_window_dim_scale` | 1.0 | 停滞窓の次元スケール指数。実効窓 = `restart_no_improve_threshold × (dim/2)^this`。`no_improve` は**評価回数**カウンタだが 1 世代は `kill_fraction × n_pop` 評価を消費するため（旧既定の固定集団で dim2 で 5、dim10 で 10、dim20 で 20。既定の縮小では予算の消費とともに減る）、固定窓は**世代数で見ると高次元ほど縮む**。dim2 では係数が必ず 1.0 になるので低次元は bit-identical、0.0 で旧固定窓に復帰 |
 | `restart_sigma_ratio` | 0.3 | スピルオーバー後の σ（σ_init に対する比率） |
 | `restart_quality_rel_floor` | 1e-8 | スピルオーバー skip 閾値（best_so_far / \|f_init\| ≤ this で skip）。乗法スケール不変 |
 | `basin_switch_after_failed_spillovers` | 2 | この連続失敗回数で best 破棄＋σ_init リセットの完全ベイスン乗換え |

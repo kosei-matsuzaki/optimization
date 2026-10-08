@@ -34,7 +34,7 @@ MC-ESO と比較する既存最適化手法の一覧と実装詳細。提案手�
 
 | パラメータ | 値 | 意味 |
 |---|---|---|
-| `sigma0` | `0.2 × (hi - lo)` | 初期探索範囲（`main.py` が問題ごとに付与。クラス既定値は 1.0）|
+| `sigma0` | `0.2 × (hi - lo)` | 初期探索範囲（`main.py` / `quick_check.py` が問題ごとに付与。クラス既定値は 1.0）|
 | マルチスタート | 有効 | 収束後、最良点から再起動 |
 
 ---
@@ -127,7 +127,7 @@ Neighborhood-based Crowding DE（Qu, Suganthan & Liang, 2012）。DE ベース�
 - **Repel-CMA-ES は de Nobel+ 2024 の近似**。棄却判定を Euclid 距離で行っている（原論文は現在の CMA 計量での Mahalanobis 距離 / σ）。`repel_coverage` も本プロジェクトの選択で、斥力の強さを決める唯一のパラメータなので、これに依存する主張をする前に感度を測ること。
 - 多解指標は `final_solutions` だけを見る（[experiments.md](experiments.md#多解報告cec2013-ルール-niching-スイート)）。報告するのは r3pso が全粒子の pbest、NMMSO がモード集合、Repel-CMA-ES が各 restart の best ＋最終集団、Crowding-DE / NCDE が最終集団。
 - 低予算では集団サイズが効く。NCDE / Crowding-DE / r3pso の既定 `n_pop=30` は 2D・5000 評価で 166 世代しか回らないので、負けが手法のせいか設定のせいかは予算を変えて確かめる必要がある。
-- **【2026-09-18 その141】`r3pso` の `n_particles=30` は公表設定から外れている（既定は未変更）。** Li 2010 §VI-B は母集団を**定数ではなく帯**で与えており、易しい関数（1e4 評価）で 20-50、Shubert 2-D で 200-500、**D=8〜20 では 300-800**（本文は `analysis/mmo2024/e141/refs/r3pso_li2010.txt.gz`）。実測でも CEC2013 の 5 関数 10 seed で **300 にすると PR@1e-5 が +0.1233（p=1.757e-7、5 関数すべてで正）**。**慣性・加速係数は論文と一致**（χ=0.7298 / φ=2.05 の構成係数形）＝ 外れているのは母集団 1 個だけ。**既定を変えるかは未決**（変えると記録済みの `r3pso` の値が全部「旧既定のもの」になるため、[research_loop.md](research_loop.md) の方針欄 2026-09-11 (3) の代償の行が要る）。
+- **【2026-09-18 その141】`r3pso` の `n_particles=30` は公表設定から外れている（既定は未変更）。** Li 2010 §VI-B は母集団を**定数ではなく帯**で与えており、易しい関数（1e4 評価）で 20-50、Shubert 2-D で 200-500、**D=8〜20 では 300-800**（本文は `analysis/mmo2024/e141/refs/r3pso_li2010.txt.gz`、タグ `archive/multisolution-2026-09-29` 内）。実測でも CEC2013 の 5 関数 10 seed で **300 にすると PR@1e-5 が +0.1233（p=1.757e-7、5 関数すべてで正）**。**慣性・加速係数は論文と一致**（χ=0.7298 / φ=2.05 の構成係数形）＝ 外れているのは母集団 1 個だけ。**既定を変えるかは未決**（変えると記録済みの `r3pso` の値が全部「旧既定のもの」になるため、[research_loop.md](research_loop.md) の方針欄 2026-09-11 (3) の代償の行が要る）。
 - **【2026-09-18 その141】`NCDE` の `n_pop=30` は主水準では欠陥ではない。** 同じ測定で 300（`m` は出荷の 1/5 という割合を保って 60）にしても **PR@1e-5 は +0.0150 / p=0.348**。**ただし内訳は打ち消し**で、N15 +0.1000・N17 +0.0875 が有意な一方、**N20-CF4-20D は −0.1250（0/9/1、p=0.0039）で、落ちるのは深さだけ**（PR@1e-3 までは同値、1e-5 で 0.0000。40 万評価 ÷ 300 個体 ≈ 1,333 世代）。**NCDE の原論文（Qu+ 2012）の母集団設定は未取得**（open-access PDF が無い）。
 
 ### 記録値がどの配線で取られたか（但し書き。2026-09-21 その150 が追加）
@@ -150,12 +150,12 @@ Neighborhood-based Crowding DE（Qu, Suganthan & Liang, 2012）。DE ベース�
 
 より強力な近代手法を外部ライブラリ経由で `BaseOptimizer` インターフェースに合わせて組み込む。
 
-- **L-SHADE**（`core/optimizers/lshade.py`, mealpy ラッパー）— SHADE に線形集団縮小を加えた適応的 DE（Tanabe & Fukunaga 2014、CEC2014 優勝）。初期集団 `N_init = 18 × d`、`miu_f = miu_cr = 0.5`。
+- **L-SHADE**（`core/optimizers/lshade_port.py`, 論文どおりの numpy 移植。2026-10-06 から登録名 `L-SHADE` はこちら）— SHADE に線形集団縮小を加えた適応的 DE（Tanabe & Fukunaga 2014、CEC2014 優勝）。既定は `n_init_factor=18`（初期集団 `18 × d`）/ `n_min=4` / `memory_size=6` / `p_best=0.11` / `arc_rate=2.6`。旧 mealpy ラッパー（`core/optimizers/lshade.py`）は `L-SHADE-mealpy` として参照用に残る（下の「この作業で見つかった既存の比較手法の問題」）。
 - **IPOP-CMA-ES**（`core/optimizers/restart_cmaes.py`, pycma ラッパー）— 収束ごとに集団サイズ λ を倍化して再起動（Auger & Hansen 2005）。
 - **BIPOP-CMA-ES**（同上）— 大規模・小規模 2 つの λ regime を予算が釣り合うよう交互に再起動（Hansen 2009）。
-- IPOP/BIPOP も CMA-ES と同じく `sigma0 = 0.2 × span` を `main.py` が付与する。
+- IPOP/BIPOP も CMA-ES と同じく `sigma0 = 0.2 × span` を `main.py` / `quick_check.py` が付与する（クラス側の既定 `sigma0=1.0` は使われない）。
 
-> **注意（再現性）**: pycma 系（CMA-ES seed0 / IPOP / BIPOP）は同一 seed でも run ごとに結果が変動しうる。Wilcoxon 等の seed-paired 比較ではこの非決定性を念頭に置く。
+> **注意（再現性）**: pycma 系（CMA-ES / IPOP / BIPOP）が同一 seed でも run ごとに変動していたのは、run 0 のシード 0 を pycma が「時刻から乱数」と解釈していたこちらの包みの不具合で、2026-10-06 に修正済み（下の「この作業で見つかった既存の比較手法の問題」）。修正前の記録値には run 0 の非決定性が残っている。
 
 ---
 
@@ -176,7 +176,7 @@ niching 手法が「協調している」ことの値打ちを測るための、
 | `iso` | True | 共分散を止めてステップ幅だけ（`CMA_on=0`）|
 
 既定値は `scripts/niching/hunt_coverage.py --null` の offline 降下（`_null_descent`）と同一で、
-**降下 1 本は offline 版と厳密に一致する**（`analysis/mmo2024/e110/identity_check.py` が
+**降下 1 本は offline 版と厳密に一致する**（`analysis/mmo2024/e110/identity_check.py`、タグ `archive/multisolution-2026-09-29` 内 が
 保存ダンプに対して evals / best_f / 着地最適の一致を確認）。
 違うのは**鎖にしたこと**だけ ＝ 再起動本数が「予算 ÷ 平均降下コスト」ではなく実際に買えた本数になり、
 報告集合が `max(100, 2K)` の上限を通る。

@@ -17,14 +17,18 @@ optimization/
 │   │   ├── cmaes.py            # CMA-ES（best-anchored restart）
 │   │   ├── mceso.py            # MC-ESO（提案手法）+ _MCESOState
 │   │   ├── pso.py / de.py / savoa.py  # PSO・DE・SaVOA baseline
-│   │   ├── lshade.py           # L-SHADE（mealpy wrapper）
-│   │   └── restart_cmaes.py    # IPOP/BIPOP-CMA-ES（pycma wrapper）
+│   │   ├── lshade_port.py      # L-SHADE（論文どおりの numpy 移植。登録名 L-SHADE）
+│   │   ├── lshade.py           # L-SHADE（mealpy wrapper。登録名 L-SHADE-mealpy、参照用）
+│   │   ├── restart_cmaes.py    # IPOP/BIPOP-CMA-ES（pycma wrapper）
+│   │   └── …                   # ハイブリッド・niching 系ほか（一覧は baselines.md）
 │   ├── runner.py               # 複数run の実験実行・統計サマリー
 │   └── visualize.py            # 関数地形図・収束曲線・各種 GIF の生成
 ├── web/                        # Results UI（Flask）→ docs/web.md
 ├── main.py                     # 本番実験エントリーポイント（GitHub Actions 経由）
 ├── quick_check.py              # ローカル軽量確認スクリプト
 ├── run.sh                      # 実験管理 CLI
+├── scripts/                    # 集計・検査ツール（下の「評価の分析・自動化」。一時停止路線は scripts/niching/）
+├── analysis/                   # 測定結果の控え（テーマ別サブディレクトリ、analysis/README.md）
 ├── docs/                       # ドキュメント（本ディレクトリ）
 ├── external/                   # 外部由来のベンチマーク実装（vendored、pip 依存ではない）
 │   └── mmo2024/                #  GECCO'2024/'2025 MMO suite（CC BY-SA 4.0, Ali Ahrari）
@@ -46,7 +50,7 @@ optimization/
 
 ### 新しい手法を追加する
 
-`core/optimizers/` に新しいファイル（例 `myopt.py`）を作り `BaseOptimizer` を継承したクラスを定義し、`core/optimizers/__init__.py` で再エクスポートしたうえで `main.py` の `_BASE_OPTIMIZERS` に追記すれば比較実験に組み込まれる。
+`core/optimizers/` に新しいファイル（例 `myopt.py`）を作り `BaseOptimizer` を継承したクラスを定義し、`core/optimizers/__init__.py` で再エクスポートしたうえで、quick で回すなら `quick_check.py` の `_OPTIMIZERS`、GitHub Actions（`main.py`）で回すなら `main.py` の `_BASE_OPTIMIZERS` に追記する（2 つの登録表は別物）。
 
 ---
 
@@ -68,10 +72,10 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 
 | コマンド | 説明 |
 |---|---|
-| `./run.sh quick --all` | **手法評価の標準コマンド**。**2 次元 BBOB-24（F01-F24）のみ**を n_runs=20 / max_evals=5000 で評価 |
+| `./run.sh quick --all` | **手法評価の標準コマンド**。**2 次元 BBOB-24（F01-F24）のみ**を n_runs=20 / max_evals=5000 で評価（`--all` 自体は「選択中の `--dim` の F01-F24」を意味し、`--dim` 既定が 2 なので 2D になる） |
 | `./run.sh quick --all --custom` | BBOB-24 に Custom 11（C01-C11, 2D 限定）を追加。多峰・多解など**特定目的の参照時のみ**使う |
 | `./run.sh quick --funcs C01-Himmelblau,C02-SixHumpCamel` | Custom 単独に絞り込んだ集中確認 |
-| `./run.sh quick --funcs F08-Rosenbrock,F10-EllipsoidalRot` | 任意関数に絞り込んだ集中検証（デバッグ用） |
+| `./run.sh quick --funcs F08-Rosenbrock,F10-EllipsoidalRot` | 任意関数に絞り込んだ集中検証（デバッグ用）。**`--funcs` 単独は quick-12 サブセットの中を絞るだけ**で、quick-12 外の BBOB 関数（例 F02）は警告なしに落ちる。quick-12 外を指名するときは `--all --funcs ...` にする（Custom C01-C11 だけは dim2 なら `--funcs` 単独で選べる） |
 | `./run.sh quick --suite niching --n-runs 20` | **低次元多峰の評価**。CEC2013 niching の 2D/3D サブセット（N04-N10）を各関数の次元で回す（`--dim` は無視）|
 | `./run.sh quick --suite niching --suite-budget` | 同上を**競技の公式予算**（MaxFEs 5e4 / 2e5 / 4e5）で回す。文献値と比べたいときだけ使う |
 | `./run.sh quick --all --dim {2\|3\|5\|10\|20} --max-evals <2500×d>` | **次元スケーリング計測**（BBOB-24 を各次元で）。現状把握のスナップショット用。採否判定は 2D が主対象 |
@@ -122,11 +126,11 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 
 | ツール | 用途 |
 |---|---|
-| `scripts/analyze_quick.py <run_dir> [--baseline <dir>] [--baseline-method <name>] [--dim N]` | quick 結果（`summary.csv`/`wilcoxon.csv`）を規定の **3 指標**（SR / `evals_succ_mean` / Wilcoxon）に集計し、SR@1e-10 主指標・関数別の改善/悪化・SR@1e-10 非回帰チェック・判定を出力。SR@1e-10 非回帰チェックは2モード: `--baseline <旧run_dir>`（cross-run, 同名 MC-ESO を run 間で差分） / `--baseline-method <名前>`（within-run, 同一 run 内の元版と差分。**改変 MC-ESO と元 MC-ESO の 2 手法のみ**を `--methods "MC-ESO,<元名>"` で回したとき用）。CSV を手で読む代わりにこれで報告する |
+| `scripts/analyze_quick.py <run_dir> [--baseline <dir>] [--baseline-method <name>] [--dim N] [--ref <name>]` | quick 結果（`summary.csv`/`wilcoxon.csv`）を規定の **3 指標**（SR / `evals_succ_mean` / Wilcoxon）に集計し、SR@1e-10 主指標・関数別の改善/悪化・SR@1e-10 非回帰チェック・判定を出力。SR@1e-10 非回帰チェックは2モード: `--baseline <旧run_dir>`（cross-run, 同名 MC-ESO を run 間で差分） / `--baseline-method <名前>`（within-run, 同一 run 内の元版と差分。**改変 MC-ESO と元 MC-ESO の 2 手法のみ**を `--methods "MC-ESO,<元名>"` で回したとき用）。CSV を手で読む代わりにこれで報告する。`--ref` は reference 手法名（既定 `MC-ESO`） |
 | サブエージェント `experimenter`（`.claude/agents/`） | 「比較手法設定 → `./run.sh quick` 実行 → monitor → `analyze_quick.py` で分析 → 判定を返す」一連を独立コンテキストで完結。手法ブラッシュアップ中に本会話を汚さず評価を回すためのもの（評価専任・コードは変更しない） |
 | `scripts/niching/diagnose_niching.py [--evals N] [--seeds N] [--eps 1e-1,1e-3,1e-5] [--funcs ...] [--csv PATH] [--fast-scoring]` | CEC2013 niching で MC-ESO の **visited（走行中に触れた大域最適）と reported（報告集合の大域最適）を分けて数える**。`visited ≫ reported` なら記録の問題（追加評価ゼロで直る）、`visited ≈ reported` なら探索の問題。`distinct` は報告集合の rho 分離点数（重複報告の検査）、`blocked` はそのうち eps を外して 0 点になる数。**`--eps` はカンマ列を取り、すべて同じ run から採点する**（精度水準を増やしても再最適化は起きない）。**visited は eps に強く依存するので 1 水準だけで判断しないこと**（2026-08-31 の測定は ε=1e-4 単独で「Vincent は探索が届いていない」と誤結論した）。`--variant` は診断用の変種（`core/optimizers/mceso_*.py`、本体は不変）を選ぶ。**`--variant fast` は既定値を渡すだけの no-op で base と同一**なので対照に使わない。**`--fast-scoring` は `visited` を `visited_fast()`（厳密等価、近似ではない）で採点し、reselect 列を落として -1 を書く**。素の採点は履歴全点に O(n²) の greedy を掛けるので、**N09-Vincent3D では 1 run 401 秒のうち 98.5% が採点**（最適化は 6.2 秒）になり、このフラグで 2 腕 × 15 seed が 118 秒に落ちる。**報告規則（resel 列）を見たいときだけ外す** |
 | `scripts/niching/hunt_confound.py [--func NAME] [--ref LABEL] [--metric pr\|visited\|loss\|distinct\|landed\|hunts\|blocked] LABEL=CSV ...` | `diagnose_niching.py` の CSV を複数取り、**共通 seed で対応のある Wilcoxon**（w/t/l・p・A12）を eps 水準ごとに並べる。**`--metric` は検定をかける列を選ぶ（既定 `pr`）**。表の他の列は常に平均が並ぶので、**問いの棄却条件が PR 以外の列で書かれているときは必ずこれを合わせること**（その68 の棄却条件は `visited` ＝ 被覆の天井で書かれていた）。PR の隣に **hunt 数と診断カラム（visited / distinct / landed / blocked）を必ず表示する**ので、「PR の差が hunt 数の差ではないか」「どの成分が動いて PR が動いたのか」をその場で読める。予算違いの run を並べて hunt 数を揃えるのが本来の用途（2026-09-03 の `sigma_only` 交絡テスト）で、成分の機序を読む用途は 2026-09-04 その40〜その42 **その81 から、eps 水準ごとに `PR = 被覆 − 報告損失`（`PR` / `visited/K` / `(visited − reported)/K`）の 3 成分すべてに対応のある検定をかけた成分分解表を常時印字する。**`PR` は恒等式でこの 2 成分の差なので、**PR が動かないことと成分が動かないことは別の主張**であり、hunt 本数を動かす腕では成分が両方動いて PR だけ止まることがある（その80 の `basin_reset`、その81 の吸収率の表）。 |
-| `scripts/niching/niching_baseline.py [--funcs ...] [--methods ...] [--seeds N] [--evals-frac F ...] [--report-rule current\|reselect\|both] [--csv PATH]` | CEC2013 niching の**手法横断の順位表**（関数 × 手法 × 精度水準の peak ratio）。`--report-rule` が**報告規則**を切り替える: `current` は各手法の `final_solutions`（従来の表）、`reselect` は**その run 自身の履歴**から rho 貪欲に選び直した集合（cap = max(100, 2K)、**追加評価ゼロ**、`diagnose_niching.reselect_from_history` を共用）。**`both` は同一の run を両方の規則で採点する**ので、ペアリングが厳密で追加コストは採点分だけ。**選び直しは手法非依存の後処理なので、1 手法だけに与えて比較してはいけない**（2026-09-03 その28）。`--evals-frac` が 1.0 未満の run は狙いを定めるための道具で、公表用の比較ではない |
+| `scripts/niching/niching_baseline.py [--funcs ...] [--methods ...] [--seeds N] [--evals-frac F ...] [--report-rule current\|reselect\|history\|both\|all] [--csv PATH]` | CEC2013 niching の**手法横断の順位表**（関数 × 手法 × 精度水準の peak ratio）。`--report-rule` が**報告規則**を切り替える: `current` は各手法の `final_solutions`（従来の表）、`reselect` は**その run 自身の履歴**から rho 貪欲に選び直した集合（cap = max(100, 2K)、**追加評価ゼロ**、`diagnose_niching.reselect_from_history` を共用）。**`both` は同一の run を両方の規則で採点する**ので、ペアリングが厳密で追加コストは採点分だけ。`history` は評価履歴全体（上限なし。合法な報告ではなく、あらゆる報告規則の上限）、`all` は `both` に `history` を足す（`--help` による）。**選び直しは手法非依存の後処理なので、1 手法だけに与えて比較してはいけない**（2026-09-03 その28）。`--evals-frac` が 1.0 未満の run は狙いを定めるための道具で、公表用の比較ではない |
 | `scripts/niching/fullbudget_rank.py [--pair A,B] [--levels pr_1e-1,...] CSV [CSV ...]` | `niching_baseline.py` の CSV（正規予算の matrix ジョブが吐く `analysis/hm/fullbudget_*.csv`）を読み、**判定水準のみ（PR@1e-3 / PR@1e-5）**で (a) 関数ごとの手法順位と (b) **対応のある MC-ESO 対 NMMSO**（seed 対の w/t/l・両側 Wilcoxon・A12）を出す。棄却条件が平均ではなく**符号**（Shubert 2 関数で MC-ESO ≥ NMMSO）で書かれているため、1/10 予算の参照表（`status.md` 由来）をスクリプト内に定数で持ち、**held / FLIPPED を明示する**。**NM-Restart の N06/N08 行は落として、落としたことを刷る**（その28: restart 回数 1）。`--pair A,B` は対比する 2 手法を差し替える（その51 は `MC-ESO-rel,MC-ESO`、その53 は `MC-ESO-rel6,MC-ESO-rel`）。**`--levels` は刷る精度水準を広げる**（既定は判定水準の 2 つのまま。profile の**形**を読む回だけ 5 水準を刷る ―― 刷ることと順位の根拠にすることは別。1/10 予算の参照ブロックは `pr_1e-3` が含まれるときだけ出る） |
 | `scripts/check_doc_links.py` | `README.md` ＋ `docs/*.md` の**相互参照アンカーが実在する見出しを指しているか**を GitHub の slug 規則で検査する（壊れていれば非ゼロ終了）。**docs を統合・移動したあとに 1 回走らせる** —— リンクは押すまで壊れて見えないので、その88 は 2 本を目で見つけて次のサイクルまで放置し、その90 が全 51 本を検査したら**畳んだログ節を指す参照を含めて 6 本**壊れていた |
 | `scripts/check_doc_size.py` | **docs の行数が上限を超えていないか**を検査する（上限の表はスクリプト内の `CAPS` が正。超えていれば非ゼロ終了）。commit 前に走らせる。2026-09-29 に `acceptance_topology.md` が 15,037 行まで育ったのを受けて置いた |

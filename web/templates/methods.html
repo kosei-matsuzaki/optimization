@@ -443,7 +443,7 @@ strains ← []
             <div class="fc-pane-title">親選択の確率分布</div>
             <div class="math-display">\[ w_i = \frac{e^{(f_{\max} - f_i)\,/\,T}}{\displaystyle\sum_{j \in \mathrm{active}} e^{(f_{\max} - f_j)\,/\,T}}, \qquad \sum_i w_i = 1 \]</div>
             <div class="fc-note">
-              \(T\uparrow\) で確率が均一化（探索性↑）、\(T\downarrow\) で最良個体に集中（貪欲性↑）。基準 \(f_{\max}\) を引くことで softmax の数値安定性を確保。集団サイズは <code>n_pop = max(20, 4·dim)</code>（次元適応、dim≤5 で 20）。
+              \(T\uparrow\) で確率が均一化（探索性↑）、\(T\downarrow\) で最良個体に集中（貪欲性↑）。基準 \(f_{\max}\) を引くことで softmax の数値安定性を確保。集団サイズは予算の消費に合わせて <code>max(20, 16·dim)</code> から <code>max(10, 4·dim)</code> まで縮める（<code>pop_schedule="linear"</code>、2026-10-08 から既定。2D で 32 → 10）。旧既定（〜2026-10-07）は <code>n_pop = max(20, 4·dim)</code> 固定。
             </div>
           </div>
         </div>
@@ -905,7 +905,7 @@ strains ← []
         <div class="cmp-aspect-body">
           <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">固定 30</span></div>
           <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">\(\lambda\) 自動決定</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">次元適応</span>\(n_\text{pop} = \max(20,\, 4d)\)（dim≤5 で 20、高次元でスケール）</span></div>
+          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">次元適応＋縮小</span>\(\max(20,\, 16d)\) から \(\max(10,\, 4d)\) へ予算に合わせて縮小（2026-10-08 から既定。旧既定は \(\max(20,\, 4d)\) 固定）</span></div>
         </div>
       </div>
 
