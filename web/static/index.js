@@ -70,18 +70,25 @@ function getCardInfo(name) {
   // For workflow runs and legacy quick runs the `set` field is absent; only
   // show it when explicitly provided (currently only quick runs since the
   // --all flag was introduced).
-  const setStr = m.set === "all-26" ? "BBOB-26" : m.set === "quick-12" ? "quick-12" : null;
-  const evalsStr = [
-    m.n_runs    != null ? `${m.n_runs} runs` : null,
-    m.max_evals != null ? `${Number(m.max_evals).toLocaleString()} evals` : null,
+  // set is e.g. "all-d2", "allc-d5", "quick-d2" (or legacy "all-26" / "quick-12").
+  const setStr = !m.set ? null
+    : m.set.startsWith('allc') ? 'BBOB+Custom'
+    : m.set.startsWith('all') ? 'BBOB-24'
+    : m.set.startsWith('quick') ? 'quick-12' : null;
+  const dimStr = m.dim != null ? `${m.dim}D` : null;
+  const parts = [
     setStr,
-  ].filter(Boolean).join(' · ');
-  const metaStr = [sub, evalsStr].filter(Boolean).join('  ·  ');
-  return { title, sub, date, time, commit, type, status, evalsStr, metaStr };
+    m.n_runs    != null ? `n=${m.n_runs}` : null,
+    m.max_evals != null ? `${Number(m.max_evals).toLocaleString()} evals` : null,
+  ].filter(Boolean);
+  const evalsStr = [dimStr, ...parts].filter(Boolean).join(' ');
+  const paramsHtml = (dimStr ? `<span class="p-dim">${_esc(dimStr)}</span>` : '')
+    + parts.map(_esc).join('<span class="p-sep">/</span>');
+  return { title, sub, date, time, commit, type, status, evalsStr, paramsHtml };
 }
 
 function applyCardInfo(row, name) {
-  const { title, date, time, evalsStr, commit, type, status } = getCardInfo(name);
+  const { title, date, time, paramsHtml, commit, type, status } = getCardInfo(name);
   const linkEl = row.querySelector('.rt-link');
   if (linkEl) linkEl.textContent = title;
   const typeChip = row.querySelector('.rt-type-chip');
@@ -91,7 +98,7 @@ function applyCardInfo(row, name) {
   const timeEl = row.querySelector('.rt-time');
   if (timeEl) timeEl.textContent = time;
   const paramsEl = row.querySelector('.rt-params');
-  if (paramsEl) paramsEl.textContent = evalsStr;
+  if (paramsEl) { paramsEl.innerHTML = paramsHtml; paramsEl.title = paramsEl.textContent; }
   const commitEl = row.querySelector('.rt-commit');
   if (commitEl) commitEl.textContent = commit;
   const statusDiv = row.querySelector('.rc-status');
@@ -124,7 +131,7 @@ document.getElementById('quick-count').textContent =
 if (ALL_RESULTS.length) {
   const { date, time, commit } = getCardInfo(ALL_RESULTS[0]);
   document.getElementById('latest-date').textContent = date ? `${date} ${time}`.trim() : ALL_RESULTS[0];
-  document.getElementById('latest-commit').textContent = commit ? `@ ${commit}` : '';
+  document.getElementById('latest-commit').textContent = commit || '';
 }
 
 // ── HTML escape ──
@@ -134,7 +141,7 @@ function _esc(s) {
 
 // ── Create a result card DOM element ──
 function createResultCard(name) {
-  const { title, date, time, evalsStr, commit, type, status } = getCardInfo(name);
+  const { title, date, time, paramsHtml, commit, type, status } = getCardInfo(name);
   const typeClass    = type === 'quick' ? ' is-quick' : type === 'workflow' ? ' is-workflow' : '';
   const typeChipCls  = type || 'unknown';
   const statusHtml   = status
@@ -148,15 +155,15 @@ function createResultCard(name) {
     <td><a href="/results/${encodeURIComponent(name)}" class="rt-link">${_esc(title)}</a></td>
     <td><span class="rt-type-chip ${typeChipCls}">${_esc(type || '')}</span></td>
     <td><span class="rt-date">${_esc(date)}</span><span class="rt-time">${_esc(time)}</span></td>
-    <td class="rt-params">${_esc(evalsStr)}</td>
+    <td class="rt-params">${paramsHtml}</td>
     <td class="rt-commit">${_esc(commit)}</td>
     <td>${statusHtml}</td>
     <td class="rt-actions-cell">
       <button class="card-menu-btn" onclick="toggleCardMenu(${JSON.stringify(name)},event)" title="操作">⋮</button>
       <div class="card-menu-dropdown" id="menu-${_esc(name)}">
-        <button class="stop-job" style="display:${status === 'running' ? '' : 'none'};" onclick="stopCurrentJob()">■ 実行停止</button>
-        <button onclick="renameResult(${JSON.stringify(name)},event)">✏ 名前変更</button>
-        <button class="danger" onclick="deleteResult(${JSON.stringify(name)},event)">🗑 削除</button>
+        <button class="stop-job" style="display:${status === 'running' ? '' : 'none'};" onclick="stopCurrentJob()">実行を停止</button>
+        <button onclick="renameResult(${JSON.stringify(name)},event)">名前を変更</button>
+        <button class="danger" onclick="deleteResult(${JSON.stringify(name)},event)">削除</button>
       </div>
     </td>`;
   return row;
@@ -199,7 +206,7 @@ async function refreshResults() {
     Object.assign(RESULTS_META, meta);
 
     // Stat cards
-    const totalEl = document.querySelector('.stat-card.blue .stat-value');
+    const totalEl = document.getElementById('results-total');
     if (totalEl) totalEl.textContent = results.length;
     document.getElementById('quick-count').textContent =
       results.filter(r => (meta[r]?.type || '') === 'quick').length;
@@ -208,26 +215,26 @@ async function refreshResults() {
       const ldEl = document.getElementById('latest-date');
       const lcEl = document.getElementById('latest-commit');
       if (ldEl) ldEl.textContent = date ? `${date} ${time}`.trim() : results[0];
-      if (lcEl) lcEl.textContent = commit ? `@ ${commit}` : '';
+      if (lcEl) lcEl.textContent = commit || '';
     }
 
     // Get or create results-tbody inside results-panel
     const panel = document.getElementById('results-panel');
     let tbody = document.getElementById('results-tbody');
     if (!tbody) {
-      const placeholder = panel.querySelector('[style*="text-align"]');
+      const placeholder = panel.querySelector('.results-empty');
       if (placeholder) placeholder.remove();
       const wrap = document.createElement('div');
       wrap.className = 'results-table-wrap';
       wrap.innerHTML = `<table class="results-table">
         <thead><tr>
-          <th class="sortable" data-sort="name"   onclick="sortResults('name')">Name</th>
-          <th class="sortable" data-sort="type"   onclick="sortResults('type')">Type</th>
-          <th class="sortable" data-sort="date"   onclick="sortResults('date')">Date</th>
-          <th class="sortable" data-sort="params" onclick="sortResults('params')">Params</th>
-          <th class="sortable" data-sort="commit" onclick="sortResults('commit')">Commit</th>
-          <th class="sortable" data-sort="status" onclick="sortResults('status')">Status</th>
-          <th></th>
+          <th class="sortable" data-sort="name"   onclick="sortResults('name')">名前</th>
+          <th class="sortable" data-sort="type"   onclick="sortResults('type')">種類</th>
+          <th class="sortable" data-sort="date"   onclick="sortResults('date')">日時</th>
+          <th class="sortable" data-sort="params" onclick="sortResults('params')">条件</th>
+          <th class="sortable" data-sort="commit" onclick="sortResults('commit')">commit</th>
+          <th class="sortable" data-sort="status" onclick="sortResults('status')">状態</th>
+          <th><span class="sr-only">操作</span></th>
         </tr></thead>
         <tbody id="results-tbody"></tbody>
       </table>`;
@@ -307,21 +314,21 @@ function pollStatus(jobId) {
         localStorage.removeItem(QUICK_JOB_KEY);
         if (data.status === 'done') {
           jobBadge.className = 'badge badge-done';
-          jobBadge.textContent = '✓ Done';
+          jobBadge.textContent = '完了';
           if (data.result_dir) {
             jobResultAnchor.href = `/results/${data.result_dir}`;
             jobResultLink.style.display = 'inline';
           }
-          showToast('Run completed!', 'ok');
+          showToast('Quick Run が完了しました', 'ok');
           setTimeout(refreshResults, 600);
         } else if (data.status === 'stopped') {
           jobBadge.className = 'badge badge-failed';
-          jobBadge.textContent = '■ Stopped';
-          showToast('Run stopped.', 'warn');
+          jobBadge.textContent = '停止しました';
+          showToast('Quick Run を停止しました', 'warn');
         } else {
           jobBadge.className = 'badge badge-failed';
-          jobBadge.textContent = '✗ Failed';
-          showToast('Run failed.', 'err');
+          jobBadge.textContent = '失敗';
+          showToast('Quick Run が失敗しました。ログを確認してください', 'err');
         }
         return;
       }
@@ -358,7 +365,7 @@ function pollShellJob() {
       if (!running) {
         runBtn.disabled = false;
         jobBadge.className = 'badge badge-done';
-        jobBadge.textContent = 'Shell job ended';
+        jobBadge.textContent = 'run.sh のジョブが終了しました';
         return;
       }
     } catch (_) {}
@@ -381,7 +388,7 @@ function pollShellJob() {
           lastLineCount = data.output.length;
           document.getElementById('job-status').style.display = 'block';
           jobBadge.className = 'badge badge-running';
-          jobBadge.innerHTML = '<span class="spinner"></span>&nbsp;Running';
+          jobBadge.innerHTML = '<span class="spinner"></span>実行中';
           runBtn.disabled = true;
           data.output.forEach(line => terminal.appendChild(colorLine(line)));
           terminal.scrollTop = terminal.scrollHeight;
@@ -401,7 +408,9 @@ function pollShellJob() {
       if (running) {
         document.getElementById('job-status').style.display = 'block';
         jobBadge.className = 'badge badge-running';
-        jobBadge.innerHTML = '<span class="spinner"></span>&nbsp;Running <span style="font-size:10px;opacity:.7;">(run.sh)</span>';
+        const names = [...runningSet];
+        jobBadge.innerHTML = '<span class="spinner"></span>run.sh で実行中'
+          + (names.length ? ` <a class="job-run-name" href="/results/${encodeURIComponent(names[0])}">${_esc(names[0])}</a>` : '');
         terminal.style.display = 'none';
         runBtn.disabled = true;
         pollShellJob();
@@ -414,7 +423,7 @@ function pollShellJob() {
 const CM_KEY = 'config_modal_last';
 const CM_DEFAULTS = {
   quick:    { n_runs: 20, max_evals: 5000,  label: '', dim: '2',
-              methods: null, funcset: 'quick', funcs: null },
+              methods: null, funcset: 'all', funcs: null },
   workflow: { n_runs: 30, max_evals: 15000, use_all: false, label: '' },
 };
 
@@ -522,12 +531,12 @@ function openConfigModal(mode) {
   try { saved = (JSON.parse(localStorage.getItem(CM_KEY)) || {})[mode] || {}; } catch (_) {}
   const def = { ...CM_DEFAULTS[mode], ...saved };
 
-  document.getElementById('cm-icon').textContent  = isQuick ? '▶' : '⚡';
+  document.getElementById('cm-icon').textContent  = isQuick ? '▶' : '↗';
   document.getElementById('cm-icon').className    = `dlg-icon-badge ${isQuick ? 'info' : 'success'}`;
-  document.getElementById('cm-title').textContent = isQuick ? 'Quick Run 設定' : 'GitHub Actions 設定';
+  document.getElementById('cm-title').textContent = isQuick ? 'Quick Run' : 'GitHub Actions で実行';
   document.getElementById('cm-msg').textContent   = isQuick
-    ? 'ローカル環境で軽量動作確認を実行します。'
-    : 'GitHub Actions 上で本実験ワークフローを起動します。';
+    ? 'このPCで quick_check.py を実行します。手法の判定は BBOB 全 24 関数・n=20・5,000 evals（2D）で行います。'
+    : 'GitHub Actions のワークフロー（main ブランチ）を起動します。手法の判定には使わない補助実験です。';
 
   const nRunsEl    = document.getElementById('cm-n-runs');
   const maxEvalsEl = document.getElementById('cm-max-evals');
@@ -547,7 +556,7 @@ function openConfigModal(mode) {
     // Populate functions area and apply funcset selection
     cmEnsureFunctions().then(() => {
       const fsRadios = document.querySelectorAll('input[name=cm-funcset]');
-      const fsVal = def.funcset || 'quick';
+      const fsVal = def.funcset || 'all';
       fsRadios.forEach(r => { r.checked = (r.value === fsVal); });
       fsRadios.forEach(r => r.onchange = cmOnFuncsetChange);
       const customSel = (fsVal === 'custom' && def.funcs && def.funcs.length)
@@ -561,7 +570,7 @@ function openConfigModal(mode) {
     el.style.display = isQuick ? '' : 'none';
   });
   const okBtn = document.getElementById('cm-ok');
-  okBtn.textContent = isQuick ? '▶ 実行する' : '⚡ トリガー';
+  okBtn.textContent = isQuick ? '実行' : '起動';
   okBtn.className   = `btn btn-sm dlg-ok ${isQuick ? 'btn-primary' : 'btn-primary'}`;
 
   overlay.classList.add('open');
@@ -634,7 +643,7 @@ async function _runQuickFromModal() {
   runBtn.disabled = true;
   document.getElementById('job-status').style.display = 'block';
   jobBadge.className = 'badge badge-running';
-  jobBadge.innerHTML = '<span class="spinner"></span>&nbsp;Running';
+  jobBadge.innerHTML = '<span class="spinner"></span>実行中';
   jobResultLink.style.display = 'none';
   const res = await fetch('/api/run', { method: 'POST', body: form });
   const { job_id } = await res.json();
@@ -656,10 +665,10 @@ async function _runWorkflowFromModal() {
   form.append('max_evals', vals.max_evals);
 
   const btn = document.getElementById('gh-btn');
-  btn.disabled = true; btn.textContent = 'Triggering…';
+  btn.disabled = true; btn.textContent = '起動中…';
   const res = await fetch('/api/gh-trigger', { method: 'POST', body: form });
   const data = await res.json();
-  btn.disabled = false; btn.textContent = '⚡ Trigger Workflow';
+  btn.disabled = false; btn.textContent = 'GitHub Actions で実行';
   showToast(data.message, data.ok ? 'ok' : 'err');
   if (data.ok) setTimeout(loadGhRuns, 2000);
 }
@@ -690,38 +699,46 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── Remote Runs ──
 async function loadGhRuns() {
   const list = document.getElementById('gh-runs-list');
-  list.innerHTML = '<p class="empty-state"><span class="spinner"></span> Loading…</p>';
+  list.innerHTML = '<p class="empty-state"><span class="spinner"></span> 読み込み中…</p>';
+  const STATUS_JA = { success: '成功', failure: '失敗', cancelled: '中止',
+                      in_progress: '実行中', queued: '待機中', completed: '完了' };
   try {
     const res = await fetch('/api/gh-runs');
-    if (!res.ok) throw new Error(await res.text());
-    const runs = await res.json();
-    if (!runs.length) { list.innerHTML = '<p class="empty-state">No runs found.</p>'; return; }
+    let data = null;
+    try { data = await res.json(); } catch (_) {}
+    if (!res.ok || !Array.isArray(data)) {
+      const why = (data && data.error) || `HTTP ${res.status}`;
+      list.innerHTML = `<p class="empty-state is-error"><strong>実行履歴を取得できませんでした。</strong><br>${_esc(why)}</p>`;
+      return;
+    }
+    const runs = data;
+    if (!runs.length) { list.innerHTML = '<p class="empty-state">ワークフローの実行はまだありません。</p>'; return; }
     list.innerHTML = '';
     runs.forEach(run => {
       const row = document.createElement('div');
       row.className = 'gh-run-row';
       row.id = `gh-run-${run.databaseId}`;
       const status = run.conclusion || run.status;
-      const badgeClass = status === 'success' ? 'badge-done'
-        : status === 'failure' ? 'badge-failed' : 'badge-running';
       const canDownload = run.conclusion === 'success';
       const date = new Date(run.createdAt).toLocaleString('ja-JP',
         {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
       row.innerHTML = `
-        <div class="gh-run-meta">
-          <span class="badge ${badgeClass}" style="font-size:10px;">${status}</span>
-          <span style="font-size:10.5px;color:var(--muted);">${date}</span>
+        <span class="gh-run-dot ${_esc(status)}" title="${_esc(status)}"></span>
+        <span class="gh-run-title" title="${_esc(run.name)}">${_esc(run.name)}</span>
+        <span class="gh-run-date">${date}</span>
+        <div class="gh-run-sub">
+          <span>${_esc(STATUS_JA[status] || status)}</span>
+          <span class="mono">${_esc((run.headSha || '').slice(0,7))}</span>
+          ${canDownload ? `<button class="btn btn-outline btn-sm" id="dl-btn-${run.databaseId}"
+            onclick="startDownload('${run.databaseId}')">取り込む</button>` : ''}
         </div>
-        <div class="gh-run-title">${run.name} <span style="color:var(--muted);font-size:10.5px;">${(run.headSha || '').slice(0,7)}</span></div>
-        ${canDownload ? `<button class="btn btn-outline btn-sm" id="dl-btn-${run.databaseId}"
-          onclick="startDownload('${run.databaseId}')">⬇ Download</button>` : ''}
-        <div id="dl-status-${run.databaseId}" style="font-size:11px;margin-top:4px;"></div>
+        <div class="gh-run-dl" id="dl-status-${run.databaseId}"></div>
       `;
       list.appendChild(row);
     });
     resumeDownloadPolling();
   } catch(e) {
-    list.innerHTML = `<p class="empty-state" style="color:var(--danger);">Error: ${e.message}</p>`;
+    list.innerHTML = `<p class="empty-state is-error"><strong>実行履歴を取得できませんでした。</strong><br>${_esc(e.message)}</p>`;
   }
 }
 
@@ -732,7 +749,7 @@ async function startDownload(ghRunId) {
   const label = await dlg.prompt('この結果の実験名を入力してください（省略可）:', '');
   if (label === null) return;
   const btn = document.getElementById(`dl-btn-${ghRunId}`);
-  if (btn) { btn.disabled = true; btn.textContent = 'Starting…'; }
+  if (btn) { btn.disabled = true; btn.textContent = '開始中…'; }
   const form = new FormData();
   form.append('run_id', ghRunId);
   form.append('label', label);
@@ -755,9 +772,9 @@ function pollDownload(jobId, ghRunId) {
         // Job state was lost (likely Flask reload during dev). Reset UI.
         localStorage.removeItem(DL_JOB_KEY);
         if (statusEl) {
-          statusEl.innerHTML = `<span style="color:var(--danger);">ジョブ状態が失われました（サーバ再起動）。再ダウンロードしてください。</span>`;
+          statusEl.innerHTML = `<span style="color:var(--danger);">サーバが再起動したため進捗が分からなくなりました。もう一度「取り込む」を押してください。</span>`;
         }
-        if (btn) { btn.disabled = false; btn.textContent = '⬇ Download'; }
+        if (btn) { btn.disabled = false; btn.textContent = '取り込む'; }
         return;
       }
       if (!res.ok) { scheduleNext(); return; }
@@ -765,19 +782,17 @@ function pollDownload(jobId, ghRunId) {
       if (statusEl) {
         if (data.status === 'running' && typeof data.progress === 'number') {
           statusEl.innerHTML = `
-            <div style="font-size:11px;color:var(--text-2);margin-bottom:3px;">${data.message}</div>
-            <div style="height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden;border:1px solid var(--border-light);">
-              <div style="height:100%;width:${data.progress}%;background:linear-gradient(90deg,var(--accent-muted) 0%,var(--accent) 100%);transition:width .4s ease;"></div>
-            </div>`;
+            <div>${_esc(data.message)}</div>
+            <div class="dl-progress"><div style="width:${data.progress}%"></div></div>`;
         } else {
           const color = data.status === 'done' ? 'var(--success)'
             : data.status === 'failed' ? 'var(--danger)' : 'var(--warn)';
-          statusEl.innerHTML = `<span style="color:${color};">${data.message}</span>`;
+          statusEl.innerHTML = `<span style="color:${color};">${_esc(data.message)}</span>`;
         }
       }
       if (data.status !== 'running') {
         localStorage.removeItem(DL_JOB_KEY);
-        if (btn) { btn.disabled = false; btn.textContent = '⬇ Download'; }
+        if (btn) { btn.disabled = false; btn.textContent = '取り込む'; }
         if (data.status === 'done') {
           showToast(data.message, 'ok');
           setTimeout(refreshResults, 600);
@@ -812,7 +827,7 @@ function toggleCardMenu(runId, e) {
     btn.classList.add('open');
     const r = btn.getBoundingClientRect();
     menu.style.top  = (r.bottom + 4) + 'px';
-    menu.style.left = Math.max(4, r.right - 132) + 'px';
+    menu.style.left = Math.max(4, r.right - 140) + 'px';
     _openMenu = runId;
   }
 }
@@ -865,7 +880,7 @@ function resumeDownloadPolling() {
   try {
     const { job_id, gh_run_id } = JSON.parse(stored);
     const btn = document.getElementById(`dl-btn-${gh_run_id}`);
-    if (btn) { btn.disabled = true; btn.textContent = 'Downloading…'; }
+    if (btn) { btn.disabled = true; btn.textContent = '取り込み中…'; }
     pollDownload(job_id, gh_run_id);
   } catch(e) {
     localStorage.removeItem(DL_JOB_KEY);

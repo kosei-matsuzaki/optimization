@@ -1,4 +1,3 @@
-  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   .page { max-width: 1100px; margin: 0 auto; padding: 32px 36px 72px; }
 
   /* ── Hero ─────────────────────────────────────────────────────────── */
@@ -33,7 +32,6 @@
     gap: 6px;
     font-size: 11px;
     font-weight: 700;
-    text-transform: uppercase;
     letter-spacing: 1.2px;
     color: var(--ch-contact);
     background: rgba(79, 124, 172, 0.10);
@@ -82,7 +80,6 @@
     margin-top: 8px;
     font-size: 10.5px;
     font-weight: 700;
-    text-transform: uppercase;
     letter-spacing: .55px;
   }
   .hero-schematic-caption span { padding: 2px 6px; border-radius: 4px; }
@@ -116,7 +113,6 @@
   .perf-headline-label {
     font-size: 10px;
     font-weight: 700;
-    text-transform: uppercase;
     letter-spacing: .6px;
     color: var(--muted);
     margin-bottom: 2px;
@@ -146,7 +142,6 @@
   .perf-cell-method {
     font-size: 10px;
     font-weight: 700;
-    text-transform: uppercase;
     letter-spacing: .5px;
     color: var(--muted);
   }
@@ -262,7 +257,6 @@
     padding: 11px 14px;
     font-weight: 700;
     font-size: 11px;
-    text-transform: uppercase;
     letter-spacing: .55px;
     color: rgba(255,255,255,.78) !important;
     border-bottom: 1px solid #3730a3 !important;
@@ -302,7 +296,6 @@
   .concept-section-label {
     font-size: 11px;
     font-weight: 700;
-    text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--muted);
     margin: 0 0 10px;
@@ -367,7 +360,6 @@
   .concept-eyebrow {
     font-size: 9.5px;
     font-weight: 800;
-    text-transform: uppercase;
     letter-spacing: .9px;
     line-height: 1;
   }
@@ -463,7 +455,6 @@
     font-size: 11.5px;
     color: var(--text-2);
     font-weight: 700;
-    text-transform: uppercase;
     letter-spacing: .5px;
     margin-bottom: 12px;
     display: flex;
@@ -498,7 +489,6 @@
     background: rgba(179,146,63,.10);
     border: 1px solid rgba(179,146,63,.30);
     border-radius: 999px;
-    text-transform: uppercase;
   }
   .fc-fork-card strong { font-size: 14.5px; font-weight: 800; color: var(--text); display: block; margin-bottom: 6px; letter-spacing: -.2px; }
   .fc-fork-card span   { font-size: 12.5px; color: var(--text-2); line-height: 1.72; }
@@ -655,8 +645,7 @@
   }
   .method-card-type {
     display: inline-flex; align-items: center;
-    font-size: 10px; font-weight: 800;
-    text-transform: uppercase; letter-spacing: .7px;
+    font-size: 10px; font-weight: 800; letter-spacing: .7px;
     color: var(--mc-color, var(--accent));
     background: var(--mc-tint, rgba(66,99,235,.10));
     border: 1px solid var(--mc-border, rgba(66,99,235,.30));
@@ -702,7 +691,6 @@
     gap: 6px;
     font-size: 10px;
     font-weight: 800;
-    text-transform: uppercase;
     letter-spacing: .8px;
     color: var(--accent-dark);
     margin-bottom: 10px;

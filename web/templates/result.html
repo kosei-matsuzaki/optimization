@@ -7,8 +7,7 @@
 <script src="/static/modal.js"></script>
 {% endblock %}
 
-{% block header_back %}<a href="/" class="header-back" title="ホームへ戻る">←</a>{% endblock %}
-{% block header_title %}Results{% endblock %}
+{% block header_title %}{{ run_id }}{% endblock %}
 
 {% block content %}
 <div class="layout">
@@ -19,8 +18,8 @@
       <div class="srh-topbar">
         <span class="srh-type-chip unknown" id="srh-type-chip">—</span>
         <span style="flex:1;"></span>
-        <button class="srh-icon-btn rename-btn" onclick="renameResult('{{ run_id }}')" title="名前変更">✏</button>
-        <button class="srh-icon-btn delete-btn" onclick="deleteResult('{{ run_id }}')" title="削除">🗑</button>
+        <button class="srh-icon-btn rename-btn" onclick="renameResult('{{ run_id }}')" title="この結果の名前を変更">名前変更</button>
+        <button class="srh-icon-btn delete-btn" onclick="deleteResult('{{ run_id }}')" title="この結果を削除">削除</button>
       </div>
       <div class="sidebar-run-id" id="sidebar-run-id">{{ run_id }}</div>
       <div class="sidebar-run-meta" id="sidebar-run-meta"></div>
@@ -30,7 +29,7 @@
     {% if all_results|length > 1 %}
     <details class="sidebar-runs-section">
       <summary>
-        他の結果 ({{ all_results|length - 1 }})
+        ほかの結果（{{ all_results|length - 1 }}）
         <span class="sidebar-runs-toggle">▶</span>
       </summary>
       <ul class="results-list">
@@ -42,8 +41,8 @@
           </a>
           <button class="sidebar-run-menu-btn" onclick="toggleSidebarMenu('{{ r }}', event)" title="操作">⋮</button>
           <div class="sidebar-run-dropdown" id="srmenu-{{ r }}">
-            <button onclick="renameResult('{{ r }}')">✏ 名前変更</button>
-            <button class="danger" onclick="deleteResult('{{ r }}')">🗑 削除</button>
+            <button onclick="renameResult('{{ r }}')">名前を変更</button>
+            <button class="danger" onclick="deleteResult('{{ r }}')">削除</button>
           </div>
         </li>
         {% endif %}
@@ -55,6 +54,7 @@
     {% if dims %}
 
     <!-- Overall evaluation entries (top-level, separate from per-function views) -->
+    <div class="sb-label">全関数の集計</div>
     <div class="ov-nav" id="overall-nav">
       <button class="ov-nav-btn" data-ovview="ranking"  onclick="selectOverall('ranking')">ランキング</button>
       <button class="ov-nav-btn" data-ovview="detail"   onclick="selectOverall('detail')">成績詳細</button>
@@ -62,16 +62,17 @@
     </div>
 
     <!-- View mode tabs (per-function analysis) -->
+    <div class="sb-label">関数・手法ごとに見る</div>
     <div class="view-mode-bar">
-      <button class="vm-btn active" id="vm-function" onclick="switchViewMode('function')">Function</button>
-      <button class="vm-btn" id="vm-method" onclick="switchViewMode('method')">Method</button>
-      <button class="vm-btn" id="vm-compare" onclick="switchViewMode('compare')">Compare</button>
+      <button class="vm-btn active" id="vm-function" onclick="switchViewMode('function')">関数</button>
+      <button class="vm-btn" id="vm-method" onclick="switchViewMode('method')">手法</button>
+      <button class="vm-btn" id="vm-compare" onclick="switchViewMode('compare')">比較</button>
     </div>
 
     <!-- Dimension -->
     {% if dims|length > 1 %}
     <div class="sidebar-section" style="flex-shrink:0;">
-      <div class="section-header"><span class="section-title">Dimension</span></div>
+      <div class="section-header"><span class="section-title">次元</span></div>
       <div class="tab-bar" id="dim-tabs">
         {% for dim in dims %}
         <button class="{% if loop.first %}active{% endif %}" data-dim="{{ dim }}">{{ dim }}</button>
@@ -87,7 +88,7 @@
     <!-- Function mode: function list -->
     <div class="sidebar-section" id="func-panel" style="flex:1; overflow-y:auto;">
       <div class="section-header">
-        <span class="section-title">Function</span>
+        <span class="section-title">関数</span>
         <span class="tag" id="func-count"></span>
       </div>
       <ul class="results-list" id="func-list"></ul>
@@ -96,7 +97,7 @@
     <!-- Method mode: method list -->
     <div class="sidebar-section" id="method-panel" style="flex:1; overflow-y:auto; display:none;">
       <div class="section-header">
-        <span class="section-title">Method</span>
+        <span class="section-title">手法</span>
         <span class="tag" id="method-count"></span>
       </div>
       <ul class="results-list" id="method-list"></ul>
@@ -106,15 +107,15 @@
     <div id="compare-panel">
       <div class="cmp-section">
         <div class="cmp-section-header">
-          <span>Functions</span>
-          <button class="cmp-select-all" onclick="cmpSelectAll('func')">全選択</button>
+          <span>関数</span>
+          <button class="cmp-select-all" onclick="cmpSelectAll('func')">すべて選択</button>
         </div>
         <div class="cmp-check-list" id="cmp-func-list"></div>
       </div>
       <div class="cmp-section">
         <div class="cmp-section-header">
-          <span>Methods</span>
-          <button class="cmp-select-all" onclick="cmpSelectAll('method')">全選択</button>
+          <span>手法</span>
+          <button class="cmp-select-all" onclick="cmpSelectAll('method')">すべて選択</button>
         </div>
         <div class="cmp-check-list" id="cmp-method-list"></div>
       </div>
@@ -129,7 +130,7 @@
     <!-- Visualization type selector -->
     <div class="card" id="media-card">
       <div class="card-header-row">
-        <span class="card-title-label">Visualization</span>
+        <span class="card-title-label">図</span>
         <span class="card-func-badge" id="media-func-badge"></span>
       </div>
       <div class="view-selector" id="media-selector"></div>
@@ -157,11 +158,11 @@
     <!-- Results table (Function mode only) -->
     <div class="card" id="results-card">
       <div class="card-header-row">
-        <span class="card-title-label">Results</span>
+        <span class="card-title-label">手法別の成績</span>
         <span class="card-func-badge" id="results-func-badge"></span>
       </div>
       <div id="unified-table-container">
-        <p class="empty-state">Select a function.</p>
+        <p class="empty-state">左の一覧から関数を選んでください。</p>
       </div>
     </div>
 
@@ -175,7 +176,7 @@
       <div class="card" id="overall-ranking-card">
         <div class="card-header-row">
           <span class="card-title-label">総合ランキング</span>
-          <span class="card-subtitle">Friedmanランク（低い＝優）· bf=median_best_f / Evals=成功 run のみで評価数中央値 / ECDF=AUC (高いほど良いがランクは低いほど良い) · 同着は平均ランク</span>
+          <span class="card-subtitle">関数ごとの順位を平均した Friedman ランク（小さいほど良い、同着は平均順位）。best_f は全 run の平均最終値、Evals は成功 run のみの平均評価回数で順位をつける。列見出しを押すと並べ替え。</span>
         </div>
         <div id="overall-leaderboard-container"></div>
         <div id="overall-friedman-container"></div>
@@ -185,8 +186,8 @@
            with per-method aggregates) + per-function, switchable by indicator -->
       <div class="card" id="overall-detail-card">
         <div class="card-header-row">
-          <span class="card-title-label">成績詳細（カテゴリ別・形状タグ別・関数別）</span>
-          <span class="card-subtitle" id="overall-detail-subtitle">指標を選択してカテゴリ別／関数別の内訳を切り替え</span>
+          <span class="card-title-label">成績詳細</span>
+          <span class="card-subtitle" id="overall-detail-subtitle">指標を選ぶと、カテゴリ別・形状タグ別・関数別の内訳が切り替わる</span>
         </div>
         <div id="overall-detail-selector" class="ov-detail-selector"></div>
         <div class="ov-detail-section-label">カテゴリ別（BBOB 公式グループ）</div>
@@ -200,15 +201,15 @@
       <!-- Wilcoxon -->
       <div class="card" id="overall-wilcoxon-card" style="display:none;">
         <div class="card-header-row">
-          <span class="card-title-label">統計的優位性（Wilcoxon signed-rank）</span>
-          <span class="card-subtitle">提案手法と各既存手法を seed-paired で比較 · 全関数集計 + 関数別</span>
+          <span class="card-title-label">統計的優位差</span>
+          <span class="card-subtitle">Wilcoxon 符号順位検定。提案手法と各既存手法を同じ seed どうしで対にして比較する。</span>
         </div>
         <div id="overall-wilcoxon-container"></div>
       </div>
     </div>
 
     {% else %}
-    <p class="empty-state">No dim subdirectories found in this result.</p>
+    <p class="empty-state">この結果には dim2 などの次元ディレクトリがありません（実行中か、途中で止まった可能性があります）。</p>
     {% endif %}
   </main>
 </div>

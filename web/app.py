@@ -247,24 +247,30 @@ def api_shell_stop():
 def api_gh_trigger():
     n_runs    = request.form.get("n_runs",    "30")
     max_evals = request.form.get("max_evals", "5000")
-    result = subprocess.run(
-        ["gh", "workflow", "run", GH_WORKFLOW, "--repo", GH_REPO,
-         "-f", f"n_runs={n_runs}", "-f", f"max_evals={max_evals}"],
-        capture_output=True, text=True, cwd=str(BASE_DIR),
-    )
+    try:
+        result = subprocess.run(
+            ["gh", "workflow", "run", GH_WORKFLOW, "--repo", GH_REPO,
+             "-f", f"n_runs={n_runs}", "-f", f"max_evals={max_evals}"],
+            capture_output=True, text=True, cwd=str(BASE_DIR),
+        )
+    except FileNotFoundError:
+        return jsonify({"ok": False, "message": "gh CLI が見つかりません"}), 503
     if result.returncode == 0:
-        return jsonify({"ok": True, "message": "Workflow triggered."})
+        return jsonify({"ok": True, "message": "ワークフローを起動しました"})
     return jsonify({"ok": False, "message": result.stderr.strip() or "Failed."}), 500
 
 
 @app.route("/api/gh-runs")
 def api_gh_runs():
-    result = subprocess.run(
-        ["gh", "run", "list", f"--workflow={GH_WORKFLOW}",
-         "--limit", "10",
-         "--json", "databaseId,status,conclusion,name,headSha,createdAt"],
-        capture_output=True, text=True, cwd=str(BASE_DIR),
-    )
+    try:
+        result = subprocess.run(
+            ["gh", "run", "list", f"--workflow={GH_WORKFLOW}",
+             "--limit", "10",
+             "--json", "databaseId,status,conclusion,name,headSha,createdAt"],
+            capture_output=True, text=True, cwd=str(BASE_DIR),
+        )
+    except FileNotFoundError:
+        return jsonify({"error": "gh CLI が見つかりません（GitHub CLI をインストールして gh auth login してください）"}), 503
     if result.returncode != 0:
         return jsonify({"error": result.stderr.strip()}), 500
     return jsonify(json.loads(result.stdout))

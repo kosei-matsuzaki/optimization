@@ -25,11 +25,11 @@ python3 web/app.py
 | 機能 | 説明 |
 |---|---|
 | Quick Run | `quick_check.py` をバックグラウンド実行。手法・関数セット・次元（BBOB dim 2/3/5/10/20）をモーダルで指定し、ライブターミナル出力を表示。`max_evals` は 50000 まで指定可（dim20 の 2500×d=50000 予算に対応）。次元タブは数値順（dim2→dim20）で並ぶ |
-| GitHub Actions Trigger | `gh` CLI 経由でワークフローをトリガー |
-| Remote Runs | 最新 10 件のワークフロー実行を一覧表示。完了済みは進捗バー付きでダウンロード可能 |
+| GitHub Actions で実行 | `gh` CLI 経由でワークフローをトリガー（`gh` が無い環境では JSON のエラーを返し、画面に理由を出す） |
+| GitHub Actions 履歴 | ダッシュボード右列に最新 10 件のワークフロー実行を一覧表示。成功したものは「取り込む」で進捗バー付きダウンロード |
 | Local Results | `results/` 配下の結果一覧。名前変更・削除・実行中ジョブの停止に対応 |
 | 結果詳細 | 次元タブ・関数タブで切替え。Landscape / Convergence / Evals / Population 等の図を表示 |
-| Summary テーブル | 手法別の成績を色分け表示（best=緑、worst=赤）。ヘッダークリックでソート可能。**SR@target** 列は 1e⁻⁴ / 1e⁻⁷ / 1e⁻¹⁰ の 3 目標を色付きヒートマップ（濃い緑=高 SR、数値=正確な%）で並べる（1e⁻¹⁰が主指標）。行を展開すると各 seed が目標ごとに ✓（到達）/✗（未到達）で表示される（旧「ECDF profile」ミニバーを置換） |
+| Summary テーブル | 手法別の成績を色分け表示（best=緑、worst=赤）。ヘッダークリックでソート可能。**SR@target** 列は 1e⁻⁴ / 1e⁻⁷ / 1e⁻¹⁰ の 3 目標を発散型ヒートマップ（赤=低 SR → 中立 → 緑=高 SR、数値=正確な%。`result.js` の `heatColor`）で並べる（1e⁻¹⁰が主指標）。行を展開すると各 seed が目標ごとに ✓（到達）/✗（未到達）で表示される（旧「ECDF profile」ミニバーを置換） |
 | 全体評価ナビ（左タブ 3 分割） | 左サイドバーの「全体評価」を **ランキング / 成績詳細 / 統計的優位差** の 3 エントリに分割（`#overall-nav`）。各エントリが 1 カードに対応し、選択中のカードのみ表示（評価範囲セレクタは 3 ビュー共通で常時表示）。URL ハッシュは `#dim2/__overall__/<view>` で永続化しリロードでも同じサブビューに戻る |
 | 評価範囲セレクタ（suite scope） | 全体評価の先頭に **BBOB / Custom /（あれば CEC2022）/ 全体（混在）** の切替バーを表示。選択スイートに応じて**ランキング・SR mean・カテゴリ別/形状タグ別・関数別・Wilcoxon をすべて再集計**する（BBOB と Custom を混ぜた平均を出さない）。バックエンドが関数名プレフィックス（F/C/G）でスイート分割し `by_suite` として全ペイロードを返すため、Friedman χ²_F / Nemenyi CD もスイート内の関数数で正しく再計算される。単一スイートのみの次元（dim3/4 は BBOB のみ等）ではバー非表示 |
 | Overall ランキング | 全関数横断の Friedman 平均順位を **best_f（全 run 平均 mean_best_f）/ Evals（succ-only mean）** の 2 列で表示（並べ替えは Evals→SR）＋ Nemenyi 臨界差。SR は **SR@1e-10（主指標）/ SR@1e-4（補助）/ PR@1e-4（履歴）** の 3 列を併記（ECDF ランクは成績詳細ビューに残置せず非表示）。**PR@1e-4（履歴）は `summary.csv` の `pr_1e-4`**＝既知の大域最適 K 点のうち評価履歴に半径内かつ f ≤ 1e-4 の点がある割合（`core/runner.py:peak_metrics`、[experiments.md の多解（MMO）報告](experiments.md#多解mmo報告)）。BBOB は K=1 なので SR@1e-4 とほぼ同じ値になり、K>1 なのは Custom の C01-C03 だけ。一時停止中の多解路線が使う CEC2013 報告集合の `cec_pr_*` とは別物で、UI はそちらを表示しない |
@@ -38,7 +38,7 @@ python3 web/app.py
 
 ### ビューモード（結果詳細画面）
 
-右上の `[Function] [Method] [Compare]` タブでビューを切り替える。
+左サイドバーの「関数・手法ごとに見る」の `[関数] [手法] [比較]` でビューを切り替える。
 
 | モード | 説明 |
 |---|---|
@@ -47,6 +47,14 @@ python3 web/app.py
 | **Compare** | 関数・手法をマルチセレクト → 関数×手法のマトリクスグリッドで比較 |
 
 ---
+
+## 見た目の方針
+
+`static/style.css` の `:root` にトークンを集約している（地色 `--bg`、文字 `--text`、罫線 `--border`、提案手法・成功・主操作の深緑 `--accent`、有意に劣る・失敗の煉瓦色 `--danger`）。書体は IBM Plex Sans JP（数値は tabular-nums）、run 名・commit・ターミナルだけ IBM Plex Mono（Google Fonts、オフライン時はシステムフォントにフォールバック）。
+
+- **提案手法の行を強調する**: ランキング・成績詳細・関数別テーブルでは Wilcoxon の reference 手法（既定 `MC-ESO`、`result.js` の `refMethod()`）の行に深緑の帯を付ける。順位の金銀銅は使わない。
+- **成功率の色は失敗側に色を載せる**: 100% は淡い緑、低いほど煉瓦色へ寄る発散型（`heatColor`）。赤緑の色相回転は使わない。
+- ヘッダーは全ページ共通で `base.html` が持ち、ナビの現在地は `request.path` から決める（各ページは `header_title` だけを上書きする）。
 
 ## ディレクトリ構成
 

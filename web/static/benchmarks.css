@@ -77,7 +77,6 @@
 .bm-axis-row .bm-axis {
   font-size: 11px;
   font-weight: 800;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #fff;
   background: var(--ax);
@@ -199,9 +198,9 @@ tbody tr:hover .bm-fname,
 tbody tr:hover .bm-cell.on { filter: brightness(0.97); }
 
 /* ── Per-axis color assignment ──────────────────────────────────────────── */
-.bm-ax-modality     { --ax: #4f46e5; --ax-dark: #3730a3; --ax-bg: #eef2ff; }
-.bm-ax-separability { --ax: #0d9488; --ax-dark: #0f766e; --ax-bg: #d5f5f0; }
-.bm-ax-conditioning { --ax: #d97706; --ax-dark: #b45309; --ax-bg: #fef3c7; }
-.bm-ax-structure    { --ax: #9333ea; --ax-dark: #7e22ce; --ax-bg: #f3e8ff; }
-.bm-ax-landscape    { --ax: #2563eb; --ax-dark: #1d4ed8; --ax-bg: #dbeafe; }
-.bm-ax-suite-shape  { --ax: #e11d48; --ax-dark: #be123c; --ax-bg: #ffe4e9; }
+.bm-ax-modality     { --ax: #3d6f99; --ax-dark: #284d6d; --ax-bg: #e6eef5; }
+.bm-ax-separability { --ax: #0e6b63; --ax-dark: #0a514b; --ax-bg: #e3f0ee; }
+.bm-ax-conditioning { --ax: #a8741c; --ax-dark: #7a5312; --ax-bg: #f6eedd; }
+.bm-ax-structure    { --ax: #7a5c99; --ax-dark: #57406f; --ax-bg: #efe9f4; }
+.bm-ax-landscape    { --ax: #4f6b3a; --ax-dark: #374b28; --ax-bg: #eaf0e4; }
+.bm-ax-suite-shape  { --ax: #a3473a; --ax-dark: #7a3328; --ax-bg: #f6e6e2; }

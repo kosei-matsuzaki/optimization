@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Optimization Lab{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
   {% block head %}{% endblock %}
 </head>
@@ -11,15 +14,23 @@
 
 {% block header %}
 <header class="header">
+  <a href="/" class="brand" title="結果一覧へ">
+    <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="8.5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".35"/>
+      <circle cx="10" cy="10" r="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/>
+      <circle cx="10" cy="10" r="1.8" fill="currentColor"/>
+    </svg>
+    <span class="brand-name">Optimization Lab</span>
+  </a>
   {% block header_back %}{% endblock %}
-  <h1>{% block header_title %}Dashboard{% endblock %}</h1>
+  <span class="header-title">{% block header_title %}{% endblock %}</span>
   <span class="header-spacer"></span>
-  {% block header_nav %}
-  <nav class="header-nav">
-    <a href="/benchmarks" class="nav-link">Benchmarks</a>
-    <a href="/methods" class="nav-link">Methods</a>
+  <nav class="header-nav" aria-label="ページ">
+    {% set p = request.path %}
+    <a href="/" class="nav-link{% if p == '/' or p.startswith('/results') %} active{% endif %}">結果</a>
+    <a href="/benchmarks" class="nav-link{% if p.startswith('/benchmarks') %} active{% endif %}">ベンチマーク関数</a>
+    <a href="/methods" class="nav-link{% if p.startswith('/methods') %} active{% endif %}">手法解説</a>
   </nav>
-  {% endblock %}
 </header>
 {% endblock %}
 

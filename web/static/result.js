@@ -105,11 +105,11 @@ const OV_SORT_KEYS = {
 //   type 'score' → 0..1 value, higher better, shown as % heatmap.
 //   type 'rank'  → Friedman rank (1..k), lower better, shown as rank chips.
 const OV_DETAIL_INDICATORS = [
-  { key: 'sr_deep', label: 'SR@1e-10', type: 'score', desc: '各関数の最高精度の成功率（主指標）· 赤=低・緑=高' },
-  { key: 'sr',      label: 'SR@1e-4',  type: 'score', desc: '各関数の成功率（補助）· 赤=低・緑=高' },
-  { key: 'pr',      label: 'PR@1e-4（履歴）',  type: 'score', desc: 'PR@1e-4（履歴ベース）: 既知の大域最適 K 点のうち、評価履歴に半径内かつ f≤1e-4 の点がある割合（summary.csv の pr_1e-4）。BBOB は K=1 なので SR@1e-4 とほぼ同じ値になる。CEC2013 報告集合の cec_pr_* とは別物 · 赤=低・緑=高' },
-  { key: 'bf',      label: 'best_f',   type: 'rank',  desc: 'best_f（全 run 平均 mean_best_f）の Friedman ランク · 緑=1位・赤=最下位 · 同着は平均ランク' },
-  { key: 'evals',   label: 'Evals',    type: 'rank',  desc: '成功 run のみの平均評価数の Friedman ランク · 緑=1位・赤=最下位' },
+  { key: 'sr_deep', label: 'SR@1e-10', type: 'score', desc: '各関数の最高精度の成功率（主指標）。赤に寄るほど低く、緑に寄るほど高い' },
+  { key: 'sr',      label: 'SR@1e-4',  type: 'score', desc: '各関数の成功率（補助）。赤に寄るほど低く、緑に寄るほど高い' },
+  { key: 'pr',      label: 'PR@1e-4（履歴）',  type: 'score', desc: 'PR@1e-4（履歴ベース）: 既知の大域最適 K 点のうち、評価履歴に半径内かつ f≤1e-4 の点がある割合（summary.csv の pr_1e-4）。BBOB は K=1 なので SR@1e-4 とほぼ同じ値になる。CEC2013 報告集合の cec_pr_* とは別物。赤に寄るほど低く、緑に寄るほど高い' },
+  { key: 'bf',      label: 'best_f',   type: 'rank',  desc: 'best_f（全 run 平均 mean_best_f）の Friedman ランク。緑=1位、赤=最下位、同着は平均ランク' },
+  { key: 'evals',   label: 'Evals',    type: 'rank',  desc: '成功 run のみの平均評価数の Friedman ランク。緑=1位、赤=最下位' },
 ];
 
 function _sortedLeaderboard() {
@@ -154,10 +154,6 @@ function initSidebarRunHeader() {
     chip.textContent = type || '—';
     chip.className = `srh-type-chip ${type || 'unknown'}`;
   }
-  if (hdr) {
-    const color = meta.type === 'quick' ? '#7c3aed' : meta.type === 'workflow' ? '#0284c7' : 'var(--accent)';
-    hdr.style.borderTopColor = color;
-  }
   const idEl = document.getElementById('sidebar-run-id');
   if (idEl) idEl.textContent = RUN_ID;
   const metaEl = document.getElementById('sidebar-run-meta');
@@ -168,9 +164,9 @@ function initSidebarRunHeader() {
       lines.push({ cls: 'srm-primary', text: d + (t ? '  ' + t.slice(0, 5) : '') });
     }
     const runInfo = [];
-    if (meta.n_runs    != null) runInfo.push(`${meta.n_runs} runs`);
+    if (meta.n_runs    != null) runInfo.push(`n=${meta.n_runs}`);
     if (meta.max_evals != null) runInfo.push(`${Number(meta.max_evals).toLocaleString()} evals`);
-    if (runInfo.length) lines.push({ cls: '', text: runInfo.join(' · ') });
+    if (runInfo.length) lines.push({ cls: '', text: runInfo.join(' / ') });
     if (meta.commit)    lines.push({ cls: 'srm-small', text: meta.commit });
     metaEl.innerHTML = lines.map(l =>
       `<span class="srm-line${l.cls ? ' ' + l.cls : ''}">${l.text}</span>`
@@ -183,11 +179,11 @@ function initSidebarRunHeader() {
 
 // ── Function groups ──
 const FUNC_GROUPS = [
-  { label: 'Separable',      color: '#4e9af1', ids: ['f01','f02','f03','f04','f05'] },
-  { label: 'Moderate',       color: '#7dc87d', ids: ['f06','f07','f08','f09'] },
-  { label: 'High Cond.',     color: '#e5a94c', ids: ['f10','f11','f12','f13','f14'] },
-  { label: 'Multi-modal',    color: '#c07fe0', ids: ['f15','f16','f17','f18','f19'] },
-  { label: 'Weak Structure', color: '#e06060', ids: ['f20','f21','f22','f23','f24'] },
+  { label: 'Separable',      color: '#3d6f99', ids: ['f01','f02','f03','f04','f05'] },
+  { label: 'Moderate',       color: '#4f8a5b', ids: ['f06','f07','f08','f09'] },
+  { label: 'High Cond.',     color: '#b07e24', ids: ['f10','f11','f12','f13','f14'] },
+  { label: 'Multi-modal',    color: '#7a5c99', ids: ['f15','f16','f17','f18','f19'] },
+  { label: 'Weak Structure', color: '#a3473a', ids: ['f20','f21','f22','f23','f24'] },
 ];
 function getFuncGroup(name) {
   const lc = name.toLowerCase();
@@ -763,7 +759,7 @@ function _renderLeaderboard(lb) {
   const statsHtml = `
     <div class="card-header-row ov-subhead">
       <span class="card-title-label">Friedman 検定</span>
-      <span class="card-subtitle">N = ${nFuncs} 関数 · k = ${nMethods} 手法 · 手法間の順位差の有意性</span>
+      <span class="card-subtitle">${nFuncs} 関数 × ${nMethods} 手法で、手法間の順位差が偶然でないかを調べる</span>
     </div>
     <table class="fr-tbl">
       <thead><tr><th>指標</th><th>χ²_F</th><th>p 値</th><th>判定</th><th>CD₀.₀₅</th></tr></thead>
@@ -781,17 +777,18 @@ function _renderLeaderboard(lb) {
   };
   let html = `
     <div class="ov-rank-header">
-      <div>#</div><div>Method</div>
-      ${sortHdr('bf', 'Mean Rank (best_f)', 'best_f（全 run 平均 mean_best_f）の Friedman 平均ランク（低い＝優）')}
-      ${sortHdr('evals', 'Mean Rank (Evals)', '成功 run のみの平均評価数の Friedman 平均ランク（低い＝優）')}
+      <div></div><div>手法</div>
+      ${sortHdr('bf', '平均順位 best_f', 'best_f（全 run 平均 mean_best_f）の Friedman 平均ランク（低い＝優）')}
+      ${sortHdr('evals', '平均順位 Evals', '成功 run のみの平均評価数の Friedman 平均ランク（低い＝優）')}
       ${sortHdr('sr_deep', 'SR@1e-10', 'SR@1e-10（最高精度・主指標）')}
       ${sortHdr('sr', 'SR@1e-4', 'SR@1e-4（補助）')}
       ${sortHdr('pr', 'PR@1e-4（履歴）', 'PR@1e-4（履歴ベース）: 既知の大域最適 K 点のうち、評価履歴に半径内かつ f≤1e-4 の点がある割合（summary.csv の pr_1e-4）。BBOB は K=1 なので SR@1e-4 とほぼ同じ値になる。CEC2013 報告集合の cec_pr_* とは別物')}
-      <div>#Best (bf/Evals)</div><div>#Worst (bf/Evals)</div>
+      <div title="1 位になった関数の数（best_f / Evals）">1 位の数</div><div title="最下位になった関数の数（best_f / Evals）">最下位の数</div>
     </div>
     <div class="ov-ranking">`;
+  const ref = refMethod();
   lb.forEach((row, i) => {
-    const medalCls = i < 3 ? `is-${i + 1}` : '';
+    const medalCls = row.method === ref ? 'is-ref' : '';
     const fillBf    = (fillFor(row.mean_rank_bf)    * 100).toFixed(1);
     const fillEvals = (fillFor(row.mean_rank_evals) * 100).toFixed(1);
     const srDeep = (row.mean_sr_deep * 100).toFixed(1) + '%';
@@ -837,14 +834,27 @@ function _renderLeaderboard(lb) {
   }
 }
 
-function _heatmapBg(sr) {
-  // 0=red(hsl 0), 1=green(hsl 120), pastel for readable text overlay
-  const h = Math.round(sr * 120);
-  return `hsl(${h},58%,80%)`;
+// Diverging success-rate ramp: brick (0%) -> warm neutral (50%) -> teal (100%).
+// Low values carry the colour because failures are what a reader scans for;
+// brick vs teal stays distinguishable under the common colour-vision deficiencies.
+const HEAT_STOPS = [[0, [238, 190, 175]], [0.5, [246, 241, 233]], [1, [200, 227, 221]]];
+function heatColor(frac) {
+  const f = Math.max(0, Math.min(1, frac));
+  const [i0, i1] = f <= 0.5 ? [0, 1] : [1, 2];
+  const [a, ca] = HEAT_STOPS[i0], [b, cb] = HEAT_STOPS[i1];
+  const t = (f - a) / (b - a);
+  const c = ca.map((v, k) => Math.round(v + (cb[k] - v) * t));
+  return { bg: `rgb(${c.join(',')})`, fg: f < 0.35 ? '#7a2716' : f >= 0.995 ? '#0a514b' : '#17202b' };
 }
+function _heatmapBg(sr) { return heatColor(sr).bg; }
 
-function _medalCls(i) {
-  return i === 0 ? 'is-1' : i === 1 ? 'is-2' : i === 2 ? 'is-3' : '';
+// The method every other method is compared against (Wilcoxon reference).
+function refMethod() {
+  const w = DIMS_DATA[currentDim]?.wilcoxon;
+  return (w && w.length && w[0].reference) || 'MC-ESO';
+}
+function _medalCls(_i, method) {
+  return method && method === refMethod() ? 'is-ref' : '';
 }
 
 // ── Unified detail view (category + per-function, switchable by indicator) ────
@@ -872,7 +882,7 @@ function _renderDetail(lb) {
   const ind = OV_DETAIL_INDICATORS.find(x => x.key === overallDetailKey) || OV_DETAIL_INDICATORS[0];
   _renderDetailSelector();
   document.getElementById('overall-detail-subtitle').textContent =
-    `${ind.label} · ${ind.desc} · 手法は${ind.type === 'rank' ? '平均ランク（低い＝優）' : '平均値（高い＝優）'}順`;
+    `${ind.desc}。手法は${ind.type === 'rank' ? '平均ランクの小さい' : '平均値の高い'}順に並ぶ。`;
 
   const funcs = overallData.funcs || [];
   const cats  = overallData.categories || [];
@@ -901,7 +911,7 @@ function _renderDetail(lb) {
 
   const scoreCell = v => v == null
     ? '<span class="ov-heatmap-pill null">—</span>'
-    : `<span class="ov-heatmap-pill" style="background:${_heatmapBg(v)};">${(v * 100).toFixed(0)}%</span>`;
+    : (({ bg, fg }) => `<span class="ov-heatmap-pill" style="background:${bg};color:${fg};">${(v * 100).toFixed(0)}%</span>`)(heatColor(v));
   const rankCell = v => {
     let chipCls = 'null', txt = '—';
     if (v != null) {
@@ -915,11 +925,11 @@ function _renderDetail(lb) {
     : (ind.type === 'rank' ? v.toFixed(2) : (v * 100).toFixed(0) + '%');
 
   // ── カテゴリ別 ──
-  let ch = '<div class="ov-tbl-wrap"><table class="ov-tbl"><thead><tr><th>Method</th>';
+  let ch = '<div class="ov-tbl-wrap"><table class="ov-tbl"><thead><tr><th>手法</th>';
   cats.forEach(c => { ch += `<th>${htmlesc(CAT_LABELS[c] || c)}</th>`; });
-  ch += '<th class="ov-mean-col">All</th></tr></thead><tbody>';
+  ch += '<th class="ov-mean-col">全体</th></tr></thead><tbody>';
   ordered.forEach((row, i) => {
-    ch += `<tr class="${_medalCls(i)}"><td>${htmlesc(row.method)}</td>`;
+    ch += `<tr class="${_medalCls(i, row.method)}"><td>${htmlesc(row.method)}</td>`;
     cats.forEach(c => {
       const fs = funcs.filter(f => fcat[f] === c);
       ch += `<td>${cell(meanOver(row.method, fs))}</td>`;
@@ -947,7 +957,7 @@ function _renderDetail(lb) {
   axisCols.forEach(a => {
     th += `<th class="ovm-axis tax-${a.axis}" colspan="${a.tags.length}">${htmlesc(a.axis)}</th>`;
   });
-  th += '<th class="ov-mean-col" rowspan="2">All</th></tr><tr>';
+  th += '<th class="ov-mean-col" rowspan="2">全体</th></tr><tr>';
   flatTags.forEach(({ t, axis }) => {
     const n = funcsWith(t).length;
     th += `<th class="ovm-tag tax-${axis}" title="${htmlesc(t)}（${n} 関数）">`
@@ -956,15 +966,15 @@ function _renderDetail(lb) {
   th += '</tr></thead><tbody>';
 
   // Section 1: per-method aggregate of the selected indicator, per tag.
-  th += `<tr class="ovm-sect"><td colspan="${nCols}">手法別集計 — ${htmlesc(ind.label)}（各タグを持つ関数のみで${ind.type === 'rank' ? '平均ランク' : '平均'}）</td></tr>`;
+  th += `<tr class="ovm-sect"><td colspan="${nCols}">手法ごとの集計: ${htmlesc(ind.label)}（そのタグを持つ関数だけで${ind.type === 'rank' ? '平均ランク' : '平均'}）</td></tr>`;
   ordered.forEach((row, i) => {
-    th += `<tr class="${_medalCls(i)}"><td class="ovm-rowh">${htmlesc(row.method)}</td>`;
+    th += `<tr class="${_medalCls(i, row.method)}"><td class="ovm-rowh">${htmlesc(row.method)}</td>`;
     flatTags.forEach(({ t }) => { th += `<td>${cell(meanOver(row.method, funcsWith(t)))}</td>`; });
     th += `<td class="ov-mean-col">${fmtMean(meanOver(row.method, funcs))}</td></tr>`;
   });
 
   // Section 2: function → tag correspondence (which functions carry each tag).
-  th += `<tr class="ovm-sect"><td colspan="${nCols}">関数のタグ対応（● = そのタグを持つ）</td></tr>`;
+  th += `<tr class="ovm-sect"><td colspan="${nCols}">どの関数がどのタグを持つか（● = 持つ）</td></tr>`;
   funcs.forEach(f => {
     const set = new Set(ftags[f] || []);
     const m = f.match(/^([A-Za-z]+\d+)-(.*)$/);
@@ -986,14 +996,14 @@ function _renderDetail(lb) {
   document.getElementById('overall-detail-tags').innerHTML = th;
 
   // ── 関数別 ──
-  let fh = '<div class="ov-tbl-wrap"><table class="ov-tbl sticky-col"><thead><tr><th>Method</th>';
+  let fh = '<div class="ov-tbl-wrap"><table class="ov-tbl sticky-col"><thead><tr><th>手法</th>';
   funcs.forEach(f => {
     const tt = (ftags[f] || []).join(', ');
     fh += `<th title="${htmlesc(f + (tt ? '  ·  ' + tt : ''))}">${htmlesc(shortLabel(f))}</th>`;
   });
-  fh += '<th class="ov-mean-col">Mean</th></tr></thead><tbody>';
+  fh += '<th class="ov-mean-col">平均</th></tr></thead><tbody>';
   ordered.forEach((row, i) => {
-    fh += `<tr class="${_medalCls(i)}"><td>${htmlesc(row.method)}</td>`;
+    fh += `<tr class="${_medalCls(i, row.method)}"><td>${htmlesc(row.method)}</td>`;
     funcs.forEach(f => { fh += `<td>${cell(valOf(f, row.method))}</td>`; });
     fh += `<td class="ov-mean-col">${fmtMean(meanOver(row.method, funcs))}</td></tr>`;
   });
@@ -1119,14 +1129,7 @@ async function buildUnifiedTable(func) {
 
   // Sequential green heatmap: 0% → pale, 100% → deep green. Number is always
   // printed so the exact value is readable regardless of color.
-  function srHeatColor(frac) {
-    const f = Math.max(0, Math.min(1, frac));
-    const L = 97 - 63 * f;              // lightness 97 → 34
-    const S = 32 + 36 * f;              // saturation 32 → 68
-    const bg = `hsl(150, ${S.toFixed(0)}%, ${L.toFixed(0)}%)`;
-    const fg = L < 62 ? '#ffffff' : '#0f3d24';
-    return { bg, fg };
-  }
+  const srHeatColor = heatColor;
 
   // Emit the 7 <td> heatmap cells for one method's SR profile.
   function fmtSRHeatCells(sr) {
@@ -1162,7 +1165,7 @@ async function buildUnifiedTable(func) {
   const COLS = [
     { label: 'Method / Seed', desc: 'Click ▶ to expand per-run details.' },
     { label: 'best_f',        desc: 'Mean of final best f(x) across all runs. Lower is better. BBOB functions: global minimum = 0.' },
-    { label: 'SR@target', desc: '各精度目標(1e⁻⁴ / 1e⁻⁷ / 1e⁻¹⁰)に到達した run の割合(%)。左=緩い→右=厳しい。セルの色は成功率(濃い緑=高)、数値は正確な%。1e⁻¹⁰が主指標。行を展開すると各 seed が目標ごとに ✓(到達)/✗(未到達) で表示される。' },
+    { label: 'SR@target', desc: '各精度目標（1e⁻⁴ / 1e⁻⁷ / 1e⁻¹⁰）に到達した run の割合。左ほど緩く右ほど厳しい。色は成功率（赤=低、緑=高）、数値は正確な %。1e⁻¹⁰ が主指標。行を展開すると各 seed が目標ごとに ✓（到達）/ ✗（未到達）で出る。' },
     { label: 'Evals (succ mean)', desc: 'Mean number of evaluations to reach the 1e-4 target across successful runs only. Failed runs are excluded (no penalty extrapolation). Taken over successful runs (small spread, outliers unlikely), so the mean is used rather than the median. Read together with SR. — means no successful run.' },
     { label: 'time (s)',      desc: 'Mean wall-clock time per run (seconds).' },
     { label: 'optima rate',   desc: 'Fraction of distinct global optima found per run (capture radius ε = 0.1 × span). N/A for single-optimum functions.' },
@@ -1181,14 +1184,14 @@ async function buildUnifiedTable(func) {
 
   let html = `
   <details class="col-legend">
-    <summary>凡例<span class="col-legend-toggle">▶</span></summary>
+    <summary>列の意味<span class="col-legend-toggle">▶</span></summary>
     <div class="col-legend-body">${legendItems}</div>
   </details>
   <div class="table-wrap">
   <table class="unified-table">
     <thead>
       <tr>
-        <th rowspan="2" style="text-align:left;min-width:150px;">Method / Seed</th>
+        <th rowspan="2" style="text-align:left;min-width:150px;">手法 / seed</th>
         <th rowspan="2">best_f</th>
         <th colspan="${SR_TARGETS.length}" class="sr-group-head">SR@target</th>
         <th rowspan="2">Evals (succ mean)</th>
@@ -1204,7 +1207,7 @@ async function buildUnifiedTable(func) {
     const method = sr.method;
     const runs   = byMethod[method] || [];
     html += `
-      <tr class="method-row" data-method="${htmlesc(method)}" data-expanded="false">
+      <tr class="method-row${method === refMethod() ? ' is-ref' : ''}" data-method="${htmlesc(method)}" data-expanded="false">
         <td><div class="method-cell">
           <span class="expand-toggle">${runs.length ? '▶' : '·'}</span>
           ${method}
@@ -1327,6 +1330,8 @@ function renderOverallWilcoxon() {
       const tip  = `${ref} vs ${m} on ${f}: ${wc} 勝 / ${tc} 引 / ${lc} 負, p(${ref} better) = ${pStr}, A12 = ${a12Str} (${a12mag})`;
       // a12 badge: emphasised when magnitude is medium/large
       const a12Cls = (a12mag === 'large' || a12mag === 'medium') ? 'a12-strong' : 'a12-weak';
+      // Every seed tied: nothing to read beyond "=", so keep the cell quiet.
+      if (tc === n) return `<td title="${tip}"><span class="ov-wc-chip is-tie"><span class="mark">=</span></span></td>`;
       return `<td title="${tip}"><span class="ov-wc-chip ${cls}">
         <span class="mark">${mark}</span>
         <span class="count">${wc}-${tc}-${lc}</span>
@@ -1337,14 +1342,14 @@ function renderOverallWilcoxon() {
   }).join('');
 
   container.innerHTML = `
-    <div style="font-size:11.5px;color:var(--muted);margin:0 0 10px;line-height:1.55;">
+    <div class="wc-legend">
       ★ p &lt; 0.01（高度に有意 ${htmlesc(ref)} が優位）／ ✓ p &lt; 0.05（有意）／ = 引分け or 非有意 ／ ✗ p &gt; 0.95（相手が優位）。
-      セル 2 段目は <span style="font-family:var(--mono);">勝-引-負</span> の seed 数 ／ 3 段目は Vargha–Delaney A₁₂（&gt;0.5 で ${htmlesc(ref)} 優位、|A−0.5| ≤ .06 negligible / ≤ .14 small / ≤ .21 medium / &gt; .21 large）。
+      セル 2 段目は 勝-引-負 の seed 数 ／ 3 段目は Vargha–Delaney A₁₂（&gt;0.5 で ${htmlesc(ref)} 優位、|A−0.5| ≤ .06 negligible / ≤ .14 small / ≤ .21 medium / &gt; .21 large）。
     </div>
     <div class="wilcoxon-summary-row">${overallTiles}</div>
-    <details open style="margin-top:14px;">
-      <summary class="overall-details-summary">関数 × 既存手法のマトリクス</summary>
-      <div class="ov-tbl-wrap" style="margin-top:8px;">
+    <details open>
+      <summary class="overall-details-summary">関数ごとの内訳</summary>
+      <div class="ov-tbl-wrap" style="margin-top:10px;">
         <table class="ov-tbl sticky-col">
           <thead><tr><th>関数</th>${headerCells}</tr></thead>
           <tbody>${bodyRows}</tbody>
