@@ -86,6 +86,7 @@ cmd_download() {
 # ── quick ─────────────────────────────────────────────────────────────────────
 PID_FILE=".quick.pid"
 DIR_FILE=".quick.dir"
+WINPID_FILE=".quick.winpid"   # Windows: native PID of the same job, for web/
 
 cmd_quick() {
   local n_runs=20 max_evals=5000 label="" use_all=0 dim=2 methods="" with_custom=0 noise=""
@@ -148,11 +149,12 @@ PYEOF
   local pid=$!
   echo "$pid" > "$PID_FILE"
   echo "$dir" > "$DIR_FILE"
+  if [[ -r "/proc/$pid/winpid" ]]; then cat "/proc/$pid/winpid" > "$WINPID_FILE"; fi
   echo "PID ${pid}  (stop with: ./run.sh stop)"
-  trap "rm -f '$PID_FILE' '$DIR_FILE'" EXIT INT TERM
+  trap "rm -f '$PID_FILE' '$DIR_FILE' '$WINPID_FILE'" EXIT INT TERM
   wait "$pid"
   local rc=$?
-  rm -f "$PID_FILE" "$DIR_FILE"
+  rm -f "$PID_FILE" "$DIR_FILE" "$WINPID_FILE"
   local final_status="done"
   [[ $rc -ne 0 ]] && final_status="failed"
   "$PY" - <<PYEOF
@@ -181,10 +183,10 @@ cmd_stop() {
   if kill -0 "$pid" 2>/dev/null; then
     kill "$pid"
     echo "Sent SIGTERM to PID ${pid}."
-    rm -f "$PID_FILE"
+    rm -f "$PID_FILE" "$WINPID_FILE"
   else
     echo "Process ${pid} is not running. Removing stale PID file."
-    rm -f "$PID_FILE"
+    rm -f "$PID_FILE" "$WINPID_FILE"
   fi
 }
 

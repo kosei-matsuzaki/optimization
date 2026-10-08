@@ -11,4 +11,5 @@ presentation/**/build/render/
 *.tmp
 .quick.pid
 .quick.dir
+.quick.winpid
 .venv/

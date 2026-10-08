@@ -19,6 +19,9 @@ RESULTS_DIR = BASE_DIR / "results"
 QUICK_CHECK = BASE_DIR / "quick_check.py"
 PID_FILE    = BASE_DIR / ".quick.pid"
 DIR_FILE    = BASE_DIR / ".quick.dir"
+# Windows: run.sh writes the MSYS PID to PID_FILE, which Python cannot address;
+# it also writes the native PID here.
+WINPID_FILE = BASE_DIR / ".quick.winpid"
 
 GH_REPO     = "kosei-matsuzaki/optimization"
 GH_WORKFLOW = "run.yml"

@@ -15,7 +15,7 @@ import threading
 from pathlib import Path
 from typing import Optional
 
-from .config import BASE_DIR, DIR_FILE, GH_REPO, PID_FILE, QUICK_CHECK
+from .config import BASE_DIR, DIR_FILE, GH_REPO, PID_FILE, QUICK_CHECK, WINPID_FILE
 from .results import current_commit, read_result_meta, write_result_meta
 
 # In-memory job registries (keyed by short job id)
@@ -23,12 +23,16 @@ JOBS: dict[str, dict] = {}            # web-started quick runs
 JOB_PROCS: dict[str, subprocess.Popen] = {}
 DL_JOBS: dict[str, dict] = {}         # artifact download jobs
 
+IS_WINDOWS = os.name == "nt"
+
 
 # ── PID file helpers (shared with run.sh quick) ─────────────────────────────
 
 def write_pid(pid: int) -> None:
     try:
         PID_FILE.write_text(str(pid))
+        if IS_WINDOWS:
+            WINPID_FILE.write_text(str(pid))
     except Exception:
         pass
 
@@ -36,13 +40,16 @@ def write_pid(pid: int) -> None:
 def clear_pid() -> None:
     try:
         PID_FILE.unlink(missing_ok=True)
+        WINPID_FILE.unlink(missing_ok=True)
     except Exception:
         pass
 
 
 def read_pid():
+    # On Windows PID_FILE holds an MSYS PID; only the native one is usable.
+    # Without it we report no job rather than act on the wrong process.
     try:
-        return int(PID_FILE.read_text().strip())
+        return int((WINPID_FILE if IS_WINDOWS else PID_FILE).read_text().strip())
     except Exception:
         return None
 
@@ -55,6 +62,19 @@ def read_quick_dir():
 
 
 def pid_running(pid: int) -> bool:
+    if IS_WINDOWS:
+        # os.kill(pid, 0) on Windows is TerminateProcess, not a liveness probe.
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(0x1000, False, pid)  # QUERY_LIMITED_INFORMATION
+        if not handle:
+            return False
+        try:
+            code = ctypes.c_ulong()
+            ok = kernel32.GetExitCodeProcess(handle, ctypes.byref(code))
+            return bool(ok) and code.value == 259  # STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
     try:
         os.kill(pid, 0)
         return True
