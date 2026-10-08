@@ -1,0 +1,61 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=2   ref=MC-ESO
+run: merged_j24_d2
+functions: 24   methods: MC-ESO, MC-ESO-v0, v1_noPop
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            93.3%   94.8%   95.6%   95.8%         880            
+  MC-ESO-v0         92.1%   93.1%   95.2%   95.4%         678         1/0
+  v1_noPop          92.1%   93.1%   95.2%   95.4%         678         1/0
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[2] sr_1e-10 NON-REGRESSION CHECK  (MC-ESO vs baseline)
+  within-run baseline method: MC-ESO-v0
+  overall sr_1e-10: 92.1% -> 93.3% (+1.2%)
+  REGRESSED (3):
+    - F04-BucheRastrigin     95% -> 85%  (-10%)
+    - F18-SchafferF7ill      90% -> 80%  (-10%)
+    - F20-Schwefel           95% -> 90%  (-5%)
+  IMPROVED (3):
+    + F06-AttractiveSector   95% -> 100%  (+5%)
+    + F17-SchafferF7         60% -> 95%  (+35%)
+    + F24-LunacekRastrigin   0% -> 15%  (+15%)
+  unchanged: 18
+  >>> SR@1e-10 VERDICT: REJECT  (3 function(s) regressed on SR@1e-10)
+      Rule: a config that lowers SR@1e-10 is not adopted (docs/experiments.md). Per-function regressions must be justified.
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%       MC-ESO-v0 100%              289/216
+  F02-EllipsoidalSep              100%       MC-ESO-v0 100%              637/476
+  F03-RastriginSep                100%       MC-ESO-v0 100%             1182/831
+  F04-BucheRastrigin               85%        MC-ESO-v0 95%            2019/1984  <-- ref behind
+  F05-LinearSlope                 100%       MC-ESO-v0 100%              422/394
+  F06-AttractiveSector            100%        MC-ESO-v0 95%              580/519
+  F07-StepEllipsoidal             100%       MC-ESO-v0 100%              215/196
+  F08-Rosenbrock                  100%       MC-ESO-v0 100%              440/475
+  F09-RosenbrockRot               100%       MC-ESO-v0 100%              559/420
+  F10-EllipsoidalRot              100%       MC-ESO-v0 100%              646/475
+  F11-Discus                      100%       MC-ESO-v0 100%              633/457
+  F12-BentCigar                   100%       MC-ESO-v0 100%              668/480
+  F13-SharpRidge                  100%       MC-ESO-v0 100%              795/589
+  F14-DiffPowers                  100%       MC-ESO-v0 100%              397/314
+  F15-RastriginRot                100%       MC-ESO-v0 100%             1159/862
+  F16-Weierstrass                 100%       MC-ESO-v0 100%              752/590
+  F17-SchafferF7                   95%        MC-ESO-v0 60%             931/1000
+  F18-SchafferF7ill                80%        MC-ESO-v0 90%             1229/930  <-- ref behind
+  F19-GriewankRosenbrock          100%       MC-ESO-v0 100%             859/1029
+  F20-Schwefel                     90%        MC-ESO-v0 95%            1217/1682  <-- ref behind
+  F21-Gallagher101                100%       MC-ESO-v0 100%              270/352
+  F22-Gallagher21                 100%       MC-ESO-v0 100%              270/189
+  F23-Katsuura                     75%        MC-ESO-v0 75%            1466/1128
+  F24-LunacekRastrigin             15%         MC-ESO-v0 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  none — MC-ESO is never significantly beaten.
+
