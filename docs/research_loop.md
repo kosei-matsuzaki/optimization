@@ -100,7 +100,7 @@
 
 ---
 
-1. **新しい既定値の基準値と ablation（10D）。**
+1. **新しい既定値の基準値と ablation（10D）。** (claimed 2026-10-08 10:30 UTC)
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,MC-ESO-v0,v1_noPop,v1_noFrz,v1_noMu"`。
    **集計**: 上と同じ形。MC-ESO の行は `pop_pow2_frzmu`（`analysis/single/j23/`、42.08%）、`MC-ESO-v0` は旧基準値 36.46% と一致するはず。F07 / F08 / F09 / F14 / F21 と易しい関数（F01 / F02 / F05 / F06）の `evals_succ_mean` を必ず書く。
    **記録**: `analysis/single/j25/`。
