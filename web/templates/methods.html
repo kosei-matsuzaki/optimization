@@ -225,7 +225,9 @@
     <section class="mt-section" id="results">
       <h2>成績</h2>
       <p class="mt-p">
-        2026-10-08 に回した quick（BBOB-24 関数、各 20 run、予算 2500 × 次元）の結果。
+        2026-10-09 に回した quick（BBOB-24 関数、各 20 run、予算 2500 × 次元）の結果。登録済みの単一解の手法 33 個を同じ run に並べた
+        （<code>LSHADE-cnEpSin</code> と <code>NGOpt</code> はこの環境の numpy 2.4.6 で動かないため除外、多解専用の手法は回していない）。
+        共有の結果置き場 <code>runs/</code> に入っているので、どの PC の Results UI からも開ける。
         数値は <code>results/</code> の CSV を <code>scripts/web/methods_data.py</code> で集計したもので、<code>scripts/analyze_quick.py</code> の集計と同じ。
         主指標は f が最適値から 1e-10 以内に届いた run の割合（SR@1e-10）。
       </p>
@@ -267,7 +269,7 @@
     <section class="mt-section" id="baselines">
       <h2>比較手法の解説</h2>
       <p class="mt-p">
-        役割は 4 種類。<span class="role role-main">主比較</span>は今回の quick で並べた手法、
+        役割は 4 種類。<span class="role role-main">主比較</span>は従来から比較に並べてきた手法、
         <span class="role role-cand">比較候補</span>は 2026-10-06 に実装したがまだ既定の比較には入れていない競技上位手法、
         <span class="role role-mmo">多解比較</span>は一時停止中の多解探索で使う手法、
         <span class="role role-floor">基準線</span>は「これに勝てなければ凝った手法の意味が無い」という下限。
@@ -458,7 +460,7 @@
       <!-- Local / niching -->
       <div class="mt-family" id="fam-local">
         <h3 class="mt-fam-head"><span class="fam-dot fam-local"></span>局所探索・多解探索</h3>
-        <p class="mt-fam-lead">低次元で「そもそも凝った手法が要るのか」を問う基準線と、複数の最適解を同時に見つける専門手法（niching）。多解の路線は一時停止中なので、今回の quick では測っていない。</p>
+        <p class="mt-fam-lead">低次元で「そもそも凝った手法が要るのか」を問う基準線と、複数の最適解を同時に見つける専門手法（niching）。多解の路線は一時停止中なので、多解専用の手法は今回の quick では測っていない（NM-Restart は測った）。</p>
         <div class="mt-cards">
           <article class="mt-card" id="m-NM-Restart" data-method="NM-Restart">
             <header><h4>NM-Restart</h4><span class="role role-floor">基準線</span></header>

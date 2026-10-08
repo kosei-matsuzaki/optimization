@@ -1,0 +1,15 @@
+{
+  "type": "quick",
+  "created_at": "2026-10-09T00:30:34",
+  "commit": "f3f725d",
+  "n_runs": 20,
+  "max_evals": 5000,
+  "set": "all-d2",
+  "dim": 2,
+  "methods": "MC-ESO,MC-ESO-v0,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,PSO,DE,L-SHADE,SaVOA,NM-Restart,EA4eig,EA4eig-jSO-IDEbd,EA4eig-Simpl,LSHADE-SPACMA,AMALGAM-SO,AMALGAM-SO-DE,HSES,ICMAES-ILS,MOS,UMOEA-II,EBOwithCMAR,HMHH,HMHH-random,PS-CMA-ES,DEPSO,jSO,L-SRTDE,IMODE,ELSHADE-SPACMA,APGSK-IMODE,SPS-L-SHADE-EIG,CoBiDE,NG-Portfolio",
+  "status": "done",
+  "published_at": "2026-10-09T02:36:02",
+  "published_from": "DESKTOP-R8JJ5RD",
+  "source_dir": "20261009_003034_allmethods_d2_quick",
+  "note": "単一解の比較手法 33 手法（LSHADE-cnEpSin / NGOpt は numpy 2.4.6 で動かず除外）、BBOB-24、n=20、予算 2500×D、--jobs 16、Windows ローカル（正準環境ではない）"
+}
