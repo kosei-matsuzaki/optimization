@@ -1,0 +1,45 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=5   ref=MC-ESO
+run: merged_j24_d5
+functions: 24   methods: MC-ESO, MC-ESO-v0, v1_noPop, v1_noFrz, v1_noMu
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            59.2%   62.7%   68.5%   70.0%        4202            
+  MC-ESO-v0         43.1%   47.1%   51.9%   55.4%        5241        14/0
+  v1_noPop          47.3%   48.3%   51.5%   56.0%        4448        10/0
+  v1_noFrz          59.2%   62.1%   67.9%   71.0%        3941         1/0
+  v1_noMu           58.8%   61.9%   67.7%   69.4%        4041         0/0
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[2] sr_1e-10 NON-REGRESSION CHECK  (MC-ESO vs baseline)
+  within-run baseline method: MC-ESO-v0
+  overall sr_1e-10: 43.1% -> 59.2% (+16.0%)
+  REGRESSED (1):
+    - F03-RastriginSep       15% -> 5%  (-10%)
+  IMPROVED (13):
+    + F07-StepEllipsoidal    55% -> 100%  (+45%)
+    + F08-Rosenbrock         90% -> 100%  (+10%)
+    + F09-RosenbrockRot      80% -> 100%  (+20%)
+    + F12-BentCigar          30% -> 100%  (+70%)
+    + F13-SharpRidge         25% -> 100%  (+75%)
+    + F14-DiffPowers         35% -> 100%  (+65%)
+    + F15-RastriginRot       10% -> 20%  (+10%)
+    + F16-Weierstrass        5% -> 50%  (+45%)
+    + F17-SchafferF7         0% -> 10%  (+10%)
+    + F18-SchafferF7ill      0% -> 5%  (+5%)
+    + F21-Gallagher101       30% -> 55%  (+25%)
+    + F22-Gallagher21        55% -> 60%  (+5%)
+    + F23-Katsuura           0% -> 10%  (+10%)
+  unchanged: 10
+  >>> SR@1e-10 VERDICT: REJECT  (1 function(s) regressed on SR@1e-10)
+      Rule: a config that lowers SR@1e-10 is not adopted (docs/experiments.md). Per-function regressions must be justified.
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%       MC-ESO-v0 100%            1712/1867
+  F02-EllipsoidalSep              100%       MC-ESO-v0 100%            3063/1545
+  F03-RastriginSep                  5%         v1_noFrz 30%            6848/8226  <-- ref behind
