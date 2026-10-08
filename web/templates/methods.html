@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Methods — Optimization Lab{% endblock %}
+{% block title %}手法解説 — Optimization Lab{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
@@ -9,904 +9,518 @@
 <link rel="stylesheet" href="/static/methods.css">
 {% endblock %}
 
+{% block header_title %}手法解説{% endblock %}
 
 {% block content %}
-<!-- ── Hero ──────────────────────────────────────────────────────────── -->
-<div class="methods-hero">
-  <div class="hero-inner">
-    <div class="hero-text">
-      <div class="hero-eyebrow">
-        <span style="width:6px; height:6px; background:var(--ch-droplet); border-radius:50%; display:inline-block;"></span>
-        新しい多経路感染モデル
+<div class="mt-page">
+
+  <nav class="mt-toc" aria-label="目次">
+    <a href="#idea">MC-ESO の考え方</a>
+    <a href="#flow">1 世代の流れ</a>
+    <a href="#mechanisms">仕組みの詳細</a>
+    <a href="#results">成績</a>
+    <a href="#lineage">比較手法の系譜</a>
+    <a href="#baselines">比較手法の解説</a>
+    <a href="#position">何が新しく、何が借り物か</a>
+  </nav>
+
+  <main class="mt-main">
+
+    <!-- ── Hero ─────────────────────────────────────────────────────────── -->
+    <header class="mt-hero" id="idea">
+      <div class="mt-hero-text">
+        <h1 class="mt-title">MC-ESO</h1>
+        <p class="mt-fullname">Multi-Channel Epidemic Spread Optimizer</p>
+        <p class="mt-lead">
+          感染症は、接触・飛沫・空気という性質の違う経路で<em>同時に</em>広がる。
+          MC-ESO はこれを連続最適化に写し、毎世代、3 種類のまったく違う作り方で子を生む。
+          既存のメタヒューリスティクスが 1 つの再生の仕組み（DE なら差分変異、CMA-ES ならガウス分布、PSO なら速度）に頼るのに対し、
+          どの作り方が効くかを問題ごとに決め打ちしない、というのが出発点。
+        </p>
+        <p class="mt-lead-sub">
+          「f(x) が低い場所 = 感染した宿主が密集する場所」とみなし、良い点ほど次の感染源に選ばれやすくする。
+          実装は <code>core/optimizers/mceso.py</code>、詳細な記録は <code>docs/mceso.md</code>。
+        </p>
       </div>
-      <h1 class="hero-title">MC-ESO<em>Multi-Channel Epidemic Spread Optimizer</em></h1>
-      <p class="hero-desc">既存メタヒューリスティクスは <strong>単一の再生メカニズム</strong>を持つ（DE = 差分変異, ES = ガウス変異, PSO = 速度ベクトル, GA = 交叉）。対して MC-ESO は感染症の流行を模し、<strong>3 つの伝染チャネル</strong>（接触・飛沫・空気）を並列に走らせる。さらに経験共分散＋適応異方性 floor・宿主競合・情報化スピルオーバー・逐次 niching を組合せ、<strong>全 35 関数（BBOB 24 ＋ Custom 11, dim=2）</strong>の最高精度 <strong>SR@1e-10 平均 89.9%</strong> で <strong>比較 8 手法中の最高値</strong>を達成（DE 85.7% を上回り、CMA-ES / PSO / SaVOA を大きく引き離す）。</p>
-    </div>
-    <div class="hero-schematic">
-      <svg viewBox="0 0 460 200" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <marker id="ar-contact" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-            <path d="M0,1 L8,5 L0,9 z" fill="#4f7cac"/>
-          </marker>
-          <marker id="ar-droplet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-            <path d="M0,1 L8,5 L0,9 z" fill="#c0894e"/>
-          </marker>
-          <marker id="ar-airborne" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-            <path d="M0,1 L8,5 L0,9 z" fill="#5f9ea0"/>
-          </marker>
-        </defs>
 
-        <!-- Close-contact panel (left) -->
-        <g transform="translate(20,30)">
-          <rect x="0" y="0" width="120" height="140" fill="rgba(37,99,235,.05)" rx="8"/>
-          <!-- dense cluster of hosts near a parent -->
-          <circle cx="60" cy="70" r="6" fill="#4f7cac"/>
-          <circle cx="50" cy="58" r="3.5" fill="#9bb6cf"/>
-          <circle cx="70" cy="58" r="3.5" fill="#9bb6cf"/>
-          <circle cx="48" cy="82" r="3.5" fill="#9bb6cf"/>
-          <circle cx="72" cy="82" r="3.5" fill="#9bb6cf"/>
-          <circle cx="60" cy="50" r="3.5" fill="#9bb6cf"/>
-          <circle cx="60" cy="90" r="3.5" fill="#9bb6cf"/>
-          <!-- short transmission arrows -->
-          <path d="M60 70 L52 60" stroke="#4f7cac" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
-          <path d="M60 70 L68 60" stroke="#4f7cac" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
-          <path d="M60 70 L52 82" stroke="#4f7cac" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
-          <path d="M60 70 L68 82" stroke="#4f7cac" stroke-width="1.3" marker-end="url(#ar-contact)" opacity=".8"/>
-          <text x="60" y="124" text-anchor="middle" font-size="9.5" font-weight="700" fill="#4f7cac">close-contact</text>
-          <text x="60" y="135" text-anchor="middle" font-size="8" fill="#64748b">短距離 / 等方</text>
-        </g>
+      <figure class="mt-hero-fig">
+        <svg viewBox="0 0 520 430" role="img" aria-labelledby="hero-fig-title">
+          <title id="hero-fig-title">3 つの伝染チャネルが 1 つの親からどう子を作るか</title>
+          <defs>
+            <marker id="ah-drop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ch-droplet)"/></marker>
+            <marker id="ah-drop-l" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ch-droplet-l)"/></marker>
+            <marker id="ah-air" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ch-air)"/></marker>
+          </defs>
+          <!-- landscape: two basins as contour rings -->
+          <g class="fig-contour">
+            <ellipse cx="190" cy="215" rx="150" ry="105" transform="rotate(-18 190 215)"/>
+            <ellipse cx="190" cy="215" rx="105" ry="70"  transform="rotate(-18 190 215)"/>
+            <ellipse cx="190" cy="215" rx="62"  ry="38"  transform="rotate(-18 190 215)"/>
+            <ellipse cx="190" cy="215" rx="24"  ry="14"  transform="rotate(-18 190 215)"/>
+            <ellipse cx="430" cy="95"  rx="70"  ry="52"/>
+            <ellipse cx="430" cy="95"  rx="38"  ry="27"/>
+            <ellipse cx="430" cy="95"  rx="13"  ry="9"/>
+          </g>
+          <!-- other hosts -->
+          <g class="fig-host">
+            <circle cx="96" cy="250" r="4"/><circle cx="262" cy="292" r="4"/><circle cx="300" cy="170" r="4"/>
+            <circle cx="140" cy="140" r="4"/><circle cx="236" cy="246" r="4"/><circle cx="62" cy="186" r="4"/>
+          </g>
+          <!-- strain (niche elite) -->
+          <circle cx="196" cy="214" r="7" class="fig-strain"/>
+          <text x="208" y="206" class="fig-note">系統（エリート）</text>
+          <!-- close contact: anisotropic cloud around parent -->
+          <ellipse cx="128" cy="236" rx="34" ry="15" transform="rotate(-18 128 236)" class="fig-close-area"/>
+          <g class="fig-close">
+            <circle cx="112" cy="238" r="3.2"/><circle cx="146" cy="226" r="3.2"/><circle cx="130" cy="244" r="3.2"/>
+            <circle cx="120" cy="230" r="3.2"/><circle cx="150" cy="236" r="3.2"/>
+          </g>
+          <!-- droplet: difference vector a→b, then parent pulled toward strain + translated difference -->
+          <line x1="262" y1="292" x2="300" y2="170" class="fig-diff" marker-end="url(#ah-drop-l)"/>
+          <text x="306" y="232" class="fig-note fig-note-drop">x<tspan dy="3" font-size="9">b</tspan><tspan dy="-3"> − x</tspan><tspan dy="3" font-size="9">a</tspan></text>
+          <path d="M128 236 L170 222" class="fig-drop" marker-end="url(#ah-drop)"/>
+          <path d="M170 222 L182 184" class="fig-drop fig-drop-2" marker-end="url(#ah-drop)"/>
+          <circle cx="183" cy="181" r="5" class="fig-drop-child"/>
+          <!-- airborne: random host jumps far -->
+          <path d="M140 140 C 230 40, 330 40, 402 82" class="fig-air" marker-end="url(#ah-air)"/>
+          <circle cx="410" cy="86" r="5" class="fig-air-child"/>
+          <circle cx="410" cy="86" r="24" class="fig-air-area"/>
+          <!-- parent -->
+          <circle cx="128" cy="236" r="7.5" class="fig-parent"/>
+          <text x="66" y="276" class="fig-note">親（感染源）</text>
 
-        <!-- Droplet panel (middle) -->
-        <g transform="translate(160,30)">
-          <rect x="0" y="0" width="120" height="140" fill="rgba(249,115,22,.05)" rx="8"/>
-          <!-- elite strain (left top) -->
-          <circle cx="32" cy="40" r="6" fill="#c0894e"/>
-          <!-- ambient hosts a, b -->
-          <circle cx="92" cy="35" r="4" fill="#d9b58a"/>
-          <circle cx="50" cy="100" r="4" fill="#d9b58a"/>
-          <!-- parent host -->
-          <circle cx="65" cy="78" r="5" fill="#a8702f"/>
-          <!-- transmission with directional combination -->
-          <path d="M65 78 Q 45 60 33 42" stroke="#c0894e" stroke-width="1.6" fill="none" marker-end="url(#ar-droplet)" stroke-dasharray="4 2"/>
-          <path d="M92 35 Q 70 60 50 100" stroke="#d9b58a" stroke-width="1" fill="none" stroke-dasharray="2 2"/>
-          <text x="60" y="124" text-anchor="middle" font-size="9.5" font-weight="700" fill="#a8702f">droplet</text>
-          <text x="60" y="135" text-anchor="middle" font-size="8" fill="#64748b">系統引力 ＋ 差分</text>
-        </g>
+          <!-- legend -->
+          <g transform="translate(22,362)" class="fig-legend">
+            <circle cx="6" cy="0" r="5" fill="var(--ch-close)"/><text x="18" y="4">接触感染: 親のすぐ近くに、地形の向きに沿って</text>
+            <circle cx="6" cy="22" r="5" fill="var(--ch-droplet)"/><text x="18" y="26">飛沫感染: 系統へ寄り、他の 2 宿主の差だけずれる</text>
+            <circle cx="6" cy="44" r="5" fill="var(--ch-air)"/><text x="18" y="48">空気感染: 任意の宿主から遠くへ飛ぶ</text>
+          </g>
+        </svg>
+        <figcaption>1 つの親から 3 つの経路で子ができる様子。等高線の内側ほど f が低い。</figcaption>
+      </figure>
+    </header>
 
-        <!-- Airborne panel (right) -->
-        <g transform="translate(300,30)">
-          <rect x="0" y="0" width="120" height="140" fill="rgba(20,184,166,.05)" rx="8"/>
-          <!-- random source -->
-          <circle cx="60" cy="70" r="5" fill="#5f9ea0"/>
-          <!-- aerosol scattered far -->
-          <circle cx="18" cy="30" r="3" fill="#a7cccd"/>
-          <circle cx="100" cy="28" r="3" fill="#a7cccd"/>
-          <circle cx="22" cy="108" r="3" fill="#a7cccd"/>
-          <circle cx="104" cy="110" r="3" fill="#a7cccd"/>
-          <circle cx="35" cy="55" r="2.5" fill="#a7cccd" opacity=".6"/>
-          <circle cx="90" cy="90" r="2.5" fill="#a7cccd" opacity=".6"/>
-          <!-- long arrows to corners -->
-          <path d="M60 70 L25 35" stroke="#5f9ea0" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
-          <path d="M60 70 L95 35" stroke="#5f9ea0" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
-          <path d="M60 70 L28 102" stroke="#5f9ea0" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
-          <path d="M60 70 L98 105" stroke="#5f9ea0" stroke-width="1.1" marker-end="url(#ar-airborne)" stroke-dasharray="2 2"/>
-          <text x="60" y="124" text-anchor="middle" font-size="9.5" font-weight="700" fill="#5f9ea0">airborne</text>
-          <text x="60" y="135" text-anchor="middle" font-size="8" fill="#64748b">遠方 / 等方</text>
-        </g>
+    <!-- ── 1 generation ───────────────────────────────────────────────── -->
+    <section class="mt-section" id="flow">
+      <h2>1 世代の流れ</h2>
+      <p class="mt-p">
+        MC-ESO には「探索フェーズ」「収束フェーズ」のような切替パラメータは無い。
+        毎世代、次の 7 段を同じ順で回し、探索と精密化の配分は全体の歩幅 σ の大きさだけで自然に変わる。
+      </p>
+      <ol class="mt-steps">
+        <li>
+          <h3>系統を選ぶ</h3>
+          <p>f の良い順に宿主を見て、すでに選んだ系統から探索範囲の 10% 以上離れたものだけを最大 6 つ残す。離れた谷ごとに 1 つずつ「感染拠点」が立つので、飛沫感染の引き寄せ先が 1 か所に固まらない。</p>
+        </li>
+        <li>
+          <h3>停滞していればスピルオーバー</h3>
+          <p>一定の評価回数（2D で 300、次元に比例）改善が無ければ、良い宿主は残して他を撒き直す。撒き直しの半分は過去の系統のそば、残りは「もう掘った谷」を避けた一様乱数。2 回続けて失敗し、しかもまだ浅い（f が初期値の 1% より上）なら、最良点も捨てて別の谷へ乗り換える。</p>
+        </li>
+        <li>
+          <h3>宿主の競合（淘汰）</h3>
+          <p>悪い方から 25% の宿主を取り除く。最良の宿主は必ず残る。</p>
+        </li>
+        <li>
+          <h3>感染源（親）を選ぶ</h3>
+          <p>f が低いほど選ばれやすい。重みは集団内の f の幅で正規化するので、問題の f のスケールや次元に関係なく同じ選択圧になる。</p>
+          <div class="mt-math">\[ w_i \propto \exp\!\Big(-\beta\,\frac{f_i - f_{\min}}{f_{\max} - f_{\min}}\Big),\quad \beta = 5 \]</div>
+        </li>
+        <li>
+          <h3>3 つのチャネルで子を作る</h3>
+          <p>空いた枠を接触・飛沫・空気感染に配分して子を作る。配分は固定ではなく、地形を見て決める（下の「チャネルルーター」）。</p>
+        </li>
+        <li>
+          <h3>巻き戻し</h3>
+          <p>新しい子が、その枠に元いた宿主より悪ければ元に戻す。集団の成績は世代ごとに単調に良くなる。</p>
+        </li>
+        <li>
+          <h3>歩幅 σ を合わせる</h3>
+          <p>改善があれば σ を 1.1 倍、無ければ 0.95 倍。σ が探索範囲の 0.1% を切ると「谷の底まで来た」とみなし、縮小を 0.85 倍に強め、空気感染を止めて浮動小数の限界まで掘り込む（drilling）。</p>
+        </li>
+      </ol>
+    </section>
 
-        <!-- title -->
-        <text x="230" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#475569" letter-spacing="1.2">3 PARALLEL TRANSMISSION CHANNELS</text>
-      </svg>
-    </div>
-  </div>
+    <!-- ── Mechanisms ─────────────────────────────────────────────────── -->
+    <section class="mt-section" id="mechanisms">
+      <h2>仕組みの詳細</h2>
+
+      <h3 class="mt-h3">3 つの伝染チャネル</h3>
+      <div class="mt-channels">
+        <article class="mt-channel ch-close">
+          <h4>接触感染 <span>close contact</span></h4>
+          <div class="mt-math">\[ x' = x_p + \sigma_i\,L\,z \]\[ z \sim \mathcal{N}(0, I),\quad LL^\top = C \]</div>
+          <p>親の近くを、地形の向きに合わせた楕円で探る。形 \(C\) は集団の広がり（経験共分散）から毎世代作る。宿主ごとの歩幅 \(\sigma_i\) は、良い宿主・長生きした宿主ほど細かくなる（最小で全体の 5%）。深い精度を稼ぐ主役。</p>
+        </article>
+        <article class="mt-channel ch-drop">
+          <h4>飛沫感染 <span>droplet</span></h4>
+          <div class="mt-math">\[ v = x_p + F\,(x_s - x_p) \]\[ \qquad +\, F\,(x_a - x_b),\quad F = 0.5 \]</div>
+          <p>系統 \(x_s\) へ引き寄せつつ、他の 2 宿主の差だけずらす。DE の current-to-best/1 と同じ形で、その後に親と二項交叉（CR = 0.9）。悪条件の谷と判定した run では差分をもう 1 本足す（current-to-best/2）。</p>
+        </article>
+        <article class="mt-channel ch-air">
+          <h4>空気感染 <span>airborne</span></h4>
+          <div class="mt-math">\[ x' = x_r + \mathcal{N}(0, \sigma_{\mathrm{air}}^2 I) \]\[ \sigma_{\mathrm{air}} = (1.5 + 3.5\,(1-\mathrm{div}))\,\sigma \]</div>
+          <p>ランダムに選んだ宿主から、集団の形に縛られず遠くへ飛ぶ。局所解から抜けるための経路。集団がまとまるほど遠くへ飛ばす。drilling 中は雑音にしかならないので止める。</p>
+        </article>
+      </div>
+
+      <h3 class="mt-h3">チャネルルーター: 地形を見て配分を決める</h3>
+      <p class="mt-p">
+        空気感染の枠をどこへ回すと良いかは、関数の種類で逆になる。悪条件の谷なら飛沫へ、座標軸に沿った関数なら接触へ、多峰なら空気のまま。
+        そこで集団の共分散から 3 つの量（固有値比 = 悪条件度、固有ベクトルの軸への揃い方、座標方向の隙間）を測り、run ごとに 1 つのルートを決めて固定する。
+        決めるまでの間と、どの条件にも当てはまらない場合は既定の配分のまま走るので、判定が外れても既定より悪くはならない。
+      </p>
+      <div class="mt-routes">
+        <div class="mt-route"><b>DROPLET</b><span>固有値比が大きい（悪条件の谷・尾根）</span><span class="mt-route-eg">F08, F11–F14</span></div>
+        <div class="mt-route"><b>CLOSE</b><span>軸に揃い、座標方向の隙間が大きい</span><span class="mt-route-eg">F04, F16</span></div>
+        <div class="mt-route"><b>KEEP-AIR</b><span>上のどちらでもない（既定の配分）</span><span class="mt-route-eg">F17, F19, F20 ほか</span></div>
+      </div>
+
+      <h3 class="mt-h3">接触感染の 2 系統（3 次元以上）</h3>
+      <p class="mt-p">
+        集団から毎世代推定し直す共分散は、「推定 → 生成 → 推定」の閉ループで高次元ほど細く潰れる（10D で実効ランクが 10 中 2 程度）。
+        そこで接触感染の子を 2 系統に分け、<em>同じ乱数</em>を 2 通りの形に通して宿主競合に選ばせる。
+        片方は従来どおり集団の共分散、もう片方は成功した子の変位から CMA-ES の rank-μ と同じ式で育てる持続的な共分散。
+        2 つを混ぜないので、どちらの異方性も保たれ、「どちらが正しいか」の判定器も要らない。
+      </p>
+      <div class="mt-math">\[ C \leftarrow (1-c)\,C + c\,\frac{1}{\mu}\sum_{k=1}^{\mu} y_k y_k^\top,\quad c = 0.05,\quad y_k = \frac{x_k - x_{p(k)}}{\sigma} \]</div>
+      <p class="mt-p">
+        2D では効き目が無いことが分かっているので、次元に応じたゲート \(g = \mathrm{clip}\big(\tfrac{D/2-1}{D_{\mathrm{ref}}/2-1}, 0, 1\big)\)（\(D_{\mathrm{ref}} = 10\)）で 2D ではきっちり 0 にし、2D の挙動は 1 ビットも変えない。
+        2026-10-08 からは、採る子を「その世代の接触感染の子の上位半分」にし、スピルオーバー直後 50 世代は更新を止める（撒き直した直後の変位は谷の形を持たないため）。
+      </p>
+
+      <h3 class="mt-h3">集団サイズを予算に合わせて縮める（2026-10-08 から既定）</h3>
+      <div class="mt-split">
+        <div>
+          <p class="mt-p">
+            序盤は大きな集団で広く探し、予算を使うにつれて悪い宿主から外して、終盤に世代数を回す。L-SHADE の線形集団縮小を宿主の集団に当てはめたもので、縮め方を 2 乗にして前倒しにしている。
+          </p>
+          <div class="mt-math">\[ N(t) = N_{\mathrm{fin}} + (N_{\mathrm{init}} - N_{\mathrm{fin}})\,(1-t)^2 \]</div>
+          <p class="mt-p mt-small">
+            \(t\) は使った予算の割合、\(N_{\mathrm{init}} = \max(20, 16D)\)、\(N_{\mathrm{fin}} = \max(10, 4D)\)。
+            予算を前もって知っている前提になる（L-SHADE 系と同じ）。
+          </p>
+        </div>
+        <figure class="mt-fig">
+          <svg id="pop-fig" viewBox="0 0 360 210" role="img" aria-label="予算の消費に対する集団サイズ（2D, 5D, 10D）"></svg>
+          <figcaption>予算の消費に対する集団サイズ。2D は 32 → 10、5D は 80 → 20、10D は 160 → 40。</figcaption>
+        </figure>
+      </div>
+
+      <h3 class="mt-h3">スピルオーバー: 結果を覚えている再起動</h3>
+      <p class="mt-p">
+        IPOP-CMA-ES などの再起動は、止まったら箱の中に一様に撒き直す。MC-ESO は止まったときに、そのときの系統を保管庫へ移し、捨てる谷の重心を覚える（集団免疫）。
+        撒き直しの半分は保管庫の系統のそば（範囲の 5% のガウス）、残りは覚えた谷の周り（範囲の 10%）を避けた一様乱数にする。
+        f が初期値の 1e-8 倍まで下がった run では、掘っている途中とみなして発動しない。
+      </p>
+
+      <h3 class="mt-h3">複数の解を順に掘る（逐次 niching）</h3>
+      <p class="mt-p">
+        1 つの谷を掘り切った（σ が下限に達して、さらに停滞した）と判断して初めて、掘った谷を避けて次の谷を探しに行く。掘り切る前は何も変えないので、最高精度の成功率を壊さない。
+        掘って捨てた谷の最良点は解アーカイブ（最大 200 点）に残し、報告する解集合に入れる。
+        多解探索の路線は 2026-10 から一時停止中で、現在の評価の主対象は単一解の精度。
+      </p>
+    </section>
+
+    <!-- ── Results ────────────────────────────────────────────────────── -->
+    <section class="mt-section" id="results">
+      <h2>成績</h2>
+      <p class="mt-p">
+        2026-10-08 に回した quick（BBOB-24 関数、各 20 run、予算 2500 × 次元）の結果。
+        数値は <code>results/</code> の CSV を <code>scripts/web/methods_data.py</code> で集計したもので、<code>scripts/analyze_quick.py</code> の集計と同じ。
+        主指標は f が最適値から 1e-10 以内に届いた run の割合（SR@1e-10）。
+      </p>
+
+      <div class="mt-tabs" role="tablist" id="res-tabs"></div>
+      <div id="res-meta" class="mt-res-meta"></div>
+      <div class="mt-res-grid">
+        <div class="mt-res-table-wrap"><table class="mt-res-table" id="res-table"></table></div>
+        <div class="mt-res-notes" id="res-notes"></div>
+      </div>
+
+      <h3 class="mt-h3">関数ごとの SR@1e-10</h3>
+      <p class="mt-p mt-small">赤いほど低く、緑ほど高い。行は SR@1e-10 の平均が高い順。</p>
+      <div class="mt-heat-wrap"><table class="mt-heat" id="res-heat"></table></div>
+
+      <aside class="mt-caveat">
+        <h3>読むときの注意</h3>
+        <ul>
+          <li>このPC（Windows）で回したもの。このプロジェクトの正準環境はクラウドで、ローカルの結果は同じ run の中での手法どうしの比較にだけ使う。記録済みの正準環境の値（例: 新既定の 2D 93.33%）とは一致しない。</li>
+          <li>20 run なので、1 関数あたり 5pt の差は 1 run の差。Wilcoxon の勝ち・負けは「MC-ESO が有意に良い／悪い関数の数」（p &lt; 0.05、向きは A12）。</li>
+          <li>MC-ESO-v0 は 2026-10-08 より前の既定値。差は今回の変更（集団の縮小、学習共分散の凍結と上位半分の採用）の分。</li>
+          <li>平均評価回数は、成功した run だけの平均を関数について平均したもの。成功した関数が少ない手法ほど易しい関数だけの値になるので、成功率と一緒に読む。</li>
+        </ul>
+      </aside>
+    </section>
+
+    <!-- ── Lineage ────────────────────────────────────────────────────── -->
+    <section class="mt-section" id="lineage">
+      <h2>比較手法の系譜</h2>
+      <p class="mt-p">
+        このプロジェクトに登録してある比較手法を、発表年と系統で並べた。実線は「〜を元にした」、
+        <span class="lg-borrow">点線</span>は MC-ESO が仕組みを借りている手法。
+        <span class="lg-measured">塗りつぶした点</span>は今回の quick で測った手法。名前を押すと下の解説へ移る。
+      </p>
+      <div class="mt-lineage-wrap"><svg id="lineage-svg" role="img" aria-label="比較手法の系譜図"></svg></div>
+    </section>
+
+    <!-- ── Baselines ──────────────────────────────────────────────────── -->
+    <section class="mt-section" id="baselines">
+      <h2>比較手法の解説</h2>
+      <p class="mt-p">
+        役割は 4 種類。<span class="role role-main">主比較</span>は今回の quick で並べた手法、
+        <span class="role role-cand">比較候補</span>は 2026-10-06 に実装したがまだ既定の比較には入れていない競技上位手法、
+        <span class="role role-mmo">多解比較</span>は一時停止中の多解探索で使う手法、
+        <span class="role role-floor">基準線</span>は「これに勝てなければ凝った手法の意味が無い」という下限。
+      </p>
+
+      <!-- ES -->
+      <div class="mt-family" id="fam-es">
+        <h3 class="mt-fam-head"><span class="fam-dot fam-es"></span>進化戦略（CMA-ES 系）</h3>
+        <p class="mt-fam-lead">ガウス分布から候補を引き、良かった候補の方向へ分布の平均・形・大きさを学習していく系統。悪条件や回転した関数に強く、高次元の単峰では今も基準になる。</p>
+        <div class="mt-cards">
+          <article class="mt-card" id="m-CMA-ES" data-method="CMA-ES">
+            <header><h4>CMA-ES</h4><span class="role role-main">主比較</span></header>
+            <p class="mt-origin">Hansen &amp; Ostermeier 2001</p>
+            <p>探索分布の共分散行列を、成功した方向から少しずつ学習する（rank-1 / rank-μ 更新と歩幅の累積適応）。関数の形が回転・伸長していても、そのうち楕円の向きが合ってくる。このプロジェクトでは収束を検出したら最良点から細い σ で再開する。</p>
+            <p class="mt-rel">MC-ESO の持続的な共分散は、この rank-μ 更新をそのまま移したもの。</p>
+          </article>
+          <article class="mt-card" id="m-IPOP-CMA-ES" data-method="IPOP-CMA-ES">
+            <header><h4>IPOP-CMA-ES</h4><span class="role role-main">主比較</span></header>
+            <p class="mt-origin">Auger &amp; Hansen 2005</p>
+            <p>CMA-ES が止まるたびに、集団サイズを 2 倍にして箱の中から再起動する。大きな集団は大域的な構造をならして見るので、多峰関数で効く。</p>
+            <p class="mt-rel">スピルオーバーの比較相手。こちらは再起動のたびに過去を忘れる。</p>
+          </article>
+          <article class="mt-card" id="m-BIPOP-CMA-ES" data-method="BIPOP-CMA-ES">
+            <header><h4>BIPOP-CMA-ES</h4><span class="role role-main">主比較</span></header>
+            <p class="mt-origin">Hansen 2009</p>
+            <p>大きな集団での再起動（IPOP と同じ）と、小さな集団・小さな歩幅での再起動を、使った予算が釣り合うように交互に行う。大域構造のある関数と、細かい谷が散らばった関数の両方を拾う。</p>
+            <p class="mt-rel">「1 つの谷を掘る → 次へ」という逐次 niching の発想の元。</p>
+          </article>
+          <article class="mt-card" id="m-Repel-CMA-ES" data-method="Repel-CMA-ES">
+            <header><h4>Repel-CMA-ES</h4><span class="role role-mmo">多解比較</span></header>
+            <p class="mt-origin">de Nobel ら 2024（近似実装）</p>
+            <p>再起動のたびに、それまでの最良点の周りを立入禁止にし、そこに落ちた候補は引き直す。禁止域の半径は、禁止域の合計が箱の一定割合を塞ぐように決まり、再起動が増えるほど縮む。</p>
+            <p class="mt-rel">MC-ESO の「掘った谷を避けて撒き直す」に最も近い先行例。</p>
+          </article>
+          <article class="mt-card" id="m-PS-CMA-ES" data-method="PS-CMA-ES">
+            <header><h4>PS-CMA-ES</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Müller, Baumgartner &amp; Sbalzarini 2009</p>
+            <p>複数の CMA-ES を同時に走らせ、一定世代ごとに PSO のように全体の最良点へ向けて各インスタンスの分布を回転・移動させる。多漏斗の地形向け。</p>
+            <p class="mt-rel">情報交換は 200 世代ごとなので、10D・25,000 評価では一度も起きない。</p>
+          </article>
+          <article class="mt-card" id="m-ICMAES-ILS" data-method="ICMAES-ILS">
+            <header><h4>iCMAES-ILS</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Liao &amp; Stützle 2013（CEC 2013 優勝）</p>
+            <p>IPOP-CMA-ES と反復局所探索（Mtsls1）を最初に少しずつ走らせて競わせ、良かった方に残りの予算を全部渡す。</p>
+          </article>
+          <article class="mt-card" id="m-HSES" data-method="HSES">
+            <header><h4>HSES</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Zhang &amp; Shi 2018（CEC 2018 優勝）</p>
+            <p>3 段構え。座標ごとの正規分布で粗く探し（単変量の EDA）、その最良点から CMA-ES で回転を捉え、最後にまた単変量の標本で詰める。</p>
+            <p class="mt-rel">第 1 段だけで 20,200 評価を使うので、2D・5,000 評価では第 1 段しか動かない。</p>
+          </article>
+        </div>
+      </div>
+
+      <!-- DE -->
+      <div class="mt-family" id="fam-de">
+        <h3 class="mt-fam-head"><span class="fam-dot fam-de"></span>差分進化（DE 系）</h3>
+        <p class="mt-fam-lead">集団内の 2 点の差をそのまま歩幅に使う系統。歩幅が集団の広がりに自動で比例する。L-SHADE 以降は、F（差の倍率）と CR（交叉率）を成功例から学習し、集団を予算に合わせて縮めるのが標準で、CEC の競技の上位はほぼこの系統。</p>
+        <div class="mt-cards">
+          <article class="mt-card" id="m-DE" data-method="DE">
+            <header><h4>DE</h4><span class="role role-main">主比較</span></header>
+            <p class="mt-origin">Storn &amp; Price 1997（DE/rand/1/bin）</p>
+            <p>集団から 3 点 a, b, c を選び \(x_a + F(x_b - x_c)\) を作り、元の点と座標ごとに混ぜて（二項交叉）、良ければ置き換える。F = 0.5、CR = 0.9、集団 30。</p>
+            <p class="mt-rel">MC-ESO の飛沫感染は同じ差分ベクトルを使う。「差分変異だけでどこまで行けるか」を測るための直接の対照。</p>
+          </article>
+          <article class="mt-card" id="m-L-SHADE" data-method="L-SHADE">
+            <header><h4>L-SHADE</h4><span class="role role-main">主比較</span></header>
+            <p class="mt-origin">Tanabe &amp; Fukunaga 2014（CEC 2014 優勝）</p>
+            <p>SHADE（成功した F・CR の履歴から次の値を引く適応 DE）に、集団サイズを予算に対して線形に縮める仕組み（LPSR）を加えたもの。論文どおりの numpy 移植で、初期集団 18D。</p>
+            <p class="mt-rel">MC-ESO の集団縮小はこの LPSR を宿主の集団に当てはめたもの。</p>
+          </article>
+          <article class="mt-card" id="m-jSO" data-method="jSO">
+            <header><h4>jSO</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Brest, Maučec &amp; Bošković 2017（CEC 2017 2 位）</p>
+            <p>iL-SHADE の後継。変異を current-to-pBest-w/1（重み付き）にし、F・CR の上限を世代の進みに応じて変える。pyade の版は論文から外れるので、論文どおりに移植した。</p>
+          </article>
+          <article class="mt-card" id="m-LSHADE-cnEpSin" data-method="LSHADE-cnEpSin">
+            <header><h4>LSHADE-cnEpSin</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Awad ら 2017（mealpy 経由）</p>
+            <p>F を正弦波のアンサンブルで揺らし、交叉を共分散行列の固有座標系で行う L-SHADE の変種。集団は論文の 18D → 4 に合わせ直した。</p>
+          </article>
+          <article class="mt-card" id="m-SPS-L-SHADE-EIG" data-method="SPS-L-SHADE-EIG">
+            <header><h4>SPS-L-SHADE-EIG</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Guo ら 2015（CEC 2015 優勝）</p>
+            <p>L-SHADE に、固有ベクトル座標での交叉（回転に強くなる）と、停滞したら「最近成功した親」から子を作る枠組み（SPS）を足したもの。名前の自己最適化は競技の関数ごとの事前調整なので再現せず、作者の未調整の既定値を使う。</p>
+          </article>
+          <article class="mt-card" id="m-L-SRTDE" data-method="L-SRTDE">
+            <header><h4>L-SRTDE</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Stanovov &amp; Semenkin 2024（CEC 2024 優勝）</p>
+            <p>直前の世代で置き換えに成功した個体の割合（成功率）でパラメータを適応させる DE に、集団の線形縮小を組み合わせたもの。作者の C++ を行単位で移植し、CEC2022 10D の全 12 関数で C++ 版と平均誤差が一致することを確かめてある。</p>
+          </article>
+          <article class="mt-card" id="m-CoBiDE" data-method="CoBiDE">
+            <header><h4>CoBiDE</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Wang, Li, Huang &amp; Li 2014</p>
+            <p>交叉を集団の共分散行列の固有座標で行い、F・CR を二峰の分布（大きめと小さめ）から引く DE。EA4eig の構成要素の 1 つでもある（中身は 5 点違う）。</p>
+          </article>
+          <article class="mt-card" id="m-IMODE" data-method="IMODE">
+            <header><h4>IMODE</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Sallam ら 2020（CEC 2020 優勝）</p>
+            <p>3 種類の DE 変異を、各個体に改善率で配分して使い分ける多演算子 DE。予算の終盤に SQP の局所探索を入れる。初期集団は 6D² と大きい。作者の競技提出コードを行番号つきで移植した。</p>
+          </article>
+          <article class="mt-card" id="m-APGSK-IMODE" data-method="APGSK-IMODE">
+            <header><h4>APGSK-IMODE</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Mohamed ら 2021（CEC 2021 3 位）</p>
+            <p>「知識の獲得と共有」（GSK: 若手は身近な人から、熟練者は集団全体の上位・下位から学ぶ）を適応パラメータにした手法と、IMODE を並走させる。元コードの不具合も意図的に再現している。</p>
+          </article>
+          <article class="mt-card" id="m-LSHADE-SPACMA" data-method="LSHADE-SPACMA">
+            <header><h4>LSHADE-SPACMA</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Mohamed ら 2017（CEC 2017 3 位）</p>
+            <p>L-SHADE の F を半分だけ適応させ（semi-parameter adaptation）、個体の一部を CMA-ES で生成する混成。両者への配分は成績で動く。</p>
+          </article>
+          <article class="mt-card" id="m-ELSHADE-SPACMA" data-method="ELSHADE-SPACMA">
+            <header><h4>ELSHADE-SPACMA</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Hadi, Mohamed &amp; Jambi 2018（CEC 2018 3 位）</p>
+            <p>LSHADE-SPACMA の 1 世代と、EADE（別の適応 DE）の 1 世代を交互に回す。</p>
+          </article>
+        </div>
+      </div>
+
+      <!-- Swarm / bio -->
+      <div class="mt-family" id="fam-swarm">
+        <h3 class="mt-fam-head"><span class="fam-dot fam-swarm"></span>群知能・生物模倣</h3>
+        <p class="mt-fam-lead">鳥の群れ、ウイルス、蝶などのふるまいを探索の規則に写した系統。MC-ESO もここに属する。</p>
+        <div class="mt-cards">
+          <article class="mt-card" id="m-PSO" data-method="PSO">
+            <header><h4>PSO</h4><span class="role role-main">主比較</span></header>
+            <p class="mt-origin">Kennedy &amp; Eberhart 1995</p>
+            <p>各粒子が速度を持ち、自分が見た最良点と群れ全体の最良点に引き寄せられながら動く。慣性 0.729、加速係数 1.494、粒子 30。</p>
+          </article>
+          <article class="mt-card" id="m-SaVOA" data-method="SaVOA">
+            <header><h4>SaVOA</h4><span class="role role-main">主比較</span></header>
+            <p class="mt-origin">Liang &amp; Juarez 2020（近似実装）</p>
+            <p>ウイルスの増殖を模した VOA の自己適応版。改善すれば σ × 1.2、停滞すれば σ × 0.9 と、歩幅を乗法的に自動調整する。</p>
+            <p class="mt-rel">同じ感染症の着想で再生の仕組みが 1 つだけの手法として、MC-ESO の直接の対照。MC-ESO の σ 適応はこの乗法則を借りている。</p>
+          </article>
+          <article class="mt-card" id="m-DEPSO" data-method="DEPSO">
+            <header><h4>DEPSO</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Zhang &amp; Xie 2003</p>
+            <p>PSO の更新と DE の差分変異を世代ごとに交互に使う混成。全文が入手できず、要旨と二次資料から実装したので推測が多い。</p>
+          </article>
+          <article class="mt-card" id="m-EBOwithCMAR" data-method="EBOwithCMAR">
+            <header><h4>EBOwithCMAR</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Kumar, Misra &amp; Singh 2017（CEC 2017 優勝）</p>
+            <p>蝶のなわばり行動（とまる・巡回する）を DE 風の演算子にした手法に、CMA-ES による「退避」段と SQP の局所探索を組み合わせる。作者の MATLAB を行単位で移植。</p>
+          </article>
+        </div>
+      </div>
+
+      <!-- Hybrid -->
+      <div class="mt-family" id="fam-hybrid">
+        <h3 class="mt-fam-head"><span class="fam-dot fam-hybrid"></span>複数手法の組み合わせ・選択</h3>
+        <p class="mt-fam-lead">既存の手法を部品として並べ、成績に応じて予算や個体を配り直す系統。「1 つの再生機構に頼らない」という点で MC-ESO に最も近い考え方を持つので、新規性を主張するうえで一番の比較相手になる。</p>
+        <div class="mt-cards">
+          <article class="mt-card" id="m-AMALGAM-SO" data-method="AMALGAM-SO">
+            <header><h4>AMALGAM-SO</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Vrugt, Robinson &amp; Hyman 2009</p>
+            <p>CMA、GA、PSO（<code>AMALGAM-SO-DE</code> は CMA、GA、DE）が同じ親集団からそれぞれ子を作り、各手法の子の数を前回の繁殖成功に応じて配り直す。再起動ごとに集団を 2 倍にする。</p>
+            <p class="mt-rel">「複数の作り方を混ぜ、成績で配分する」点で MC-ESO と最も構造が近い。MC-ESO は配分を成績ではなく地形の測定で決める。</p>
+          </article>
+          <article class="mt-card" id="m-MOS" data-method="MOS">
+            <header><h4>MOS</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">LaTorre, Muelas &amp; Peña 2010（BBOB-2010）</p>
+            <p>DE と IPOP-CMA-ES が 1 つの集団を順番に進化させ、各手法の参加割合を平均改善量に応じて動かす（Multiple Offspring Sampling）。</p>
+          </article>
+          <article class="mt-card" id="m-HMHH" data-method="HMHH">
+            <header><h4>HMHH</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Grobler ら 2010 / 2015</p>
+            <p>共通の集団の各個体を GA、GCPSO、SaNSDE、CMA-ES のどれかに割り当て、数世代ごとの改善量からタブー探索で割り当て直すハイパーヒューリスティクス。<code>HMHH-random</code> は割り当てをランダムにした対照。</p>
+          </article>
+          <article class="mt-card" id="m-UMOEA-II" data-method="UMOEA-II">
+            <header><h4>UMOEA-II</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Elsayed, Hamza &amp; Sarker 2016（CEC 2016 上位）</p>
+            <p>多演算子 DE と CMA-ES の 2 つの部分集団を走らせ、一定周期ごとに改善と多様性から両者の実行確率を決め、情報を共有する。予算の最後の 25% で局所探索。</p>
+          </article>
+          <article class="mt-card" id="m-EA4eig" data-method="EA4eig">
+            <header><h4>EA4eig</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">Bujok &amp; Kolenovsky 2022（CEC 2022 優勝）</p>
+            <p>CoBiDE、IDEbd、CMA-ES、jSO の 4 手法が 1 つの集団を共有し、成功率に応じて使われる頻度が変わる。交叉は固有座標系で行う。<code>EA4eig-jSO-IDEbd</code> は Biedrzycki の解析で最も良かった 2 手法版、<code>EA4eig-Simpl</code> はその最終的な簡略版（IDEbd のみ）。</p>
+          </article>
+          <article class="mt-card" id="m-NGOpt" data-method="NGOpt">
+            <header><h4>NGOpt / NG-Portfolio</h4><span class="role role-cand">比較候補</span></header>
+            <p class="mt-origin">nevergrad（Meta）</p>
+            <p>問題の次元や予算から、どの手法を使うかを規則で選ぶアルゴリズム選択器（NGOpt）と、複数手法に予算を分けるポートフォリオ。手法そのものというより「既製品の自動選択に勝てるか」の目安。</p>
+          </article>
+        </div>
+      </div>
+
+      <!-- Local / niching -->
+      <div class="mt-family" id="fam-local">
+        <h3 class="mt-fam-head"><span class="fam-dot fam-local"></span>局所探索・多解探索</h3>
+        <p class="mt-fam-lead">低次元で「そもそも凝った手法が要るのか」を問う基準線と、複数の最適解を同時に見つける専門手法（niching）。多解の路線は一時停止中なので、今回の quick では測っていない。</p>
+        <div class="mt-cards">
+          <article class="mt-card" id="m-NM-Restart" data-method="NM-Restart">
+            <header><h4>NM-Restart</h4><span class="role role-floor">基準線</span></header>
+            <p class="mt-origin">Nelder &amp; Mead 1965 ＋ 再起動</p>
+            <p>一様乱数の点から Nelder–Mead 単体法を深い収束条件まで走らせ、予算が尽きるまで再起動を繰り返す。再起動の間で何も引き継がない。2〜3 次元の BBOB ではこれが非常に強いことが COCO のデータで知られている。</p>
+          </article>
+          <article class="mt-card" id="m-Crowding-DE" data-method="Crowding-DE">
+            <header><h4>Crowding-DE</h4><span class="role role-mmo">多解比較</span></header>
+            <p class="mt-origin">Thomsen 2004</p>
+            <p>DE の子を親ではなく<em>一番近い個体</em>と競わせる。子は自分の近所しか置き換えられないので、別の谷の部分集団が共存する。NCDE から近傍変異を外した対照。</p>
+          </article>
+          <article class="mt-card" id="m-NCDE" data-method="NCDE">
+            <header><h4>NCDE</h4><span class="role role-mmo">多解比較</span></header>
+            <p class="mt-origin">Qu, Suganthan &amp; Liang 2012</p>
+            <p>Crowding-DE に、差分を作る 3 点を近傍 6 個体から選ぶ近傍変異を足したもの。差分ベクトルが谷の中に収まり、谷ごとに深く収束できる。</p>
+            <p class="mt-rel">「並列に共存させる niching」対「MC-ESO の逐次 niching」を比べる相手。</p>
+          </article>
+          <article class="mt-card" id="m-r3pso" data-method="r3pso">
+            <header><h4>r3pso</h4><span class="role role-mmo">多解比較</span></header>
+            <p class="mt-origin">Li 2010</p>
+            <p>PSO の「群れ全体の最良点」を、輪状につないだ両隣 3 粒子の最良点に置き換える。niche 半径を持たずに複数の谷を保つ古典。係数は PSO と同じなので、差は近傍の形だけ。</p>
+          </article>
+          <article class="mt-card" id="m-NMMSO" data-method="NMMSO">
+            <header><h4>NMMSO</h4><span class="role role-mmo">多解比較</span></header>
+            <p class="mt-origin">Fieldsend 2014（pynmmso）</p>
+            <p>複数の小さな群れを、谷の数に合わせて分裂・併合させる多群 PSO。ニッチ数を自分で決める。公式実装をそのまま使うので「比較相手の実装が悪い」という反論を封じられる。</p>
+          </article>
+          <article class="mt-card" id="m-MAP-Elites" data-method="MAP-Elites">
+            <header><h4>MAP-Elites</h4><span class="role role-mmo">多解比較</span></header>
+            <p class="mt-origin">Mouret &amp; Clune 2015</p>
+            <p>「行動記述子」で区切った格子の各マスに最良の解を 1 つずつ置く quality-diversity の代表。ここでは最初の 2 座標を記述子にしている。すべての最適解を見つける niching とは問いが違うことを示す対照。</p>
+          </article>
+        </div>
+      </div>
+
+      <p class="mt-p mt-small mt-refimpl">
+        このほか、外部ライブラリ版の <code>jSO-minionpy</code>・<code>L-SRTDE-minionpy</code>・<code>L-SHADE-mealpy</code>・<code>IMODE-mealpy</code> を参照用に登録してある。
+        mealpy の L-SHADE と IMODE には成績を大きく損なう不具合があったので、比較には移植版を使う（<code>docs/baselines.md</code>）。
+      </p>
+    </section>
+
+    <!-- ── Position ───────────────────────────────────────────────────── -->
+    <section class="mt-section" id="position">
+      <h2>何が新しく、何が借り物か</h2>
+      <p class="mt-p">個々の部品の多くは既存手法から来ている。新しさは部品ではなく、その組み合わせ方にある。</p>
+      <div class="mt-table-wrap">
+        <table class="mt-plain">
+          <thead><tr><th>MC-ESO の部品</th><th>元になった手法</th><th>MC-ESO で違うところ</th></tr></thead>
+          <tbody>
+            <tr><td>持続的な共分散（rank-μ）</td><td>CMA-ES</td><td>集団の瞬時の共分散（EMNA 型）と<em>混ぜずに並走</em>させ、宿主競合に選ばせる。2D では次元ゲートで完全に止める</td></tr>
+            <tr><td>飛沫感染の差分ベクトル</td><td>DE（current-to-best）</td><td>引き寄せ先が単一の最良点ではなく、離れた谷ごとの系統（最大 6）から選ばれる</td></tr>
+            <tr><td>σ の乗法適応</td><td>SaVOA</td><td>σ が小さくなると drilling に入り、縮小を強めて空気感染を止める</td></tr>
+            <tr><td>停滞時の再起動</td><td>IPOP / BIPOP-CMA-ES</td><td>盲目的な一様再起動ではなく、系統の保管庫と「掘った谷」の記憶を使って撒き直す</td></tr>
+            <tr><td>集団サイズの縮小</td><td>L-SHADE（LPSR）</td><td>宿主の集団に当てはめ、縮め方を 2 乗で前倒しにする</td></tr>
+            <tr><td>複数の作り方の混合</td><td>AMALGAM-SO、EA4eig、MOS</td><td>配分を「前回の成績」ではなく、集団の共分散から測った地形の種類で run ごとに決めて固定する</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
 </div>
-
-<!-- ── Performance snapshot ─────────────────────────────────────────── -->
-<div class="perf-banner">
-  <div class="perf-grid">
-    <div class="perf-headline">
-      <div class="perf-headline-label">全 35 関数 SR@1e-10 平均（主指標, n=20 × 5000 evals, dim=2）</div>
-      <div class="perf-headline-value">89.9<span style="font-size:13px; font-weight:600; color:var(--text-2); margin-left:4px;">%</span></div>
-      <div class="perf-headline-sub">MC-ESO ＝ 比較 8 手法中で最高。21/35 関数で SR@1e-10 = 100%</div>
-    </div>
-    <div class="perf-cell is-best">
-      <div class="perf-cell-method">MC-ESO</div>
-      <div class="perf-cell-value">89.9%</div>
-    </div>
-    <div class="perf-cell">
-      <div class="perf-cell-method">DE</div>
-      <div class="perf-cell-value">85.7%</div>
-    </div>
-    <div class="perf-cell">
-      <div class="perf-cell-method">IPOP</div>
-      <div class="perf-cell-value">76.6%</div>
-    </div>
-    <div class="perf-cell">
-      <div class="perf-cell-method">L-SHADE</div>
-      <div class="perf-cell-value">73.3%</div>
-    </div>
-    <div class="perf-cell">
-      <div class="perf-cell-method">BIPOP</div>
-      <div class="perf-cell-value">73.1%</div>
-    </div>
-    <div class="perf-cell">
-      <div class="perf-cell-method">SaVOA</div>
-      <div class="perf-cell-value">67.9%</div>
-    </div>
-    <div class="perf-cell">
-      <div class="perf-cell-method">CMA-ES</div>
-      <div class="perf-cell-value">60.0%</div>
-    </div>
-  </div>
-</div>
-
-<!-- ── On-page nav ────────────────────────────────────────────────────── -->
-<nav class="page-nav" id="pageNav">
-  <a href="#vso"         class="page-nav-link"><span class="nav-num">01&thinsp;·&thinsp;</span>MC-ESO</a>
-  <a href="#baselines"   class="page-nav-link"><span class="nav-num">02&thinsp;·&thinsp;</span>ベースライン</a>
-  <a href="#differences" class="page-nav-link"><span class="nav-num">03&thinsp;·&thinsp;</span>既存手法との比較</a>
-</nav>
-
-<div class="page">
-
-  <!-- ── MC-ESO ─────────────────────────────────────────────────────────── -->
-  <h2 class="sec-heading reveal" id="vso">
-    <span class="sec-num">01</span>MC-ESO — Multi-Channel Epidemic Spread Optimizer
-  </h2>
-  <p class="sec-sub reveal">感染症の流行を模倣した提案手法。3 チャネル並列伝染 ＋ 経験共分散（適応異方性 floor）＋ 宿主競合 ＋ 情報化スピルオーバー ＋ 逐次 niching の組合せで、全 35 関数 (dim=2) の最高精度 <strong>SR@1e-10 平均 89.9%</strong> を達成し、比較 8 手法中で最高（DE 85.7% / IPOP-CMA-ES 76.6% / CMA-ES 60.0%）。成功 run の評価回数中央値も 552 と集団系手法で最速。</p>
-
-  <div class="vso-layout">
-    <div class="h3">コアとなるアナロジー</div>
-    <p style="font-size:13px; color:var(--text-2); line-height:1.75; margin-bottom:16px;">
-      既存メタヒューリスティクスは単一の再生メカニズムを持つ（DE = 差分変異、PSO = 速度ベクトル、GA = 交叉、ES = ガウス変異）。
-      対して現実の感染症は <strong>複数の伝染経路</strong> ― 接触・飛沫・空気 ― が並行して働き、それぞれ距離スケールと方向構造が定性的に異なる。
-      MC-ESO はこれを忠実に転写し、毎世代 3 チャネルを混合する。「\(f(x)\) が低い空間 ＝ 感染宿主が密集する場所」と捉え、
-      \(f\) 値の低い個体ほど次の感染源として選ばれる。とくに <em>飛沫感染</em> チャネルの個体間差分ベクトルが集団形状（暗黙的共分散）を捉えることで、
-      明示的共分散学習なしに ill-conditioned 関数も解ける。
-    </p>
-
-    <div class="concept-section">
-      <div class="concept-section-label">伝染チャネル（並列実行） — multi-channel transmission</div>
-      <div class="concept-grid">
-        <div class="concept-card c-contact">
-          <div class="concept-header">
-            <div class="concept-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="3.5" fill="#4f7cac"/>
-                <circle cx="6" cy="6" r="1.8" fill="#9bb6cf"/>
-                <circle cx="18" cy="6" r="1.8" fill="#9bb6cf"/>
-                <circle cx="6" cy="18" r="1.8" fill="#9bb6cf"/>
-                <circle cx="18" cy="18" r="1.8" fill="#9bb6cf"/>
-                <path d="M12 12 L7.5 7.5" stroke="#4f7cac" stroke-width="1.2"/>
-                <path d="M12 12 L16.5 7.5" stroke="#4f7cac" stroke-width="1.2"/>
-                <path d="M12 12 L7.5 16.5" stroke="#4f7cac" stroke-width="1.2"/>
-                <path d="M12 12 L16.5 16.5" stroke="#4f7cac" stroke-width="1.2"/>
-              </svg>
-            </div>
-            <div class="concept-titles">
-              <div class="concept-eyebrow">Channel 1 · 接触</div>
-              <div class="concept-title">Close-contact</div>
-            </div>
-          </div>
-          <div class="concept-body">親密接触による局所伝染。親の近傍に \(\mathcal{N}(0,\sigma_i^2\, C_\text{pop})\) で子を生成。\(C_\text{pop}\) は<strong>その世代の集団経験共分散</strong>（履歴累積なし、CMA-ES のランク-μ 学習と異なる）で、固有値を平均 1 に正規化することで回転・異方性に追従しつつ総ステップ幅を保存。異方性の頭打ち（floor）は<strong>集団共分散の素の固有値比で自動調整</strong>（悪条件の谷では緩め、rugged/多峰では締める）。対数品質 \(q_i\) と年齢比 \(a_i\) に応じて \(\sigma_i\) を**べき乗スケーリング**し、適応性の低い宿主は広く、適応性の高い高齢宿主は精密に伝染。</div>
-        </div>
-
-        <div class="concept-card c-droplet">
-          <div class="concept-header">
-            <div class="concept-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="5" cy="6" r="2.5" fill="#c0894e"/>
-                <circle cx="19" cy="12" r="2" fill="#d9b58a"/>
-                <circle cx="14" cy="19" r="2" fill="#d9b58a"/>
-                <circle cx="11" cy="13" r="2.5" fill="#a8702f"/>
-                <path d="M11 13 Q 7 9 5 6" stroke="#c0894e" stroke-width="1.4" fill="none"/>
-                <path d="M19 12 L14 19" stroke="#d9b58a" stroke-width="1" stroke-dasharray="1.5 1.5"/>
-              </svg>
-            </div>
-            <div class="concept-titles">
-              <div class="concept-eyebrow">Channel 2 · 飛沫</div>
-              <div class="concept-title">Droplet</div>
-            </div>
-          </div>
-          <div class="concept-body">飛沫を介した宿主間伝染。trial = \(x_\text{p} + F(x_\text{strain}{-}x_\text{p}) + F(x_a{-}x_b)\) を作り、親と座標ごとに <strong>確率 \(CR=0.9\) で二項交叉</strong> (DE/current-to-best/1/bin と同型、DE 標準値)。差分ベクトルが集団形状を反映する <strong>暗黙的異方性</strong>、系統への引力で valley 進行を加速、二項交叉が separable 多峰の座標方向情報を保護。<strong>悪条件 (droplet) ルート確定 run では第 2 差分 \(+F(x_c{-}x_d)\) を追加</strong>（current-to-best/2）してドナー多様性を増し、誤盆地で停滞した run を救出（F13/F14、高次元でより顕著）。他ルートでは追加せず base と完全一致。</div>
-        </div>
-
-        <div class="concept-card c-airborne">
-          <div class="concept-header">
-            <div class="concept-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="2.5" fill="#5f9ea0"/>
-                <circle cx="4" cy="4" r="1.4" fill="#a7cccd"/>
-                <circle cx="20" cy="4" r="1.4" fill="#a7cccd"/>
-                <circle cx="4" cy="20" r="1.4" fill="#a7cccd"/>
-                <circle cx="20" cy="20" r="1.4" fill="#a7cccd"/>
-                <path d="M12 12 L5.5 5.5" stroke="#5f9ea0" stroke-width="1" stroke-dasharray="1.5 1.5"/>
-                <path d="M12 12 L18.5 5.5" stroke="#5f9ea0" stroke-width="1" stroke-dasharray="1.5 1.5"/>
-                <path d="M12 12 L5.5 18.5" stroke="#5f9ea0" stroke-width="1" stroke-dasharray="1.5 1.5"/>
-                <path d="M12 12 L18.5 18.5" stroke="#5f9ea0" stroke-width="1" stroke-dasharray="1.5 1.5"/>
-              </svg>
-            </div>
-            <div class="concept-titles">
-              <div class="concept-eyebrow">Channel 3 · 空気</div>
-              <div class="concept-title">Airborne</div>
-            </div>
-          </div>
-          <div class="concept-body">エアロゾルによる広域伝染。ランダム宿主から遠方へ大きくジャンプ。集団が収束するほど \(\sigma_\text{air}\) を拡大し、**停滞を防ぐ**。ただし <strong>drilling mode</strong>（\(\sigma < \text{span}\times 10^{-3}\)）に入ったら停止 — 浮動小数限界への精密化を雑音で阻害しない。</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="concept-section">
-      <div class="concept-section-label">集団レベル機構 — population-level dynamics</div>
-      <div class="concept-grid">
-        <div class="concept-card c-strain">
-          <div class="concept-header">
-            <div class="concept-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="6" cy="7" r="2.5" fill="#8f7bb3"/>
-                <circle cx="18" cy="7" r="2.5" fill="#8f7bb3"/>
-                <circle cx="12" cy="17" r="2.5" fill="#8f7bb3"/>
-                <circle cx="6" cy="7" r="6" fill="none" stroke="#8f7bb3" stroke-width=".8" stroke-dasharray="2 1.5" opacity=".5"/>
-                <circle cx="18" cy="7" r="6" fill="none" stroke="#8f7bb3" stroke-width=".8" stroke-dasharray="2 1.5" opacity=".5"/>
-                <circle cx="12" cy="17" r="6" fill="none" stroke="#8f7bb3" stroke-width=".8" stroke-dasharray="2 1.5" opacity=".5"/>
-              </svg>
-            </div>
-            <div class="concept-titles">
-              <div class="concept-eyebrow">系統 · Strain</div>
-              <div class="concept-title">Strain Coexistence</div>
-            </div>
-          </div>
-          <div class="concept-body">空間的に離れた複数の感染系統を同時保護（最大 6）。飛沫感染の引力対象 pool として乱択され、**多峰問題で複数コロニーへの引力**を維持。</div>
-        </div>
-
-        <div class="concept-card c-host">
-          <div class="concept-header">
-            <div class="concept-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="6" width="6" height="4" rx="1.5" fill="#b06a6a"/>
-                <rect x="3" y="14" width="6" height="4" rx="1.5" fill="#cf9a9a" opacity=".5"/>
-                <rect x="15" y="6" width="6" height="4" rx="1.5" fill="#b06a6a"/>
-                <rect x="15" y="14" width="6" height="4" rx="1.5" fill="#cf9a9a" opacity=".5"/>
-                <path d="M11 9 L13 9 M11 12 L13 12 M11 15 L13 15" stroke="#b06a6a" stroke-width="1.3" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="concept-titles">
-              <div class="concept-eyebrow">競合 · Competition</div>
-              <div class="concept-title">Host Competition</div>
-            </div>
-          </div>
-          <div class="concept-body">μ+λ greedy 置換。毎世代下位 25% を排除、子が親より悪ければ <strong>rollback</strong>。アウトブレイクは**単調改善**し、最良宿主を確実に保持。</div>
-        </div>
-
-        <div class="concept-card c-spill">
-          <div class="concept-header">
-            <div class="concept-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="7" cy="14" r="2.5" fill="#b3923f"/>
-                <circle cx="17" cy="10" r="2" fill="#dcc77e"/>
-                <circle cx="15" cy="6" r="1.6" fill="#dcc77e"/>
-                <circle cx="20" cy="14" r="1.6" fill="#dcc77e"/>
-                <path d="M7 14 Q 12 6 17 10" stroke="#b3923f" stroke-width="1.4" fill="none" stroke-dasharray="2 1.5"/>
-                <path d="M17 10 L15 6 M17 10 L20 14" stroke="#b3923f" stroke-width="1" fill="none" opacity=".6"/>
-              </svg>
-            </div>
-            <div class="concept-titles">
-              <div class="concept-eyebrow">飛び火 · Spillover</div>
-              <div class="concept-title">Spillover Event</div>
-            </div>
-          </div>
-          <div class="concept-body">既存系統の停滞時に <b>情報化リスタート</b>。改善なし評価 ≥ 300 ＋ \(f_\text{best}>10^{-8}\) で発動。盲目 Uniform でなく、生存系統の<b>リザーバ再着火</b>＋放棄 basin を斥力で避ける<b>集団免疫</b>で探索結果を再利用（IPOP 盲目 restart との差別化点）。**ill-conditioned の整列失敗を救済**。連続失敗 2 回で <b>basin switch</b>（best 破棄＋\(\sigma_\text{init}\) リセット）に escalate し、F24 双漏斗から脱出。</div>
-        </div>
-
-        <div class="concept-card c-strain">
-          <div class="concept-header">
-            <div class="concept-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="6" cy="12" r="2.6" fill="#8f7bb3"/>
-                <circle cx="13" cy="8" r="2.2" fill="#b3a3d0"/>
-                <circle cx="18" cy="15" r="2.2" fill="#b3a3d0"/>
-                <path d="M6 12 Q 10 9 13 8" stroke="#8f7bb3" stroke-width="1.3" fill="none" stroke-dasharray="2 1.5"/>
-                <path d="M13 8 Q 17 11 18 15" stroke="#8f7bb3" stroke-width="1.3" fill="none" stroke-dasharray="2 1.5"/>
-                <path d="M6 18 L6 20 M13 18 L13 20 M18 18 L18 20" stroke="#b3a3d0" stroke-width="1.1" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="concept-titles">
-              <div class="concept-eyebrow">多解 · Niching</div>
-              <div class="concept-title">Sequential Niching</div>
-            </div>
-          </div>
-          <div class="concept-body"><b>逐次 niching</b> で多大域最適解を順番に発見。1 つの basin を掘り切ったことを <strong>σ-exhaustion</strong>（σ がフロア到達＋停滞、span 相対で <em>f 値非依存・スケール不変</em>）で検知し、既発見 basin から斥力で離れて次の basin へ restart。<strong>SR を一切落とさず</strong>（掘り切る前は base と完全同一挙動）多解探索を実体化 — C02 Six-hump で PR@1e-2 = 1.00 / 全解発見率 95%。</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Flowchart: vertical timeline (integrated with mechanism) ── -->
-  <div class="h3">1世代の動作フロー × メカニズム詳細</div>
-  <p style="font-size:12.5px; color:var(--text-2); margin:-2px 0 18px; line-height:1.72;">
-    各ステップで使われるパラメータ・数式・アルゴリズム挙動を 1 か所に統合。<code>パラメータ</code> チップにマウスを乗せると意味の補足が表示される。
-  </p>
-
-  <div class="fc-timeline">
-
-    <!-- ─ Step 1: 系統共存 ─ -->
-    <div class="fc-item">
-      <div class="fc-dot c-purple">1</div>
-      <div class="fc-card fc-card-expanded">
-        <div class="fc-card-title">系統共存（ニッチエリート抽出）</div>&#x2060;
-        <span class="fc-desc">\(f\) 値の良い順に候補を走査し、既存系統から <code>niche_radius_ratio × span</code> 以上離れた個体だけを新系統として登録。最大 <code>n_elite_max</code> 個の感染系統が別々の盆地に配置され、飛沫感染チャネルの引力対象 pool として利用される。比率指定でスケール不変。</span>
-        <div class="fc-detail">
-          <div>
-            <div class="fc-pane-title">パラメータ</div>
-            <div class="fc-params">
-              <div class="fc-param-chip" title="系統間の最小距離（span に対する比率、スケール不変）"><span class="pk">niche_radius_ratio</span><span class="pv">= 0.1</span></div>
-              <div class="fc-param-chip" title="保護する系統の最大数"><span class="pk">n_elite_max</span><span class="pv">= 6</span></div>
-            </div>
-          </div>
-          <div class="fc-mechanism">
-            <div class="fc-pane-title">アルゴリズム</div>
-<pre class="algo-pseudo"><span class="cm"># 候補を f 昇順に走査し、空間的に離れたものだけ採用</span>
-<span class="kw">sort</span> population <span class="kw">by</span> f ascending
-strains ← []
-<span class="kw">for</span> candidate <span class="kw">in</span> sorted_pop:
-  <span class="kw">if</span> min ‖candidate − s‖ &gt; niche_radius_ratio · span  <span class="kw">for all</span> s ∈ strains:
-    strains.append(candidate)
-    <span class="kw">if</span> |strains| ≥ n_elite_max: <span class="kw">break</span></pre>
-            <div class="fc-note">
-              <span class="lbl">役割</span>本ステップは死亡判定（Step 3）には関与せず、飛沫感染チャネル（Step 5b）の current-to-best 引力対象を提供する。系統選択は乱択で、特定の系統への過剰なバイアスを避ける。<br>
-              <span class="lbl">多峰対応</span>空間的に離れた複数の感染系統を保持することで、Himmelblau のような多最適解問題でも各盆地に独立した「飛沫感染源」が存在する。
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─ Step 2: 宿主競合 (μ+λ greedy kill) ─ -->
-    <div class="fc-item">
-      <div class="fc-dot c-red">2</div>
-      <div class="fc-card fc-card-expanded">
-        <div class="fc-card-title">宿主競合（μ+λ greedy kill）</div>&#x2060;
-        <span class="fc-desc">宿主集団を \(f\) 値で降順に並べ、下位 <code>kill_fraction</code>=25% の最も適応性の低い宿主を排除。最良宿主は「下位にいない」ことで自動的に生き残る。新感染が既存宿主の地位を奪うか否かは Step 6 の rollback で決定される。</span>
-        <div class="fc-detail">
-          <div>
-            <div class="fc-pane-title">パラメータ</div>
-            <div class="fc-params">
-              <div class="fc-param-chip" title="毎世代排除する宿主の割合"><span class="pk">kill_fraction</span><span class="pv">= 0.25</span></div>
-              <div class="fc-param-chip" title="接触感染 σ_i の年齢正規化分母"><span class="pk">lifespan</span><span class="pv">= 5</span></div>
-            </div>
-          </div>
-          <div class="fc-mechanism">
-            <div class="fc-pane-title">排除候補の選択</div>
-            <div class="math-display">\[ k = \lceil 0.25\cdot n_\text{pop} \rceil, \qquad \text{dead} = \mathrm{argsort}_{f}^{\downarrow}(\text{population})[\;:k] \]</div>
-            <div class="fc-note">
-              <span class="lbl">Rollback と併用</span>子が親より悪い場合は原宿主に戻す（Step 6 参照）。これにより真の (μ+λ) になり、アウトブレイクは単調改善する。ill-conditioned 関数で valley 整列に必要な「最良宿主の長期保持」を実現。<br>
-              <span class="lbl">年齢の役割</span>死亡判定には使わないが、接触感染（Step 5a）の \(\sigma_i\) スケーリング \(a_i\) の正規化分母として残存。
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─ Step 3: 停滞時 Restart ─ -->
-    <div class="fc-item">
-      <div class="fc-dot c-red">3</div>
-      <div class="fc-card fc-card-expanded">
-        <div class="fc-card-title">停滞時 Restart（情報化リスタート）</div>&#x2060;
-        <span class="fc-desc">改善なし評価が <code>restart_no_improve_threshold</code>(=300) を超え、かつ \(f_\text{best}/|f_\text{init}|>\) <code>restart_quality_rel_floor</code>(\(=10^{-8}\)) のとき global best を残して再播種。ただし<b>盲目 Uniform でなく探索結果を再利用</b>: 発動時に集団の niched elite を永続<b>リザーバ・アーカイブ</b>へ harvest し放棄 basin の重心を記憶、再播種スロットの一部 (<code>ir_archive_frac</code>) を生存系統まわりで<b>再着火</b>、残りは記憶 basin を斥力で避けた Uniform（<b>集団免疫</b>＝未踏域探索）。CMA-ES の IPOP と同役割だが、<b>探索構造を捨てない点で盲目 restart と差別化</b>。ill-conditioned (F10/F12) の整列失敗を救済。連続失敗 2 回で <b>basin switch</b>（best 破棄＋\(\sigma_\text{init}\) リセット）に escalate。</span>
-        <div class="fc-detail">
-          <div>
-            <div class="fc-pane-title">パラメータ</div>
-            <div class="fc-params">
-              <div class="fc-param-chip" title="restart 発動の no_improve 閾値"><span class="pk">restart_no_improve_threshold</span><span class="pv">= 300</span></div>
-              <div class="fc-param-chip" title="アーカイブ系統から再着火するスロット割合"><span class="pk">ir_archive_frac</span><span class="pv">= 0.5</span></div>
-              <div class="fc-param-chip" title="再着火ガウスの σ（× span）"><span class="pk">ir_reignite_sigma_ratio</span><span class="pv">= 0.05</span></div>
-              <div class="fc-param-chip" title="basin 忌避（集団免疫）の斥力球半径（× span）"><span class="pk">ir_repel_radius_ratio</span><span class="pv">= 0.1</span></div>
-              <div class="fc-param-chip" title="best_so_far / |f_init| ≤ this で restart skip（乗法スケール不変）"><span class="pk">restart_quality_rel_floor</span><span class="pv">= 1e-8</span></div>
-              <div class="fc-param-chip" title="連続失敗回数 → basin switch"><span class="pk">basin_switch_after_failed_spillovers</span><span class="pv">= 2</span></div>
-            </div>
-          </div>
-          <div class="fc-mechanism">
-            <div class="fc-pane-title">情報化リスタート (リザーバ再着火 ＋ 集団免疫忌避)</div>
-            <div class="math-display">\[ \text{trigger} = (\text{no\_improve} \geq 300) \;\wedge\; (f_\text{best}/|f_\text{init}| > 10^{-8}) \]</div>
-            <div class="math-display">\[ x_i^{\text{new}} = \begin{cases} \mathrm{reflect}\!\left(a_k + 0.05\,\text{span}\cdot\mathcal{N}(0,I)\right) & p < \texttt{ir\_archive\_frac}\ \text{(リザーバ再着火)}\\[4pt] \mathcal{U}(lo,hi)\ \text{s.t.}\ \min_c \lVert x - c\rVert > 0.1\,\text{span} & \text{otherwise (集団免疫忌避)} \end{cases} \]</div>
-            <div class="fc-note">
-              <span class="lbl">リザーバ再着火</span>\(a_k\) は永続アーカイブ（spillover 毎に集団の niched elite を harvest, 最大 <code>n_elite_max</code>=6, ニッチ分離）からの生存系統。局所流行が燃え尽きても残るリザーバ宿主から再燃する。<br>
-              <span class="lbl">集団免疫忌避</span>\(c\) は記憶した放棄 basin の重心。感染済み=枯渇領域を避け susceptible（未踏）領域へ広がる。最大 <code>ir_repel_max_tries</code>=20 回 rejection、超えたら plain Uniform。盲目 IPOP restart との本質的差別化点。<br>
-              <span class="lbl">Quality gate</span>初期 best から 8 桁以上削減できた run は precision 領域とみなし restart を抑制（F01-Sphere で 0 到達）。floor は \(|f_\text{init}|\) 比で乗法スケール不変（shift 非対応, 既知の限界）。<br>
-              <span class="lbl">Basin switch</span>連続失敗 \(\geq\) 2 回かつ \(f_\text{best}/|f_\text{init}|>10^{-2}\) で best 破棄＋全 pop 再生成＋σ を σ_init にリセット。F24 双漏斗から脱出。
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─ Step 4: 感染確率の計算 ─ -->
-    <div class="fc-item">
-      <div class="fc-dot c-blue">4</div>
-      <div class="fc-card fc-card-expanded">
-        <div class="fc-card-title">感染確率の計算（softmax 親選択）</div>&#x2060;
-        <span class="fc-desc">集団個体の \(f\) 値を softmax で重みに変換し、各空きスロットの親を確率的に抽選。\(f\) が低い個体ほど高確率で親になるが、悪い個体もわずかに選ばれることで探索性を保つ。</span>
-        <div class="fc-detail">
-          <div>
-            <div class="fc-pane-title">パラメータ</div>
-            <div class="fc-params">
-              <div class="fc-param-chip" title="softmax のシャープネス。大→均一、小→貪欲"><span class="pk">temperature</span><span class="pv">= 1.0</span></div>
-            </div>
-          </div>
-          <div class="fc-mechanism">
-            <div class="fc-pane-title">親選択の確率分布</div>
-            <div class="math-display">\[ w_i = \frac{e^{(f_{\max} - f_i)\,/\,T}}{\displaystyle\sum_{j \in \mathrm{active}} e^{(f_{\max} - f_j)\,/\,T}}, \qquad \sum_i w_i = 1 \]</div>
-            <div class="fc-note">
-              \(T\uparrow\) で確率が均一化（探索性↑）、\(T\downarrow\) で最良個体に集中（貪欲性↑）。基準 \(f_{\max}\) を引くことで softmax の数値安定性を確保。集団サイズは予算の消費に合わせて <code>max(20, 16·dim)</code> から <code>max(10, 4·dim)</code> まで縮める（<code>pop_schedule="linear"</code>、2026-10-08 から既定。2D で 32 → 10）。旧既定（〜2026-10-07）は <code>n_pop = max(20, 4·dim)</code> 固定。
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─ Step 5: 子の 3 チャネル生成 ─ -->
-    <div class="fc-fork">
-      <div class="fc-dot c-orange">5</div>
-      <div class="fc-fork-label">空きスロット数だけ子を 3 チャネル並列で生成 — 接触感染 / 飛沫感染 / 空気感染</div>
-      <div class="fc-fork-pair">
-
-        <!-- 5a 接触感染 -->
-        <div class="fc-fork-card fc-card-expanded">
-          <div class="fc-fork-num">5a — 接触感染（残り）</div>
-          <div class="fc-card-title">Close-contact: 経験共分散付きガウス伝染</div>&#x2060;
-          <span class="fc-desc">親密接触による局所伝染。親近傍に \(\mathcal{N}(0,\sigma_i^2\, C_\text{pop})\) で子を生成。\(C_\text{pop}\) は当世代の集団経験共分散で、回転・異方性に追従。<code>log_quality</code> と年齢比でべき乗スケール、適応性の低い宿主は広く、適応性が高く高齢な宿主は精密に。</span>
-          <div class="fc-detail">
-            <div class="fc-fork-inner">
-              <div>
-                <div class="fc-pane-title">パラメータ</div>
-                <div class="fc-params">
-                  <div class="fc-param-chip" title="per-host σ_i スケーリングの下限（高品質・高齢の宿主は σ×0.05 まで縮小）"><span class="pk">host_sigma_min_scale</span><span class="pv">= 0.05</span></div>
-                  <div class="fc-param-chip" title="異方性 floor の高い側（rugged/多峰で安全、固有値比を約 14:1 にクランプ）"><span class="pk">empirical_cov_floor</span><span class="pv">= 0.01</span></div>
-                  <div class="fc-param-chip" title="異方性 floor の低い側（悪条件の谷で異方性比 ~1000:1 まで許容）"><span class="pk">cov_floor_low</span><span class="pv">= 1e-3</span></div>
-                  <div class="fc-param-chip" title="適応 floor の切替閾値（集団共分散の素の固有値比で log 補間）"><span class="pk">cov_ratio_lo / hi</span><span class="pv">= 1e3 / 3e4</span></div>
-                </div>
-              </div>
-              <div class="fc-mechanism">
-                <div class="fc-pane-title">宿主ごとの拡散範囲 \(\sigma_i\) と経験共分散 \(C_\text{pop}\)</div>
-                <div class="math-display">\[ \sigma_i = \sigma_\text{global} \cdot \rho^{\,q_i\,(0.7 + 0.3\,a_i)} \]</div>
-                <div class="math-display">\[ C_\text{pop} = \frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar x)(x_i - \bar x)^\top \]</div>
-                <div class="math-display">\[ x_\text{child} = \mathrm{reflect}\!\big(x_\text{parent} + \sigma_i \cdot V \sqrt{\Lambda}\, z\big),\quad z \sim \mathcal{N}(0, I) \]</div>
-                <div class="fc-note">
-                  <span class="lbl">瞬間共分散</span>\(V \Lambda V^\top = C_\text{pop}\) を固有分解、\(\Lambda\) の平均固有値を 1 に正規化することで総ステップ幅を保存。CMA-ES のランク-μ 学習と異なり履歴累積なし、basin 切替への即応性で差別化。<br>
-                  <span class="lbl">適応異方性 floor</span>等方ガウス（\(N(0, \sigma^2 I)\)）では ill-cond 楕円体に揃わず精度が頭打ち。\(C_\text{pop}\) で valley 方向を瞬時に捕捉し、floor を<b>集団共分散の素の固有値比で自動調整</b>（悪条件の谷 ≈1e5–1e7 では緩め、rugged/多峰 ≈3–600 では締める）。F02 / F06 / F08 / F10 を SR@1e-10 = 100% に。<br>
-                  <span class="lbl">log_quality</span>\(q_i\) は履歴ベストにアンカー（0 ＝ 最悪, 1 ＝ 最良）。局所収束時でも \(q_i \approx 0\) となり広域伝染が継続。
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 5b 飛沫感染 -->
-        <div class="fc-fork-card fc-card-expanded">
-          <div class="fc-fork-num">5b — 飛沫感染（割合 h2h_ratio）</div>
-          <div class="fc-card-title">Droplet: 系統 ＋ 差分</div>&#x2060;
-          <span class="fc-desc">親 + F·(系統 − 親) + F·(x_a − x_b)。差分ベクトルが集団形状を反映し、明示的共分散学習なしに valley 方向を捕捉。系統への引力で進行加速。悪条件 (droplet) ルートでは第 2 差分 F·(x_c − x_d) を追加し停滞 run を救出。</span>
-          <div class="fc-detail">
-            <div class="fc-fork-inner">
-              <div>
-                <div class="fc-pane-title">パラメータ</div>
-                <div class="fc-params">
-                  <div class="fc-param-chip" title="子のうち飛沫感染で生成する割合"><span class="pk">h2h_ratio</span><span class="pv">= 0.4</span></div>
-                  <div class="fc-param-chip" title="差分ベクトルのスケール係数"><span class="pk">h2h_F</span><span class="pv">= 0.5</span></div>
-                </div>
-              </div>
-              <div class="fc-mechanism">
-                <div class="fc-pane-title">系統引力 ＋ 集団差分</div>
-                <div class="math-display">\[ x_\text{child} = \mathrm{reflect}\!\big(x_\text{parent} + F\cdot(x_\text{strain} - x_\text{parent}) + F\cdot(x_a - x_b) \;\underbrace{+\, F\cdot(x_c - x_d)}_{\text{droplet route only}}\big) \]</div>
-                <div class="fc-note">
-                  <span class="lbl">暗黙的異方性</span>\(x_a - x_b\) の大きさ・方向は集団形状を反映 → 谷沿いに伸びた集団からは谷沿いの差分が出る。<br>
-                  <span class="lbl">F08-F12 で核心</span>等方ガウスでは越えられない曲がった谷・ill-conditioned 楕円体を、暗黙的共分散経由で攻略可能に。<br>
-                  <span class="lbl">route-gated 第 2 差分</span>ルーターが <em>droplet</em> を確定した run のみ \(+F(x_c-x_d)\)（current-to-best/<strong>2</strong>）を追加。ドナー多様性が増し、誤盆地で停滞した run を救出（F13/F14 を 55→100% / 75→100%、高次元 dim3 では F02/F10/F11/F12/F13/F14 全体で有意改善 +12.9pt）。他ルートでは追加せず base と bit-identical で多峰探索を無傷に保つ。
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 5c 空気感染 -->
-        <div class="fc-fork-card fc-card-expanded">
-          <div class="fc-fork-num">5c — 空気感染（割合 air_ratio、drilling 中は停止）</div>
-          <div class="fc-card-title">Airborne: 広域エアロゾル拡散</div>&#x2060;
-          <span class="fc-desc">ランダムな宿主位置に大きなノイズで遠方へ跳躍。集団が収束しているときほど \(\sigma_\text{air}\) を拡大し、停滞を防ぐ。<b>drilling mode</b>（\(\sigma < \text{span}\times 10^{-3}\)）に入ったら一時停止し、子は接触感染・飛沫感染にリダイレクト。</span>
-          <div class="fc-detail">
-            <div class="fc-fork-inner">
-              <div>
-                <div class="fc-pane-title">パラメータ</div>
-                <div class="fc-params">
-                  <div class="fc-param-chip" title="子のうち空気感染で生成する割合（drilling 中は 0）"><span class="pk">air_ratio</span><span class="pv">= 0.3</span></div>
-                  <div class="fc-param-chip" title="σ_air 倍率の振幅 (factor = 1.5 + amp × (1 - diversity))"><span class="pk">air_sigma_amplifier</span><span class="pv">= 3.5</span></div>
-                </div>
-              </div>
-              <div class="fc-mechanism">
-                <div class="fc-pane-title">エアロゾル拡散範囲（drilling 外）</div>
-                <div class="math-display">\[ \mathrm{air\_ratio\_eff} = \begin{cases} 0 & \text{if } \sigma < \text{span}\cdot 10^{-3}\;(\text{drilling}) \\ \mathrm{air\_ratio} & \text{otherwise} \end{cases} \]</div>
-                <div class="math-display">\[ \sigma_\text{air} = \max(\sigma_\text{global},\; 0.3\,\sigma_\text{init}) \cdot [\sigma_\text{air}^{\max} - (\sigma_\text{air}^{\max} - \sigma_\text{air}^{\min}) d] \]</div>
-                <div class="fc-note">
-                  <span class="lbl">フロア</span>\(\sigma_\text{global}\) が小さくなりすぎても \(0.3\,\sigma_\text{init}\) で底打ち → 終盤も最低限のジャンプ幅を確保。<br>
-                  <span class="lbl">drilling 中の停止</span>正しい basin に入った後の精密化フェーズで広域ランダムノイズは害悪 — F06 SR_1e-10 を 93% → 100% に押し上げる主因。
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ─ Step 6: 宿主競合 rollback ─ -->
-    <div class="fc-item">
-      <div class="fc-dot c-red">6</div>
-      <div class="fc-card fc-card-expanded">
-        <div class="fc-card-title">宿主競合 Rollback（新感染が宿主を奪えない場合）</div>&#x2060;
-        <span class="fc-desc">各 dead スロットについて、子の \(f\) 値が「もともとそのスロットにいた親 (元宿主) の \(f\) 値」より悪ければ元宿主を復元。新感染が既存宿主を駆逐できなければ宿主は維持される。これにより真の (μ+λ)-ES と等価になり、アウトブレイクは世代を通じて単調改善する。</span>
-        <div class="fc-detail fc-detail-1col">
-          <div class="fc-mechanism">
-            <div class="fc-pane-title">Rollback rule</div>
-            <div class="math-display">\[ \text{slot}_k = \begin{cases} \text{child}_k & \text{if } f(\text{child}_k) < f(\text{original}_k) \\ \text{original}_k & \text{otherwise} \end{cases} \]</div>
-            <div class="fc-note">
-              <span class="lbl">SaVOA との対応</span>SaVOA は「親＋子を合流して上位 n を選択」する真の (μ+λ)。MC-ESO の rollback は等価な機能をスロット式実装に適合させたもの。<br>
-              <span class="lbl">F10/F12 で必須</span>ill-conditioned 関数では「最良宿主の長期保持」が valley 方向の整列に必須。Rollback なしでは F10/F12 の SR が 80% から 0% へ激落する。
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─ Step 7: σ 適応 (always-on + drilling mode) ─ -->
-    <div class="fc-item">
-      <div class="fc-dot c-red">7</div>
-      <div class="fc-card fc-card-expanded">
-        <div class="fc-card-title">\(\sigma\) 適応（always-on + drilling mode）</div>&#x2060;
-        <span class="fc-desc">SaVOA 流の乗法適応を毎世代適用。改善時は \(\sigma\) を拡大して新しい谷を探り、非改善時は縮小して局所探索を強化。\(\sigma\) が span × \(10^{-3}\) を下回ったら drilling mode に入り、より積極的な縮小率（0.85）で浮動小数限界へ追込む。σ ベースの drilling 判定は問題スケール不変。</span>
-        <div class="fc-detail">
-          <div>
-            <div class="fc-pane-title">パラメータ</div>
-            <div class="fc-params">
-              <div class="fc-param-chip" title="σ adapt 改善時の乗数"><span class="pk">sigma_up</span><span class="pv">= 1.1</span></div>
-              <div class="fc-param-chip" title="σ adapt 非改善時の乗数"><span class="pk">sigma_down</span><span class="pv">= 0.95</span></div>
-              <div class="fc-param-chip" title="drilling mode 中の縮小乗数"><span class="pk">sigma_drill_down</span><span class="pv">= 0.85</span></div>
-              <div class="fc-param-chip" title="drilling mode 発動の σ 閾値（σ &lt; span × this で発動）"><span class="pk">precision_sigma_ratio</span><span class="pv">= 1e-3</span></div>
-              <div class="fc-param-chip" title="σ_global の絶対下限（× span）"><span class="pk">sigma_floor_ratio</span><span class="pv">= 1e-6</span></div>
-            </div>
-          </div>
-          <div class="fc-mechanism">
-            <div class="fc-pane-title">更新則</div>
-            <div class="math-display">\[ \sigma^{(t+1)} = \begin{cases} \sigma^{(t)} \cdot \texttt{sigma\_up} & \text{if } f_\text{best}^{(t+1)} < f_\text{best}^{(t)} \\ \sigma^{(t)} \cdot \texttt{sigma\_drill\_down} & \text{elif } \sigma^{(t)} < \text{span}\cdot 10^{-3}\;(\text{drilling}) \\ \sigma^{(t)} \cdot \texttt{sigma\_down} & \text{otherwise} \end{cases} \]</div>
-            <div class="math-display">\[ \sigma^{(t+1)} \leftarrow \mathrm{clip}\!\left(\sigma^{(t+1)},\; \text{span}\cdot 10^{-6},\; \text{span}\right) \]</div>
-            <div class="fc-note">
-              <span class="lbl">改善時の拡大</span>1.1 倍で局所谷から脱出を試みる（SaVOA 流）。<br>
-              <span class="lbl">通常の非改善</span>0.95 倍でゆるやかに収束。drilling 域到達まで airborne が広域探索を担う。<br>
-              <span class="lbl">drilling 中の強縮小</span>0.85 倍で浮動小数限界へ追込み。同時に airborne は停止し（Step 5c）、ノイズで精度劣化しない。<br>
-              <span class="lbl">スケール不変性</span>drilling 判定が σ ベース（× span）なので、shift/scale されたベンチマークでも追加調整不要。\(\sigma_\text{global}\) は局所感染の \(\sigma_i\) と空気感染の \(\sigma_\text{air}\) の両方の基準スケール。
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─ Step 8: 逐次 niching（多解探索） ─ -->
-    <div class="fc-item">
-      <div class="fc-dot c-purple">8</div>
-      <div class="fc-card fc-card-expanded">
-        <div class="fc-card-title">逐次 niching（多解探索, σ-exhaustion 検知）</div>&#x2060;
-        <span class="fc-desc">多大域最適解を持つ関数で、1 つの basin を掘り切ったら次の basin へ移って順番に発見する。鍵は <b>SR を一切犠牲にしない 2 レジーム化</b>: basin を掘り切るまでは base と完全に同一挙動（掘りかけの best を絶対に壊さない）、掘り切った後に<b>初めて</b>多解探索（精度ゲート解除＋斥力 reseed）を起動する。「掘り切った」の検知は <code>σ</code> がフロアに到達＋停滞で、<b>探索域 span 相対・f 値非依存（スケール／シフト不変）</b>。</span>
-        <div class="fc-detail">
-          <div>
-            <div class="fc-pane-title">パラメータ</div>
-            <div class="fc-params">
-              <div class="fc-param-chip" title="σ-exhaustion 判定の σ フロア許容（× span × sigma_floor_ratio）"><span class="pk">exhausted_sigma_tol</span><span class="pv">= 1.5</span></div>
-              <div class="fc-param-chip" title="フロア到達後の停滞許容（× restart_no_improve_threshold）。巨大値で niching 無効化＝純粋単一 basin"><span class="pk">exhausted_no_improve_mult</span><span class="pv">= 3</span></div>
-            </div>
-          </div>
-          <div class="fc-mechanism">
-            <div class="fc-pane-title">basin 掘り切り検知（スケール・f 値非依存）</div>
-            <div class="math-display">\[ \text{exhausted} = \big(\sigma \le \texttt{exhausted\_sigma\_tol}\cdot\text{span}\cdot\texttt{sigma\_floor\_ratio}\big) \;\wedge\; \big(\text{no\_improve} \ge \texttt{mult}\cdot 300\big) \]</div>
-            <div class="fc-note">
-              <span class="lbl">SR 死守</span>掘り切る前は <code>_spillover_*</code> / <code>_diversified_reseed</code> をすべて base に委譲＝挙動不変。掘り切った basin はアルゴリズムの分解能限界で、base が続けても同じ深さで詰まるため離脱しても SR を失わない。<br>
-              <span class="lbl">多解の実体化</span>C01 Himmelblau PR@1e-2 = 0.59、C02 Six-hump PR = 1.00 / MMOsr = 95%、C03 Shubert PR = 0.16（深精度勢で最高）。いずれも SR@1e-10 = 100% を維持。<br>
-              <span class="lbl">設計の根拠</span>1 集団で複数 basin を同時に深精度化すると SR@1e-10 が崩壊するため、crowding でなく BIPOP 流の逐次方式（掘る→記憶→斥力 restart）を採用。
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /fc-timeline -->
-
-
-  <!-- ── ベースライン ───────────────────────────────────────────────────── -->
-  <h2 class="sec-heading reveal" id="baselines">
-    <span class="sec-num">02</span>ベースライン手法
-  </h2>
-  <p class="sec-sub reveal">MC-ESO と比較する 9 つの既存アルゴリズム。標準的な進化戦略・群知能・差分進化に加え、近代的な restart 付き CMA-ES（IPOP / BIPOP）と適応 DE（L-SHADE）を外部ライブラリ経由で、さらに低次元での下限基準となる multistart 局所探索（NM-Restart）と多解探索の専門手法（NCDE）も同条件で評価する。</p>
-
-  <div class="method-cards reveal">
-
-    <!-- CMA-ES -->
-    <div class="method-card mc-cmaes">
-      <div class="method-card-inner">
-        <div class="method-card-name">CMA-ES</div>
-        <div class="method-card-type">進化戦略</div>
-        <div class="method-diagram mini-diagram" style="height:88px; display:flex; align-items:center; justify-content:center;">
-          <svg viewBox="0 0 160 88" width="160" height="88">
-            <ellipse cx="80" cy="44" rx="30" ry="30" fill="none" stroke="rgba(66,99,235,.3)" stroke-width="1.5" stroke-dasharray="3,2"/>
-            <text x="80" y="12" text-anchor="middle" font-size="8" fill="#8892b0">初期（円形）</text>
-            <ellipse cx="80" cy="44" rx="58" ry="16" fill="none" stroke="var(--accent)" stroke-width="1.5" transform="rotate(-30 80 44)"/>
-            <text x="118" y="69" font-size="8" fill="var(--accent)">適応後（楕円）</text>
-            <circle cx="80" cy="44" r="3" fill="var(--accent)"/>
-            <defs><marker id="a1" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L5,2.5z" fill="var(--accent)"/></marker></defs>
-            <path d="M 55 30 Q 65 20 72 32" stroke="var(--accent)" stroke-width="1" fill="none" marker-end="url(#a1)"/>
-          </svg>
-        </div>
-        <p>探索分布の形（共分散行列）を世代ごとに適応学習。関数の等高線に合わせた楕円形探索が可能。単峰・滑らかな問題に強いが、多峰では局所解に陥りやすい。収束後は最良点から再スタートする再起動戦略も実装。</p>
-      </div>
-    </div>
-
-    <!-- PSO -->
-    <div class="method-card mc-pso">
-      <div class="method-card-inner">
-        <div class="method-card-name">PSO</div>
-        <div class="method-card-type">群知能 — 粒子群最適化</div>
-        <div class="method-diagram mini-diagram" style="height:88px; display:flex; align-items:center; justify-content:center;">
-          <svg viewBox="0 0 160 88" width="160" height="88">
-            <defs><marker id="a2" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L5,2.5z" fill="var(--accent)"/></marker></defs>
-            <text x="120" y="24" font-size="13" fill="#cdab63" text-anchor="middle">★</text>
-            <text x="120" y="34" font-size="7" fill="#8892b0" text-anchor="middle">gbest</text>
-            <circle cx="30" cy="65" r="5" fill="var(--accent-muted)"/>
-            <path d="M30 65 L60 42" stroke="var(--accent)" stroke-width="1.2" fill="none" marker-end="url(#a2)"/>
-            <circle cx="50" cy="70" r="5" fill="var(--accent-muted)"/>
-            <path d="M50 70 L80 50" stroke="var(--accent)" stroke-width="1.2" fill="none" marker-end="url(#a2)"/>
-            <circle cx="20" cy="45" r="5" fill="var(--accent-muted)"/>
-            <path d="M20 45 L65 30" stroke="var(--accent)" stroke-width="1.2" fill="none" marker-end="url(#a2)"/>
-            <text x="80" y="86" font-size="7" fill="#8892b0" text-anchor="middle">速度ベクトルが gbest へ引き寄せられる</text>
-          </svg>
-        </div>
-        <p>各粒子が「自身のこれまでの最良点 \(p_\text{best}\)」と「群全体の最良点 \(g_\text{best}\)」に引き寄せられながら速度を更新。実装が単純でパラメータ設定も少ない。</p>
-      </div>
-    </div>
-
-    <!-- DE -->
-    <div class="method-card mc-de">
-      <div class="method-card-inner">
-        <div class="method-card-name">DE</div>
-        <div class="method-card-type">進化的アルゴリズム — 差分進化</div>
-        <div class="method-diagram mini-diagram" style="height:88px; display:flex; align-items:center; justify-content:center;">
-          <svg viewBox="0 0 160 88" width="160" height="88">
-            <defs><marker id="a-de" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L5,2.5z" fill="var(--accent)"/></marker></defs>
-            <circle cx="25" cy="60" r="4" fill="var(--accent)"/>
-            <text x="25" y="74" font-size="7" fill="#8892b0" text-anchor="middle">x_a</text>
-            <circle cx="55" cy="35" r="4" fill="var(--accent)"/>
-            <text x="55" y="28" font-size="7" fill="#8892b0" text-anchor="middle">x_b</text>
-            <circle cx="80" cy="70" r="4" fill="var(--accent)"/>
-            <text x="80" y="83" font-size="7" fill="#8892b0" text-anchor="middle">x_c (donor)</text>
-            <path d="M25 60 L55 35" stroke="var(--accent)" stroke-width="1.1" fill="none" stroke-dasharray="2 2"/>
-            <path d="M80 70 L120 35" stroke="var(--accent)" stroke-width="1.4" fill="none" marker-end="url(#a-de)"/>
-            <text x="106" y="50" font-size="7" fill="var(--accent)" text-anchor="middle">+F·(x_b−x_a)</text>
-            <circle cx="120" cy="35" r="5" fill="#8f7bb3"/>
-            <text x="120" y="22" font-size="7" fill="#8f7bb3" text-anchor="middle">trial</text>
-            <text x="80" y="6" font-size="7" fill="#8892b0" text-anchor="middle">差分変異 → 二項交叉 → greedy 1:1 置換</text>
-          </svg>
-        </div>
-        <p>DE/rand/1/bin (Storn &amp; Price 1997)。target ごとに 3 つの donor から `v = x_a + F·(x_b − x_c)` を作り、二項交叉率 \(CR=0.9\) で trial を構成、`f(u) ≤ f(target)` のみ置換。MC-ESO の飛沫感染チャネルが借用する差分変異の本家であり、<strong>「単一機構の差分変異がどこまで到達するか」のベースライン</strong>として直接対比する。</p>
-      </div>
-    </div>
-
-    <!-- SaVOA -->
-    <div class="method-card mc-savoa">
-      <div class="method-card-inner">
-        <div class="method-card-name">SaVOA</div>
-        <div class="method-card-type">群知能 — 自己適応ウイルス最適化</div>
-        <div class="method-diagram mini-diagram" style="height:88px; display:flex; align-items:center; justify-content:center; padding:8px 12px;">
-          <div style="width:100%;">
-            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
-              <div style="flex:1; background:rgba(66,99,235,.2); border:1px solid var(--accent); border-radius:3px; padding:4px 6px; font-size:9px; color:var(--accent); text-align:center; font-weight:600;">強力個体<br><span style="font-size:8px;color:var(--muted);">Gauss 局所探索</span></div>
-              <div style="font-size:10px; color:var(--muted);">+</div>
-              <div style="flex:1; background:rgba(116,143,252,.1); border:1px solid var(--border); border-radius:3px; padding:4px 6px; font-size:9px; color:var(--muted); text-align:center;">普通個体<br><span style="font-size:8px;">向き変異 or ランダム</span></div>
-            </div>
-            <div style="font-size:9px; color:var(--muted); text-align:center; line-height:1.5;">
-              \(\sigma\) を乗法的に自己適応<br>改善 → \(\times 1.2\)（上限 \(0.5\,\sigma_\text{span}\)）/ 停滞 → \(\times 0.9\)（下限 \(10^{-8}\)）
-            </div>
-          </div>
-        </div>
-        <p>ウイルス模倣アルゴリズム（Liang &amp; Juarez 2020 準拠）。個体を上位 20%「強力」と残り「普通」に二分して役割を割り当てる。MC-ESO と同じ生物模倣着想だが、単一の再生メカニズム（強力の局所探索 ＋ 普通の中間補間）のみで、3 チャネル並列化・系統共存・スピルオーバーは持たない。個体数は固定 30。SR@1e-10 平均 67.9%。</p>
-      </div>
-    </div>
-
-    <!-- IPOP-CMA-ES -->
-    <div class="method-card mc-ipop">
-      <div class="method-card-inner">
-        <div class="method-card-name">IPOP-CMA-ES</div>
-        <div class="method-card-type">進化戦略 ＋ 集団倍化 restart</div>
-        <p>CMA-ES に <strong>IPOP restart</strong>（Auger &amp; Hansen 2005）を加えた近代手法。収束を検出するごとに集団サイズ \(\lambda\) を倍化して再起動し、多峰・大域構造の弱い問題への頑健性を高める。pycma 実装をラップ。多解（Himmelblau）では盲目 restart が複数 basin を拾い PR が高い一方、SR@1e-10 平均は 76.6% と MC-ESO に及ばない。</p>
-      </div>
-    </div>
-
-    <!-- BIPOP-CMA-ES -->
-    <div class="method-card mc-bipop">
-      <div class="method-card-inner">
-        <div class="method-card-name">BIPOP-CMA-ES</div>
-        <div class="method-card-type">進化戦略 ＋ 2 regime restart</div>
-        <p>大規模・小規模 2 つの \(\lambda\) regime を予算が釣り合うよう交互に再起動する CMA-ES 変種（Hansen 2009）。pycma 実装をラップ。盲目 restart で多解を拾う構造のため Himmelblau の PR は全手法中最高（0.76）だが、深精度の SR@1e-10 平均は 73.1% に留まる。</p>
-      </div>
-    </div>
-
-    <!-- L-SHADE -->
-    <div class="method-card mc-lshade">
-      <div class="method-card-inner">
-        <div class="method-card-name">L-SHADE</div>
-        <div class="method-card-type">適応的差分進化</div>
-        <p>SHADE に線形集団縮小（Linear population size reduction）を加えた適応 DE（Tanabe &amp; Fukunaga 2014、CEC2014 優勝）。成功履歴から \(F\) / \(CR\) を自己適応する。mealpy 実装をラップ、初期集団 \(N_\text{init}=18d\)。SR@1e-4 は 86.4% と高いが、最高精度 SR@1e-10 平均は 73.3%（深精度への詰めで MC-ESO に劣る）。</p>
-      </div>
-    </div>
-
-    <!-- NM-Restart -->
-    <div class="method-card mc-nm">
-      <div class="method-card-inner">
-        <div class="method-card-name">NM-Restart</div>
-        <div class="method-card-type">multistart 局所探索 — 下限ベースライン</div>
-        <p>restart 付き Nelder-Mead simplex（1965）。ランダム初期点から scipy の bounded Nelder-Mead を tight な収束条件（xatol=1e-12 / fatol=1e-14）まで走らせ、予算まで再スタートを繰り返す。restart 間の情報引き継ぎは一切なし。低次元 BBOB では multistart 局所探索が極めて強いため、<strong>「凝った手法は本当に必要か」に答える基準線</strong>として置く。</p>
-      </div>
-    </div>
-
-    <!-- NCDE -->
-    <div class="method-card mc-ncde">
-      <div class="method-card-inner">
-        <div class="method-card-name">NCDE</div>
-        <div class="method-card-type">niching DE — 多解探索の専門手法</div>
-        <p>Neighborhood-based Crowding DE（Qu+ 2012）。DE と同一の trial 生成に対し、donor を最近傍 \(m=6\) 個体に限定（近傍変異）し、trial を親でなく<strong>最近傍個体</strong>と競わせる（crowding 置換）。部分集団が別 basin に共存する真の niching 手法で、<strong>多解指標（PR / MMOsr）で MC-ESO の逐次 niching と直接比較</strong>する専門ベースライン。\(n=30, F=0.5, CR=0.9\) は DE と同一。</p>
-      </div>
-    </div>
-
-  </div><!-- /method-cards -->
-
-
-  <!-- ── MC-ESO と既存手法の比較 ─────────────────────────────────────────── -->
-  <h2 class="sec-heading reveal" id="differences">
-    <span class="sec-num">03</span>MC-ESO と既存手法の比較
-  </h2>
-  <p class="sec-sub reveal">MC-ESO は <strong>多経路感染モデル</strong>という新概念により、全 35 関数 (dim=2) の最高精度 <strong>SR@1e-10 平均 89.9%</strong> で比較 8 手法中の最高値を達成。最大の競合である DE (85.7%) も上回り、CMA-ES / PSO / SaVOA を大きく引き離す。以下では (1) 性能スコア、(2) 統計的優位性、(3) 設計上の違いを整理する。</p>
-
-  <div class="concept-section reveal">
-    <div class="concept-section-label">性能スコア — 全 35 関数 SR@1e-10 平均（主指標, dim=2, n=20 × 5000 evals）</div>
-    <div class="cmp-board">
-      <div class="cmp-board-row row-mceso proposed">
-        <div class="cmp-name">MC-ESO <span class="proposed-badge">提案</span></div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:89.9%;"></div></div>
-        <div class="cmp-score-val">89.9%</div>
-      </div>
-      <div class="cmp-board-row row-de">
-        <div class="cmp-name">DE</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:85.7%;"></div></div>
-        <div class="cmp-score-val">85.7%</div>
-      </div>
-      <div class="cmp-board-row row-ipop">
-        <div class="cmp-name">IPOP-CMA-ES</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:76.6%;"></div></div>
-        <div class="cmp-score-val">76.6%</div>
-      </div>
-      <div class="cmp-board-row row-lshade">
-        <div class="cmp-name">L-SHADE</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:73.3%;"></div></div>
-        <div class="cmp-score-val">73.3%</div>
-      </div>
-      <div class="cmp-board-row row-bipop">
-        <div class="cmp-name">BIPOP-CMA-ES</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:73.1%;"></div></div>
-        <div class="cmp-score-val">73.1%</div>
-      </div>
-      <div class="cmp-board-row row-savoa">
-        <div class="cmp-name">SaVOA</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:67.9%;"></div></div>
-        <div class="cmp-score-val">67.9%</div>
-      </div>
-      <div class="cmp-board-row row-cmaes">
-        <div class="cmp-name">CMA-ES</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:60.0%;"></div></div>
-        <div class="cmp-score-val">60.0%</div>
-      </div>
-      <div class="cmp-board-row row-pso">
-        <div class="cmp-name">PSO</div>
-        <div class="cmp-bar"><div class="cmp-bar-fill" style="width:57.0%;"></div></div>
-        <div class="cmp-score-val">57.0%</div>
-      </div>
-    </div>
-    <p style="font-size:11.5px; color:var(--text-2); line-height:1.6; margin:10px 2px 0;">補助指標: SR@1e-4 でも MC-ESO 92.1% が最高（DE 88.9% / L-SHADE 86.4%）。成功 run の評価回数中央値は MC-ESO 552 で、集団系手法（DE 1223 / L-SHADE 1744 / PSO 1568）より高速。CMA-ES 系（382〜408）はより速いが SR は大きく劣る。</p>
-  </div>
-
-  <div class="concept-section reveal">
-    <div class="concept-section-label">統計的優位性 — Wilcoxon 符号順位検定（MC-ESO 基準, α=0.05, 全 35 関数）</div>
-    <div class="cmp-aspects">
-      <div class="cmp-aspect">
-        <div class="cmp-aspect-head">関数別の有意な 勝ち / 負け（MC-ESO 視点）</div>
-        <div class="cmp-aspect-body">
-          <div class="cmp-row"><span class="cmp-tag" style="color:var(--text-2);border-color:var(--border)">PSO</span><span class="cmp-row-text">28 勝 0 敗 — 全面的に優位</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">20 勝 1 敗</span></div>
-          <div class="cmp-row"><span class="cmp-tag" style="color:var(--ch-airborne);border-color:rgba(95,158,160,.30)">BIPOP</span><span class="cmp-row-text">16 勝 1 敗</span></div>
-          <div class="cmp-row"><span class="cmp-tag" style="color:var(--ch-contact);border-color:rgba(79,124,172,.30)">IPOP</span><span class="cmp-row-text">13 勝 1 敗</span></div>
-          <div class="cmp-row"><span class="cmp-tag" style="color:var(--success);border-color:rgba(47,158,68,.30)">L-SHADE</span><span class="cmp-row-text">13 勝 4 敗</span></div>
-          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">11 勝 4 敗</span></div>
-          <div class="cmp-row"><span class="cmp-tag" style="color:var(--success);border-color:rgba(47,158,68,.30)">DE</span><span class="cmp-row-text">3 勝 4 敗 — 最大の競合。overall SR@1e-10 は MC-ESO が上回るが、関数別ペア比較では DE が優位な関数がやや多い（separable 多峰系）。両者の使い分けが今後の論点</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="concept-section reveal">
-    <div class="concept-section-label">設計上の違い — SaVOA / CMA-ES との観点別比較</div>
-    <div class="cmp-aspects">
-
-      <div class="cmp-aspect">
-        <div class="cmp-aspect-head">子の生成モード</div>
-        <div class="cmp-aspect-body">
-          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">強力(ガウス局所)／普通(向き変異 or ランダム)の 2 種</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">共分散行列 \(\Sigma\) からの楕円ガウスサンプリング</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">3 チャネル並列</span>接触感染（\(C_\text{pop}\) で異方化ガウス）＋ 飛沫感染（DE current-to-best、悪条件ルートは /2）＋ 空気感染（ランダム、drilling 中停止）</span></div>
-        </div>
-      </div>
-
-      <div class="cmp-aspect">
-        <div class="cmp-aspect-head">異方性の獲得</div>
-        <div class="cmp-aspect-body">
-          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">等方ガウスのみ。ill-cond で崩れる（F10 / F11 とも SR@1e-10 = 0%）</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">共分散行列の rank-1/rank-μ 適応学習で明示的に獲得（履歴累積）。ill-cond は強い（F10 / F11 / F12 = 100%）</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">瞬間共分散 ＋ 適応 floor</span>接触感染が当世代の経験共分散 \(C_\text{pop}\) でサンプリング（履歴なし）、異方性 floor を固有値比で自動調整。明示的共分散学習なしに F10 / F11 / F12 = 100%（route-gated 飛沫 current-to-best/2 が F11/F12 を 95→100% に押上げ）と CMA-ES と同等</span></div>
-        </div>
-      </div>
-
-      <div class="cmp-aspect">
-        <div class="cmp-aspect-head">多峰対応</div>
-        <div class="cmp-aspect-body">
-          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">最良解周辺に収束しやすく多峰では弱い（F03=75% / F15=40% / F20=55%）</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">単一中心の楕円分布で多峰は苦手 — F03=25% / F15=40% / F20=30% / F21=65% と大きく崩れる（overall 60% の主因）</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">系統共存 ＋ 逐次 niching</span>空間的に離れた複数の感染系統を同時保護(最大 6)＋掘り切り後の basin 移動。F03 / F15 / F20 / F21 すべて SR@1e-10 = 100%。多解 PR も C02 で 1.00（全手法中最高）</span></div>
-        </div>
-      </div>
-
-      <div class="cmp-aspect">
-        <div class="cmp-aspect-head">停滞からの脱出</div>
-        <div class="cmp-aspect-body">
-          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">なし(\(\sigma\) 縮退で停滞固定)</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">`es.stop()` 後の multistart(best 中心、\(\sigma\times 0.1\))</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">情報化リスタート</span>no_improve ≥ 300 かつ \(f_\text{best} > 10^{-8}\) で発動。リザーバ再着火＋basin 忌避で探索結果を再利用（盲目 IPOP restart と差別化）。ill-cond の整列失敗を救済（F10 / F12 = 100%）</span></div>
-        </div>
-      </div>
-
-      <div class="cmp-aspect">
-        <div class="cmp-aspect-head">選択戦略</div>
-        <div class="cmp-aspect-body">
-          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">親＋子を合流し上位 \(n\) を選択(厳密 μ+λ)</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">(μ/μ_w, λ) — 親を子で完全置換し重み付き再結合</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">μ+λ ＋ Rollback</span>毎世代下位 25% を kill、子を配置後に親より悪ければ差し戻し(実質 μ+λ)</span></div>
-        </div>
-      </div>
-
-      <div class="cmp-aspect">
-        <div class="cmp-aspect-head">探索幅 \(\sigma\) 制御</div>
-        <div class="cmp-aspect-body">
-          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">改善 → \(\times 1.2\)、停滞 → \(\times 0.9\)(全個体同一)</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">CSA(cumulative step-size adaptation)＋ 共分散同時更新</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text">SaVOA 流 always-on 適応(改善 \(\times 1.1\) / 停滞 \(\times 0.95\)) ＋ drilling mode で \(\times 0.85\) 強収縮 ＋ 個体ごと \(\sigma_i\)(品質×年齢べき乗)</span></div>
-        </div>
-      </div>
-
-      <div class="cmp-aspect">
-        <div class="cmp-aspect-head">個体数</div>
-        <div class="cmp-aspect-body">
-          <div class="cmp-row"><span class="cmp-tag savoa">SaVOA</span><span class="cmp-row-text">固定 30</span></div>
-          <div class="cmp-row"><span class="cmp-tag cmaes">CMA-ES</span><span class="cmp-row-text">\(\lambda\) 自動決定</span></div>
-          <div class="cmp-row proposed"><span class="cmp-tag mceso">MC-ESO</span><span class="cmp-row-text"><span class="lbl">次元適応＋縮小</span>\(\max(20,\, 16d)\) から \(\max(10,\, 4d)\) へ予算に合わせて縮小（2026-10-08 から既定。旧既定は \(\max(20,\, 4d)\) 固定）</span></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-</div><!-- /page -->
 {% endblock %}
 
 {% block scripts %}

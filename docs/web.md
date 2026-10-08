@@ -72,13 +72,14 @@ web/
 │   ├── index.css  / index.js     # トップ画面
 │   ├── result.css / result.js    # 結果詳細画面
 │   ├── benchmarks.css            # ベンチマーク一覧画面
-│   └── methods.css / methods.js  # 手法解説画面
+│   ├── methods.css / methods.js  # 手法解説画面（成績表・ヒートマップ・系譜図は JS が描く）
+│   └── methods_data.json         # 手法解説の成績データ（scripts/web/methods_data.py が生成）
 └── templates/             # Jinja2 テンプレート
     ├── base.html          # 共通レイアウト（<head> / <header> を集約）
     ├── index.html         # トップ画面（Quick Run / GH Actions / 結果一覧）
     ├── result.html        # 結果詳細画面（可視化・テーブル・ランキング）
     ├── benchmarks.html    # ベンチマーク関数 × 形状タグ一覧
-    └── methods.html       # 手法解説画面（MC-ESO）
+    └── methods.html       # 手法解説画面（MC-ESO の仕組み・成績・比較手法の系譜と解説）
 ```
 
 ---
@@ -120,7 +121,7 @@ web/
 |---|---|---|
 | GET | `/` | ダッシュボード（結果一覧・Quick Run・GH Actions） |
 | GET | `/benchmarks` | ベンチマーク関数 × 形状タグ 対応マトリクス（run 非依存の静的リファレンス。`SHAPE_TAGS` / `TAG_AXES` 由来。関数を行・タグを列とし、軸ごとに色分け。ヘッダ nav からアクセス） |
-| GET | `/methods` | MC-ESO 手法解説ページ |
+| GET | `/methods` | 手法解説ページ。MC-ESO の考え方・1 世代の流れ・仕組み、quick の成績（次元タブ・関数別ヒートマップ）、比較手法の系譜図（発表年 × 系統、JS が `methods.js` の `NODES` / `EDGES` から描く）と系統別の解説カード |
 | GET | `/results/<run_id>` | 結果詳細ページ |
 | GET | `/media/<path>` | `results/` 配下の図・ファイル配信 |
 
@@ -148,6 +149,16 @@ web/
 | GET | `/api/overall/<run_id>/<dim>` | 全関数横断の Friedman ランキング。`scopes`（例 `["bbob","custom","all"]`）と `by_suite`（各スイートの完全ペイロード: leaderboard / friedman / func_categories / func_tags / func_scores …）を返す。トップレベルは後方互換のため既定スコープ（混在時は `all`）のペイロードを併載 |
 
 ---
+
+## 手法解説ページの成績データ
+
+`/methods` の数値は手で書かず、quick の CSV から `scripts/web/methods_data.py` で `web/static/methods_data.json` を作って読む（集計は `scripts/analyze_quick.py` と同じ）。新しい quick を載せるときは:
+
+```bash
+python scripts/web/methods_data.py results/<2D の run> results/<5D の run> results/<10D の run>
+```
+
+本文の「読みどころ」（既存手法との比較、旧既定からの変化）も JSON から JS が組み立てるので、数値と文章がずれない。比較手法を足したら `methods.html` に解説カード（`id="m-<登録名>"`、`data-method="<登録名>"`）を、`methods.js` の `NODES` / `EDGES` に系譜を足す。
 
 ## 開発メモ
 
