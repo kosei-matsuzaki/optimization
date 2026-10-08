@@ -1,0 +1,49 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: j25merged
+functions: 24   methods: MC-ESO, MC-ESO-v0, v1_noPop, v1_noFrz, v1_noMu
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            42.1%   44.0%   49.0%   56.2%       11689            
+  MC-ESO-v0         36.5%   37.5%   38.8%   40.4%        8694        13/0
+  v1_noPop          38.3%   41.0%   44.8%   46.7%        9261         8/1
+  v1_noFrz          41.7%   42.9%   45.6%   53.1%       10803         3/0
+  v1_noMu           35.6%   39.6%   45.2%   53.1%       12899         4/1
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%       MC-ESO-v0 100%            6062/2409
+  F02-EllipsoidalSep              100%       MC-ESO-v0 100%           10137/6282
+  F03-RastriginSep                  0%         MC-ESO-v0 0%                    -
+  F04-BucheRastrigin                0%         MC-ESO-v0 0%                    -
+  F05-LinearSlope                 100%       MC-ESO-v0 100%            9838/5083
+  F06-AttractiveSector            100%       MC-ESO-v0 100%           11848/6212
+  F07-StepEllipsoidal              85%         v1_noFrz 85%            5910/5824
+  F08-Rosenbrock                   95%         v1_noFrz 95%          18863/18563
+  F09-RosenbrockRot                90%         v1_noPop 95%          19220/12161  <-- ref behind
+  F10-EllipsoidalRot              100%        v1_noPop 100%           12267/8885
+  F11-Discus                      100%       MC-ESO-v0 100%           9718/10275
+  F12-BentCigar                     0%          v1_noPop 5%          21026/18975  <-- ref behind
+  F13-SharpRidge                    5%          v1_noPop 5%          16882/13265
+  F14-DiffPowers                  100%        v1_noPop 100%            7374/3686
+  F15-RastriginRot                  0%         MC-ESO-v0 0%                    -
+  F16-Weierstrass                   0%         MC-ESO-v0 0%                    -
+  F17-SchafferF7                    0%         MC-ESO-v0 0%                    -
+  F18-SchafferF7ill                 0%         MC-ESO-v0 0%                    -
+  F19-GriewankRosenbrock            0%         MC-ESO-v0 0%                    -
+  F20-Schwefel                      0%         MC-ESO-v0 0%                    -
+  F21-Gallagher101                  5%        MC-ESO-v0 15%            4048/1747  <-- ref behind
+  F22-Gallagher21                  30%          v1_noMu 35%            4272/4057  <-- ref behind
+  F23-Katsuura                      0%         MC-ESO-v0 0%                    -
+  F24-LunacekRastrigin              0%         MC-ESO-v0 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F09-RosenbrockRot      vs v1_noPop       p=0.00695 A12=0.20 (large)
+  F12-BentCigar          vs v1_noMu        p=0.0296 A12=0.42 (small)
+
