@@ -1,0 +1,30 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: merged_f23-f24
+meta: n_runs=20 max_evals=100000 set=all-d10 commit=31f9591
+functions: 2   methods: CMA-ES, IPOP-CMA-ES, BIPOP-CMA-ES, DE, L-SHADE, MC-ESO
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  CMA-ES             0.0%    0.0%    0.0%    0.0%         ---         1/0
+  IPOP-CMA-ES        0.0%    0.0%    0.0%    0.0%         ---         1/1
+  BIPOP-CMA-ES       0.0%   10.0%   10.0%   10.0%       37563         0/2
+  DE                 0.0%    0.0%    0.0%    0.0%         ---         2/0
+  L-SHADE            0.0%    0.0%    0.0%    0.0%         ---         1/0
+  MC-ESO             0.0%    0.0%    0.0%    5.0%         ---            
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F23-Katsuura                      0%            CMA-ES 0%                    -
+  F24-LunacekRastrigin              0%            CMA-ES 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F23-Katsuura           vs BIPOP-CMA-ES   p=0.0484 A12=0.32 (medium)
+  F24-LunacekRastrigin   vs BIPOP-CMA-ES   p=0.000851 A12=0.10 (large)
+  F24-LunacekRastrigin   vs IPOP-CMA-ES    p=0.000168 A12=0.10 (large)
+

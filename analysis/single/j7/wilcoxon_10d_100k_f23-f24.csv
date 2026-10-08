@@ -1,0 +1,11 @@
+function,reference,method,n,win_count,tie_count,p_value_two_sided,p_value_ref_better,a12,a12_magnitude
+F23-Katsuura,MC-ESO,CMA-ES,20,12,0,0.07585,0.03793,0.6750,medium
+F23-Katsuura,MC-ESO,IPOP-CMA-ES,20,16,0,0.0005856,0.0002928,0.8075,large
+F23-Katsuura,MC-ESO,BIPOP-CMA-ES,20,3,0,0.04844,0.978,0.3225,medium
+F23-Katsuura,MC-ESO,DE,20,20,0,1.907e-06,9.537e-07,1.0000,large
+F23-Katsuura,MC-ESO,L-SHADE,20,19,0,5.722e-06,2.861e-06,0.9250,large
+F24-LunacekRastrigin,MC-ESO,CMA-ES,20,17,0,0.004221,0.00211,0.8725,large
+F24-LunacekRastrigin,MC-ESO,IPOP-CMA-ES,20,2,0,0.0001678,0.9999,0.0950,large
+F24-LunacekRastrigin,MC-ESO,BIPOP-CMA-ES,20,2,0,0.0008507,0.9996,0.0975,large
+F24-LunacekRastrigin,MC-ESO,DE,20,20,0,1.907e-06,9.537e-07,1.0000,large
+F24-LunacekRastrigin,MC-ESO,L-SHADE,20,11,0,0.6477,0.3238,0.5350,negligible

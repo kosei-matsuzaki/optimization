@@ -1,0 +1,22 @@
+Wilcoxon (ref=MC-ESO, alpha=0.05 two-sided, best_f, direction by A12, p=nan counted as zero)
+24 functions, 120 rows (5 methods x 24)
+
+MC-ESO 有意勝ち 31 / 有意負け 62
+  CMA-ES         勝ち 10 / 負け  6
+  IPOP-CMA-ES    勝ち  4 / 負け 15
+  BIPOP-CMA-ES   勝ち  2 / 負け 17
+  DE             勝ち 12 / 負け  6
+  L-SHADE        勝ち  3 / 負け 18
+
+A12 magnitude: {'large': 82, 'medium': 10, 'small': 1}  (total 93)
+p=nan rows (counted as not significant): 3
+
+F23 / F24 の有意な関数:
+  F23-Katsuura             vs IPOP-CMA-ES    p=0.0005856 A12=0.81 (large) -> MC-ESO better
+  F23-Katsuura             vs BIPOP-CMA-ES   p=0.04844 A12=0.32 (medium) -> baseline better
+  F23-Katsuura             vs DE             p=1.907e-06 A12=1.00 (large) -> MC-ESO better
+  F23-Katsuura             vs L-SHADE        p=5.722e-06 A12=0.93 (large) -> MC-ESO better
+  F24-LunacekRastrigin     vs CMA-ES         p=0.004221 A12=0.87 (large) -> MC-ESO better
+  F24-LunacekRastrigin     vs IPOP-CMA-ES    p=0.0001678 A12=0.10 (large) -> baseline better
+  F24-LunacekRastrigin     vs BIPOP-CMA-ES   p=0.0008507 A12=0.10 (large) -> baseline better
+  F24-LunacekRastrigin     vs DE             p=1.907e-06 A12=1.00 (large) -> MC-ESO better
