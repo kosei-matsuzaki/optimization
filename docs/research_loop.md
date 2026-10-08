@@ -96,7 +96,7 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）。
 
-9. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か（残り: 4 倍予算の 12 関数）。**
+9. **包絡線への上乗せの減衰は「次元」か「1 分布あたりのサンプル数」か（残り: 4 倍予算の 12 関数）。** (claimed 2026-10-08 02:30 UTC)
    10D で予算 4 倍（100000）、`--methods "MC-ESO,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE"`、n=20。2 倍（50000）の 24 関数、4 倍の F01 / F07 / F12 / F19 / F22（2026-10-07）と F02 / F03 / F04 / F05 / F06 / F08 / F09（2026-10-08）は実施済み（作業ログ）。**残り 12 関数**: F10 F11 F13 F14 F15 F16 F17 F18 F20 F21 F23 F24。**12 関数は 90 分に入らないので、入る分だけ回して残りをここに書き直す。**
    **メモリと所要（2026-10-08 の実測）**: **2 shard 並列なら 1 関数 10〜20 分**で、cgroup 16GB に対しピークは数 GB に収まった（3 shard は 2026-10-07 に OOM したので **2 shard までに抑える**）。1 関数 1 shard、label は `j9e100k<Fnn>`、`--funcs` は**完全名**（`F10-EllipsoidalRot` 等。番号だけでは `No matching functions` で即終了する）。
    **集計**: `analysis/single/j7/envelope.py`（e183 analyze.py の [8] と同じ式）で「MC-ESO を 6 手法目に加えたときに関数別包絡線が上がる量」を出す。24 関数そろうまで比べられるのは**同じ関数部分集合に絞った 25000 / 50000 との差だけ**（絞り込みは summary.csv を渡す前に行う。12 関数版の例が `envelope_10d_25k_50k_100k_sub7.txt`）。`evals_succ_mean` の対応平均は `analysis/single/j7/paired_evals.py`（`scripts/analyze_quick.py` の [1] は非対応平均）。累積は `summary_10d_100k_cum12.csv` に 12 関数分が入っているので、次の回はこれに連結する。
