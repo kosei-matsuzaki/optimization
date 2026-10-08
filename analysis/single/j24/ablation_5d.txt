@@ -1,0 +1,49 @@
+Per-function SR@1e-10 (%),  ref = MC-ESO,  24 functions
+
+function                     MC-ESO  MC-ESO-v0   v1_noPop   v1_noFrz    v1_noMud:MC-ESO-v0 d:v1_noPop d:v1_noFrz  d:v1_noMu
+---------------------------------------------------------------------------------------------------------------------------
+F01-Sphere                      100        100        100        100        100         +0         +0         +0         +0
+F02-EllipsoidalSep              100        100        100        100        100         +0         +0         +0         +0
+F03-RastriginSep                  5         15         10         30         15        +10         +5        +25        +10
+F04-BucheRastrigin                0          0          0          0          0         +0         +0         +0         +0
+F05-LinearSlope                 100        100        100        100        100         +0         +0         +0         +0
+F06-AttractiveSector            100        100        100        100        100         +0         +0         +0         +0
+F07-StepEllipsoidal             100         55         60        100        100        -45        -40         +0         +0
+F08-Rosenbrock                  100         90         90        100         85        -10        -10         +0        -15
+F09-RosenbrockRot               100         80         80        100        100        -20        -20         +0         +0
+F10-EllipsoidalRot              100        100        100        100        100         +0         +0         +0         +0
+F11-Discus                      100        100        100        100        100         +0         +0         +0         +0
+F12-BentCigar                   100         30         45        100        100        -70        -55         +0         +0
+F13-SharpRidge                  100         25         55        100        100        -75        -45         +0         +0
+F14-DiffPowers                  100         35         90        100        100        -65        -10         +0         +0
+F15-RastriginRot                 20         10          5          0         20        -10        -15        -20         +0
+F16-Weierstrass                  50          5          5         50         55        -45        -45         +0         +5
+F17-SchafferF7                   10          0          0         10          0        -10        -10         +0        -10
+F18-SchafferF7ill                 5          0          0          5          5         -5         -5         +0         +0
+F19-GriewankRosenbrock            5          5          0          0          5         +0         -5         -5         +0
+F20-Schwefel                      0          0          0          0          0         +0         +0         +0         +0
+F21-Gallagher101                 55         30         40         55         50        -25        -15         +0         -5
+F22-Gallagher21                  60         55         55         65         65         -5         -5         +5         +5
+F23-Katsuura                     10          0          0          5         10        -10        -10         -5         +0
+F24-LunacekRastrigin              0          0          0          0          0         +0         +0         +0         +0
+
+Overall mean SR@1e-10 and diff vs ref:
+  MC-ESO          59.17%  (n=24)
+  MC-ESO-v0       43.12%  (n=24)   (-16.04pt vs MC-ESO)
+  v1_noPop        47.29%  (n=24)   (-11.88pt vs MC-ESO)
+  v1_noFrz        59.17%  (n=24)   (+0.00pt vs MC-ESO)
+  v1_noMu         58.75%  (n=24)   (-0.42pt vs MC-ESO)
+
+Functions whose SR@1e-10 differs from ref:
+  MC-ESO-v0: 14 changed: F03 5->15, F07 100->55, F08 100->90, F09 100->80, F12 100->30, F13 100->25, F14 100->35, F15 20->10, F16 50->5, F17 10->0, F18 5->0, F21 55->30, F22 60->55, F23 10->0
+  v1_noPop: 15 changed: F03 5->10, F07 100->60, F08 100->90, F09 100->80, F12 100->45, F13 100->55, F14 100->90, F15 20->5, F16 50->5, F17 10->0, F18 5->0, F19 5->0, F21 55->40, F22 60->55, F23 10->0
+  v1_noFrz: 5 changed: F03 5->30, F15 20->0, F19 5->0, F22 60->65, F23 10->5
+  v1_noMu: 6 changed: F03 5->15, F08 100->85, F16 50->55, F17 10->0, F21 55->50, F22 60->65
+
+Paired evals_succ_mean (functions where ref and the arm both succeed):
+  MC-ESO-v0        5240.9  vs ref   4171.1  (nf=20)
+  v1_noPop         4448.1  vs ref   4047.9  (nf=18)
+  v1_noFrz         3940.9  vs ref   3816.2  (nf=19)
+  v1_noMu          4040.6  vs ref   4202.4  (nf=21)
+
+wrote /tmp/claude-0/-home-user-optimization/30aafa46-3feb-5f4c-ad27-77d0be0086b4/scratchpad/per_function_sr1e10_5d.csv
