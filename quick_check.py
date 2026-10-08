@@ -431,6 +431,10 @@ _OPTIMIZERS = {
     "v1_h2hA":        (MultiChannelEpidemicOptimizer, {"h2h_adapt": True}),
     "v1_pop32":       (MultiChannelEpidemicOptimizer, {"pop_init_mult": 32.0}),
     "v1_gate2":       (MultiChannelEpidemicOptimizer, {"cc_gate_mahal": 2.0}),
+    "v1_rcf30":       (MultiChannelEpidemicOptimizer, {"route_commit_frac": 0.30}),
+    "v1_crher":       (MultiChannelEpidemicOptimizer, {"h2h_cr_heritable": True}),
+    "v1_crher_rcf30": (MultiChannelEpidemicOptimizer,
+                       {"h2h_cr_heritable": True, "route_commit_frac": 0.30}),
     # 2026-10-06 improvement candidates (all defaults unchanged).
     # A. population-size schedules
     "pop_lin16":      (MultiChannelEpidemicOptimizer,

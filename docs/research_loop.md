@@ -105,6 +105,17 @@
    **集計**: 上と同じ形。MC-ESO の行は `pop_pow2_frzmu`（`analysis/single/j23/`、42.08%）、`MC-ESO-v0` は旧基準値 36.46% と一致するはず。F07 / F08 / F09 / F14 / F21 と易しい関数（F01 / F02 / F05 / F06）の `evals_succ_mean` を必ず書く。
    **記録**: `analysis/single/j25/`。
 
+
+2. **CR の継承と経路の判定時期を 2D と 5D で測る。**
+   `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,v1_crher,v1_rcf30,v1_crher_rcf30"`（2D）と、同じ手法を `--dim 5 --max-evals 12500`（5D）。
+   **背景**（[history.md](history.md) 2026-10-08）: `v1_crher`（`h2h_cr_heritable`: 宿主ごとに飛沫感染の CR を持ち、子は継承、飛沫の子は確率 0.1 で U(0,1) に引き直す。jDE 方式）はローカルで 2D +1.04 / 5D +7.69 / 10D ±0pt、2D・5D で base の有意勝ちゼロ（5D の F03 20 → 60%、F22 50 → 90%）。`v1_rcf30`（`route_commit_frac=0.30`: 経路を予算の 30% で決める）は 10D の F12 / F13 / F14 の誤判定を直すが SR はほぼ動かない。
+   **集計**: 標準の集計。2D の SR@1e-10 を下げる腕があるかを 1 行で書く。5D は F03 / F04 / F15 / F20 / F21 / F22 と、悪条件の F12 / F13 / F14 の変化を必ず書く。
+   **記録**: `analysis/single/j26/`（2D と 5D を別ファイルに）。
+3. **CR の継承と経路の判定時期を 10D で測る。**
+   `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,v1_crher,v1_rcf30,v1_crher_rcf30"`。
+   **集計**: 標準の集計。F03 / F04 / F12 / F13 / F14 / F20 / F21 / F22 の変化を必ず書く。
+   **記録**: `analysis/single/j27/`。
+
 ## 規則
 
 **測定**

@@ -104,6 +104,10 @@ class _MCESOState:
     gen_h2h_start: int = 0
     gen_h2h_count: int = 0
     ls_done: bool = False
+    # h2h_cr_heritable: each host's droplet CR, and this generation's children's
+    # CRs in channel order (inherited from the parent; droplet may redraw).
+    pop_cr: "np.ndarray | None" = None
+    gen_child_cr: list = field(default_factory=list)
     # Evaluation count at which σ was last inside the drilling regime. The
     # pathology — σ pinned by its own control law so the precision scale is
     # never reached — shows up as this falling far behind the current count
@@ -345,6 +349,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # late enough that the conditioning EMA has developed (droplet functions
         # reach cond ~3-7 by here, others stay ≤ ~2.7).
         route_commit_gen: int = 120,
+        # Commit the route at this fraction of the budget instead of at
+        # route_commit_gen (None = use the generation count). With the shrinking
+        # population, generation 120 is only ~17% of the budget at d10, before
+        # the population covariance shows F12 / F13 / F14's conditioning (cond EMA
+        # 2.6-2.9 vs threshold 3.0; 3.8-4.2 at 30%).
+        route_commit_frac: "float | None" = None,
         # ── Migratory (vector-borne) channel: stuck-gated structured escape ──
         # A 4th transmission channel modelling a carrier moving the pathogen to a
         # distant region. It fires ONLY when a run is stuck — drilled in (σ below
@@ -645,6 +655,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # wise moves (separable functions; DE solves F03 / F04 / F20 with low CR)
         # and whole-vector moves, without learning which one works.
         h2h_cr_mix: "tuple | None" = None,
+        # Heritable droplet CR (jDE-style self-adaptation, Brest et al. 2006):
+        # every host carries a CR, children inherit their parent's, a droplet
+        # child redraws it from U(0, 1) with probability h2h_cr_tau, and host
+        # competition decides which survive — selection, not a learned schedule.
+        h2h_cr_heritable: bool = False,
+        h2h_cr_tau: float = 0.1,
         # End-phase local search (as in IMODE / EBOwithCMAR / UMOEA-II): once
         # (1 − ls_final_frac) of the budget is spent, run SciPy SLSQP (finite-
         # difference gradients, box bounds) from the best host with at most
@@ -741,6 +757,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.align_close_thresh = align_close_thresh
         self.close_mgap_thresh = close_mgap_thresh
         self.cond_droplet_early = cond_droplet_early
+        self.route_commit_frac = route_commit_frac
         self.route_commit_gen = route_commit_gen
         self.migratory_channel = migratory_channel
         self.migratory_ratio = migratory_ratio
@@ -793,6 +810,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.route_mix = route_mix
         self.h2h_adapt = h2h_adapt
         self.h2h_cr_mix = h2h_cr_mix
+        self.h2h_cr_heritable = h2h_cr_heritable
+        self.h2h_cr_tau = h2h_cr_tau
         self.ls_final_frac = ls_final_frac
         self.ls_budget_frac = ls_budget_frac
         self._mom_on = mom_ratio > 0.0 or bool(
@@ -1268,6 +1287,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.pop_age[i] = 0
             if st.pop_dx is not None and st.pop_dx.shape == st.pop_x.shape:
                 st.pop_dx[i] = 0.0
+            if (self.h2h_cr_heritable and st.pop_cr is not None
+                    and st.pop_cr.shape[0] == st.pop_x.shape[0]):
+                st.pop_cr[i] = rng.random()
             st.history_x.append(new_x.copy())
             st.history_f.append(f_new)
             st.history_sigma_eval.append(sig_log)
@@ -1343,6 +1365,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         noise = rng.standard_normal((n_local, self.dim))
         raw_noise = noise.copy()   # kept for the persistent-C stream below
         local_parent_x = st.pop_x[gi_arr].copy()
+        if self.h2h_cr_heritable:
+            st.gen_child_cr.append(st.pop_cr[gi_arr].copy())
         if self._mom_on:
             st.gen_all_parents.append(local_parent_x.copy())
         sigma_i = st.sigma * host_scale
@@ -1434,7 +1458,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             c = rng.integers(0, n, size=n_h2h)
             d = rng.integers(0, n, size=n_h2h)
             diff = diff + (st.pop_x[c] - st.pop_x[d])
-        if self.h2h_adapt:
+        if self.h2h_cr_heritable:
+            CRv = st.pop_cr[h2h_parents_gi].copy()
+            redraw = rng.random(n_h2h) < self.h2h_cr_tau
+            CRv[redraw] = rng.random(int(redraw.sum()))
+            st.gen_child_cr.append(CRv.copy())
+            Fcol, CRcol = self.h2h_F, CRv[:, None]
+        elif self.h2h_adapt:
             if st.h2h_mF is None:
                 st.h2h_mF = np.full(6, float(self.h2h_F))
                 st.h2h_mCR = np.full(6, float(self.h2h_CR))
@@ -1482,6 +1512,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             return np.empty((0, self.dim))
         rng = st.rng
         air_parents_gi = rng.integers(0, self.n_pop, size=n_air)
+        if self.h2h_cr_heritable:
+            st.gen_child_cr.append(st.pop_cr[air_parents_gi].copy())
         noise_air = rng.standard_normal((n_air, self.dim))
         if self._cc_dim_gate() > 0.0:
             st.gen_parent_x.append(st.pop_x[air_parents_gi].copy())
@@ -1500,6 +1532,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             return np.empty((0, self.dim)), np.empty(0)
         rng = st.rng
         gi = rng.choice(self.n_pop, size=n_mom, p=weights)
+        if self.h2h_cr_heritable:
+            st.gen_child_cr.append(st.pop_cr[gi].copy())
         kappa = rng.uniform(1.0, 2.0, size=n_mom)
         dx = st.pop_dx[gi]
         norms = np.linalg.norm(dx, axis=1)
@@ -1599,7 +1633,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 return air_base, h2h_r                  # KEEP-AIR (base) while warming
             if st.cc_logratio_ema > self.cond_droplet_early:
                 st.channel_route = "droplet"             # early high-cond → ill-cond valley
-            elif len(st.history_sigma_global) < self.route_commit_gen:
+            elif (len(st.history_f) < self.route_commit_frac * st.max_evals
+                  if self.route_commit_frac is not None
+                  else len(st.history_sigma_global) < self.route_commit_gen):
                 return air_base, h2h_r                  # KEEP-AIR (base) until checkpoint
             # Checkpoint: commit from the stabilized EMA values, then lock.
             elif st.cc_logratio_ema > self.cond_droplet_thresh:
@@ -1691,6 +1727,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         keep = np.sort(np.argsort(st.pop_f)[:target])
         if st.pop_dx is not None and st.pop_dx.shape[0] == st.pop_x.shape[0]:
             st.pop_dx = st.pop_dx[keep]
+        if st.pop_cr is not None and st.pop_cr.shape[0] == st.pop_x.shape[0]:
+            st.pop_cr = st.pop_cr[keep]
         st.pop_x = st.pop_x[keep]
         st.pop_f = st.pop_f[keep]
         st.pop_age = st.pop_age[keep]
@@ -1803,6 +1841,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             if st.cc_C is None:
                 st.cc_C = np.eye(self.dim)
         st.gen_h2h_start, st.gen_h2h_count = n_local, n_h2h
+        if self.h2h_cr_heritable:
+            st.gen_child_cr = []
+            if st.pop_cr is None:
+                st.pop_cr = rng.random(self.n_pop)
+            elif st.pop_cr.shape[0] != self.n_pop:
+                extra = self.n_pop - st.pop_cr.shape[0]
+                st.pop_cr = (np.concatenate([st.pop_cr, rng.random(extra)])
+                             if extra > 0 else st.pop_cr[:self.n_pop])
         new_local, sigma_i = self._close_contact_children(
             st, n_local, weights, log_f_max, log_f_spread)
         new_h2h, h2h_step_norms = self._droplet_children(st, n_h2h, weights, elite_arr)
@@ -1906,6 +1952,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         """
         replaced_slots: list[int] = []
         track_dx = self._mom_on and st.pop_dx is not None
+        track_cr = self.h2h_cr_heritable and st.pop_cr is not None
+        if track_cr:
+            child_cr = (np.concatenate(st.gen_child_cr) if st.gen_child_cr
+                        else np.empty(0))
+            old_cr: list[float] = []
         if track_dx:
             all_par = (np.concatenate(st.gen_all_parents, axis=0)
                        if st.gen_all_parents else np.empty((0, self.dim)))
@@ -1913,6 +1964,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         for k in range(min(n_dead, len(new_xs))):
             slot = int(dead_global[k])
             x = new_xs[k]
+            if track_cr:
+                old_cr.append(float(st.pop_cr[slot]))
+                if k < len(child_cr):
+                    st.pop_cr[slot] = child_cr[k]
             if track_dx:
                 old_dx.append(st.pop_dx[slot].copy())
                 st.pop_dx[slot] = (x - all_par[k]) if k < len(all_par) else 0.0
@@ -1936,6 +1991,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     st.pop_f[slot] = dead_orig_f[k]
                     if track_dx:
                         st.pop_dx[slot] = old_dx[k]
+                    if track_cr:
+                        st.pop_cr[slot] = old_cr[k]
                 elif self._cc_dim_gate() > 0.0:
                     survived.append((k, st.pop_x[slot].copy(), st.pop_f[slot]))
         if (self._cc_dim_gate() > 0.0
