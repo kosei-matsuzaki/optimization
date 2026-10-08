@@ -1,0 +1,7 @@
+paired evals_succ_mean (ref=MC-ESO), 7 functions: F02, F03, F04, F05, F06, F08, F09
+  method          method evals   MC-ESO evals  common funcs
+  CMA-ES                3482.4         8737.0             5
+  IPOP-CMA-ES           3773.8         8737.0             5
+  BIPOP-CMA-ES          3767.2         8737.0             5
+  DE                   18399.0        24208.5             4
+  L-SHADE              32750.0        20490.3             6

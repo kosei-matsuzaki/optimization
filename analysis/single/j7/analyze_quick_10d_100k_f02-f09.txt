@@ -1,0 +1,45 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: merged
+functions: 7   methods: CMA-ES, IPOP-CMA-ES, BIPOP-CMA-ES, DE, L-SHADE, MC-ESO
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  CMA-ES            67.1%   67.1%   67.1%   67.1%        3482         3/2
+  IPOP-CMA-ES       71.4%   71.4%   71.4%   71.4%        3774         3/3
+  BIPOP-CMA-ES      71.4%   71.4%   71.4%   71.4%        3767         2/3
+  DE                31.4%   33.6%   37.1%   42.1%       18399         3/0
+  L-SHADE          100.0%  100.0%  100.0%  100.0%       36809         0/6
+  MC-ESO            66.4%   66.4%   66.4%   66.4%       20490            
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F02-EllipsoidalSep              100%          CMA-ES 100%            6282/3611
+  F03-RastriginSep                  5%         L-SHADE 100%          79257/57367  <-- ref behind
+  F04-BucheRastrigin                0%         L-SHADE 100%                    -  <-- ref behind
+  F05-LinearSlope                 100%          CMA-ES 100%            5083/1212
+  F06-AttractiveSector            100%          CMA-ES 100%            6212/2569
+  F08-Rosenbrock                   75%     IPOP-CMA-ES 100%           12123/5433  <-- ref behind
+  F09-RosenbrockRot                85%     IPOP-CMA-ES 100%           13985/6037  <-- ref behind
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F02-EllipsoidalSep     vs L-SHADE        p=0.00815 A12=0.33 (medium)
+  F03-RastriginSep       vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F04-BucheRastrigin     vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs BIPOP-CMA-ES   p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs CMA-ES         p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F08-Rosenbrock         vs BIPOP-CMA-ES   p=0.000362 A12=0.10 (large)
+  F08-Rosenbrock         vs CMA-ES         p=0.0248 A12=0.25 (large)
+  F08-Rosenbrock         vs IPOP-CMA-ES    p=0.00197 A12=0.17 (large)
+  F08-Rosenbrock         vs L-SHADE        p=7.62e-05 A12=0.00 (large)
+  F09-RosenbrockRot      vs BIPOP-CMA-ES   p=0.0019 A12=0.23 (large)
+  F09-RosenbrockRot      vs IPOP-CMA-ES    p=0.0285 A12=0.32 (medium)
+  F09-RosenbrockRot      vs L-SHADE        p=0.00012 A12=0.03 (large)
+
