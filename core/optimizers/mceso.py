@@ -640,6 +640,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # host competition strictly better than the host it replaced; memories
         # are updated with Δf-weighted Lehmer means. False keeps fixed F / CR.
         h2h_adapt: bool = False,
+        # Per-child droplet CR drawn uniformly from these values (None = fixed
+        # h2h_CR). (0.1, 0.9) lets host competition arbitrate between coordinate-
+        # wise moves (separable functions; DE solves F03 / F04 / F20 with low CR)
+        # and whole-vector moves, without learning which one works.
+        h2h_cr_mix: "tuple | None" = None,
         # End-phase local search (as in IMODE / EBOwithCMAR / UMOEA-II): once
         # (1 − ls_final_frac) of the budget is spent, run SciPy SLSQP (finite-
         # difference gradients, box bounds) from the best host with at most
@@ -787,6 +792,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.mom_ratio = mom_ratio
         self.route_mix = route_mix
         self.h2h_adapt = h2h_adapt
+        self.h2h_cr_mix = h2h_cr_mix
         self.ls_final_frac = ls_final_frac
         self.ls_budget_frac = ls_budget_frac
         self._mom_on = mom_ratio > 0.0 or bool(
@@ -1438,6 +1444,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             CRv = np.clip(rng.normal(st.h2h_mCR[ri], 0.1), 0.0, 1.0)
             st.gen_h2h_Fv, st.gen_h2h_CRv = Fv, CRv
             Fcol, CRcol = Fv[:, None], CRv[:, None]
+        elif self.h2h_cr_mix is not None:
+            CRv = rng.choice(np.asarray(self.h2h_cr_mix, dtype=float), n_h2h)
+            Fcol, CRcol = self.h2h_F, CRv[:, None]
         else:
             Fcol, CRcol = self.h2h_F, self.h2h_CR
         if len(elite_arr) > 0:
