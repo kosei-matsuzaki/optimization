@@ -300,6 +300,10 @@ async function loadMediaIndex() {
       mediaIndex = await res.json();
       mediaIndex.has = new Set((mediaIndex.files || [])
         .map(f => `${f.func}|${f.method ?? ''}|${f.type}`));
+      // Proposed method first (then its old default), the rest alphabetically
+      const rank = m => m === 'MC-ESO' ? 0 : m.startsWith('MC-ESO') ? 1 : 2;
+      mediaIndex.methods = (mediaIndex.methods || [])
+        .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
     }
   } catch (_) {
     mediaIndex = null;
