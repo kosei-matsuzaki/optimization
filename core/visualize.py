@@ -3,6 +3,9 @@ import csv
 from pathlib import Path
 import numpy as np
 import matplotlib
+# Files only. The default GUI backend (Tk on Windows) breaks when --jobs runs:
+# Tk objects get collected on the executor's helper thread and abort the process.
+matplotlib.use("Agg")
 import matplotlib.ticker
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -165,7 +168,7 @@ def _draw_convergence(
     results_per_method: dict[str, list[OptimizeResult]],
     title: str | None = None,
 ) -> None:
-    """Median best-so-far f − f* per method, quartile band for the coloured ones.
+    """Median best-so-far f − f* per method, with MC-ESO's quartile band.
 
     Methods with a fixed colour (and MC-ESO-v0) are drawn in colour; all others
     are grey context lines under a single legend entry, so a 35-method run stays
@@ -197,9 +200,8 @@ def _draw_convergence(
         med, q1, q3 = curves[name]
         c = _method_color(name)
         is_ref = name == "MC-ESO"
-        if is_ref or name in _METHOD_COLOR:
-            ax.fill_between(evals, q1, q3, color=c, alpha=0.18 if is_ref else 0.06,
-                            linewidth=0, zorder=2)
+        if is_ref:   # one band only: nine overlapping bands turn into mud
+            ax.fill_between(evals, q1, q3, color=c, alpha=0.18, linewidth=0, zorder=2)
         ax.plot(evals, med, color=c, linewidth=2.2 if is_ref else 1.4,
                 linestyle=_METHOD_DASH.get(name, "-"), zorder=4 if is_ref else 3,
                 label=name)
@@ -209,7 +211,7 @@ def _draw_convergence(
     ax.set_ylim(bottom=_FLOOR / 2)
     ax.set_xlim(1, evals[-1])
     ax.set_xlabel("評価回数")
-    ax.set_ylabel("f − f*（中央値、帯は四分位）")
+    ax.set_ylabel("f − f*（中央値。帯は MC-ESO の四分位）")
     ax.grid(True, which="major")
     ax.grid(False, which="minor")
     if title:
@@ -241,7 +243,8 @@ def _draw_surface3d(
     X: np.ndarray, Y: np.ndarray, Z: np.ndarray,
 ) -> None:
     Zp = np.log1p(Z - Z.min())
-    ax.plot_surface(X, Y, Zp, cmap=_LAND, linewidth=0, antialiased=True, rcount=80, ccount=80)
+    ax.plot_surface(X, Y, Zp, cmap=_LAND, linewidth=0, antialiased=True, rcount=80, ccount=80,
+                    rasterized=True)
     if benchmark.optima_pos:
         for opt in benchmark.optima_pos:
             oz = np.log1p(benchmark.func(np.array(opt)) - Z.min())
@@ -313,7 +316,9 @@ def save_landscape_svg(
 
     fig = plt.figure(figsize=(9.6, 4.4))
     ax_land = fig.add_subplot(1, 2, 1)
-    ax_land.contourf(X, Y, Z_plot, levels=36, cmap=_LAND)
+    # Filled areas as pixels, lines and text as vectors: a fully vector landscape
+    # was ~3 MB per function.
+    ax_land.contourf(X, Y, Z_plot, levels=36, cmap=_LAND).set_rasterized(True)
     ax_land.contour(X, Y, Z_plot, levels=14, colors="#ffffff", linewidths=0.4, alpha=0.7)
     _draw_optima(ax_land, benchmark)
     ax_land.set_xlim(lo, hi); ax_land.set_ylim(lo, hi); ax_land.set_aspect("equal")

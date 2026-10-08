@@ -209,12 +209,15 @@ function buildTypeSelector() {
   const sel = document.getElementById('media-selector');
   sel.innerHTML = '';
 
-  const hasFuncs = mediaIndex && mediaIndex.funcs && mediaIndex.funcs.length > 0;
-  const types = hasFuncs
-    ? TYPE_ORDER.filter(t => FUNC_LEVEL_TYPES.has(t) || mediaIndex.types.includes(t))
-    : [];
+  // Only the figure types this dimension actually has files for: landscapes
+  // exist for 2D only, and quick runs without --viz have no figures at all.
+  const types = TYPE_ORDER.filter(t => (mediaIndex?.types || []).includes(t));
+  if (!types.length) {
+    sel.innerHTML = '<p class="empty-state">この run には図がありません。図は <code>./run.sh quick --viz</code> で回したときだけ作られます（数値は下の表と「全関数の集計」で見られます）。</p>';
+    return;
+  }
 
-  if (!types.includes(currentType)) currentType = types[0] || 'evals';
+  if (!types.includes(currentType)) currentType = types[0];
 
   types.forEach(t => {
     const btn = document.createElement('button');
@@ -295,11 +298,18 @@ async function loadMediaIndex() {
     const res = await fetch(`/api/media-index/${encodeURIComponent(RUN_ID)}/${currentDim}`);
     if (res.ok) {
       mediaIndex = await res.json();
+      mediaIndex.has = new Set((mediaIndex.files || [])
+        .map(f => `${f.func}|${f.method ?? ''}|${f.type}`));
     }
   } catch (_) {
     mediaIndex = null;
   }
 }
+// Is there a file for this (function, method, type)? method = null for landscape / convergence.
+function hasMedia(func, method, type) {
+  return !!mediaIndex?.has?.has(`${func}|${method ?? ''}|${type}`);
+}
+const NO_FIGURE = '<p class="empty-state">この組み合わせの図はありません。</p>';
 
 // ── Function list ────────────────────────────────────────────────────────────
 function buildFuncList() {
@@ -413,21 +423,20 @@ function renderFunctionGrid() {
   const grid = document.getElementById('media-grid');
   grid.innerHTML = '';
   grid.classList.remove('solo');
-  if (!currentFunc || !mediaIndex) return;
+  if (!currentFunc || !mediaIndex || !(mediaIndex.types || []).length) return;
 
   // Function-level types (landscape/convergence): single full-width cell
   if (FUNC_LEVEL_TYPES.has(currentType)) {
+    if (!hasMedia(currentFunc, null, currentType)) { grid.innerHTML = NO_FIGURE; return; }
     grid.classList.add('solo');
     const url = mediaUrl(currentFunc, null, currentType);
     grid.appendChild(makeGridCell(currentFunc, null, currentType, url, currentFunc));
     return;
   }
 
-  const methods = mediaIndex.methods || [];
-  if (!methods.length) {
-    grid.innerHTML = '<p class="empty-state">手法別データがありません。</p>';
-    return;
-  }
+  // Only methods that have this figure (e.g. outbreak dynamics exist for MC-ESO only)
+  const methods = (mediaIndex.methods || []).filter(m => hasMedia(currentFunc, m, currentType));
+  if (!methods.length) { grid.innerHTML = NO_FIGURE; return; }
 
   methods.forEach(method => {
     const url = mediaUrl(currentFunc, method, currentType);
@@ -441,14 +450,14 @@ function renderMethodGrid() {
   grid.innerHTML = '';
   if (!mediaIndex) return;
 
-  const funcs = mediaIndex.funcs || [];
-  if (!funcs.length) {
-    grid.innerHTML = '<p class="empty-state">関数データがありません。</p>';
-    return;
-  }
+  if (!(mediaIndex.types || []).length) return;
+  const isFuncLevel = FUNC_LEVEL_TYPES.has(currentType);
+  const funcs = (mediaIndex.funcs || []).filter(f =>
+    hasMedia(f, isFuncLevel ? null : currentMethod, currentType));
+  if (!funcs.length) { grid.innerHTML = NO_FIGURE; return; }
 
   // Function-level types (landscape/convergence): ignore selected method
-  if (FUNC_LEVEL_TYPES.has(currentType)) {
+  if (isFuncLevel) {
     funcs.forEach(func => {
       const url = mediaUrl(func, null, currentType);
       grid.appendChild(makeGridCell(func, null, currentType, url, func));
