@@ -551,29 +551,107 @@ for _name, (_cls, _kw) in list(_OPTIMIZERS.items()):
         _OPTIMIZERS[_name] = (_cls, {**_V0_DEFAULTS, **_kw})
 
 
+# Methods that take a per-benchmark `sigma0` initial step.
+_SIGMA_USERS = (CMAESOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
+                RepellingCMAESOptimizer)
+
+# Result fields that only the renderers read. A --jobs worker drops them when
+# rendering is off: an MC-ESO run at 10D pickles to ~12 MB, almost all of it
+# population snapshots, and every run crosses a process boundary.
+_VIZ_ONLY_FIELDS = ("history_pop", "history_pop_sigma", "history_sigma_global",
+                    "history_n_elite", "history_no_improve", "history_eval_count",
+                    "history_sigma_eval")
+
+
+def _run_one(bench, method: str, n_runs: int, max_evals: int,
+             noise: str | None) -> tuple[list, list]:
+    """All runs of one method on one function (the unit of work for --jobs)."""
+    cls, kwargs = _OPTIMIZERS[method]
+    sigma0 = 0.2 * (bench.bounds[1] - bench.bounds[0])
+    kw = {**kwargs, **({"sigma0": sigma0} if cls in _SIGMA_USERS else {})}
+    return run_experiment(cls, bench, n_runs=n_runs, max_evals=max_evals,
+                          noise_model=noise, **kw)
+
+
+def _bench_key(bench) -> tuple[str, int, str]:
+    """Benchmarks hold closures and do not pickle; workers look them up by name."""
+    for kind, regs in (("bbob", _DIM_REGISTRIES.items()),
+                       ("niching", [(0, NICHING_BENCHMARKS_BY_NAME)]),
+                       ("cec2022", [(10, BENCHMARKS_CEC2022_10D_BY_NAME)])):
+        for d, reg in regs:
+            if reg.get(bench.name) is bench:
+                return kind, d, bench.name
+    raise ValueError(f"benchmark {bench.name!r} is not in a registry; --jobs cannot ship it")
+
+
+def _bench_from_key(key: tuple[str, int, str]):
+    kind, d, name = key
+    if kind == "bbob":
+        return _DIM_REGISTRIES[d][name]
+    return (NICHING_BENCHMARKS_BY_NAME if kind == "niching"
+            else BENCHMARKS_CEC2022_10D_BY_NAME)[name]
+
+
+def _worker_task(key, method, n_runs, max_evals, noise, slim):
+    import dataclasses
+    results, times = _run_one(_bench_from_key(key), method, n_runs, max_evals, noise)
+    if slim:
+        results = [dataclasses.replace(
+            r, history_x=np.asarray(r.history_x, dtype=float),
+            **{k: [] for k in _VIZ_ONLY_FIELDS}) for r in results]
+    return results, times
+
+
+def _parallel_results(benchmarks: list, methods: list[str], n_runs: int,
+                      max_evals: int, noise: str | None, jobs: int, slim: bool):
+    """Yield (bench index, method, results, times) in the serial order.
+
+    Every run is seeded by its index (core.runner), so splitting the work across
+    processes gives the same numbers, except for methods that draw from an
+    unseeded global RNG (the mealpy wrappers), which are not reproducible in any
+    mode. Results are consumed in order and submission runs at most `window`
+    tasks ahead, which bounds memory when one slow task holds up the queue.
+    """
+    from concurrent.futures import ProcessPoolExecutor
+    tasks = [(bi, m) for bi in range(len(benchmarks)) for m in methods]
+    keys = [_bench_key(b) for b in benchmarks]
+    window = max(4 * jobs, 32)
+    pending: dict = {}
+    nxt = 0
+    with ProcessPoolExecutor(max_workers=jobs) as ex:
+        for i, (bi, m) in enumerate(tasks):
+            while nxt < len(tasks) and len(pending) < window:
+                b2, m2 = tasks[nxt]
+                pending[nxt] = ex.submit(_worker_task, keys[b2], m2, n_runs,
+                                         max_evals, noise, slim)
+                nxt += 1
+            results, times = pending.pop(i).result()
+            yield bi, m, results, times
+
+
 def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int,
              optimizers: dict | None = None, noise: str | None = None,
-             no_viz: bool = False) -> None:
+             no_viz: bool = False, jobs: int = 1) -> None:
     """Run all functions in a dimension group and save results to dim_dir."""
     dim_dir.mkdir(parents=True, exist_ok=True)
     if optimizers is None:
         optimizers = _OPTIMIZERS
-    # Methods that take a per-benchmark `sigma0` initial step.
-    _SIGMA_USERS = (CMAESOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
-                    RepellingCMAESOptimizer)
     print(f"\n{'Function':<22} {'Method':<12} {'Mean':>12} "
           f"{'SR@1e-1':>7} {'SR@1e-2':>7} {'SR@1e-4':>7} {'SR@1e-7':>7} {'SR@1e-10':>8} {'EvalsSucc':>10}")
     print("-" * 102)
+    methods = list(optimizers)
+    if jobs > 1:
+        stream = _parallel_results(benchmarks, methods, n_runs, max_evals, noise,
+                                   jobs, slim=no_viz)
+    else:
+        stream = ((bi, m, *_run_one(b, m, n_runs, max_evals, noise))
+                  for bi, b in enumerate(benchmarks) for m in methods)
+    stream = iter(stream)
     for bench in benchmarks:
-        sigma0 = 0.2 * (bench.bounds[1] - bench.bounds[0])
         results_per_method: dict = {}
         times_per_method: dict = {}
-        for method, (cls, kwargs) in optimizers.items():
-            kw = {**kwargs, **({"sigma0": sigma0} if cls in _SIGMA_USERS else {})}
-            results, times = run_experiment(
-                cls, bench, n_runs=n_runs, max_evals=max_evals,
-                noise_model=noise, **kw
-            )
+        for _ in methods:
+            _, method, results, times = next(stream)
             results_per_method[method] = results
             times_per_method[method] = times
             s = summarize(results)
@@ -647,6 +725,7 @@ def main(
     noise: str | None = None,
     suite_budget: bool = False,
     no_viz: bool = False,
+    jobs: int = 1,
 ) -> None:
     output_dir = Path(output_dir)
     if suite == "niching":
@@ -730,15 +809,15 @@ def main(
                 for b in group:
                     _run_dim([b], output_dir / f"dim{d}", n_runs,
                              int(b.suite_max_evals), optimizers=optimizers,
-                             noise=noise, no_viz=no_viz)
+                             noise=noise, no_viz=no_viz, jobs=jobs)
             else:
                 _run_dim(group, output_dir / f"dim{d}", n_runs, max_evals,
-                         optimizers=optimizers, noise=noise, no_viz=no_viz)
+                         optimizers=optimizers, noise=noise, no_viz=no_viz, jobs=jobs)
         return
 
     print(f"\n=== dim{dim} ===")
     _run_dim(benchmarks, output_dir / f"dim{dim}", n_runs, max_evals,
-             optimizers=optimizers, noise=noise, no_viz=no_viz)
+             optimizers=optimizers, noise=noise, no_viz=no_viz, jobs=jobs)
 
 
 if __name__ == "__main__":
@@ -771,6 +850,10 @@ if __name__ == "__main__":
                         help="Skip landscape / convergence / animation rendering and "
                              "write only the CSVs. Rendering scales with the number of "
                              "evaluations, so large-budget runs need this.")
+    parser.add_argument("--jobs", type=int, default=1,
+                        help="Worker processes. Each (function, method) pair runs in "
+                             "its own task; outputs are written in the serial order and "
+                             "every seeded method gives the same numbers as --jobs 1.")
     parser.add_argument("--suite-budget", action="store_true",
                         help="Use each function's own competition budget instead of "
                              "--max-evals. Only meaningful with --suite niching "
@@ -789,4 +872,4 @@ if __name__ == "__main__":
     main(n_runs=args.n_runs, max_evals=args.max_evals, output_dir=args.output_dir,
          funcs=funcs_list, use_all=args.all, dim=args.dim, suite=args.suite,
          methods=methods_list, with_custom=args.custom, noise=args.noise,
-         suite_budget=args.suite_budget, no_viz=args.no_viz)
+         suite_budget=args.suite_budget, no_viz=args.no_viz, jobs=max(1, args.jobs))

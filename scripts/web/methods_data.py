@@ -8,10 +8,14 @@ win/loss = functions where the reference is significantly better / worse,
 p_two < 0.05, direction by A12).
 
     python scripts/web/methods_data.py results/<d2 run> results/<d5 run> results/<d10 run>
+
+Run directories may be local (results/, plain CSV) or shared (runs/, CSV.gz).
 """
 from __future__ import annotations
 
 import csv
+import gzip
+import io
 import json
 import math
 import sys
@@ -46,13 +50,19 @@ def _mean(vals: list[float]) -> float | None:
     return sum(vals) / len(vals) if vals else None
 
 
+def _rows(path: Path) -> list[dict]:
+    gz = path.with_name(path.name + ".gz")
+    f = (open(path, newline="") if path.exists()
+         else io.TextIOWrapper(gzip.open(gz), newline=""))
+    with f:
+        return list(csv.DictReader(f))
+
+
 def one_run(run_dir: Path) -> dict:
-    meta = json.loads((run_dir / "result.json").read_text())
+    meta = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
     dim = int(meta["dim"])
-    with open(run_dir / f"dim{dim}" / "summary.csv", newline="") as f:
-        rows = list(csv.DictReader(f))
-    with open(run_dir / f"dim{dim}" / "wilcoxon.csv", newline="") as f:
-        wil = list(csv.DictReader(f))
+    rows = _rows(run_dir / f"dim{dim}" / "summary.csv")
+    wil = _rows(run_dir / f"dim{dim}" / "wilcoxon.csv")
 
     funcs = sorted({r["function"] for r in rows})
     methods: list[str] = []

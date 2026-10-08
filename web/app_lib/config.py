@@ -15,7 +15,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 BASE_DIR    = ROOT
-RESULTS_DIR = BASE_DIR / "results"
+RESULTS_DIR = BASE_DIR / "results"   # this PC only (git-ignored; has the figures)
+RUNS_DIR    = BASE_DIR / "runs"      # shared through git: numbers only, CSVs gzipped
 QUICK_CHECK = BASE_DIR / "quick_check.py"
 PID_FILE    = BASE_DIR / ".quick.pid"
 DIR_FILE    = BASE_DIR / ".quick.dir"

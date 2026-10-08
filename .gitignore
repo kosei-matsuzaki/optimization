@@ -13,3 +13,4 @@ presentation/**/build/render/
 .quick.dir
 .quick.winpid
 .venv/
+logs_local/

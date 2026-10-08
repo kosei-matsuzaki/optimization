@@ -219,8 +219,8 @@ niching 手法が「協調している」ことの値打ちを測るための、
 | `SPS-L-SHADE-EIG` | `sps_lshade_eig.py` | Guo ら CEC 2015 優勝 | 共著者のコード（`ChinChangYang/RobustOptimizer`）の移植 | 名前の「自己最適化」は競技の関数ごとの事前調整なので再現せず、作者の未調整の既定値を使う。元コードの癖 2 件は既定で残す（`fixed_cauchy_table`、`archive_parent`） |
 | `CoBiDE` | `cobide.py` | Wang ら *Appl. Soft Comput.* 2014 | 論文と公式 `CoBiDE.m` | EA4eig の中の CoBiDE とは 5 点違う（境界処理、共分散の安全策、F の引き直し、交叉、集団の縮小）。単体版は元論文に従う |
 | `IMODE-mealpy` | `lib_wrappers.py` | mealpy 3.0.3 | — | mealpy の実装に不具合（評価後に演算子の割当を引き直し、成績が別の演算子に付く）と SQP 欠落。10D F10 で 10〜67。比較に使うなら移植が要る |
-| `LSHADE-cnEpSin` | `lib_wrappers.py` | mealpy 3.0.3 | — | 集団を論文の 18·D → 4 に直した |
-| `NGOpt` / `NG-Portfolio` | `lib_wrappers.py` | nevergrad 1.0.12 | — | NGOpt は遅い（10D で 1 run 40〜240 秒）。Portfolio は Sphere でも弱い（ライブラリ側の性質） |
+| `LSHADE-cnEpSin` | `lib_wrappers.py` | mealpy 3.0.3 | — | 集団を論文の 18·D → 4 に直した。**mealpy 3.0.3 は numpy ≤ 1.26 を要求し、numpy 2.4.6 の環境には入らない**（入る 3.0.2 には `mealpy.sota_based` が無い。2026-10-09 確認） |
+| `NGOpt` / `NG-Portfolio` | `lib_wrappers.py` | nevergrad 1.0.12 | — | NGOpt は遅い（10D で 1 run 40〜240 秒）。Portfolio は Sphere でも弱い（ライブラリ側の性質）。**numpy 2.4.6 の環境では NGOpt が内部の代理モデルで落ちる**（`metamodel.py` の `float(model.predict(...))`、2026-10-09 確認）。NG-Portfolio は動く |
 
 **この作業で見つかった既存の比較手法の問題（2026-10-06 に修正。修正前の記録値は測り直し待ち）**
 - `cmaes.py` / `restart_cmaes.py`（CMA-ES / IPOP / BIPOP）→ **修正済み**（`pycma_seed` で 0 だけを固定の非ゼロ値に置き換え、最後の世代は残りの予算分だけ評価して止める。seed 100・200 の run は予算内の best が修正前と完全一致することを 3 手法 × 3 関数で確認）。修正前の内容: (1) run 0 のシードが 0 になり、pycma が 0 を「時刻から乱数」と解釈するので run 0 だけ再現しない（[findings.md](findings.md) の「cma ライブラリは run 間で決定的でない」の少なくとも一部はこれ）。(2) 最後の世代を丸ごと評価するので、評価回数の上限を最大で集団サイズ − 1 回超える。

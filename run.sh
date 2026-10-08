@@ -213,6 +213,13 @@ cmd_status() {
   gh run view "$run_id"
 }
 
+# ── publish ──────────────────────────────────────────────────────────────────
+# results/ is per-PC (git-ignored). publish copies a run's numbers (CSV.gz +
+# result.json, no figures) into runs/, which is tracked, so other PCs see it.
+cmd_publish() {
+  "$PY" scripts/publish_run.py "$@"
+}
+
 # ── ui ───────────────────────────────────────────────────────────────────────
 cmd_ui() {
   echo "Starting UI at http://localhost:8080 ..."
@@ -237,6 +244,7 @@ case "${1:-help}" in
   status)   shift; cmd_status   "${1:-}" ;;
   ui)       shift; cmd_ui       "${1:-}" ;;
   loop)     shift; cmd_loop     "$@" ;;
+  publish)  shift; cmd_publish  "$@" ;;
   *)
     cat <<'EOF'
 Usage: ./run.sh <command> [options]
@@ -258,6 +266,7 @@ Usage: ./run.sh <command> [options]
 
   quick [--n-runs N] [--max-evals N] [--dim {2|3|5|10|20}] [--methods LIST]
         [--funcs LIST] [--suite {bbob|cec2022|niching}] [--all] [--custom] [--noise MODE] [--label NAME] [--viz]
+        [--jobs N]
       ローカルで手法を検証・評価する（評価の標準: 2D BBOB-24 のみ / n_runs=20, max_evals=5000, --all）
       デフォルト: --n-runs 20 --max-evals 5000 --dim 2
       --methods は比較する手法のコンマ区切り（空欄=全手法）
@@ -273,7 +282,13 @@ Usage: ./run.sh <command> [options]
         判定は summary.csv / wilcoxon.csv の 3 指標で行うので図は要らず、
         図は 1 run あたり約 500 MB かかる（results/ が 5.5 GB まで育ち、うち数値は 2.8 MB だった）。
         進捗報告の資料を作るときだけ付ける。
+      --jobs N で (関数 × 手法) を N プロセスに分けて並列に回す（既定 1）。
+        各 run は seed 固定なので結果は --jobs 1 と同じ（実行時間の列を除く）。
       保存先: results/YYYYMMDD_HHMMSS_<label|commit>_quick/
+
+  publish results/<run> [...] [--name NAME] [--note TEXT] [--force]
+      run の数値（summary / wilcoxon / run ごとの統計を CSV.gz で、図は除く）を
+      git 管理の runs/ に写す。commit して push すれば他の PC の Results UI にも出る。
 
   stop
       実行中の quick ジョブを停止（SIGTERM を送信）

@@ -98,7 +98,7 @@ def optima_found_mask(
     """
     K = len(optima_pos)
     found = np.zeros(K, dtype=bool)
-    if K == 0 or not result.history_x:
+    if K == 0 or len(result.history_x) == 0:   # list, or an array from a --jobs worker
         return found
     opts = np.asarray(optima_pos, dtype=float)              # (K, dim)
     radius = max(0.5, radius_ratio * span)

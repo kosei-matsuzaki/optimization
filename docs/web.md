@@ -16,7 +16,7 @@ python3 web/app.py
 
 開発サーバ（`debug=True`）で動作する。ホットリロード時にメモリ上のジョブ状態（実行中の Quick Run / ダウンロード）はリセットされるため、リロードをまたぐ進捗復元はブラウザ側の `localStorage` ＋ `.quick.pid` で補完している。Windows（Git Bash）では `.quick.pid` が MSYS の PID で Python から扱えないため、`run.sh quick` は同じジョブのネイティブ PID を `.quick.winpid` にも書き、web 側は Windows ではこちらだけを読んで `OpenProcess` で生存確認する（Windows の `os.kill(pid, 0)` は生存確認ではなく TerminateProcess になるので使わない）。
 
-> 結果データは `results/YYYYMMDD_HHMMSS_<commit>/` を直接読む。UI 自体は結果を生成せず、Quick Run は `quick_check.py` をサブプロセスとして起動するだけ。`main.py`（本番実験）はローカルでは実行しない（リポジトリ全体のルール）。
+> 結果データは `results/YYYYMMDD_HHMMSS_<commit>/`（この PC だけ、図あり）と `runs/<run>/`（git で共有、数値のみ・CSV.gz）の両方を読む（`app_lib/results.py` の `run_path` / `_open_csv`）。同名なら `results/` を優先。`runs/` だけにある run は一覧で「共有」と表示し、名前変更・削除の API は拒否する（git で扱う）。UI 自体は結果を生成せず、Quick Run は `quick_check.py` をサブプロセスとして起動するだけ。`main.py`（本番実験）はローカルでは実行しない（リポジトリ全体のルール）。
 
 ---
 

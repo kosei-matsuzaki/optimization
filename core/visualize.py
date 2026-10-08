@@ -3,40 +3,108 @@ import csv
 from pathlib import Path
 import numpy as np
 import matplotlib
+import matplotlib.ticker
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.patches as mpatches
-from matplotlib.gridspec import GridSpec
+from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.lines import Line2D
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 from .benchmarks import BenchmarkFunction
 from .optimizers import OptimizeResult
 
+# ── Look ──────────────────────────────────────────────────────────────────────
+# Matches the results UI (web/static/style.css): ink text, recessive grid, one
+# teal for the proposed method. Japanese labels need a CJK face; the list falls
+# through to whatever the machine has (matplotlib >= 3.6 falls back per glyph).
+INK, INK_2, MUTED, RULE, GRID, SURFACE = (
+    "#17202b", "#4a5563", "#7d8794", "#dce1e3", "#e9edee", "#ffffff")
+GOOD, BAD = "#00897b", "#c2412d"          # reached the target / did not
+
+# First installed face wins; listing only installed ones keeps matplotlib from
+# warning once per missing family. The variable "Noto Sans JP" is left out: on
+# Windows matplotlib registers only its thin master.
+_FONT_PREFS = ["IBM Plex Sans JP", "BIZ UDPGothic", "Yu Gothic UI", "Meiryo",
+               "Noto Sans CJK JP", "IPAexGothic", "Hiragino Sans"]
+try:
+    from matplotlib import font_manager as _fm
+    _installed = {f.name for f in _fm.fontManager.ttflist}
+    _FONTS = [f for f in _FONT_PREFS if f in _installed] + ["DejaVu Sans"]
+except Exception:          # pragma: no cover
+    _FONTS = ["DejaVu Sans"]
+
 matplotlib.rcParams.update({
-    "font.family": "serif",
-    "font.serif": ["Times New Roman", "DejaVu Serif"],
-    "mathtext.fontset": "stix",
-    "axes.titlesize": 10,
-    "axes.labelsize": 9,
-    "xtick.labelsize": 8,
-    "ytick.labelsize": 8,
-    "legend.fontsize": 8,
+    "font.family": _FONTS,
+    "mathtext.fontset": "dejavusans",
+    "axes.unicode_minus": False,
+    "font.size": 9,
+    "axes.titlesize": 9.5,
+    "axes.titleweight": "bold",
+    "axes.titlelocation": "left",
+    "axes.titlecolor": INK,
+    "axes.labelsize": 8.5,
+    "axes.labelcolor": INK_2,
+    "axes.edgecolor": RULE,
+    "axes.linewidth": 0.8,
+    "axes.facecolor": SURFACE,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "axes.grid": True,
+    "grid.color": GRID,
+    "grid.linewidth": 0.6,
+    "xtick.color": MUTED,
+    "ytick.color": MUTED,
+    "xtick.labelsize": 7.5,
+    "ytick.labelsize": 7.5,
+    "xtick.labelcolor": INK_2,
+    "ytick.labelcolor": INK_2,
+    "legend.fontsize": 7.5,
+    "legend.frameon": False,
+    "legend.labelcolor": INK,
+    "figure.facecolor": SURFACE,
     "figure.dpi": 150,
+    "savefig.facecolor": SURFACE,
+    "svg.fonttype": "path",
 })
 
-_COLORS = ["tab:blue", "tab:orange", "tab:green", "tab:red", "deepskyblue", "tab:brown"]
-
+# Fixed colour per entity — a method keeps its colour in every figure, whatever
+# else is plotted (validated with the dataviz palette checker: lightness, chroma,
+# normal-vision and CVD separation all pass in this order; red/green sits in the
+# CVD warning band, so line style and the legend carry identity as well).
 _METHOD_COLOR: dict[str, str] = {
-    "CMA-ES": "tab:blue",
-    "PSO":    "tab:orange",
-    "DE":     "tab:purple",
-    "SaVOA":  "tab:red",
-    "MC-ESO": "deepskyblue",
+    "MC-ESO":       "#00897b",
+    "CMA-ES":       "#4a3aa7",
+    "IPOP-CMA-ES":  "#eb6834",
+    "BIPOP-CMA-ES": "#2a78d6",
+    "DE":           "#e87ba4",
+    "L-SHADE":      "#eda100",
+    "PSO":          "#e34948",
+    "SaVOA":        "#008300",
 }
+_METHOD_DASH: dict[str, tuple] = {"MC-ESO-v0": (0, (4, 2))}
+OTHER = "#b3bac1"          # every method without a fixed colour
+_SOLO = "#3c4a57"          # per-method figure of a method without a fixed colour
 
 
-def _method_color(name: str, fallback_idx: int) -> str:
-    return _METHOD_COLOR.get(name, _COLORS[fallback_idx % len(_COLORS)])
+def _method_color(name: str, fallback_idx: int = 0) -> str:
+    if name == "MC-ESO-v0":
+        return "#5fb3a8"
+    return _METHOD_COLOR.get(name, _SOLO)
+
+
+# Landscape: one hue (slate teal), dark = low f. Search points sit on top in the
+# method's colour, so the background stays light over most of the box.
+_LAND = LinearSegmentedColormap.from_list(
+    "land", ["#2f5f66", "#86aaa9", "#d8e3e0", "#f6f5f0"])
+_LAND_LIGHT = LinearSegmentedColormap.from_list(
+    "land_light", ["#7d9e9d", "#b9cecb", "#e2ebe8", "#faf9f5"])
+# f along a 3-D point cloud: one hue (blue), dark = near the optimum.
+_FCMAP = LinearSegmentedColormap.from_list(
+    "fval", ["#0d366b", "#2a78d6", "#86b6ef", "#dce9f8"])
+
+_TARGET = 1e-10            # SR@1e-10, the primary metric
+_FLOOR = 1e-12             # log-axis floor for exact zeros
 
 
 # ---------------------------------------------------------------------------
@@ -79,38 +147,92 @@ def _out_dir(output_dir: Path, subdir: str) -> Path:
     return p
 
 
+def _gap(values, benchmark: BenchmarkFunction) -> np.ndarray:
+    """f − f* clipped to the log floor."""
+    return np.maximum(np.asarray(values, dtype=float) - benchmark.optimum, _FLOOR)
+
+
+def _thin(n: int, k: int = 700) -> np.ndarray:
+    """Indices that keep a long curve's shape at a fraction of the SVG size."""
+    if n <= k:
+        return np.arange(n)
+    return np.unique(np.concatenate([np.linspace(0, n - 1, k).astype(int), [n - 1]]))
+
+
 def _draw_convergence(
     ax: plt.Axes,
     benchmark: BenchmarkFunction,
     results_per_method: dict[str, list[OptimizeResult]],
     title: str | None = None,
 ) -> None:
-    common_max = max(
-        max(len(r.history_best) for r in results)
-        for results in results_per_method.values()
-    )
-    for idx, (method_name, results) in enumerate(results_per_method.items()):
-        color = _method_color(method_name, idx)
-        padded = np.array([
-            r.history_best + [r.history_best[-1]] * (common_max - len(r.history_best))
-            for r in results
-        ])
-        evals = np.arange(1, common_max + 1)
-        mean = np.mean(padded, axis=0)
-        std = np.std(padded, axis=0)
-        lower = np.maximum(mean - std, mean * 0.01)
-        upper = mean + std
+    """Median best-so-far f − f* per method, quartile band for the coloured ones.
 
-        ax.semilogy(evals, mean, color=color, linewidth=1.6, label=method_name)
-        ax.fill_between(evals, lower, upper, color=color, alpha=0.18)
+    Methods with a fixed colour (and MC-ESO-v0) are drawn in colour; all others
+    are grey context lines under a single legend entry, so a 35-method run stays
+    readable and a method never changes colour between figures.
+    """
+    common_max = max(max(len(r.history_best) for r in res)
+                     for res in results_per_method.values())
+    idx = _thin(common_max)
+    evals = idx + 1
+    curves = {}
+    for name, results in results_per_method.items():
+        padded = np.array([r.history_best + [r.history_best[-1]] * (common_max - len(r.history_best))
+                           for r in results], dtype=float)
+        g = _gap(padded, benchmark)[:, idx]
+        curves[name] = (np.median(g, axis=0), np.percentile(g, 25, axis=0),
+                        np.percentile(g, 75, axis=0))
 
-    ax.axhline(benchmark.optimum + 1e-10, color="gray", linestyle="--",
-               linewidth=0.8, label="optimum")
-    ax.set_xlabel("Evaluations")
-    ax.set_ylabel(r"Best $f$ (log)")
-    ax.set_title(title or "Convergence")
-    ax.legend(fontsize=7)
-    ax.grid(True, which="both", alpha=0.25)
+    def colored(n):
+        return n in _METHOD_COLOR or n in _METHOD_DASH
+
+    n_other = 0
+    for name, (med, _, _) in curves.items():
+        if not colored(name):
+            ax.plot(evals, med, color=OTHER, linewidth=0.8, alpha=0.8, zorder=1)
+            n_other += 1
+    order = sorted((n for n in curves if colored(n)),
+                   key=lambda n: (n == "MC-ESO", -curves[n][0][-1]))
+    for name in order:
+        med, q1, q3 = curves[name]
+        c = _method_color(name)
+        is_ref = name == "MC-ESO"
+        if is_ref or name in _METHOD_COLOR:
+            ax.fill_between(evals, q1, q3, color=c, alpha=0.18 if is_ref else 0.06,
+                            linewidth=0, zorder=2)
+        ax.plot(evals, med, color=c, linewidth=2.2 if is_ref else 1.4,
+                linestyle=_METHOD_DASH.get(name, "-"), zorder=4 if is_ref else 3,
+                label=name)
+    ax.set_yscale("log")
+    ax.axhline(_TARGET, color=MUTED, linewidth=0.8, linestyle=(0, (3, 3)), zorder=0)
+    ax.text(evals[-1], _TARGET, " 1e-10", color=MUTED, fontsize=7, va="center", ha="left")
+    ax.set_ylim(bottom=_FLOOR / 2)
+    ax.set_xlim(1, evals[-1])
+    ax.set_xlabel("評価回数")
+    ax.set_ylabel("f − f*（中央値、帯は四分位）")
+    ax.grid(True, which="major")
+    ax.grid(False, which="minor")
+    if title:
+        ax.set_title(title)
+    # Legend: best final median first, MC-ESO always on top of the list.
+    handles = [Line2D([], [], color=_method_color(n), linewidth=2.2 if n == "MC-ESO" else 1.4,
+                      linestyle=_METHOD_DASH.get(n, "-"), label=n)
+               for n in sorted(order, key=lambda n: (n != "MC-ESO", curves[n][0][-1]))]
+    if n_other:
+        handles.append(Line2D([], [], color=OTHER, linewidth=0.8, label=f"その他 {n_other} 手法"))
+    ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.01, 1.0),
+              borderaxespad=0, handlelength=2.2)
+
+
+def _land_bg(ax: plt.Axes, X, Y, Z_plot, lo, hi, light: bool = True) -> None:
+    ax.contourf(X, Y, Z_plot, levels=24, cmap=_LAND_LIGHT if light else _LAND, zorder=0)
+    ax.contour(X, Y, Z_plot, levels=12, colors="#ffffff", linewidths=0.4, alpha=0.8, zorder=1)
+    ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
+    ax.set_aspect("equal")
+    ax.grid(False)
+    for s in ax.spines.values():
+        s.set_visible(True); s.set_color(RULE)
+    ax.set_xlabel(r"$x_1$"); ax.set_ylabel(r"$x_2$", rotation=0, labelpad=8)
 
 
 def _draw_surface3d(
@@ -118,25 +240,40 @@ def _draw_surface3d(
     benchmark: BenchmarkFunction,
     X: np.ndarray, Y: np.ndarray, Z: np.ndarray,
 ) -> None:
-    ax.plot_surface(X, Y, Z, cmap="viridis", alpha=0.85, linewidth=0, antialiased=True)
-    ax.contour(X, Y, Z, zdir="z", offset=float(Z.min()), levels=15, cmap="viridis", alpha=0.4)
+    Zp = np.log1p(Z - Z.min())
+    ax.plot_surface(X, Y, Zp, cmap=_LAND, linewidth=0, antialiased=True, rcount=80, ccount=80)
     if benchmark.optima_pos:
         for opt in benchmark.optima_pos:
-            oz = benchmark.func(np.array(opt))
-            ax.scatter([opt[0]], [opt[1]], [oz], marker="*", color="yellow",
-                       edgecolors="black", linewidths=0.5, s=150, zorder=5)
-    ax.set_xlabel(r"$x_1$", labelpad=2)
-    ax.set_ylabel(r"$x_2$", labelpad=2)
-    ax.set_zlabel(r"$f$", labelpad=2)
-    ax.set_title("Landscape")
-    ax.tick_params(axis="both", labelsize=7)
+            oz = np.log1p(benchmark.func(np.array(opt)) - Z.min())
+            ax.scatter([opt[0]], [opt[1]], [oz], marker="*", color=BAD,
+                       edgecolors="white", linewidths=0.6, s=110, zorder=5)
+    _style_3d(ax)
+    ax.set_zlabel("log(1 + f − f_min)", labelpad=2)
+
+
+def _style_3d(ax) -> None:
+    for a in (ax.xaxis, ax.yaxis, ax.zaxis):
+        a.set_pane_color((1, 1, 1, 0))
+        a._axinfo["grid"].update(color=GRID, linewidth=0.5)
+        a.line.set_color(RULE)
+    ax.tick_params(labelsize=6.5, colors=MUTED)
+    ax.set_xlabel(r"$x_1$", labelpad=0); ax.set_ylabel(r"$x_2$", labelpad=0)
 
 
 def _draw_optima(ax: plt.Axes, benchmark: BenchmarkFunction) -> None:
     if benchmark.optima_pos:
         for opt in benchmark.optima_pos:
-            ax.plot(opt[0], opt[1], "+", color="gold", markersize=9,
-                    markeredgewidth=1.8, zorder=7)
+            # hollow and under the search marks: it shows where the optimum is
+            # without hiding a population that has converged onto it
+            ax.plot(opt[0], opt[1], marker="*", markerfacecolor="none",
+                    markeredgecolor=BAD, markersize=13, markeredgewidth=1.3,
+                    zorder=1.5, linestyle="none")
+
+
+def _frame_title(ax, left: str, right: str = "") -> None:
+    ax.set_title(left, loc="left", fontsize=9)
+    if right:
+        ax.set_title(right, loc="right", fontsize=8, fontweight="normal", color=INK_2)
 
 
 def _save_anim(ani: animation.FuncAnimation, out_dir: Path, stem: str, fps: int) -> str:
@@ -150,6 +287,10 @@ def _save_anim(ani: animation.FuncAnimation, out_dir: Path, stem: str, fps: int)
     gif_path = out_dir / f"{stem}.gif"
     ani.save(str(gif_path), writer=animation.PillowWriter(fps=fps))
     return "gif"
+
+
+# Animations: square frames at a size the UI's grid cells show sharply.
+_ANIM_SIZE, _ANIM_DPI = (4.4, 4.4), 90
 
 
 # ---------------------------------------------------------------------------
@@ -166,28 +307,27 @@ def save_landscape_svg(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    X, Y, Z = _contour_data(benchmark, resolution=200)
-    Z_plot = np.log1p(Z - Z.min() + 1e-10)
+    X, Y, Z = _contour_data(benchmark, resolution=160)
+    Z_plot = np.log1p(Z - Z.min())
     lo, hi = benchmark.bounds
 
-    fig = plt.figure(figsize=(10, 4.5))
-    gs = GridSpec(1, 2, figure=fig, width_ratios=[1, 1], wspace=0.30)
+    fig = plt.figure(figsize=(9.6, 4.4))
+    ax_land = fig.add_subplot(1, 2, 1)
+    ax_land.contourf(X, Y, Z_plot, levels=36, cmap=_LAND)
+    ax_land.contour(X, Y, Z_plot, levels=14, colors="#ffffff", linewidths=0.4, alpha=0.7)
+    _draw_optima(ax_land, benchmark)
+    ax_land.set_xlim(lo, hi); ax_land.set_ylim(lo, hi); ax_land.set_aspect("equal")
+    ax_land.grid(False)
+    ax_land.set_xlabel(r"$x_1$"); ax_land.set_ylabel(r"$x_2$", rotation=0, labelpad=8)
+    ax_land.set_title("等高線（濃いほど f が低い、★ = 大域最適）")
 
-    ax_land = fig.add_subplot(gs[0])
-    ax_land.contourf(X, Y, Z_plot, levels=40, cmap="viridis", alpha=0.85)
-    ax_land.contour(X, Y, Z_plot, levels=20, colors="white", linewidths=0.3, alpha=0.4)
-    if benchmark.optima_pos:
-        for opt in benchmark.optima_pos:
-            ax_land.plot(opt[0], opt[1], "+", color="gold", markersize=10,
-                         markeredgewidth=2.0, zorder=7)
-    ax_land.set_xlim(lo, hi); ax_land.set_ylim(lo, hi)
-    ax_land.set_xlabel(r"$x_1$"); ax_land.set_ylabel(r"$x_2$")
-    ax_land.set_title("2D Landscape")
-
-    ax_surf = fig.add_subplot(gs[1], projection="3d")
+    ax_surf = fig.add_subplot(1, 2, 2, projection="3d")
     _draw_surface3d(ax_surf, benchmark, X, Y, Z)
+    ax_surf.set_title("曲面（log スケール）")
+    ax_surf.view_init(elev=32, azim=-58)
 
-    fig.suptitle(f"{benchmark.name}  [{benchmark.category}]", fontsize=12)
+    fig.suptitle(f"{benchmark.name}（{benchmark.category}）", x=0.06, ha="left",
+                 fontsize=11, fontweight="bold", color=INK, y=1.02)
     fig.savefig(output_dir / f"{benchmark.name}_landscape.svg", format="svg", bbox_inches="tight")
     plt.close(fig)
 
@@ -204,47 +344,13 @@ def save_convergence_svg(
     """Convergence curves for all methods in one comparison plot."""
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    if benchmark.dim == 3:
-        fig = plt.figure(figsize=(14, 5))
-        gs = GridSpec(1, 2, figure=fig, width_ratios=[1.6, 1], wspace=0.35)
-        ax_conv = fig.add_subplot(gs[0])
-        _draw_convergence(ax_conv, benchmark, results_per_method, title="Convergence")
-
-        ax_3d = fig.add_subplot(gs[1], projection="3d")
-        best_method = min(
-            results_per_method,
-            key=lambda m: min(r.best_f for r in results_per_method[m]),
-        )
-        best_run = min(results_per_method[best_method], key=lambda r: r.best_f)
-        if best_run.history_x:
-            arr = np.array(best_run.history_x)
-            f_log = np.log1p(np.array(best_run.history_f))
-            sc = ax_3d.scatter(
-                arr[:, 0], arr[:, 1], arr[:, 2],
-                c=f_log, cmap="viridis_r", s=6, alpha=0.4,
-                edgecolors="none", depthshade=True,
-            )
-            fig.colorbar(sc, ax=ax_3d, shrink=0.55, pad=0.08, label="log(1+f)")
-        if benchmark.optima_pos:
-            for opt in benchmark.optima_pos:
-                ax_3d.scatter([opt[0]], [opt[1]], [opt[2]], marker="*", color="red",
-                               s=180, edgecolors="white", linewidths=0.5, zorder=5)
-        lo3, hi3 = benchmark.bounds
-        ax_3d.set_xlim(lo3, hi3); ax_3d.set_ylim(lo3, hi3); ax_3d.set_zlim(lo3, hi3)
-        ax_3d.set_xlabel(r"$x_1$", labelpad=1, fontsize=7)
-        ax_3d.set_ylabel(r"$x_2$", labelpad=1, fontsize=7)
-        ax_3d.set_zlabel(r"$x_3$", labelpad=1, fontsize=7)
-        ax_3d.tick_params(labelsize=6)
-        ax_3d.set_title(
-            f"{best_method} — eval distribution\nbright=near optimum  *=optimum",
-            fontsize=7,
-        )
-    else:
-        fig, ax_conv = plt.subplots(1, 1, figsize=(8, 5))
-        _draw_convergence(ax_conv, benchmark, results_per_method, title="Convergence")
-
-    fig.suptitle(f"{benchmark.name}  [{benchmark.category}]  — Convergence", fontsize=12)
+    fig, ax = plt.subplots(1, 1, figsize=(8.2, 4.6))
+    _draw_convergence(ax, benchmark, results_per_method)
+    n_runs = max(len(r) for r in results_per_method.values())
+    fig.suptitle(f"{benchmark.name}　収束の推移", x=0.07, ha="left", fontsize=11,
+                 fontweight="bold", color=INK)
+    fig.text(0.07, 0.905, f"{benchmark.dim} 次元、{n_runs} run の最良値の推移。点線は SR の主指標の閾値 1e-10。",
+             color=MUTED, fontsize=8, ha="left")
     fig.savefig(output_dir / f"{benchmark.name}_convergence.svg", format="svg", bbox_inches="tight")
     plt.close(fig)
 
@@ -268,24 +374,23 @@ def save_method_runs_anim(
 
     n_runs = len(results)
     lo, hi = benchmark.bounds
-    color = _method_color(method_name, 0)
-
+    color = _method_color(method_name)
     X, Y, Z = _contour_data(benchmark, resolution=100)
-    Z_plot = np.log1p(Z - Z.min() + 1e-10)
+    Z_plot = np.log1p(Z - Z.min())
 
-    fig, ax = plt.subplots(1, 1, figsize=(5, 4.5), dpi=60)
+    fig, ax = plt.subplots(1, 1, figsize=_ANIM_SIZE, dpi=_ANIM_DPI)
 
     def draw_frame(run_idx: int) -> list:
         ax.clear()
-        ax.contourf(X, Y, Z_plot, levels=30, cmap="viridis", alpha=0.7)
-        ax.contour(X, Y, Z_plot, levels=10, colors="white", linewidths=0.2, alpha=0.3)
+        _land_bg(ax, X, Y, Z_plot, lo, hi)
+        ok = None
         if run_idx < len(results):
             r = results[run_idx]
-            if r.history_x:
-                pts = np.array(r.history_x)
-                s = max(1, len(pts) // 1000)
-                ax.scatter(pts[::s, 0], pts[::s, 1], s=8, c=color,
-                           alpha=0.35, zorder=2, rasterized=True)
+            if len(r.history_x):
+                pts = np.asarray(r.history_x)
+                s = max(1, len(pts) // 1500)
+                ax.scatter(pts[::s, 0], pts[::s, 1], s=5, c=color, alpha=0.35,
+                           linewidths=0, zorder=2, rasterized=True)
                 best_f, traj = float("inf"), []
                 for x, f in zip(r.history_x, r.history_best):
                     if f < best_f:
@@ -293,22 +398,20 @@ def save_method_runs_anim(
                         traj.append(x)
                 if len(traj) > 1:
                     t = np.array(traj)
-                    ax.plot(t[:, 0], t[:, 1], "-", color=color, linewidth=1.2,
-                            zorder=3, alpha=0.8)
-                bidx = int(np.argmin(r.history_best))
-                bx = r.history_x[bidx]
-                dot_c = "lime" if r.best_f <= 1e-4 else "red"
-                ax.plot(bx[0], bx[1], "o", color=dot_c, markersize=7,
-                        markeredgecolor="white", markeredgewidth=0.5, zorder=5)
+                    ax.plot(t[:, 0], t[:, 1], "-", color=INK, linewidth=0.7, alpha=0.45, zorder=3)
+                bx = r.history_x[int(np.argmin(r.history_best))]
+                ok = r.best_f - benchmark.optimum <= 1e-4
+                ax.plot(bx[0], bx[1], marker="o" if ok else "X", color=GOOD if ok else BAD,
+                        markersize=8, markeredgecolor="white", markeredgewidth=1.0,
+                        zorder=9, linestyle="none")
         _draw_optima(ax, benchmark)
-        ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
-        ax.set_xlabel(r"$x_1$"); ax.set_ylabel(r"$x_2$")
-        ax.set_title(f"run {run_idx+1}/{n_runs}  lime=success  red=fail", fontsize=8)
+        state = "" if ok is None else ("　到達 ●" if ok else "　未到達 ✕")
+        _frame_title(ax, method_name, f"run {run_idx + 1}/{n_runs}{state}")
         return []
 
-    fig.suptitle(f"{benchmark.name}  — {method_name}", fontsize=9)
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_runs,
                                   interval=1000 // fps, blit=False)
+    fig.tight_layout()
     _save_anim(ani, output_dir, f"{benchmark.name}_{method_name}_runs", fps)
     plt.close(fig)
 
@@ -335,43 +438,38 @@ def save_method_evals_anim(
     run = (min(results, key=lambda r: r.best_f) if best
            else max(results, key=lambda r: r.best_f))
     lo, hi = benchmark.bounds
-    color = _method_color(method_name, 0)
-
+    color = _method_color(method_name)
     X, Y, Z = _contour_data(benchmark, resolution=100)
-    Z_plot = np.log1p(Z - Z.min() + 1e-10)
+    Z_plot = np.log1p(Z - Z.min())
 
-    total_evals = len(run.history_x)
+    hx = np.asarray(run.history_x)
+    total_evals = len(hx)
     n_frames = max(1, (total_evals + step - 1) // step)
-
-    fig, ax = plt.subplots(1, 1, figsize=(5, 4.5), dpi=60)
+    fig, ax = plt.subplots(1, 1, figsize=_ANIM_SIZE, dpi=_ANIM_DPI)
+    which = "最良の run" if best else "最悪の run"
 
     def draw_frame(frame_idx: int) -> list:
-        comp_limit = (frame_idx + 1) * step
+        n_shown = min((frame_idx + 1) * step, total_evals)
         ax.clear()
-        ax.contourf(X, Y, Z_plot, levels=30, cmap="viridis", alpha=0.7)
-        ax.contour(X, Y, Z_plot, levels=10, colors="white", linewidths=0.2, alpha=0.3)
-        pts = run.history_x[:comp_limit]
-        if pts:
-            arr = np.array(pts)
-            ax.scatter(arr[:, 0], arr[:, 1], s=8, c=color, alpha=0.4, zorder=2)
-        if run.history_best[:comp_limit]:
-            bidx = int(np.argmin(run.history_best[:comp_limit]))
-            bx = run.history_x[bidx]
-            ax.plot(bx[0], bx[1], "o", color="red", markersize=8,
-                    markeredgecolor="white", markeredgewidth=0.5, zorder=5)
+        _land_bg(ax, X, Y, Z_plot, lo, hi)
+        if n_shown:
+            arr = hx[:n_shown]
+            ax.scatter(arr[:, 0], arr[:, 1], s=5, c=color, alpha=0.4, linewidths=0, zorder=2)
+            # the latest batch stands out from the accumulated cloud
+            new = hx[max(0, n_shown - step):n_shown]
+            ax.scatter(new[:, 0], new[:, 1], s=9, c=color, alpha=0.95, linewidths=0, zorder=3)
+            bidx = int(np.argmin(run.history_best[:n_shown]))
+            ax.plot(hx[bidx][0], hx[bidx][1], marker="o", color=INK, markersize=7,
+                    markeredgecolor="white", markeredgewidth=1.0, zorder=9, linestyle="none")
         _draw_optima(ax, benchmark)
-        ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
-        ax.set_xlabel(r"$x_1$"); ax.set_ylabel(r"$x_2$")
-        n_shown = min(comp_limit, len(run.history_x))
-        bv = run.history_best[n_shown - 1] if n_shown > 0 else float("inf")
-        ax.set_title(f"e={n_shown}  f={bv:.2e}", fontsize=8)
+        bv = run.history_best[n_shown - 1] - benchmark.optimum if n_shown else float("inf")
+        _frame_title(ax, f"{method_name}（{which}）", f"{n_shown:,} 評価　f−f* = {bv:.1e}")
         return []
 
     suffix = "" if best else "_failed"
-    note = "eval accum." if best else "eval accum. (failed run)"
-    fig.suptitle(f"{benchmark.name}  — {method_name}  {note}", fontsize=9)
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
+    fig.tight_layout()
     _save_anim(ani, output_dir, f"{benchmark.name}_{method_name}_evals{suffix}", fps)
     plt.close(fig)
 
@@ -398,10 +496,9 @@ def save_method_population_anim(
     run = (min(results, key=lambda r: r.best_f) if best
            else max(results, key=lambda r: r.best_f))
     lo, hi = benchmark.bounds
-    color = _method_color(method_name, 0)
-
+    color = _method_color(method_name)
     X, Y, Z = _contour_data(benchmark, resolution=100)
-    Z_plot = np.log1p(Z - Z.min() + 1e-10)
+    Z_plot = np.log1p(Z - Z.min())
 
     pops = run.history_pop
     if not pops:
@@ -409,44 +506,39 @@ def save_method_population_anim(
     s = max(1, len(pops) // pop_frames)
     indices = [min(i * s, len(pops) - 1) for i in range(pop_frames)]
     frames = [pops[idx] for idx in indices]
-    n_total = run.n_evals
-    eval_counts = [round((idx + 1) / len(pops) * n_total) for idx in indices]
+    eval_counts = [round((idx + 1) / len(pops) * run.n_evals) for idx in indices]
     n_frames = len(frames)
-
-    fig, ax = plt.subplots(1, 1, figsize=(5, 4.5), dpi=60)
     has_sigma = bool(run.history_pop_sigma)
+    which = "最良の run" if best else "最悪の run"
+
+    fig, ax = plt.subplots(1, 1, figsize=_ANIM_SIZE, dpi=_ANIM_DPI)
 
     def draw_frame(frame_idx: int) -> list:
         ax.clear()
-        ax.contourf(X, Y, Z_plot, levels=30, cmap="viridis", alpha=0.7)
-        ax.contour(X, Y, Z_plot, levels=10, colors="white", linewidths=0.2, alpha=0.3)
+        _land_bg(ax, X, Y, Z_plot, lo, hi)
         fi = min(frame_idx, n_frames - 1)
-        if len(frames[fi]) > 0:
-            pop = frames[fi]
-            ax.scatter(pop[:, 0], pop[:, 1], s=35, c=color,
-                       edgecolors="white", linewidths=0.3, zorder=4, alpha=0.9)
+        pop = frames[fi]
+        if len(pop) > 0:
             if has_sigma:
-                sigma_fi = min(fi, len(run.history_pop_sigma) - 1)
-                pop_sig = run.history_pop_sigma[sigma_fi]
-                for pos, sig in zip(pop, pop_sig):
-                    circ = mpatches.Circle(
-                        (float(pos[0]), float(pos[1])), float(sig),
-                        fill=True, facecolor=color, edgecolor=color,
-                        linewidth=1.2, alpha=0.18, zorder=3,
-                    )
-                    ax.add_patch(circ)
+                sig = run.history_pop_sigma[min(fi, len(run.history_pop_sigma) - 1)]
+                for pos, sg in zip(pop, sig):
+                    ax.add_patch(mpatches.Circle((float(pos[0]), float(pos[1])), float(sg),
+                                                 fill=False, edgecolor=color, linewidth=0.8,
+                                                 alpha=0.45, zorder=3))
+            ax.scatter(pop[:, 0], pop[:, 1], s=22, c=color, edgecolors="white",
+                       linewidths=0.6, zorder=4)
         _draw_optima(ax, benchmark)
-        ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
-        ax.set_xlabel(r"$x_1$"); ax.set_ylabel(r"$x_2$")
-        sigma_note = "  [○=σ]" if has_sigma else ""
-        ax.set_title(f"eval={eval_counts[fi]}{sigma_note}", fontsize=8)
+        # A converged population collapses onto one point; say how small it is.
+        spread = float(np.ptp(pop, axis=0).max()) if len(pop) > 1 else 0.0
+        note = "　○ = 宿主ごとの σ" if has_sigma else ""
+        _frame_title(ax, f"{method_name}（{which}）",
+                     f"{eval_counts[fi]:,} 評価　広がり {spread:.0e}{note}")
         return []
 
     suffix = "" if best else "_failed"
-    note = "population" if best else "population (failed run)"
-    fig.suptitle(f"{benchmark.name}  — {method_name}  {note}", fontsize=9)
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
+    fig.tight_layout()
     _save_anim(ani, output_dir, f"{benchmark.name}_{method_name}_population{suffix}", fps)
     plt.close(fig)
 
@@ -469,55 +561,46 @@ def save_method_3devals_anim(
         return
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    from matplotlib.colors import Normalize
+    from matplotlib.colors import LogNorm
 
     run = (min(results, key=lambda r: r.best_f) if best
            else max(results, key=lambda r: r.best_f))
     lo, hi = benchmark.bounds
-
-    all_f_log = np.log1p(run.history_f)
-    vmax = float(np.percentile(all_f_log, 98)) if len(all_f_log) else 1.0
-    norm = Normalize(vmin=0.0, vmax=max(vmax, 1e-8))
-    cmap = plt.get_cmap("viridis_r")
-
-    total_evals = len(run.history_x)
+    hx = np.asarray(run.history_x)
+    gap = _gap(run.history_f, benchmark)
+    vmax = float(np.percentile(gap, 98)) if len(gap) else 1.0
+    norm = LogNorm(vmin=max(float(gap.min()), _FLOOR), vmax=max(vmax, 1e-8))
+    total_evals = len(hx)
     step = max(1, total_evals // n_frames)
+    which = "最良の run" if best else "最悪の run"
 
-    fig = plt.figure(figsize=(5.5, 4.8), dpi=60)
+    fig = plt.figure(figsize=(5.0, 4.4), dpi=_ANIM_DPI)
     ax = fig.add_subplot(1, 1, 1, projection="3d")
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm = plt.cm.ScalarMappable(cmap=_FCMAP, norm=norm)
     sm.set_array([])
-    cbar = fig.colorbar(sm, ax=ax, shrink=0.55, pad=0.08,
-                        label="log(1+f)  [bright=near opt.]")
-    cbar.ax.tick_params(labelsize=7)
+    cbar = fig.colorbar(sm, ax=ax, shrink=0.55, pad=0.1)
+    cbar.set_label("f − f*（濃いほど最適に近い）", color=INK_2, fontsize=7.5)
+    cbar.ax.tick_params(labelsize=6.5, colors=MUTED)
+    cbar.outline.set_visible(False)
 
     def draw_frame(frame_idx: int) -> list:
         ax.clear()
-        comp_limit = (frame_idx + 1) * step
-        pts = run.history_x[:comp_limit]
-        if pts:
-            arr = np.array(pts)
-            f_log = np.log1p(np.array(run.history_f[:comp_limit]))
-            ax.scatter(arr[:, 0], arr[:, 1], arr[:, 2],
-                       c=f_log, cmap=cmap, norm=norm,
-                       s=8, alpha=0.45, edgecolors="none", depthshade=True)
+        n_shown = min((frame_idx + 1) * step, total_evals)
+        if n_shown:
+            ax.scatter(hx[:n_shown, 0], hx[:n_shown, 1], hx[:n_shown, 2],
+                       c=gap[:n_shown], cmap=_FCMAP, norm=norm,
+                       s=6, alpha=0.55, edgecolors="none", depthshade=False)
         if benchmark.optima_pos:
             for opt in benchmark.optima_pos:
-                ax.scatter([opt[0]], [opt[1]], [opt[2]], marker="*", color="red",
-                            s=180, edgecolors="white", linewidths=0.5, zorder=5)
+                ax.scatter([opt[0]], [opt[1]], [opt[2]], marker="*", color=BAD,
+                           s=140, edgecolors="white", linewidths=0.6, zorder=5)
         ax.set_xlim(lo, hi); ax.set_ylim(lo, hi); ax.set_zlim(lo, hi)
-        ax.set_xlabel(r"$x_1$", labelpad=0, fontsize=7)
-        ax.set_ylabel(r"$x_2$", labelpad=0, fontsize=7)
-        ax.set_zlabel(r"$x_3$", labelpad=0, fontsize=7)
-        ax.tick_params(labelsize=6)
-        n_shown = min(comp_limit, len(run.history_x))
-        ax.set_title(f"eval={n_shown}", fontsize=8)
+        _style_3d(ax)
+        ax.set_zlabel(r"$x_3$", labelpad=0)
+        ax.set_title(f"{method_name}（{which}）  {n_shown:,} 評価", loc="left", fontsize=9)
         return []
 
     suffix = "" if best else "_failed"
-    note = "3D eval accum." if best else "3D eval accum. (failed run)"
-    fig.suptitle(f"{benchmark.name}  — {method_name}  {note}  * = optimum", fontsize=9)
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
     _save_anim(ani, output_dir, f"{benchmark.name}_{method_name}_3devals{suffix}", fps)
@@ -542,14 +625,12 @@ def save_method_3dpopulation_anim(
         return
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-
     from matplotlib.colors import Normalize
 
     run = (min(results, key=lambda r: r.best_f) if best
            else max(results, key=lambda r: r.best_f))
     lo, hi = benchmark.bounds
-    opt_pos = (np.array(benchmark.optima_pos[0])
-               if benchmark.optima_pos else None)
+    opt_pos = np.array(benchmark.optima_pos[0]) if benchmark.optima_pos else None
 
     pops = run.history_pop
     if not pops:
@@ -559,56 +640,46 @@ def save_method_3dpopulation_anim(
     frames_pop = [pops[idx] for idx in indices]
     eval_counts = [round((idx + 1) / len(pops) * run.n_evals) for idx in indices]
     n_frames = len(frames_pop)
+    which = "最良の run" if best else "最悪の run"
 
     if opt_pos is not None:
-        max_dist = float(np.sqrt(3) * (hi - lo))
-        norm = Normalize(vmin=0.0, vmax=max_dist)
-        cmap = plt.get_cmap("viridis_r")
-        cbar_label = "dist to optimum  [bright=near]"
+        norm = Normalize(vmin=0.0, vmax=float(np.sqrt(3) * (hi - lo)) / 2)
+        cbar_label = "最適解までの距離（濃いほど近い）"
     else:
         norm = Normalize(vmin=0.0, vmax=1.0)
-        cmap = plt.get_cmap("viridis_r")
-        cbar_label = "relative generation"
+        cbar_label = "世代の進み"
 
-    az_start, az_range = 30, 180
-
-    fig = plt.figure(figsize=(5.5, 4.8), dpi=60)
+    fig = plt.figure(figsize=(5.0, 4.4), dpi=_ANIM_DPI)
     ax = fig.add_subplot(1, 1, 1, projection="3d")
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm = plt.cm.ScalarMappable(cmap=_FCMAP, norm=norm)
     sm.set_array([])
-    cbar = fig.colorbar(sm, ax=ax, shrink=0.55, pad=0.08, label=cbar_label)
-    cbar.ax.tick_params(labelsize=7)
+    cbar = fig.colorbar(sm, ax=ax, shrink=0.55, pad=0.1)
+    cbar.set_label(cbar_label, color=INK_2, fontsize=7.5)
+    cbar.ax.tick_params(labelsize=6.5, colors=MUTED)
+    cbar.outline.set_visible(False)
 
     def draw_frame(frame_idx: int) -> list:
         ax.clear()
-        azim = az_start + az_range * frame_idx / max(n_frames - 1, 1)
+        azim = 30 + 180 * frame_idx / max(n_frames - 1, 1)
         fi = min(frame_idx, n_frames - 1)
-        if len(frames_pop[fi]) > 0:
-            pop = frames_pop[fi]
-            if opt_pos is not None:
-                dists = np.linalg.norm(pop - opt_pos, axis=1)
-                c_vals = dists
-            else:
-                c_vals = np.full(len(pop), frame_idx / max(n_frames - 1, 1))
-            ax.scatter(pop[:, 0], pop[:, 1], pop[:, 2],
-                       c=c_vals, cmap=cmap, norm=norm,
-                       s=40, edgecolors="white", linewidths=0.3, alpha=0.9, depthshade=True)
+        pop = frames_pop[fi]
+        if len(pop) > 0:
+            c_vals = (np.linalg.norm(pop - opt_pos, axis=1) if opt_pos is not None
+                      else np.full(len(pop), frame_idx / max(n_frames - 1, 1)))
+            ax.scatter(pop[:, 0], pop[:, 1], pop[:, 2], c=c_vals, cmap=_FCMAP, norm=norm,
+                       s=30, edgecolors="white", linewidths=0.5, alpha=0.95, depthshade=False)
         if benchmark.optima_pos:
             for opt in benchmark.optima_pos:
-                ax.scatter([opt[0]], [opt[1]], [opt[2]], marker="*", color="red",
-                            s=200, edgecolors="white", linewidths=0.5, zorder=5)
+                ax.scatter([opt[0]], [opt[1]], [opt[2]], marker="*", color=BAD,
+                           s=150, edgecolors="white", linewidths=0.6, zorder=5)
         ax.set_xlim(lo, hi); ax.set_ylim(lo, hi); ax.set_zlim(lo, hi)
-        ax.set_xlabel(r"$x_1$", labelpad=0, fontsize=7)
-        ax.set_ylabel(r"$x_2$", labelpad=0, fontsize=7)
-        ax.set_zlabel(r"$x_3$", labelpad=0, fontsize=7)
-        ax.tick_params(labelsize=6)
+        _style_3d(ax)
+        ax.set_zlabel(r"$x_3$", labelpad=0)
         ax.view_init(elev=25, azim=azim)
-        ax.set_title(f"eval={eval_counts[fi]}", fontsize=8)
+        ax.set_title(f"{method_name}（{which}）  {eval_counts[fi]:,} 評価", loc="left", fontsize=9)
         return []
 
     suffix = "" if best else "_failed"
-    note = "3D population" if best else "3D population (failed run)"
-    fig.suptitle(f"{benchmark.name}  — {method_name}  {note}  * = optimum", fontsize=9)
     ani = animation.FuncAnimation(fig, draw_frame, frames=n_frames,
                                   interval=1000 // fps, blit=False)
     _save_anim(ani, output_dir, f"{benchmark.name}_{method_name}_3dpopulation{suffix}", fps)
@@ -616,7 +687,7 @@ def save_method_3dpopulation_anim(
 
 
 # ---------------------------------------------------------------------------
-# Public: per-method outbreak dynamics SVG (3-row, 1 column)
+# Public: per-method outbreak dynamics SVG (MC-ESO internals, one shared x-axis)
 # ---------------------------------------------------------------------------
 
 def save_method_vso_svg(
@@ -626,119 +697,92 @@ def save_method_vso_svg(
     output_dir: str | Path = "results",
     best: bool = True,
 ) -> None:
-    """Outbreak dynamics for MC-ESO: σ history, convergence, stagnation."""
+    """Outbreak dynamics for MC-ESO: σ, best f, strain count, stagnation.
+
+    Four stacked panels on one evaluation axis (no twin y-axes): spillovers
+    show up in every panel at the same x as σ jumping back up and the
+    stagnation counter resetting.
+    """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-
     if not any(r.history_sigma_global for r in results):
         return
 
     run = (min(results, key=lambda r: r.best_f) if best
            else max(results, key=lambda r: r.best_f))
-    color = _method_color(method_name, 0)
-
-    fig, axes = plt.subplots(3, 1, figsize=(6, 9.5), squeeze=False)
-    row_titles = ["σ dynamics",
-                  "Best fitness + strains",
-                  "Stagnation (no_improve)"]
-    for row, rtitle in enumerate(row_titles):
-        axes[row][0].set_ylabel(rtitle, fontsize=9, fontweight="bold", labelpad=8)
-
+    color = _method_color(method_name)
     evals = np.array(run.history_eval_count) if run.history_eval_count else None
 
-    # ── Row 0: σ dynamics ─────────────────────────────────────────────────────
-    # σ_global (dashed), per-host median σᵢ with Q25–Q75 band, and the actual
-    # σ used for each evaluated child (scatter). Restart events appear as
-    # discontinuous up-jumps in σ_global.
-    ax = axes[0][0]
-    sg = run.history_sigma_global
-    ps = run.history_pop_sigma
+    def gen_x(n):
+        return evals if evals is not None and len(evals) == n else np.arange(n)
+
+    fig, axes = plt.subplots(4, 1, figsize=(7.2, 8.0), sharex=True,
+                             gridspec_kw={"height_ratios": [1.3, 1.1, 0.6, 0.8], "hspace": 0.32})
+
+    # σ: global step, per-host median with the quartile band, σ per offspring
+    ax = axes[0]
+    sg, ps = run.history_sigma_global, run.history_pop_sigma
     if sg:
-        xs = evals if evals is not None and len(evals) == len(sg) else np.arange(len(sg))
-        ax.semilogy(xs, sg, color="gray", linewidth=1.1, linestyle="--",
-                    label="σ_global", zorder=3)
+        xs = gen_x(len(sg))
         if ps:
             n_g = min(len(sg), len(ps))
             ps_gen = ps[-n_g:] if len(ps) > len(sg) else ps[:n_g]
-            med = np.array([np.median(s)          for s in ps_gen])
-            q25 = np.array([np.percentile(s, 25)  for s in ps_gen])
-            q75 = np.array([np.percentile(s, 75)  for s in ps_gen])
-            mn  = np.array([np.min(s)              for s in ps_gen])
-            mx  = np.array([np.max(s)              for s in ps_gen])
             g = xs[:n_g]
-            ax.semilogy(g, med, color=color, linewidth=1.4, label="median σ_i", zorder=4)
-            ax.fill_between(g, q25, q75, color=color, alpha=0.28, zorder=2, label="Q25–Q75")
-            ax.fill_between(g, mn,  mx,  color=color, alpha=0.10, zorder=1)
-    # Scatter: actual sigma used per evaluated offspring (starts after initial pop)
+            ax.fill_between(g, [np.percentile(s, 25) for s in ps_gen],
+                            [np.percentile(s, 75) for s in ps_gen],
+                            color=color, alpha=0.18, linewidth=0, label="宿主の σ（四分位）")
+            ax.plot(g, [np.median(s) for s in ps_gen], color=color, linewidth=1.4,
+                    label="宿主の σ（中央値）")
+        ax.plot(xs, sg, color=INK, linewidth=1.0, linestyle=(0, (4, 2)), label="全体の σ")
     se = run.history_sigma_eval
     if se:
-        n_init = run.n_evals - len(se)
         se_arr = np.array(se, dtype=float)
-        valid = np.isfinite(se_arr)
-        x_sc = np.arange(n_init, n_init + len(se_arr))[valid]
-        y_sc = se_arr[valid]
-        if len(x_sc) > 0:
-            ax.scatter(x_sc, y_sc, s=4, color=color, alpha=0.18, linewidths=0,
-                       zorder=2, label="σ per offspring")
-    ax.set_title(method_name, fontsize=8)
-    ax.tick_params(labelsize=7)
-    ax.legend(fontsize=6, loc="upper right")
-    ax.grid(True, which="both", alpha=0.18)
+        n_init = run.n_evals - len(se_arr)
+        ok = np.isfinite(se_arr)
+        ax.scatter(np.arange(n_init, n_init + len(se_arr))[ok], se_arr[ok], s=2,
+                   color=color, alpha=0.15, linewidths=0, label="子ごとの σ", rasterized=True)
+    ax.set_yscale("log")
+    ax.set_title("歩幅 σ", loc="left")
+    ax.legend(loc="lower right", bbox_to_anchor=(1.0, 1.0), ncol=4, fontsize=7,
+              handlelength=1.6, columnspacing=1.0, borderaxespad=0.2)
 
-    # ── Row 1: Best fitness + strain count ────────────────────────────────────
-    # The optimization's primary convergence curve, with the number of niched
-    # strains overlaid (multimodal landscapes typically sustain >1 strain).
-    ax = axes[1][0]
+    # best f − f*
+    ax = axes[1]
     hb = run.history_best
-    n_el = run.history_n_elite
     if hb:
-        hb_arr = np.array(hb)
-        hb_pos = np.where(hb_arr > 0, hb_arr, np.nan)
-        x_bf = np.arange(len(hb_arr))
-        ax.semilogy(x_bf, np.where(np.isfinite(hb_pos), hb_pos, np.nan),
-                    color=color, linewidth=1.5, label="best f")
-    if n_el:
-        ax2 = ax.twinx()
-        g2 = (evals if evals is not None and len(evals) == len(n_el)
-              else np.arange(len(n_el)))
-        ax2.step(g2, n_el, color="goldenrod", linewidth=0.9,
-                 linestyle=":", where="post", label="n_strains")
-        ax2.set_ylabel("n_strains", fontsize=7, color="goldenrod")
-        ax2.tick_params(labelsize=6, colors="goldenrod")
-        ax2.set_ylim(bottom=0)
-    ax.tick_params(labelsize=7)
-    ax.legend(fontsize=6, loc="upper right")
-    ax.grid(True, which="both", alpha=0.18)
+        idx = _thin(len(hb), 1500)
+        ax.plot(idx + 1, _gap(np.asarray(hb)[idx], benchmark), color=color, linewidth=1.6)
+        ax.axhline(_TARGET, color=MUTED, linewidth=0.8, linestyle=(0, (3, 3)))
+    ax.set_yscale("log")
+    ax.set_title("これまでの最良値 f − f*（点線 = 1e-10）", loc="left")
 
-    # ── Row 2: Stagnation (no_improve) — drives spillover restart ─────────────
-    # no_improve increments per evaluation without meaningful progress and
-    # resets on improvement or on a spillover. Spikes that reach
-    # restart_no_improve_threshold (=300) triggered a restart this run.
-    ax = axes[2][0]
+    # strains (niched elites) — its own panel, not a twin axis
+    ax = axes[2]
+    n_el = run.history_n_elite
+    if n_el:
+        ax.step(gen_x(len(n_el)), n_el, where="post", color=INK_2, linewidth=1.0)
+        ax.set_ylim(0, max(n_el) + 1)
+        ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+    ax.set_title("系統の数", loc="left")
+
+    # stagnation counter that triggers a spillover
+    ax = axes[3]
     no_imp = run.history_no_improve
     if no_imp:
-        xs = (evals if evals is not None and len(evals) == len(no_imp)
-              else np.arange(len(no_imp)))
-        ax.plot(xs, no_imp, color=color, linewidth=1.2, label="no_improve")
-        ax.axhline(300, color="crimson", linewidth=0.8, linestyle="--",
-                   alpha=0.65, label="restart threshold (=300)")
+        ax.plot(gen_x(len(no_imp)), no_imp, color=color, linewidth=1.1)
+        thr = 300 * (benchmark.dim / 2)
+        ax.axhline(thr, color=BAD, linewidth=0.8, linestyle=(0, (3, 3)))
+        ax.text(0.005, thr, f" スピルオーバーの閾値 {thr:.0f}", transform=ax.get_yaxis_transform(),
+                ha="left", va="bottom", fontsize=7, color=INK_2)
         ax.set_ylim(bottom=0)
-    ax.set_xlabel("Evaluations", fontsize=8)
-    ax.tick_params(labelsize=7)
-    ax.legend(fontsize=6, loc="upper right")
-    ax.grid(True, alpha=0.18)
+    ax.set_title("停滞カウンタ（改善の無い評価回数）", loc="left")
+    ax.set_xlabel("評価回数")
 
-    suffix = "" if best else "_failed"
-    note   = "best run" if best else "failed (worst) run"
-    fig.suptitle(
-        f"{benchmark.name}  — {method_name}  outbreak dynamics  ({note})",
-        fontsize=11,
-    )
-    fig.tight_layout()
-    fig.savefig(
-        output_dir / f"{benchmark.name}_{method_name}_outbreak_dyn{suffix}.svg",
-        format="svg", bbox_inches="tight",
-    )
+    which = "最良の run" if best else "最悪の run"
+    fig.suptitle(f"{benchmark.name}　{method_name} の内部状態（{which}）", x=0.08, ha="left",
+                 fontsize=11, fontweight="bold", color=INK, y=0.995)
+    fig.savefig(output_dir / f"{benchmark.name}_{method_name}_outbreak_dyn{'' if best else '_failed'}.svg",
+                format="svg", bbox_inches="tight")
     plt.close(fig)
 
 

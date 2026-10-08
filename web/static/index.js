@@ -84,11 +84,13 @@ function getCardInfo(name) {
   const evalsStr = [dimStr, ...parts].filter(Boolean).join(' ');
   const paramsHtml = (dimStr ? `<span class="p-dim">${_esc(dimStr)}</span>` : '')
     + parts.map(_esc).join('<span class="p-sep">/</span>');
-  return { title, sub, date, time, commit, type, status, evalsStr, paramsHtml };
+  // source: 'local' (results/ on this PC), 'shared' (runs/ via git) or 'both'
+  const source = m.source || 'local';
+  return { title, sub, date, time, commit, type, status, evalsStr, paramsHtml, source };
 }
 
 function applyCardInfo(row, name) {
-  const { title, date, time, paramsHtml, commit, type, status } = getCardInfo(name);
+  const { title, date, time, paramsHtml, commit, type, status, source } = getCardInfo(name);
   const linkEl = row.querySelector('.rt-link');
   if (linkEl) linkEl.textContent = title;
   const typeChip = row.querySelector('.rt-type-chip');
@@ -113,6 +115,22 @@ function applyCardInfo(row, name) {
   else if (type === 'workflow') row.classList.add('is-workflow');
   const stopBtn = row.querySelector('.stop-job');
   if (stopBtn) stopBtn.style.display = status === 'running' ? '' : 'none';
+  applySource(row, source);
+}
+
+// Shared runs come from runs/ (git). Mark them, and drop rename/delete for the
+// ones that exist only there — those are changed with git, not from here.
+function applySource(row, source) {
+  const cell = row.querySelector('.rt-type-chip')?.parentElement;
+  if (cell && source !== 'local' && !cell.querySelector('.rt-src-chip')) {
+    cell.insertAdjacentHTML('beforeend',
+      `<span class="rt-src-chip" title="${source === 'both' ? 'このPCの results/ と共有の runs/ の両方にある' : '共有の runs/ にだけある（図なし）'}">共有</span>`);
+  }
+  if (source === 'shared') {
+    row.querySelectorAll('.card-menu-dropdown button:not(.stop-job)').forEach(b => b.remove());
+    const btn = row.querySelector('.card-menu-btn');
+    if (btn) btn.style.visibility = 'hidden';
+  }
 }
 
 document.querySelectorAll('.rt-row[data-name]').forEach(row => {
@@ -141,7 +159,7 @@ function _esc(s) {
 
 // ── Create a result card DOM element ──
 function createResultCard(name) {
-  const { title, date, time, paramsHtml, commit, type, status } = getCardInfo(name);
+  const { title, date, time, paramsHtml, commit, type, status, source } = getCardInfo(name);
   const typeClass    = type === 'quick' ? ' is-quick' : type === 'workflow' ? ' is-workflow' : '';
   const typeChipCls  = type || 'unknown';
   const statusHtml   = status
@@ -166,6 +184,7 @@ function createResultCard(name) {
         <button class="danger" onclick="deleteResult(${JSON.stringify(name)},event)">削除</button>
       </div>
     </td>`;
+  applySource(row, source);
   return row;
 }
 

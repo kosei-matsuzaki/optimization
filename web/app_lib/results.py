@@ -1,4 +1,8 @@
-"""Read-only data layer over the ``results/`` directory.
+"""Read-only data layer over ``results/`` (this PC) and ``runs/`` (shared via git).
+
+A run id resolves to ``results/<id>`` when that exists (it has the figures),
+otherwise to ``runs/<id>``. Shared runs hold the same CSVs gzipped
+(``scripts/publish_run.py``), so every CSV read goes through ``_open_csv``.
 
 Pure helpers that list runs, scan media files, parse the per-dimension
 ``summary.csv`` / ``wilcoxon.csv`` tables, compute the Friedman ranking, and
@@ -7,22 +11,60 @@ read/write each run's ``result.json`` metadata. No Flask or threading here.
 from __future__ import annotations
 
 import csv
+import gzip
+import io
 import json
 import subprocess
 from pathlib import Path
 
-from .config import BASE_DIR, RESULTS_DIR
+from .config import BASE_DIR, RESULTS_DIR, RUNS_DIR
+
+
+# ── run location (local results/ or shared runs/) ───────────────────────────
+
+def _dirs(root: Path) -> set[str]:
+    return {d.name for d in root.iterdir() if d.is_dir()} if root.exists() else set()
+
+
+def run_path(run_id: str) -> Path | None:
+    """Directory of a run: the local copy first (it carries the figures)."""
+    if not run_id or "/" in run_id or "\\" in run_id or ".." in run_id:
+        return None
+    for root in (RESULTS_DIR, RUNS_DIR):
+        p = root / run_id
+        if p.is_dir():
+            return p
+    return None
+
+
+def run_source(run_id: str) -> str:
+    """'local' (this PC only), 'shared' (runs/ only) or 'both'."""
+    loc, sh = (RESULTS_DIR / run_id).is_dir(), (RUNS_DIR / run_id).is_dir()
+    return "both" if loc and sh else ("local" if loc else "shared")
+
+
+def _open_csv(path: Path):
+    """Open ``x.csv`` or, failing that, ``x.csv.gz`` as text; None if neither."""
+    if path.exists():
+        return open(path, newline="")
+    gz = path.with_name(path.name + ".gz")
+    if gz.exists():
+        return io.TextIOWrapper(gzip.open(gz), newline="")
+    return None
+
+
+def _read_rows(path: Path) -> list[dict]:
+    f = _open_csv(path)
+    if f is None:
+        return []
+    with f:
+        return list(csv.DictReader(f))
 
 
 # ── run / dim / function listings ───────────────────────────────────────────
 
 def list_results() -> list[str]:
-    if not RESULTS_DIR.exists():
-        return []
-    return sorted(
-        (d.name for d in RESULTS_DIR.iterdir() if d.is_dir()),
-        reverse=True,
-    )
+    return sorted(_dirs(RESULTS_DIR) | _dirs(RUNS_DIR), reverse=True)
 
 
 def list_dims(run_dir: Path) -> list[str]:
@@ -53,14 +95,11 @@ def list_functions(run_dir: Path, dim: str) -> list[str]:
     for p in dim_dir.glob("*_convergence.svg"):
         funcs.add(p.stem[: -len("_convergence")])
 
-    # Fallback: summary.csv (before landscape SVGs are written)
+    # Fallback: summary.csv (no figures: before they are written, or a shared run)
     if not funcs:
-        summary_path = run_dir / dim / "summary.csv"
-        if summary_path.exists():
-            with open(summary_path, newline="") as f:
-                for row in csv.DictReader(f):
-                    if "function" in row:
-                        funcs.add(row["function"])
+        for row in _read_rows(run_dir / dim / "summary.csv"):
+            if "function" in row:
+                funcs.add(row["function"])
 
     return sorted(funcs)
 
@@ -127,28 +166,21 @@ def build_media_index(run_dir: Path, dim: str) -> dict:
 # ── CSV tables ──────────────────────────────────────────────────────────────
 
 def read_summary(run_dir: Path, dim: str) -> list[dict]:
-    path = run_dir / dim / "summary.csv"
-    if not path.exists():
-        return []
-    with open(path, newline="") as f:
-        return list(csv.DictReader(f))
+    return _read_rows(run_dir / dim / "summary.csv")
 
 
 def read_wilcoxon(run_dir: Path, dim: str) -> list[dict]:
     """Read per-function Wilcoxon signed-rank rows (reference vs each method)."""
-    path = run_dir / dim / "wilcoxon.csv"
-    if not path.exists():
-        return []
-    with open(path, newline="") as f:
-        return list(csv.DictReader(f))
+    return _read_rows(run_dir / dim / "wilcoxon.csv")
 
 
 def read_stats(run_id: str, dim: str, func_name: str) -> dict:
     """Per-run/per-function raw stats CSV → {headers, rows}."""
-    csv_path = RESULTS_DIR / run_id / dim / "stats" / f"{func_name}.csv"
-    if not csv_path.exists():
+    run_dir = run_path(run_id)
+    f = _open_csv(run_dir / dim / "stats" / f"{func_name}.csv") if run_dir else None
+    if f is None:
         return {"headers": [], "rows": []}
-    with open(csv_path, newline="") as f:
+    with f:
         reader = csv.DictReader(f)
         headers = reader.fieldnames or []
         rows = list(reader)
@@ -401,6 +433,13 @@ def write_result_meta(run_dir: Path, meta: dict) -> None:
 
 
 def read_result_meta(run_dir: Path) -> dict:
+    """result.json of a run, plus ``source`` (local / shared / both)."""
+    meta = _read_meta_file(run_dir)
+    meta["source"] = run_source(run_dir.name)
+    return meta
+
+
+def _read_meta_file(run_dir: Path) -> dict:
     path = run_dir / "result.json"
     if path.exists():
         try:

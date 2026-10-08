@@ -36,8 +36,8 @@ MC-ESO（提案手法）と既存最適化手法を BBOB 等のベンチマー�
 - `quick_check.py` はローカルでの軽量動作確認専用スクリプト。
 - **`./run.sh quick` はユーザーから「検証して」「比較して」「分析して」などの明示的な指示があった場合のみ実行する。コード変更後の自動動作確認目的では実行しない。**
 - `./run.sh quick` を使うこと。`python3 quick_check.py` を直接呼ばない。
-- 実験管理は `run.sh` で行う（trigger / download / quick / stop / list / status / ui / loop の 8 個。`run.sh:218-226`）。
-- 結果はすべて `results/YYYYMMDD_HHMMSS_<commit>/` にバージョン管理される。
+- 実験管理は `run.sh` で行う（trigger / download / quick / stop / list / status / ui / loop / publish の 9 個。末尾の `case` 文）。
+- 結果はすべて `results/YYYYMMDD_HHMMSS_<commit>/` にバージョン管理される。`results/` は PC ごと（git 管理外）。他の PC と共有する run は `./run.sh publish results/<run>` で `runs/`（git 管理、数値のみ・CSV.gz）に写して commit する。
 - 手法の検証・比較・分析は「比較手法設定 → `./run.sh quick` 実行 → monitor → `scripts/analyze_quick.py` で 3 指標分析 → 判定」の順で行う。比較手法は `--methods` で必要分だけに絞る（不要なベースラインを回さない）。詳細は [docs/experiments.md の評価の分析・自動化](docs/experiments.md#評価の分析自動化) を参照。
 
 ## Claude の構成（`.claude/`）

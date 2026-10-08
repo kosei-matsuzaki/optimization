@@ -34,7 +34,9 @@ optimization/
 │   └── mmo2024/                #  GECCO'2024/'2025 MMO suite（CC BY-SA 4.0, Ali Ahrari）
 │       ├── python_code/        #   参照実装 ProblemMM.py + data/
 │       └── docs/               #   競技仕様書 TR2024001 と 2024 の結果資料（テキスト）
-└── results/
+├── runs/                       # 共有する結果（git 管理）。results/ から ./run.sh publish で数値だけ写す
+│   └── <run 名>/                #  result.json ＋ dim{N}/{summary,wilcoxon}.csv.gz ＋ stats/*.csv.gz（図は無い）
+└── results/                    # この PC だけの結果（git 管理外。図もここ）
     └── YYYYMMDD_HHMMSS_<commit>/
         ├── dim2/
         │   ├── {Func}_landscape.svg   # 関数地形（2D等高線 + 3D表面）
@@ -46,7 +48,7 @@ optimization/
         └── dim3/                      # 3D 版（3D scatter / 3D アニメ）
 ```
 
-結果はすべて `results/YYYYMMDD_HHMMSS_<commit>/` に自動バージョン管理される。
+結果はすべて `results/YYYYMMDD_HHMMSS_<commit>/` に自動バージョン管理される。`results/` は git 管理外なので **PC ごとに別**。他の PC と共有したい run は `./run.sh publish results/<run>` で `runs/` に数値だけ（CSV は gzip）写して commit / push する。Results UI は `results/` と `runs/` の両方を一覧に出し（共有ぶんには「共有」の印）、同じ名前ならこの PC の `results/`（図がある方）を開く。`runs/` の run は UI から名前変更・削除できない（git で扱う）。
 
 ### 新しい手法を追加する
 
@@ -81,6 +83,8 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 | `./run.sh quick --all --dim {2\|3\|5\|10\|20} --max-evals <2500×d>` | **次元スケーリング計測**（BBOB-24 を各次元で）。現状把握のスナップショット用。採否判定は 2D が主対象 |
 | `./run.sh quick --n-runs 5 --max-evals 3000` | パラメータを上書きしてローカル確認 |
 | `./run.sh quick --all --viz` | 図（landscape / convergence / アニメーション）も描く。**既定では描かない** — 判定は `summary.csv` / `wilcoxon.csv` の 3 指標で行うので図は不要で、図は 1 run あたり約 500 MB かかる（2026-09-08 時点で `results/` は 5.5 GB、うち数値は 2.8 MB だった）。**進捗報告の資料を作るときだけ付ける。** UI は図が無くても `summary.csv` から関数一覧を作る |
+| `./run.sh quick --all --jobs 16` | **(関数 × 手法) を 16 プロセスに分けて並列に回す**。各 run は seed 固定なので、数値は `--jobs 1` と同じ（実行時間の列 `time_s` / `mean_time_s` だけが違う。2026-10-09 に 7 手法 × 4 関数 × 5D で確認）。図を描かないときはワーカーが図用の履歴（集団のスナップショット等）を捨ててから返すので、10D でもメモリに収まる。大量の手法を回すとき用 |
+| `./run.sh publish results/<run> [--note TEXT]` | run の数値を git 管理の `runs/` に写す（上の「ディレクトリ構造」） |
 | `./run.sh quick --all --noise gauss_sev` | **ノイズ評価モード**（診断用）。noisy f をアルゴリズムに見せ、指標は真値で再採点（下記） |
 | `./run.sh ui` | Results UI を起動 → http://localhost:8080 |
 | `./run.sh trigger` | GitHub Actions ワークフローをトリガー（**補助実験**, n=100。評価には使わない） |
@@ -421,11 +425,14 @@ dim{N}/
 | `runs` | 1 フレーム=1run の探索軌跡アニメ |
 | `population` / `population_failed` | 集団配置の推移アニメ |
 | `3devals` / `3dpopulation` | 3D 関数用の評価点・集団アニメ |
-| `outbreak_dyn` / `outbreak_dyn_failed` | 3 行 SVG: ①σ 動態（σ_global / 中央値 σᵢ / 子ごと σ scatter）、②best f 収束 ＋ 系統数 n_strains、③no_improve 推移 ＋ restart 閾値 |
+| `outbreak_dyn` / `outbreak_dyn_failed` | 4 段の SVG（x 軸は評価回数で共通）: ①歩幅 σ（全体の σ / 宿主の σ の中央値と四分位 / 子ごとの σ）、②最良値 f − f*、③系統の数、④停滞カウンタとスピルオーバーの閾値（300 × D/2）。2 軸グラフはやめた |
 
 ### 画像の読み方
 
 - **`landscape.svg`** — 左: 2D 等高線（暗い = f が低い = 最適解に近い）+ 黄丸 = 真の最適解。右: 3D サーフェスプロット。
-- **`convergence.svg`** — x 軸: 評価回数、y 軸: best f（対数スケール）、線: 全 run 平均、影: ±1σ。
-- **アニメーション（runs）** — 薄い点（ラスタライズ）: 評価点（最大 2000 点にサブサンプリング）、折れ線: best-x の更新軌跡、石灰色の点: 成功した最終 best-x（f ≤ 1e-4）、赤い点: 失敗した最終 best-x、黄丸: 真の最適解の位置。
-- **3D アニメーション** — 評価点の色は `viridis_r` カラーマップ（**明るい黄色ほど f が低く最適解に近い**）。集団の色は最適解からのユークリッド距離（**明るいほど最適解に近い**）。カメラが 30°→210° 回転。
+- **配色（2026-10-09 から）** — Results UI と揃えている。手法の色は**手法ごとに固定**で、MC-ESO は深緑、主比較 7 手法（CMA-ES / IPOP / BIPOP / DE / L-SHADE / PSO / SaVOA）に 1 色ずつ、それ以外の手法は灰色の「その他」（`core/visualize.py` の `_METHOD_COLOR`。並びは dataviz の配色検査を通したもの）。地形は 1 色相の濃淡（濃いほど f が低い）、★（白抜き・赤）が大域最適。ラベルは日本語（CJK フォントが無い環境では豆腐になる）。
+- **`landscape.svg`** — 左: 2D 等高線（濃いほど f が低い）＋ ★ = 大域最適。右: 3D 曲面（log(1 + f − f_min)）。
+- **`convergence.svg`** — x 軸: 評価回数、y 軸: f − f*（対数）。線は**全 run の中央値**、帯は四分位（色の付く手法のみ）。点線が SR の主指標の閾値 1e-10。f − f* = 0 は 1e-12 に描く。
+- **アニメーション（runs）** — 点: 評価点、細線: 最良点の更新軌跡、● 緑 = 最終最良点が f − f* ≤ 1e-4、✕ 赤 = 未到達。
+- **アニメーション（population）** — 点: 集団、円: 宿主ごとの σ（MC-ESO のみ）。右上の「広がり」は集団の座標の最大幅（収束すると ★ に重なって見えなくなるため）。
+- **3D アニメーション** — 色は 1 色相（青）で、**濃いほど f が低い / 最適解に近い**。カメラが 30°→210° 回転。

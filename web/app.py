@@ -29,6 +29,9 @@ app = Flask(__name__)
 
 BASE_DIR    = config.BASE_DIR
 RESULTS_DIR = config.RESULTS_DIR
+RUNS_DIR = config.RUNS_DIR
+# Shared runs (runs/) are versioned in git: change them with git, not the UI.
+_SHARED_ONLY = "共有済みの結果（runs/）は git で管理しているため、画面からは変更・削除できません"
 QUICK_CHECK = config.QUICK_CHECK
 GH_REPO     = config.GH_REPO
 GH_WORKFLOW = config.GH_WORKFLOW
@@ -39,7 +42,7 @@ GH_WORKFLOW = config.GH_WORKFLOW
 @app.route("/")
 def index():
     names = results.list_results()
-    meta = {r: results.read_result_meta(RESULTS_DIR / r) for r in names}
+    meta = {r: results.read_result_meta(results.run_path(r)) for r in names}
     return render_template("index.html", results=names, results_meta=meta,
                            running=jobs.running_dirs())
 
@@ -87,8 +90,8 @@ def benchmarks_page():
 
 @app.route("/results/<run_id>")
 def result_detail(run_id: str):
-    run_dir = RESULTS_DIR / run_id
-    if not run_dir.exists():
+    run_dir = results.run_path(run_id)
+    if run_dir is None:
         return redirect(url_for("index"))
 
     dims = results.list_dims(run_dir)
@@ -105,7 +108,7 @@ def result_detail(run_id: str):
     }
 
     all_results = results.list_results()
-    all_results_meta = {r: results.read_result_meta(RESULTS_DIR / r) for r in all_results}
+    all_results_meta = {r: results.read_result_meta(results.run_path(r)) for r in all_results}
     return render_template(
         "result.html",
         run_id=run_id,
@@ -118,8 +121,10 @@ def result_detail(run_id: str):
 
 @app.route("/media/<path:filepath>")
 def media(filepath: str):
-    full_path = RESULTS_DIR / filepath
-    if not full_path.exists():
+    run_id, _, rest = filepath.partition("/")
+    run_dir = results.run_path(run_id)
+    full_path = (run_dir / rest) if run_dir and ".." not in rest else None
+    if full_path is None or not full_path.is_file():
         return "Not found", 404
     return send_file(full_path)
 
@@ -310,7 +315,7 @@ def api_dl_status(job_id: str):
 @app.route("/api/results")
 def api_results_list():
     names = results.list_results()
-    meta = {r: results.read_result_meta(RESULTS_DIR / r) for r in names}
+    meta = {r: results.read_result_meta(results.run_path(r)) for r in names}
     return jsonify({"results": names, "meta": meta, "running": jobs.running_dirs()})
 
 
@@ -320,7 +325,8 @@ def api_rename_result(run_id: str):
         return jsonify({"ok": False, "message": "Invalid ID"}), 400
     run_dir = RESULTS_DIR / run_id
     if not run_dir.exists() or not run_dir.is_dir():
-        return jsonify({"ok": False, "message": "Not found"}), 404
+        return jsonify({"ok": False, "message": _SHARED_ONLY if (RUNS_DIR / run_id).is_dir()
+                        else "Not found"}), 404
     new_name = request.form.get("new_name", "").strip()
     if not new_name or "/" in new_name or ".." in new_name:
         return jsonify({"ok": False, "message": "Invalid name"}), 400
@@ -337,7 +343,8 @@ def api_delete_result(run_id: str):
         return jsonify({"ok": False, "message": "Invalid ID"}), 400
     run_dir = RESULTS_DIR / run_id
     if not run_dir.exists() or not run_dir.is_dir():
-        return jsonify({"ok": False, "message": "Not found"}), 404
+        return jsonify({"ok": False, "message": _SHARED_ONLY if (RUNS_DIR / run_id).is_dir()
+                        else "Not found"}), 404
     shutil.rmtree(run_dir)
     return jsonify({"ok": True})
 
@@ -351,8 +358,8 @@ def api_stats(run_id: str, dim: str, func_name: str):
 def api_media_index(run_id: str, dim: str):
     if not run_id or "/" in run_id or ".." in run_id:
         return jsonify({"error": "invalid"}), 400
-    run_dir = RESULTS_DIR / run_id
-    if not run_dir.exists():
+    run_dir = results.run_path(run_id)
+    if run_dir is None:
         return jsonify({"error": "not found"}), 404
     return jsonify(results.build_media_index(run_dir, dim))
 
@@ -361,8 +368,8 @@ def api_media_index(run_id: str, dim: str):
 def api_result_data(run_id: str):
     if not run_id or "/" in run_id or ".." in run_id:
         return jsonify({"error": "invalid"}), 400
-    run_dir = RESULTS_DIR / run_id
-    if not run_dir.exists():
+    run_dir = results.run_path(run_id)
+    if run_dir is None:
         return jsonify({"error": "not found"}), 404
     dims = results.list_dims(run_dir)
     dims_data = {
@@ -380,8 +387,8 @@ def api_result_data(run_id: str):
 def api_overall(run_id: str, dim: str):
     if not run_id or "/" in run_id or ".." in run_id:
         return jsonify({"error": "invalid"}), 400
-    run_dir = RESULTS_DIR / run_id
-    if not run_dir.exists():
+    run_dir = results.run_path(run_id)
+    if run_dir is None:
         return jsonify({"error": "not found"}), 404
     return jsonify(results.compute_overall_ranking(run_dir, dim))
 
