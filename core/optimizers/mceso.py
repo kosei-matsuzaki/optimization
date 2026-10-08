@@ -252,7 +252,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # LPSR applied to the host pool). A larger pool opened F07 at d10 but cost
         # easy functions half their generations; shrinking keeps the early breadth
         # and gives the late phase back its generations.
-        pop_schedule: str = "fixed",
+        # Default since 2026-10-08 (adopted from the pop_pow2_frzmu arm): shrink.
+        pop_schedule: str = "linear",
         pop_init_mult: float = 16.0,
         pop_final_mult: float = 4.0,
         pop_min: int = 10,
@@ -260,7 +261,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # fraction of the budget spent. 1 = linear. Larger values shrink early and
         # hand the late phase more generations — at d10 the linear 16·D → 4·D
         # schedule lost 5pt (F08 / F09 / F14) while it gained 15.8pt at d5.
-        pop_shrink_power: float = 1.0,
+        pop_shrink_power: float = 2.0,
         n_elite_max: int = 6,
         niche_radius_ratio: float = 0.1,       # min mutual elite distance, × span
                                                # (scale-invariant; on BBOB span=10
@@ -595,7 +596,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # children, ranked by f — which raises the sample count instead of
         # squeezing more out of the same one or two samples (the four rejected
         # attempts, docs/history.md:865 / :979 / :1041, all did the latter).
-        cc_mu_frac: float = 0.0,
+        cc_mu_frac: float = 0.5,               # default since 2026-10-08 (was 0.0)
         # Apply cc_mu_frac only in runs the channel router committed to the
         # droplet (ill-conditioned) route. At d5 the top-μ rule lifted the
         # ill-conditioned group (+9pt) but cost the Rastrigin family (F03 15→0%,
@@ -606,7 +607,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # 1e5-1e6 when spillovers are disabled, but with them (33 per run) it
         # oscillates at 1e2-1e4: the steps that succeed right after a uniform
         # reseed come from far-off, high-f hosts and say nothing about the basin.
-        cc_spill_freeze_gens: int = 0,
+        cc_spill_freeze_gens: int = 50,        # default since 2026-10-08 (was 0)
         # Provenance gate (intrinsic alternative to the freeze timer): only
         # children whose parent lies within this many σ·sqrt(dim) of the
         # incumbent best, measured in the learned C's metric, update C (0 = off).
@@ -714,7 +715,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.pop_min = pop_min
         self.pop_shrink_power = pop_shrink_power
         self.ipop_fail_streak = ipop_fail_streak
-        if pop_schedule == "linear":
+        if pop_schedule == "linear" and n_pop is None:
+            # An explicit n_pop is the initial size of the schedule.
             self.n_pop = max(20, int(round(pop_init_mult * self.dim)))
         self._pop_final = max(pop_min, int(round(pop_final_mult * self.dim)))
         self._n_pop0 = self.n_pop          # ipop_growth restores this at each run start

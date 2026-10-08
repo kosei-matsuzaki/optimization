@@ -415,6 +415,16 @@ _OPTIMIZERS = {
     "mom10_noAir_gate2": (MultiChannelEpidemicOptimizer,
                        {"mom_ratio": 0.10, "air_ratio": 0.0, "cc_air_ratio": 0.0,
                         "cc_gate_mahal": 2.0}),
+    # Pre-2026-10-08 default (fixed population, no learned-C freeze, beat-parent
+    # rule) — the reference every arm below was measured against. Arms defined
+    # before 2026-10-08 set only the parameters they change, so they now run ON
+    # TOP of the new default; their recorded numbers are relative to MC-ESO-v0.
+    "MC-ESO-v0":      (MultiChannelEpidemicOptimizer,
+                       {"pop_schedule": "fixed", "cc_spill_freeze_gens": 0, "cc_mu_frac": 0.0}),
+    # Ablation of the 2026-10-08 default: remove one of its three changes.
+    "v1_noPop":       (MultiChannelEpidemicOptimizer, {"pop_schedule": "fixed"}),
+    "v1_noFrz":       (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 0}),
+    "v1_noMu":        (MultiChannelEpidemicOptimizer, {"cc_mu_frac": 0.0}),
     # 2026-10-06 improvement candidates (all defaults unchanged).
     # A. population-size schedules
     "pop_lin16":      (MultiChannelEpidemicOptimizer,
