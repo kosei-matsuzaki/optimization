@@ -100,7 +100,7 @@
 
 ---
 
-1. **CR の継承と経路の判定時期を 2D と 5D で測る。**
+1. **CR の継承と経路の判定時期を 2D と 5D で測る。** (claimed 2026-10-08 12:31 UTC)
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,v1_crher,v1_rcf30,v1_crher_rcf30"`（2D）と、同じ手法を `--dim 5 --max-evals 12500`（5D）。
    **背景**（[history.md](history.md) 2026-10-08）: `v1_crher`（`h2h_cr_heritable`: 宿主ごとに飛沫感染の CR を持ち、子は継承、飛沫の子は確率 0.1 で U(0,1) に引き直す。jDE 方式）はローカルで 2D +1.04 / 5D +7.69 / 10D ±0pt、2D・5D で base の有意勝ちゼロ（5D の F03 20 → 60%、F22 50 → 90%）。`v1_rcf30`（`route_commit_frac=0.30`: 経路を予算の 30% で決める）は 10D の F12 / F13 / F14 の誤判定を直すが SR はほぼ動かない。
    **集計**: 標準の集計。2D の SR@1e-10 を下げる腕があるかを 1 行で書く。5D は F03 / F04 / F15 / F20 / F21 / F22 と、悪条件の F12 / F13 / F14 の変化を必ず書く。
