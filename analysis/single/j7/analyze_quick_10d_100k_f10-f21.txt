@@ -1,0 +1,77 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: run_new10
+meta: n_runs=20 max_evals=100000 set=all commit=?
+functions: 10   methods: CMA-ES, IPOP-CMA-ES, BIPOP-CMA-ES, DE, L-SHADE, MC-ESO
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  CMA-ES            31.5%   40.0%   41.0%   47.0%        3504         3/2
+  IPOP-CMA-ES       64.5%   73.0%   74.5%   75.0%       20471         0/9
+  BIPOP-CMA-ES      59.0%   68.5%   69.0%   71.0%       22559         0/9
+  DE                 4.0%    4.5%   19.5%   27.5%       14172         6/4
+  L-SHADE           65.0%   66.5%   69.0%   70.0%       40013         1/9
+  MC-ESO            31.5%   33.0%   33.5%   41.0%       10905            
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[2] sr_1e-10 NON-REGRESSION CHECK  (MC-ESO vs baseline)
+  baseline run: run_50k_sub10 (method MC-ESO)
+  overall sr_1e-10: 31.0% -> 31.5% (+0.5%)
+  IMPROVED (1):
+    + F14-DiffPowers         90% -> 95%  (+5%)
+  unchanged: 9
+  >>> SR@1e-10 VERDICT: OK
+      Rule: a config that lowers SR@1e-10 is not adopted (docs/experiments.md). Per-function regressions must be justified.
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F10-EllipsoidalRot              100%          CMA-ES 100%           13786/5114
+  F11-Discus                      100%          CMA-ES 100%           10275/3904
+  F13-SharpRidge                    0%         L-SHADE 100%          16189/38610  <-- ref behind
+  F14-DiffPowers                   95%          CMA-ES 100%            4466/1764  <-- ref behind
+  F15-RastriginRot                  0%       IPOP-CMA-ES 5%                    -  <-- ref behind
+  F16-Weierstrass                   0%      IPOP-CMA-ES 85%                    -  <-- ref behind
+  F17-SchafferF7                    0%     IPOP-CMA-ES 100%                    -  <-- ref behind
+  F18-SchafferF7ill                 0%      IPOP-CMA-ES 95%                    -  <-- ref behind
+  F20-Schwefel                      0%          L-SHADE 30%                    -  <-- ref behind
+  F21-Gallagher101                 20%      IPOP-CMA-ES 45%           9807/31725  <-- ref behind
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F10-EllipsoidalRot     vs BIPOP-CMA-ES   p=0.00235 A12=0.27 (large)
+  F10-EllipsoidalRot     vs CMA-ES         p=0.0253 A12=0.38 (small)
+  F10-EllipsoidalRot     vs IPOP-CMA-ES    p=0.00834 A12=0.34 (medium)
+  F10-EllipsoidalRot     vs L-SHADE        p=0.000129 A12=0.03 (large)
+  F11-Discus             vs L-SHADE        p=0.000132 A12=0.07 (large)
+  F13-SharpRidge         vs BIPOP-CMA-ES   p=1.91e-06 A12=0.04 (large)
+  F13-SharpRidge         vs CMA-ES         p=5.72e-06 A12=0.11 (large)
+  F13-SharpRidge         vs IPOP-CMA-ES    p=3.81e-06 A12=0.05 (large)
+  F13-SharpRidge         vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F14-DiffPowers         vs BIPOP-CMA-ES   p=0.0251 A12=0.35 (medium)
+  F14-DiffPowers         vs IPOP-CMA-ES    p=0.0153 A12=0.33 (medium)
+  F14-DiffPowers         vs L-SHADE        p=8.84e-05 A12=0.00 (large)
+  F15-RastriginRot       vs BIPOP-CMA-ES   p=0.00271 A12=0.15 (large)
+  F15-RastriginRot       vs IPOP-CMA-ES    p=0.00199 A12=0.17 (large)
+  F15-RastriginRot       vs L-SHADE        p=0.0296 A12=0.33 (medium)
+  F16-Weierstrass        vs BIPOP-CMA-ES   p=0.000322 A12=0.11 (large)
+  F16-Weierstrass        vs IPOP-CMA-ES    p=1.91e-06 A12=0.03 (large)
+  F17-SchafferF7         vs BIPOP-CMA-ES   p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs DE             p=1.91e-06 A12=0.06 (large)
+  F17-SchafferF7         vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F18-SchafferF7ill      vs BIPOP-CMA-ES   p=1.91e-06 A12=0.00 (large)
+  F18-SchafferF7ill      vs DE             p=1.91e-06 A12=0.00 (large)
+  F18-SchafferF7ill      vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F18-SchafferF7ill      vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F20-Schwefel           vs BIPOP-CMA-ES   p=9.54e-06 A12=0.04 (large)
+  F20-Schwefel           vs DE             p=1.91e-05 A12=0.03 (large)
+  F20-Schwefel           vs IPOP-CMA-ES    p=9.54e-06 A12=0.02 (large)
+  F20-Schwefel           vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F21-Gallagher101       vs BIPOP-CMA-ES   p=0.0124 A12=0.25 (large)
+  F21-Gallagher101       vs DE             p=0.0475 A12=0.34 (medium)
+  F21-Gallagher101       vs IPOP-CMA-ES    p=0.000838 A12=0.16 (large)
+  F21-Gallagher101       vs L-SHADE        p=0.00169 A12=0.15 (large)
+

@@ -1,0 +1,25 @@
+paired evals_succ_mean (ref=MC-ESO), 10 functions: F10, F11, F13, F14, F15, F16, F17, F18, F20, F21
+  method          method evals   MC-ESO evals  common funcs
+  CMA-ES                3504.4        10904.6             5
+  IPOP-CMA-ES          10068.4        10904.6             5
+  BIPOP-CMA-ES          6986.0        10904.6             5
+  DE                   13665.3        10154.0             3
+  L-SHADE              28256.8        10904.6             5
+
+--- 50000 same 10 funcs ---
+paired evals_succ_mean (ref=MC-ESO), 10 functions: F10, F11, F13, F14, F15, F16, F17, F18, F20, F21
+  method          method evals   MC-ESO evals  common funcs
+  CMA-ES                3514.6        10904.6             5
+  IPOP-CMA-ES           6670.6        10904.6             5
+  BIPOP-CMA-ES          6926.4        10904.6             5
+  DE                   12889.3        10154.0             3
+  L-SHADE              24266.2        10904.6             5
+
+--- cum22 at 100000 ---
+paired evals_succ_mean (ref=MC-ESO), 22 functions: F01, F02, F03, F04, F05, F06, F07, F08, F09, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22
+  method          method evals   MC-ESO evals  common funcs
+  CMA-ES                3693.8        11237.6            12
+  IPOP-CMA-ES           6433.3        14751.4            13
+  BIPOP-CMA-ES          5688.6        13836.7            14
+  DE                   16796.9        20735.8             9
+  L-SHADE              30073.9        19358.9            14
