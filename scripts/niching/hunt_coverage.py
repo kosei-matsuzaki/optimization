@@ -21,7 +21,7 @@ Shubert's optima are spaced ~0.88 apart throughout, so the same fixed radius
 behaves consistently across the domain — the contrast case.
 
 Usage (MC-ESO hunt dump):
-        python3 scripts/hunt_coverage.py analysis/hm/hunts_n07_xy.csv
+        python3 scripts/niching/hunt_coverage.py analysis/hm/hunts_n07_xy.csv
 
 Method-agnostic mode (entry 64).  ``--run`` drops the MC-ESO hunt dump and
 asks the same question of *any* optimizer, by reading its evaluation history:
@@ -41,10 +41,10 @@ optimum accrues thousands of points for one arrival:
     so coverage (reached at all: density-free) is the primary read.
 
 Usage:
-  python3 scripts/hunt_coverage.py --run --func N09-Vincent3D \
+  python3 scripts/niching/hunt_coverage.py --run --func N09-Vincent3D \
       --methods MC-ESO,NM-Restart,NMMSO --seeds 15 --evals-frac 1.0 \
       --csv analysis/hm/e64/visits.csv
-  python3 scripts/hunt_coverage.py --analyze analysis/hm/e64/visits.csv
+  python3 scripts/niching/hunt_coverage.py --analyze analysis/hm/e64/visits.csv
 """
 from __future__ import annotations
 import argparse
@@ -141,7 +141,7 @@ def _diagnostic_arms() -> dict:
     the mechanism this entry is testing: if the width bias is a property of
     best-of-n restart selection, taking the race out has to move the bias.
     """
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from core.optimizers.mceso_commit_reseed import CommitReseedMCESO
     return {"MC-ESO-place": (CommitReseedMCESO,
                              {"commit_sigma_mode": "place",
@@ -155,7 +155,7 @@ def _run_one(args_tuple):
     name, method, seed, budget, eps_list = args_tuple
     import time
     from core.benchmarks import niching_by_name
-    from scripts.niching_baseline import _METHODS
+    from scripts.niching.niching_baseline import _METHODS
     b = niching_by_name(name)
     cls, kw = dict(_METHODS, **_DIAGNOSTIC_ARMS)[method]
     t0 = time.time()
@@ -182,7 +182,7 @@ def run_mode(argv: list[str]) -> None:
     ap.add_argument("--csv", type=Path, required=True)
     a = ap.parse_args(argv)
 
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from core.benchmarks import niching_by_name
     b = niching_by_name(a.func)
     opts = true_optima(b)          # e87: any registered niching function
@@ -470,7 +470,7 @@ def hv_mode(argv: list[str]) -> None:
     ap.add_argument("--csv", type=Path, required=True)
     a = ap.parse_args(argv)
 
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from core.benchmarks import niching_by_name
     jobs = []
     for name in a.funcs.split(","):
@@ -544,7 +544,7 @@ def null_mode(argv: list[str]) -> None:
     ap.add_argument("--geo-csv", type=Path, default=None)
     a = ap.parse_args(argv)
 
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from core.benchmarks import niching_by_name
     b = niching_by_name(a.func)
     opts = true_optima(b)

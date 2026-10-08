@@ -253,7 +253,7 @@
 - `analysis/hm/e71/` — CEC2013 期の文献取得物（HillVallEA、RLEMMO など）。それ以外の `analysis/hm/` は削除済みで、`git show 1c44323:analysis/hm/<path>` で取り出せる。
 - `analysis/audit/` — 監査テーマの遺物 3 本（`set_properties.csv.gz` など）。監査の生 CSV は 2026-09-03 に削除済み（`c01588c` 以前の履歴にある）。
 - `external/mmo2024/` — 新 suite の Python 実装と競技資料（`competition_setup_TR2024001.txt`、`gecco2024_results_deck.txt`）。
-- スクリプト: `scripts/hunt_coverage.py` / `niching_baseline.py` / `diagnose_niching.py`（この時点では `scripts/` 直下。`scripts/niching/` へ移す予定と記録されている）、`scripts/niching/`、`scripts/audit/`。
+- スクリプト: `scripts/niching/`（`hunt_coverage.py` / `niching_baseline.py` / `diagnose_niching.py` / `report_set_quality.py` を含む。この 4 本はタグの時点では `scripts/` 直下と `scripts/metrics/` にあり、2026-10-08 に移した。タグ側の記録のコマンド行は旧パスのまま）、`scripts/audit/`。
 - 手法: `core/optimizers/` の `restart_lander.py`、`nmmso.py`、`ncde.py`、`r3pso.py`、`mceso_sol_archive.py`、`mceso_commit_reseed.py`、`mceso_recover.py`。
 - 環境: コンテナが変わるたびに `pynmmso` などの再適用が要る。BBOB 用の手順は [findings.md](../findings.md) の「環境と再現性」、niching 用を含む全文はタグ側の `docs/acceptance_topology.md`「環境の再構築」節。
 

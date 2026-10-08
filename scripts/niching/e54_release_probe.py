@@ -42,13 +42,13 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from core.benchmarks import NICHING_BENCHMARKS_BY_NAME            # noqa: E402
 from core.runner import NICHE_ACCURACIES, _seed_indices           # noqa: E402
 from core.optimizers.mceso_release_probe import ReleaseProbeMCESO  # noqa: E402
 
 # The adoption candidate (entry 46 corner, entry 44 clamp). Same keywords as the
-# "MC-ESO-rel" arm of scripts/niching_baseline.py, so the peak ratios this script
+# "MC-ESO-rel" arm of scripts/niching/niching_baseline.py, so the peak ratios this script
 # prints must reproduce analysis/hm/e51 exactly -- that is the identity check.
 ARM = {"rel_level": 1e-5, "fis_floor": 1e-12}
 

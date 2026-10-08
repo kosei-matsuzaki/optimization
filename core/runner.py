@@ -197,7 +197,7 @@ def count_goptima_nn(solutions: np.ndarray, fvals: np.ndarray,
     (``external/mmo2024/docs/competition_setup_TR2024001.txt`` §4) and gives no
     rho, so ``count_goptima``'s radius filter has nothing to read. Each point
     with ``f <= accuracy`` is attributed to its nearest optimum and the distinct
-    optima are counted — the same rule ``scripts/hunt_coverage.py`` scores the
+    optima are counted — the same rule ``scripts/niching/hunt_coverage.py`` scores the
     restart-lander null with, which is what makes method and null comparable.
     """
     if len(solutions) == 0:

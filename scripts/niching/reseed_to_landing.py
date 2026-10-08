@@ -45,12 +45,12 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from core.benchmarks import NICHING_BENCHMARKS_BY_NAME              # noqa: E402
 from core.optimizers import MultiChannelEpidemicOptimizer           # noqa: E402
 from core.optimizers.mceso_adaptive_repel import AdaptiveRepelMCESO  # noqa: E402
 from core.optimizers.mceso_commit_reseed import CommitReseedMCESO      # noqa: E402
-from scripts.hunt_coverage import vincent_optima                    # noqa: E402
+from scripts.niching.hunt_coverage import vincent_optima                    # noqa: E402
 
 
 def _tracer(base_cls):
@@ -106,7 +106,7 @@ def _paired_one(job):
     func, variant, seed, evals = job
     import importlib
     import time
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from core.benchmarks import NICHING_BENCHMARKS_BY_NAME
     mod, cls_name, kw = _CLS_SPECS[variant]
     base_cls = getattr(importlib.import_module(mod), cls_name)
@@ -361,7 +361,7 @@ def main() -> None:
     _CLS = {"base": (MultiChannelEpidemicOptimizer, {}),
             "adaptive": (AdaptiveRepelMCESO, {"repel_mode": "adaptive"}),
             # The whole population committed to one draw, spread at 0.1x the
-            # locally observed basin spacing (scripts/diagnose_niching.py's
+            # locally observed basin spacing (scripts/niching/diagnose_niching.py's
             # `commit_tight`). Note the tracer records *every* diversified draw,
             # so for this variant the "draws" of a hunt are the anchor plus the
             # cloud placed around it -- `distinct optima drawn near` therefore

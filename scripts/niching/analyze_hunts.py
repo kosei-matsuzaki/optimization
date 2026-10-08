@@ -65,13 +65,13 @@ def _load(paths: list[str]) -> dict[tuple[str, int, int], list[dict]]:
 
 def _rho(name: str) -> float:
     """The scorer's niche radius for this function."""
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from core.benchmarks import NICHING_BENCHMARKS_BY_NAME  # noqa: E402
     return float(NICHING_BENCHMARKS_BY_NAME[name].niche_rho)
 
 
 def _K(name: str) -> int:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from core.benchmarks import NICHING_BENCHMARKS_BY_NAME  # noqa: E402
     return int(NICHING_BENCHMARKS_BY_NAME[name].n_global_optima)
 

@@ -17,7 +17,7 @@ search problem). Spillover / basin-switch / exhaustion counters come along so
 the restart loop can be read at the same time.
 
 Usage:
-  python3 scripts/diagnose_niching.py [--evals 25000] [--seeds 5]
+  python3 scripts/niching/diagnose_niching.py [--evals 25000] [--seeds 5]
                                       [--funcs N06-Shubert2D,...]
 """
 from __future__ import annotations
@@ -27,7 +27,7 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from core.benchmarks import NICHING_BENCHMARKS_BY_NAME          # noqa: E402
 from core.optimizers import MultiChannelEpidemicOptimizer        # noqa: E402
 from core.optimizers.mceso_adaptive_repel import AdaptiveRepelMCESO  # noqa: E402

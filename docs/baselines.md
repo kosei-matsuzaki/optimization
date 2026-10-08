@@ -24,7 +24,7 @@ MC-ESO と比較する既存最適化手法の一覧と実装詳細。提案手�
 | **r3pso** | ring-topology lbest PSO | 多解比較対象（Li 2010。**niche 半径を持たない** niching の古典）|
 | **NMMSO** | 多スウォーム niching | 多解比較対象（Fieldsend 2014、`pynmmso` 経由。**公式実装で動く競技上位級**）|
 | **Repel-CMA-ES** | 斥力付き restart ES | 多解比較対象（de Nobel+ 2024 の近似実装。MC-ESO の情報化リスタートの先行例）|
-| **Restart-Lander** | 記憶なし多スタート | **null（下限ではなく「協調なしで届く線」）**。一様再起動 ＋ 等方降下だけ。`scripts/niching_baseline.py` から `--methods Restart-Lander` で回す（下記）|
+| **Restart-Lander** | 記憶なし多スタート | **null（下限ではなく「協調なしで届く線」）**。一様再起動 ＋ 等方降下だけ。`scripts/niching/niching_baseline.py` から `--methods Restart-Lander` で回す（下記）|
 
 ---
 
@@ -175,7 +175,7 @@ niching 手法が「協調している」ことの値打ちを測るための、
 | `descent_budget` | 12500 | 1 降下の上限評価回数（新 suite の予算 5e5 の 1/40） |
 | `iso` | True | 共分散を止めてステップ幅だけ（`CMA_on=0`）|
 
-既定値は `scripts/hunt_coverage.py --null` の offline 降下（`_null_descent`）と同一で、
+既定値は `scripts/niching/hunt_coverage.py --null` の offline 降下（`_null_descent`）と同一で、
 **降下 1 本は offline 版と厳密に一致する**（`analysis/mmo2024/e110/identity_check.py` が
 保存ダンプに対して evals / best_f / 着地最適の一致を確認）。
 違うのは**鎖にしたこと**だけ ＝ 再起動本数が「予算 ÷ 平均降下コスト」ではなく実際に買えた本数になり、

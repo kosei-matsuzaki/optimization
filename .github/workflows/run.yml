@@ -129,7 +129,7 @@ jobs:
         # against the wrong field. Fail loudly instead.
         run: |
           python3 -c "
-          from scripts.niching_baseline import _METHODS
+          from scripts.niching.niching_baseline import _METHODS
           assert 'NMMSO' in _METHODS, 'NMMSO missing: the comparison would be incomplete'
           print(sorted(_METHODS))"
 
@@ -139,7 +139,7 @@ jobs:
         # Reporting-rule effects are settled anyway (log entry 28: no rank change
         # at eps <= 1e-3), and the judgement levels here are 1e-3 / 1e-5.
         run: |
-          python3 scripts/niching_baseline.py \
+          python3 scripts/niching/niching_baseline.py \
             --funcs "${{ matrix.func }}" \
             --seeds "${{ inputs.seeds }}" \
             --evals-frac "${{ inputs.evals_frac }}" \

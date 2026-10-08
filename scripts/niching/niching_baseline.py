@@ -13,7 +13,7 @@ search. See core/runner.niching_peak_metrics.
 ``--report-rule`` swaps that reporting rule for a *method-agnostic* one. The
 ``reselect`` rule rebuilds the reported set from the run's own evaluation
 history with the same rho-greedy walk the scorer uses, capped at the
-competition's own ``max(100, 2K)`` (scripts.diagnose_niching.reselect_from_history).
+competition's own ``max(100, 2K)`` (scripts.niching.diagnose_niching.reselect_from_history).
 It is legal output post-processing that costs zero extra evaluations, so any
 method can adopt it — which is exactly why measuring it on one method only
 (MC-ESO, 2026-09-02 log entry 20) cannot support a ranking claim. ``both``
@@ -26,7 +26,7 @@ this an aiming device, not a publishable comparison; the full-budget run belongs
 on GitHub Actions.
 
 Usage:
-  python3 scripts/niching_baseline.py [--evals-frac 0.1] [--seeds 3]
+  python3 scripts/niching/niching_baseline.py [--evals-frac 0.1] [--seeds 3]
                                       [--methods MC-ESO,NCDE,...] [--csv out.csv]
 """
 from __future__ import annotations
@@ -41,12 +41,12 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from core.benchmarks import (NICHING_BENCHMARKS_BY_NAME,            # noqa: E402
                              niching_by_name)
 from core.runner import (NICHE_ACCURACIES, _niching_counts,         # noqa: E402
                          count_goptima_nn)
-from scripts.diagnose_niching import reselect_from_history          # noqa: E402
+from scripts.niching.diagnose_niching import reselect_from_history          # noqa: E402
 from core.optimizers import (MultiChannelEpidemicOptimizer, NCDEOptimizer,
                              RingPSOOptimizer, DEOptimizer,
                              MultistartNelderMeadOptimizer)         # noqa: E402

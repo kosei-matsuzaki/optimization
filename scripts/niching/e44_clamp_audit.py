@@ -27,7 +27,7 @@ import csv
 import gzip
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 HM = ROOT / "analysis" / "hm"
 E44 = HM / "e44"
 KEY = ("function", "seed", "evals")

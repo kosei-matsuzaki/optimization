@@ -98,8 +98,6 @@
 
 **対話セッションでやること（測定ルーチンは取らない）**
 - 記述とコードのずれ 2 件: `--all` の help の「2D」表記（`quick_check.py` と `run.sh`）、結果 UI の「PR」列（`web/app_lib/results.py`）。→ `/docs-check`
-- `scripts/` の仕分け（一時停止路線の道具 3 本を `scripts/niching/` へ）。→ `/tidy`
-- [history.md](history.md) を上限 1000 行に収める統合。
 
 ---
 

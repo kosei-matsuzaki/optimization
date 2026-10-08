@@ -39,7 +39,7 @@ def _open(path: str):
 
 
 def _rho_K(name: str) -> tuple[float, int]:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from core.benchmarks import NICHING_BENCHMARKS_BY_NAME  # noqa: E402
     b = NICHING_BENCHMARKS_BY_NAME[name]
     return float(b.niche_rho), int(b.n_global_optima)

@@ -80,7 +80,7 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 | `./run.sh quick --all --noise gauss_sev` | **ノイズ評価モード**（診断用）。noisy f をアルゴリズムに見せ、指標は真値で再採点（下記） |
 | `./run.sh ui` | Results UI を起動 → http://localhost:8080 |
 | `./run.sh trigger` | GitHub Actions ワークフローをトリガー（**補助実験**, n=100。評価には使わない） |
-| GitHub Actions `Run Optimization` を **`mode: niching`** で dispatch（ref = `research-loop`） | **CEC2013 niching の正規予算比較**（`scripts/niching_baseline.py --evals-frac 1.0`、既定 15 seed）。関数ごとに 1 ジョブの matrix（N04-N10）で、壁時計は最も遅い関数で決まる。**ローカルでは回さない**（1 関数 1 seed で 7 手法が最大 6 分、7 関数 × 15 seed は数時間）。成果物は `niching-fullbudget-<関数>` アーティファクトの CSV で、集計は `scripts/niching/fullbudget_rank.py`。`mode: bbob`（既定）と main への push は従来どおり `main.py` |
+| GitHub Actions `Run Optimization` を **`mode: niching`** で dispatch（ref = `research-loop`） | **CEC2013 niching の正規予算比較**（`scripts/niching/niching_baseline.py --evals-frac 1.0`、既定 15 seed）。関数ごとに 1 ジョブの matrix（N04-N10）で、壁時計は最も遅い関数で決まる。**ローカルでは回さない**（1 関数 1 seed で 7 手法が最大 6 分、7 関数 × 15 seed は数時間）。成果物は `niching-fullbudget-<関数>` アーティファクトの CSV で、集計は `scripts/niching/fullbudget_rank.py`。`mode: bbob`（既定）と main への push は従来どおり `main.py` |
 | `./run.sh download` / `./run.sh download <RUN_ID>` | 完了済みワークフロー結果をダウンロード |
 | `./run.sh status` / `./run.sh status <RUN_ID>` | ワークフロー実行の状態を表示 |
 | `./run.sh list` | ローカル結果一覧 + リモート実行履歴（最新5件） |
@@ -109,23 +109,24 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 
 ### 評価の分析・自動化
 
-**【2026-09-28 その180】一時停止中の多解（niching）路線のスクリプト 11 本を `scripts/` 直下から `scripts/niching/` へ移した**
-（`analyze_hunts` / `blocked_inventory` / `depth_breadth` / `e44_clamp_audit` / `e44_niching_clamp` / `e54_release_probe` /
-`fullbudget_rank` / `hunt_confound` / `reseed_to_landing` / `resel_rule` / `trim_loss`。**削除はしていない** ——
-路線を再開するときはここから呼ぶ）。**`scripts/` 直下に残したのは現行の単一解テーマが呼ぶもの**
+**一時停止中の多解（niching）路線のスクリプトは `scripts/niching/` にある（削除はしていない。路線を再開するときはここから呼ぶ）。**
+2026-09-28 その180 に 11 本（`analyze_hunts` / `blocked_inventory` / `depth_breadth` / `e44_clamp_audit` / `e44_niching_clamp` /
+`e54_release_probe` / `fullbudget_rank` / `hunt_confound` / `reseed_to_landing` / `resel_rule` / `trim_loss`）を移し、
+2026-10-08 に残りの 4 本（`hunt_coverage` / `niching_baseline` / `diagnose_niching` と `scripts/metrics/report_set_quality`）を移した。
+移設に合わせて `sys.path` の起点（`parents[2]`）とスクリプト間の import（`scripts.niching.*`）を直した。過去の `prereg.md` や作業ログに残る
+`scripts/<名前>.py` のコマンド行は当時の記録として読む（タグ `archive/multisolution-2026-09-29` 側のパス）。
+**`scripts/` 直下に残すのは現行の単一解テーマが呼ぶもの**
 （`analyze_quick` / `loop_status` / `check_doc_links` / `check_doc_size` / `scan_silent_null` / `measure_channel_signals`）
 **＋ 判定ゲート自体の検出力を測る 2 本**（`gate_power` / `e47_analyze` ＝ **BBOB-24 dim2 の腕の判別可能性**を測る道具なので、
-単一解テーマの判定ゲートの問いが使う）**＋ 被参照が 3 桁の 3 本**（`hunt_coverage` 85 箇所 / `niching_baseline` 115 箇所 /
-`diagnose_niching` 43 箇所。**移すと過去の `prereg.md` に記録された「実際に打ったコマンド」を書き換えることになる**ので、
-移すかどうかは俯瞰の判断に置いた）。下表のパスは移設後のもの。
+単一解テーマの判定ゲートの問いが使う）。下表のパスは移設後のもの。
 
 | ツール | 用途 |
 |---|---|
 | `scripts/analyze_quick.py <run_dir> [--baseline <dir>] [--baseline-method <name>] [--dim N]` | quick 結果（`summary.csv`/`wilcoxon.csv`）を規定の **3 指標**（SR / `evals_succ_mean` / Wilcoxon）に集計し、SR@1e-10 主指標・関数別の改善/悪化・SR@1e-10 非回帰チェック・判定を出力。SR@1e-10 非回帰チェックは2モード: `--baseline <旧run_dir>`（cross-run, 同名 MC-ESO を run 間で差分） / `--baseline-method <名前>`（within-run, 同一 run 内の元版と差分。**改変 MC-ESO と元 MC-ESO の 2 手法のみ**を `--methods "MC-ESO,<元名>"` で回したとき用）。CSV を手で読む代わりにこれで報告する |
 | サブエージェント `experimenter`（`.claude/agents/`） | 「比較手法設定 → `./run.sh quick` 実行 → monitor → `analyze_quick.py` で分析 → 判定を返す」一連を独立コンテキストで完結。手法ブラッシュアップ中に本会話を汚さず評価を回すためのもの（評価専任・コードは変更しない） |
-| `scripts/diagnose_niching.py [--evals N] [--seeds N] [--eps 1e-1,1e-3,1e-5] [--funcs ...] [--csv PATH] [--fast-scoring]` | CEC2013 niching で MC-ESO の **visited（走行中に触れた大域最適）と reported（報告集合の大域最適）を分けて数える**。`visited ≫ reported` なら記録の問題（追加評価ゼロで直る）、`visited ≈ reported` なら探索の問題。`distinct` は報告集合の rho 分離点数（重複報告の検査）、`blocked` はそのうち eps を外して 0 点になる数。**`--eps` はカンマ列を取り、すべて同じ run から採点する**（精度水準を増やしても再最適化は起きない）。**visited は eps に強く依存するので 1 水準だけで判断しないこと**（2026-08-31 の測定は ε=1e-4 単独で「Vincent は探索が届いていない」と誤結論した）。`--variant` は診断用の変種（`core/optimizers/mceso_*.py`、本体は不変）を選ぶ。**`--variant fast` は既定値を渡すだけの no-op で base と同一**なので対照に使わない。**`--fast-scoring` は `visited` を `visited_fast()`（厳密等価、近似ではない）で採点し、reselect 列を落として -1 を書く**。素の採点は履歴全点に O(n²) の greedy を掛けるので、**N09-Vincent3D では 1 run 401 秒のうち 98.5% が採点**（最適化は 6.2 秒）になり、このフラグで 2 腕 × 15 seed が 118 秒に落ちる。**報告規則（resel 列）を見たいときだけ外す** |
+| `scripts/niching/diagnose_niching.py [--evals N] [--seeds N] [--eps 1e-1,1e-3,1e-5] [--funcs ...] [--csv PATH] [--fast-scoring]` | CEC2013 niching で MC-ESO の **visited（走行中に触れた大域最適）と reported（報告集合の大域最適）を分けて数える**。`visited ≫ reported` なら記録の問題（追加評価ゼロで直る）、`visited ≈ reported` なら探索の問題。`distinct` は報告集合の rho 分離点数（重複報告の検査）、`blocked` はそのうち eps を外して 0 点になる数。**`--eps` はカンマ列を取り、すべて同じ run から採点する**（精度水準を増やしても再最適化は起きない）。**visited は eps に強く依存するので 1 水準だけで判断しないこと**（2026-08-31 の測定は ε=1e-4 単独で「Vincent は探索が届いていない」と誤結論した）。`--variant` は診断用の変種（`core/optimizers/mceso_*.py`、本体は不変）を選ぶ。**`--variant fast` は既定値を渡すだけの no-op で base と同一**なので対照に使わない。**`--fast-scoring` は `visited` を `visited_fast()`（厳密等価、近似ではない）で採点し、reselect 列を落として -1 を書く**。素の採点は履歴全点に O(n²) の greedy を掛けるので、**N09-Vincent3D では 1 run 401 秒のうち 98.5% が採点**（最適化は 6.2 秒）になり、このフラグで 2 腕 × 15 seed が 118 秒に落ちる。**報告規則（resel 列）を見たいときだけ外す** |
 | `scripts/niching/hunt_confound.py [--func NAME] [--ref LABEL] [--metric pr\|visited\|loss\|distinct\|landed\|hunts\|blocked] LABEL=CSV ...` | `diagnose_niching.py` の CSV を複数取り、**共通 seed で対応のある Wilcoxon**（w/t/l・p・A12）を eps 水準ごとに並べる。**`--metric` は検定をかける列を選ぶ（既定 `pr`）**。表の他の列は常に平均が並ぶので、**問いの棄却条件が PR 以外の列で書かれているときは必ずこれを合わせること**（その68 の棄却条件は `visited` ＝ 被覆の天井で書かれていた）。PR の隣に **hunt 数と診断カラム（visited / distinct / landed / blocked）を必ず表示する**ので、「PR の差が hunt 数の差ではないか」「どの成分が動いて PR が動いたのか」をその場で読める。予算違いの run を並べて hunt 数を揃えるのが本来の用途（2026-09-03 の `sigma_only` 交絡テスト）で、成分の機序を読む用途は 2026-09-04 その40〜その42 **その81 から、eps 水準ごとに `PR = 被覆 − 報告損失`（`PR` / `visited/K` / `(visited − reported)/K`）の 3 成分すべてに対応のある検定をかけた成分分解表を常時印字する。**`PR` は恒等式でこの 2 成分の差なので、**PR が動かないことと成分が動かないことは別の主張**であり、hunt 本数を動かす腕では成分が両方動いて PR だけ止まることがある（その80 の `basin_reset`、その81 の吸収率の表）。 |
-| `scripts/niching_baseline.py [--funcs ...] [--methods ...] [--seeds N] [--evals-frac F ...] [--report-rule current\|reselect\|both] [--csv PATH]` | CEC2013 niching の**手法横断の順位表**（関数 × 手法 × 精度水準の peak ratio）。`--report-rule` が**報告規則**を切り替える: `current` は各手法の `final_solutions`（従来の表）、`reselect` は**その run 自身の履歴**から rho 貪欲に選び直した集合（cap = max(100, 2K)、**追加評価ゼロ**、`diagnose_niching.reselect_from_history` を共用）。**`both` は同一の run を両方の規則で採点する**ので、ペアリングが厳密で追加コストは採点分だけ。**選び直しは手法非依存の後処理なので、1 手法だけに与えて比較してはいけない**（2026-09-03 その28）。`--evals-frac` が 1.0 未満の run は狙いを定めるための道具で、公表用の比較ではない |
+| `scripts/niching/niching_baseline.py [--funcs ...] [--methods ...] [--seeds N] [--evals-frac F ...] [--report-rule current\|reselect\|both] [--csv PATH]` | CEC2013 niching の**手法横断の順位表**（関数 × 手法 × 精度水準の peak ratio）。`--report-rule` が**報告規則**を切り替える: `current` は各手法の `final_solutions`（従来の表）、`reselect` は**その run 自身の履歴**から rho 貪欲に選び直した集合（cap = max(100, 2K)、**追加評価ゼロ**、`diagnose_niching.reselect_from_history` を共用）。**`both` は同一の run を両方の規則で採点する**ので、ペアリングが厳密で追加コストは採点分だけ。**選び直しは手法非依存の後処理なので、1 手法だけに与えて比較してはいけない**（2026-09-03 その28）。`--evals-frac` が 1.0 未満の run は狙いを定めるための道具で、公表用の比較ではない |
 | `scripts/niching/fullbudget_rank.py [--pair A,B] [--levels pr_1e-1,...] CSV [CSV ...]` | `niching_baseline.py` の CSV（正規予算の matrix ジョブが吐く `analysis/hm/fullbudget_*.csv`）を読み、**判定水準のみ（PR@1e-3 / PR@1e-5）**で (a) 関数ごとの手法順位と (b) **対応のある MC-ESO 対 NMMSO**（seed 対の w/t/l・両側 Wilcoxon・A12）を出す。棄却条件が平均ではなく**符号**（Shubert 2 関数で MC-ESO ≥ NMMSO）で書かれているため、1/10 予算の参照表（`status.md` 由来）をスクリプト内に定数で持ち、**held / FLIPPED を明示する**。**NM-Restart の N06/N08 行は落として、落としたことを刷る**（その28: restart 回数 1）。`--pair A,B` は対比する 2 手法を差し替える（その51 は `MC-ESO-rel,MC-ESO`、その53 は `MC-ESO-rel6,MC-ESO-rel`）。**`--levels` は刷る精度水準を広げる**（既定は判定水準の 2 つのまま。profile の**形**を読む回だけ 5 水準を刷る ―― 刷ることと順位の根拠にすることは別。1/10 予算の参照ブロックは `pr_1e-3` が含まれるときだけ出る） |
 | `scripts/check_doc_links.py` | `README.md` ＋ `docs/*.md` の**相互参照アンカーが実在する見出しを指しているか**を GitHub の slug 規則で検査する（壊れていれば非ゼロ終了）。**docs を統合・移動したあとに 1 回走らせる** —— リンクは押すまで壊れて見えないので、その88 は 2 本を目で見つけて次のサイクルまで放置し、その90 が全 51 本を検査したら**畳んだログ節を指す参照を含めて 6 本**壊れていた |
 | `scripts/check_doc_size.py` | **docs の行数が上限を超えていないか**を検査する（上限の表はスクリプト内の `CAPS` が正。超えていれば非ゼロ終了）。commit 前に走らせる。2026-09-29 に `acceptance_topology.md` が 15,037 行まで育ったのを受けて置いた |
@@ -291,9 +292,9 @@ git タグ `archive/multisolution-2026-09-29` の `docs/acceptance_topology.md` 
 
 **呼び方**: `core.benchmarks.niching_by_name("M13-D10-PIN01")` ＝ `M{PID:02d}-D{dim:02d}-PIN{pin:02d}`。
 **960 問を事前構築せず名前から都度作る**（`make_mmo2024(pid, dim, pin)`）。CEC2013 の名前も同じ関数で引ける。
-`scripts/hunt_coverage.py` は `NICHING_BENCHMARKS_BY_NAME` ではなくこの関数を使うので、`--null` と
+`scripts/niching/hunt_coverage.py` は `NICHING_BENCHMARKS_BY_NAME` ではなくこの関数を使うので、`--null` と
 `--hv` はそのままこの suite に当たる（`--funcs M09-D10-PIN01,...` と渡す）。
-**`scripts/niching_baseline.py` も その106 で `niching_by_name()` に直したので同じく当たる**
+**`scripts/niching/niching_baseline.py` も その106 で `niching_by_name()` に直したので同じく当たる**
 （それまでは辞書を直接引いていて `KeyError` になった。最適化 run を回す経路はこちらだけ）。
 **`--null --pop-sigma <P>`**（その97）は同じ per-draw ダンプを、σ0 を `--sigma-ratio × span` ではなく
 **P 点 population の最近傍距離の半分**に取って書き出す ＝ その95 の `split` 腕の規則。
@@ -352,7 +353,7 @@ MC-ESO（V1）を reference とし、各手法を seed-paired で比較。`wilco
 
 - **報告集合** = 最終集団 ＋ restart 系手法の各 restart の best（`OptimizeResult.final_solutions`）。MC-ESO は生存ホスト＋永続系統アーカイブ、NM-Restart / IPOP / BIPOP / CMA-ES は restart best ＋最終集団、集団を持たない場合は best 1 点。f の良い順に `max(100, 2K)` 点で打ち切る。
 - **計数** (`count_goptima`) は公式 `how_many_goptima` と同じ順序: 報告集合を f 順に並べ、既採用点から rho より遠い点だけを seed として拾い、**その後で**精度 ε 内かを判定する。良いが不正確な点がニッチを塞ぐ挙動まで含めて再現する（冗長な報告を罰するのがこの指標の要点）。
-- **GECCO'2024 suite（`M**`）だけは rho ではなく最近傍で数える** (`count_goptima_nn`、その106)。この suite は **rho を配布しておらず**、PR を「目標精度 ε_f 以内で発見された大域最小の割合」と**目的関数空間だけで**定義している（`external/mmo2024/docs/competition_setup_TR2024001.txt` §4）。したがって `niche_rho is None` の benchmark は、`f ≤ ε` の報告点を**最近傍の最適に帰属**させ相異なる最適の数を返す経路に落ちる（`core/runner.py:_niching_counts`）。**`scripts/hunt_coverage.py --null` の着地帰属と同じ規則**なので、手法の実測と null の上限が同じ土俵に載る。CEC2013（`N**`）の rho 経路は一切変わらない。
+- **GECCO'2024 suite（`M**`）だけは rho ではなく最近傍で数える** (`count_goptima_nn`、その106)。この suite は **rho を配布しておらず**、PR を「目標精度 ε_f 以内で発見された大域最小の割合」と**目的関数空間だけで**定義している（`external/mmo2024/docs/competition_setup_TR2024001.txt` §4）。したがって `niche_rho is None` の benchmark は、`f ≤ ε` の報告点を**最近傍の最適に帰属**させ相異なる最適の数を返す経路に落ちる（`core/runner.py:_niching_counts`）。**`scripts/niching/hunt_coverage.py --null` の着地帰属と同じ規則**なので、手法の実測と null の上限が同じ土俵に載る。CEC2013（`N**`）の rho 経路は一切変わらない。
 - 列は `cec_pr_{ε}` / `cec_sr_{ε}`（ε = 1e-1 … 1e-5）、その平均 `cec_pr_mean` / `cec_sr_mean`、報告点数 `n_reported`、`cec_k`。`scripts/analyze_quick.py` が `[1b]` 節で集計する。
 - **手法の判定に `cec_pr_1e-1` を使わない**（2026-09-03 その28）。報告規則を全手法で揃えると **N07 で 7 手法中 7 手法が PR@1e-1 = 1.00 に張り付く**一方、**eps ≤ 1e-3 では上位 2 位が全 5 関数で一切動かない**。1e-1 は探索の質ではなく**報告規則の質**を測っている。1e-1 / 1e-2 は参考値として併記してよいが、順位の根拠にしない。**判定は ε ≤ 1e-3 で行う。**
 

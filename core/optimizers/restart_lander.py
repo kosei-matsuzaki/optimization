@@ -19,7 +19,7 @@ descents, laid end to end inside the suite's own budget:
     -> the descent's best point joins ``final_solutions``
   repeat until the run budget is spent.
 
-The descent is byte-for-byte the one ``scripts/hunt_coverage.py:_null_descent``
+The descent is byte-for-byte the one ``scripts/niching/hunt_coverage.py:_null_descent``
 draws offline (same ``tolfun = tolfunhist = tolx = 0``, same isotropic
 covariance, same per-descent cap), so the only differences against the estimate
 are the ones the estimate abstracts away: the restart count is whatever the
