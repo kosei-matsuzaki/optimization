@@ -447,6 +447,11 @@ _OPTIMIZERS = {
     "v1_pfo8":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_pop_final_open": 8.0}),
     "v1_pfo6":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_pop_final_open": 6.0}),
     "v1_pfo12":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_pop_final_open": 12.0}),
+    # Droplet share while the learned C is not ill-conditioned (same latch as v1_pfo*).
+    "v1_ho50":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_h2h_open": 0.5}),
+    "v1_ho70":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_h2h_open": 0.7}),
+    "v1_ho50_pfo8":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_h2h_open": 0.5,
+                                                       "hd_pop_final_open": 8.0}),
     "v1_crR":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True,
                                                        "router_signal": "learned"}),
     "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,

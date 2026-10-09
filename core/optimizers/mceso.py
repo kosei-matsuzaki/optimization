@@ -414,6 +414,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # 10D valleys F08 / F09 90→10–15; the valleys' learned C crosses 10^3,
         # the multimodal functions' mostly does not.
         hd_pop_final_open: "float | None" = None,
+        # Same latch, for the droplet share: from dimension 3 up the droplet
+        # (DE) channel takes this share until the learned C is ill-conditioned
+        # (None = off). A uniform 0.5 broke the 10D valleys (2026-10-09 round 1).
+        hd_h2h_open: "float | None" = None,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
         # others in the very next one. Real epidemics have a latent period —
@@ -802,6 +806,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # An explicit n_pop is the initial size of the schedule.
             self.n_pop = max(20, int(round(pop_init_mult * self.dim)))
         self._pop_final = max(pop_min, int(round(pop_final_mult * self.dim)))
+        self._h2h_open = hd_h2h_open if self.dim >= 3 else None
         self._pop_final_open = (max(pop_min, int(round(hd_pop_final_open * self.dim)))
                                 if hd_pop_final_open is not None and self.dim >= 3 else None)
         self._n_pop0 = self.n_pop          # ipop_growth restores this at each run start
@@ -1715,6 +1720,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Base ratios, tapered toward the close-contact-dominant setting the
         # persistent-covariance learner needs once the dimension gate opens.
         air_r, h2h_r = self._cc_channel_ratios()
+        if self._h2h_open is not None and not self._update_cc_ill(st):
+            h2h_r = self._h2h_open
         learned_router = (self.router_signal == "learned" and self.channel_schedule
                           and self._cc_dim_gate() > 0.0)
         if learned_router and st.channel_route != "droplet" and st.cc_C is not None:
@@ -1816,17 +1823,20 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 if st.pop_dx is not None and st.pop_dx.shape == st.pop_x.shape:
                     st.pop_dx[w] = 0.0
 
+    def _update_cc_ill(self, st: _MCESOState) -> bool:
+        """Latch: has the learned covariance reached 10^router_learned_cond?"""
+        if not st.cc_ill and st.cc_C is not None:
+            ev = np.linalg.eigvalsh(st.cc_C)
+            st.cc_ill = bool(ev[0] > 0 and math.log10(ev[-1] / ev[0]) >= self.router_learned_cond)
+        return st.cc_ill
+
     def _shrink_population(self, st: _MCESOState) -> None:
         """Linear population-size reduction: drop the worst hosts down to the
         size scheduled for the evaluations spent so far."""
         frac = len(st.history_f) / max(st.max_evals, 1)
         final = self._pop_final
-        if self._pop_final_open is not None and not st.cc_ill:
-            if st.cc_C is not None:
-                ev = np.linalg.eigvalsh(st.cc_C)
-                st.cc_ill = bool(ev[0] > 0 and math.log10(ev[-1] / ev[0]) >= self.router_learned_cond)
-            if not st.cc_ill:
-                final = self._pop_final_open
+        if self._pop_final_open is not None and not self._update_cc_ill(st):
+            final = self._pop_final_open
         if final != self._pop_final:
             target = int(round(final + (self._n_pop0 - final) * (1.0 - frac) ** self.pop_shrink_power))
             target = max(final, min(self.n_pop, target))
