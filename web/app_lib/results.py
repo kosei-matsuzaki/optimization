@@ -17,7 +17,8 @@ import json
 import subprocess
 from pathlib import Path
 
-from .config import BASE_DIR, RESULTS_DIR, RUNS_DIR
+from .config import BASE_DIR, RESULTS_DIR, RUNS_DIR   # puts the project root on sys.path
+from core.env_info import read_env
 
 
 # ── run location (local results/ or shared runs/) ───────────────────────────
@@ -450,9 +451,13 @@ def write_result_meta(run_dir: Path, meta: dict) -> None:
 
 
 def read_result_meta(run_dir: Path) -> dict:
-    """result.json of a run, plus ``source`` (local / shared / both)."""
+    """result.json of a run, plus ``source`` (local / shared / both) and ``env``
+    (env.json: where it was computed; absent for runs before 2026-10-09)."""
     meta = _read_meta_file(run_dir)
     meta["source"] = run_source(run_dir.name)
+    env = read_env(run_dir)
+    if env:
+        meta["env"] = env
     return meta
 
 

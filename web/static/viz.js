@@ -190,10 +190,20 @@
       return `<option value="${r.seed}" ${String(r.seed) === String(selected) ? 'selected' : ''}>seed ${r.seed}  ${ok ? '✓ 到達' : '✕ 未到達'}  f=${fmtE(parseFloat(r.best_f))}</option>`;
     }).join('');
   }
+  // Runs reproduce bit for bit on one machine only (core/env_info.py). When a
+  // re-run differs, say which of the two usual reasons applies.
   function verifiedBadge(d) {
-    return d.verified
-      ? `<span class="viz-badge ok" title="この PC で同じ seed を再実行し、記録された最終値と一致した">再実行・記録と一致</span>`
-      : `<span class="viz-badge warn" title="記録 ${fmtE(d.recorded_best_f)} / 再実行 ${fmtE(d.best_f)}。run の後にコードが変わったか、seed で再現しない手法">再実行の結果が記録と違う</span>`;
+    if (d.verified) {
+      return `<span class="viz-badge ok" title="この PC で同じ seed を再実行し、記録された最終値と一致した">再実行・記録と一致</span>`;
+    }
+    const nums = `記録 ${fmtE(d.recorded_best_f)} / この PC の再実行 ${fmtE(d.best_f)}`;
+    if (d.same_env === false) {
+      return `<span class="viz-badge warn" title="${esc(nums)}。この run は別の環境（${esc(d.run_env)}）で計算された。線形代数ライブラリや CPU が違うと同じ seed でも探索の経路が分かれるので、表示しているのはこの PC（${esc(d.this_env)}）での同じ seed の run">別の環境の run・表示はこの PC での再実行</span>`;
+    }
+    const why = d.same_env === true
+      ? '同じ環境なので、run の後にコードが変わったか、seed で再現しない手法（mealpy 系）'
+      : 'run の環境が記録されていない（2026-10-09 より前の run）。別の PC で取った run か、run の後にコードが変わった可能性';
+    return `<span class="viz-badge warn" title="${esc(nums)}。${esc(why)}">再実行の結果が記録と違う</span>`;
   }
 
   // ── 2. search view ──────────────────────────────────────────────────────────

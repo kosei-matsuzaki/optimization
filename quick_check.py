@@ -57,6 +57,7 @@ from core.optimizers.lib_wrappers import (IMODEOptimizer, LSHADEcnEpSinOptimizer
                                           JSOOptimizer as JSOLibOptimizer,
                                           LSRTDEOptimizer as LSRTDELibOptimizer,
                                           NGOptOptimizer, NGPortfolioOptimizer)
+from core.env_info import write_env
 from core.run_data import save_curves, append_mceso_runs
 from core.runner import (run_experiment, summarize, wilcoxon_vs_reference,
                          peak_metrics, niching_peak_metrics, niching_peak_counts)
@@ -733,6 +734,9 @@ def main(
     jobs: int = 1,
 ) -> None:
     output_dir = Path(output_dir)
+    # Results reproduce bit for bit on one machine, not across machines
+    # (core/env_info.py): record where this run was computed.
+    write_env(output_dir)
     if suite == "niching":
         registry = NICHING_BENCHMARKS_BY_NAME
         func_set = _NICHING_NAMES

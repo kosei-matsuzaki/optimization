@@ -97,6 +97,11 @@ def replay(run_id: str, dim_name: str, func: str, method: str, seed: int) -> str
 
     recorded = _recorded_best(run_dir, dim_name, func, method, seed)
     verified = recorded is not None and float(f"{r.best_f:.6e}") == recorded
+    # A mismatch means one of two things; the environment says which is likely.
+    from core.env_info import read_env
+    run_env, here = read_env(run_dir), _this_env()
+    same_env = (None if run_env is None
+                else run_env.get("fingerprint") == here.get("fingerprint"))
 
     X = np.asarray(r.history_x, dtype=float)
     F = np.asarray(r.history_f, dtype=float)
@@ -145,6 +150,9 @@ def replay(run_id: str, dim_name: str, func: str, method: str, seed: int) -> str
         "optima": [list(map(float, o)) for o in (bench.optima_pos or [])],
         "n_evals": int(len(F)), "best_f": float(r.best_f), "f_opt": float(bench.optimum), "best_gap": float(best_gap[-1]),
         "recorded_best_f": recorded, "verified": verified,
+        "same_env": same_env,
+        "run_env": _env_label(run_env) if run_env else None,
+        "this_env": _env_label(here),
         "x": _b64(X, np.float32),
         "log_gap": _b64(np.log10(gap), np.float32),
         "log_best_gap": _b64(np.log10(best_gap), np.float32),
@@ -156,6 +164,16 @@ def replay(run_id: str, dim_name: str, func: str, method: str, seed: int) -> str
         "trace": trace,
     }
     return json.dumps(payload, separators=(",", ":"))
+
+
+@functools.lru_cache(maxsize=1)
+def _this_env() -> dict:
+    from core.env_info import environment
+    return environment()
+
+
+def _env_label(env: dict) -> str:
+    return f"{env.get('os')} / {env.get('cpu')} / numpy {env.get('numpy')} / {env.get('blas')}"
 
 
 @functools.lru_cache(maxsize=64)

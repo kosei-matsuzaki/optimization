@@ -404,6 +404,8 @@ MC-ESO の報告集合は**同じ盆地の重複が半分以上**を占める。
 
 全評価点・集団・内部状態の時系列は保存しない。UI がその run を同じ seed で**再実行**して出す。
 
+**計算環境の記録（`env.json`、2026-10-09 から）**: run は**同じマシンでは bit 単位で再現するが、マシンが違うと再現しない**（線形代数ライブラリと CPU の命令で固有分解の末尾の bit が変わり、そこから探索の経路が分かれる。[findings.md](findings.md) の macOS とクラウドの不一致、2D の新既定値が正準環境 93.33% / この Windows PC 94.0%）。そこで quick は run ごとに `env.json`（OS、CPU、Python / numpy / scipy の版、BLAS / LAPACK、`OPENBLAS_CORETYPE`、ホスト名と、数値に効く項目だけのハッシュ `fingerprint`）を書き、`publish` は `runs/` にも写す（`core/env_info.py`）。**別の環境の run どうしの差には環境の差が混ざる**ので、比べるのは同じ `fingerprint` の run の中で。2026-10-08〜09 にこの PC で回した run には後から書いた（`backfilled` 欄つき）。
+
 以下の画像は `--viz` を付けたときだけ作られる（論文用の静止画が要るとき向け）。`results/YYYYMMDD_<commit>/dim{N}/` 以下に**関数 × 手法ごとの個別ファイル**として保存される。静的図は SVG（ベクター）、アニメーションは WebP（GIF より 30〜50% 小容量、非対応環境では GIF フォールバック）。
 
 ### ファイル命名規則

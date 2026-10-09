@@ -66,6 +66,9 @@ def publish(src: Path, name: str | None, note: str | None, force: bool) -> Path:
             out.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(gz, out)
             total += out.stat().st_size
+    env = src / "env.json"          # where the run was computed (core/env_info.py)
+    if env.exists():
+        shutil.copyfile(env, dst / "env.json")
     meta.update({
         "published_at": datetime.now().isoformat(timespec="seconds"),
         "published_from": platform.node(),

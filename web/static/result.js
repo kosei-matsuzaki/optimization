@@ -175,6 +175,9 @@ function initSidebarRunHeader() {
     if (meta.max_evals != null) runInfo.push(`${Number(meta.max_evals).toLocaleString()} evals`);
     if (runInfo.length) lines.push({ cls: '', text: runInfo.join(' / ') });
     if (meta.commit)    lines.push({ cls: 'srm-small', text: meta.commit });
+    // Where it was computed: results only reproduce exactly on the same environment
+    if (meta.env) lines.push({ cls: 'srm-small srm-env', text: `${meta.env.os} / ${meta.env.cpu} / ${meta.env.blas}` });
+    else lines.push({ cls: 'srm-small srm-env', text: '計算環境の記録なし（2026-10-09 より前）' });
     metaEl.innerHTML = lines.map(l =>
       `<span class="srm-line${l.cls ? ' ' + l.cls : ''}">${l.text}</span>`
     ).join('');
