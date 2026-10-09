@@ -73,6 +73,8 @@ class _MCESOState:
     cc_C: "np.ndarray | None" = None
     # Evolution path of the learned covariance (cc_path; zero = never moved).
     cc_p: "np.ndarray | None" = None
+    # hd_pop_final_open: the learned C has reached 10^router_learned_cond (latched).
+    cc_ill: bool = False
     # Parent positions of this generation's offspring (same order as the
     # concatenated children) and the σ used, so the accepted steps can be
     # recovered for the update. Written only when the persistent covariance is on.
@@ -404,6 +406,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # both are tuned 2D values, so the overrides leave 2D bit-identical.
         hd_kill_fraction: "float | None" = None,
         hd_pop_init_mult: "float | None" = None,
+        # Landscape-dependent end of the population shrink, from dimension 3 up
+        # (None = off). The shrink ends at max(pop_min, this·D) until the learned
+        # covariance's log10 condition reaches router_learned_cond, and at
+        # pop_final_mult·D once it has (latched for the run). Round 1 of
+        # 2026-10-09: a final 8·D lifted 5D F16 25→85 / F03 10→40 but broke the
+        # 10D valleys F08 / F09 90→10–15; the valleys' learned C crosses 10^3,
+        # the multimodal functions' mostly does not.
+        hd_pop_final_open: "float | None" = None,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
         # others in the very next one. Real epidemics have a latent period —
@@ -792,6 +802,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # An explicit n_pop is the initial size of the schedule.
             self.n_pop = max(20, int(round(pop_init_mult * self.dim)))
         self._pop_final = max(pop_min, int(round(pop_final_mult * self.dim)))
+        self._pop_final_open = (max(pop_min, int(round(hd_pop_final_open * self.dim)))
+                                if hd_pop_final_open is not None and self.dim >= 3 else None)
         self._n_pop0 = self.n_pop          # ipop_growth restores this at each run start
         self.ipop_growth = ipop_growth
         self.ipop_max_mult = ipop_max_mult
@@ -1808,14 +1820,25 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         """Linear population-size reduction: drop the worst hosts down to the
         size scheduled for the evaluations spent so far."""
         frac = len(st.history_f) / max(st.max_evals, 1)
-        if self.pop_shrink_power == 1.0:
+        final = self._pop_final
+        if self._pop_final_open is not None and not st.cc_ill:
+            if st.cc_C is not None:
+                ev = np.linalg.eigvalsh(st.cc_C)
+                st.cc_ill = bool(ev[0] > 0 and math.log10(ev[-1] / ev[0]) >= self.router_learned_cond)
+            if not st.cc_ill:
+                final = self._pop_final_open
+        if final != self._pop_final:
+            target = int(round(final + (self._n_pop0 - final) * (1.0 - frac) ** self.pop_shrink_power))
+            target = max(final, min(self.n_pop, target))
+        elif self.pop_shrink_power == 1.0:
             # Exactly the formula the canonical pop_lin* runs used.
             target = int(round(self._n_pop0 + (self._pop_final - self._n_pop0) * frac))
         else:
             target = int(round(self._pop_final
                                + (self._n_pop0 - self._pop_final)
                                * (1.0 - frac) ** self.pop_shrink_power))
-        target = max(self._pop_final, min(self.n_pop, target))
+        if final == self._pop_final:
+            target = max(self._pop_final, min(self.n_pop, target))
         if target >= self.n_pop:
             return
         keep = np.sort(np.argsort(st.pop_f)[:target])

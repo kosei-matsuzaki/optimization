@@ -443,6 +443,10 @@ _OPTIMIZERS = {
                                                        "hd_pop_init_mult": 8.0}),
     # jDE-style CR self-adaptation from 3D up, off the DROPLET route only.
     "v1_cr":          (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True}),
+    # Landscape-dependent final population: 8·D (6·D) until the learned C is ill-conditioned.
+    "v1_pfo8":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_pop_final_open": 8.0}),
+    "v1_pfo6":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_pop_final_open": 6.0}),
+    "v1_pfo12":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_pop_final_open": 12.0}),
     "v1_crR":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True,
                                                        "router_signal": "learned"}),
     "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,
