@@ -458,6 +458,11 @@ _OPTIMIZERS = {
     "v1_ras":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort", "hd_alt_ratio": 0.2}),
     "v1_ras1":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort1", "hd_alt_ratio": 0.2}),
     "v1_rasE":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassortE", "hd_alt_ratio": 0.2}),
+    # Same, switched off in the drilling regime (like airborne).
+    "v1_epiD":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "epi", "hd_alt_ratio": 0.2, "hd_alt_drill": False}),
+    "v1_rasD":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort", "hd_alt_ratio": 0.2, "hd_alt_drill": False}),
+    "v1_ras1D":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort1", "hd_alt_ratio": 0.2, "hd_alt_drill": False}),
+    "v1_rasED":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassortE", "hd_alt_ratio": 0.2, "hd_alt_drill": False}),
     "v1_crR":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True,
                                                        "router_signal": "learned"}),
     "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,

@@ -431,6 +431,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Children are logged on the migratory channel code.
         hd_alt: "str | None" = None,
         hd_alt_ratio: float = 0.2,
+        # Whether the fourth route keeps running once σ is in the drilling regime.
+        # The 2026-10-09 screen (5D, on) cost the valleys F06 / F08 / F09 10–40pt;
+        # airborne is off in drilling for the same reason.
+        hd_alt_drill: bool = True,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
         # others in the very next one. Real epidemics have a latent period —
@@ -822,6 +826,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self._h2h_open = hd_h2h_open if self.dim >= 3 else None
         self._alt = hd_alt if self.dim >= 3 else None
         self.hd_alt_ratio = hd_alt_ratio
+        self.hd_alt_drill = hd_alt_drill
         self._pop_final_open = (max(pop_min, int(round(hd_pop_final_open * self.dim)))
                                 if hd_pop_final_open is not None and self.dim >= 3 else None)
         self._n_pop0 = self.n_pop          # ipop_growth restores this at each run start
@@ -1992,7 +1997,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             n_mig = max(0, n_mig + n_local)
             n_local = n_dead - n_air - n_h2h - n_mig
         n_alt = 0
-        if self._alt is not None:
+        if self._alt is not None and (self.hd_alt_drill or not in_drilling_now):
             n_alt = min(n_local, int(round(self.hd_alt_ratio * n_dead)))
             n_local -= n_alt
         n_mom = 0
