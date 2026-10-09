@@ -174,6 +174,23 @@ def read_wilcoxon(run_dir: Path, dim: str) -> list[dict]:
     return _read_rows(run_dir / dim / "wilcoxon.csv")
 
 
+def read_curves(run_id: str, dim: str, func: str) -> dict | None:
+    """Convergence data written by core/run_data.save_curves (None if absent)."""
+    run_dir = run_path(run_id)
+    if run_dir is None or "/" in func or ".." in func:
+        return None
+    p = run_dir / dim / "curves" / f"{func}.json.gz"
+    if not p.exists():
+        return None
+    with gzip.open(p, "rt", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def read_mceso_runs(run_dir: Path, dim: str) -> list[dict]:
+    """Per-run MC-ESO router / restart summary (core/run_data.append_mceso_runs)."""
+    return _read_rows(run_dir / dim / "mceso_runs.csv")
+
+
 def read_stats(run_id: str, dim: str, func_name: str) -> dict:
     """Per-run/per-function raw stats CSV → {headers, rows}."""
     run_dir = run_path(run_id)

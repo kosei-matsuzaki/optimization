@@ -8,7 +8,8 @@ let viewMode      = 'function';
 let currentDim    = DIMS[0] || null;
 let currentFunc   = null;
 let currentMethod = null;
-let currentType   = 'evals';
+// ?view=viz_search (or any figure type) opens that tab; default: convergence
+let currentType   = new URLSearchParams(location.search).get('view') || 'viz_curves';
 let currentMediaSrc = null;
 let mediaIndex    = null;  // loaded from /api/media-index
 
@@ -17,7 +18,13 @@ let cmpSelectedFuncs   = new Set();
 let cmpSelectedMethods = new Set();
 
 // ── ALL_TYPE_LABELS ──────────────────────────────────────────────────────────
+// Interactive views drawn by static/viz.js from data (function view only);
+// the image types below are matplotlib files from runs made with --viz.
+const VIZ_TYPES = ['viz_curves', 'viz_search', 'viz_internals'];
 const TYPE_LABELS = {
+  'viz_curves':         '収束',
+  'viz_search':         '探索の様子',
+  'viz_internals':      'MC-ESO の内部',
   'evals':              '評価点の蓄積',
   'evals_failed':       '評価点 (失敗)',
   'runs':               '探索軌跡',
@@ -209,17 +216,28 @@ function buildTypeSelector() {
   const sel = document.getElementById('media-selector');
   sel.innerHTML = '';
 
-  // Only the figure types this dimension actually has files for: landscapes
-  // exist for 2D only, and quick runs without --viz have no figures at all.
-  const types = TYPE_ORDER.filter(t => (mediaIndex?.types || []).includes(t));
+  // Image tabs only for files this dimension has (landscapes are 2D only, and
+  // runs without --viz have none); the interactive views need no files.
+  const imgTypes = TYPE_ORDER.filter(t => (mediaIndex?.types || []).includes(t));
+  const methodsHere = _summaryMethods();
+  const vizTypes = viewMode === 'function'
+    ? VIZ_TYPES.filter(t => t !== 'viz_internals' || methodsHere.some(m => m.startsWith('MC-ESO')))
+    : [];
+  const types = [...vizTypes, ...imgTypes];
   if (!types.length) {
-    sel.innerHTML = '<p class="empty-state">この run には図がありません。図は <code>./run.sh quick --viz</code> で回したときだけ作られます（数値は下の表と「全関数の集計」で見られます）。</p>';
+    sel.innerHTML = '<p class="empty-state">この run には画像がありません。収束・探索の様子・MC-ESO の内部は「関数」表示で見られます。</p>';
     return;
   }
 
   if (!types.includes(currentType)) currentType = types[0];
 
   types.forEach(t => {
+    if (vizTypes.length && t === imgTypes[0]) {
+      const sep = document.createElement('span');
+      sep.className = 'vs-sep';
+      sep.textContent = '画像';
+      sel.appendChild(sep);
+    }
     const btn = document.createElement('button');
     btn.className = 'vs-btn' + (t === currentType ? ' active' : '');
     btn.dataset.type = t;
@@ -256,6 +274,8 @@ function switchViewMode(mode) {
   document.getElementById('compare-panel').style.display = mode === 'compare'  ? 'flex' : 'none';
 
   // Show/hide main panels
+  buildTypeSelector();   // interactive views exist in the function view only
+  document.getElementById('viz-root').style.display = 'none';
   document.getElementById('media-grid-wrap').style.display    = mode === 'function' ? '' : 'none';
   document.getElementById('method-grid-wrap').style.display   = mode === 'method'   ? '' : 'none';
   document.getElementById('compare-matrix-wrap').style.display = mode === 'compare'  ? '' : 'none';
@@ -423,10 +443,41 @@ function selectMethod(method) {
 }
 
 // ── Render: Function mode grid (all methods for current function) ─────────────
+// Methods of the current dimension, in summary order.
+function _summaryMethods() {
+  const rows = DIMS_DATA[currentDim]?.summary || [];
+  return [...new Set(rows.map(r => r.method))];
+}
+
+// One container per interactive view, so each keeps its own selections.
+function renderViz() {
+  const root = document.getElementById('viz-root');
+  root.style.display = '';
+  document.getElementById('media-grid-wrap').style.display = 'none';
+  VIZ_TYPES.forEach(t => {
+    let box = root.querySelector(`[data-viz="${t}"]`);
+    if (!box) { box = document.createElement('div'); box.dataset.viz = t; root.appendChild(box); }
+    box.style.display = t === currentType ? '' : 'none';
+  });
+  const box = root.querySelector(`[data-viz="${currentType}"]`);
+  const key = `${currentDim}|${currentFunc}`;
+  if (box.dataset.key === key) return;        // already drawn for this function
+  box.dataset.key = key;
+  const ctx = { runId: RUN_ID, dim: currentDim, func: currentFunc, methods: _summaryMethods() };
+  const fn = { viz_curves: Viz.curves, viz_search: Viz.search, viz_internals: Viz.internals }[currentType];
+  fn(box, ctx);
+}
+
 function renderFunctionGrid() {
   const grid = document.getElementById('media-grid');
   grid.innerHTML = '';
   grid.classList.remove('solo');
+  if (currentFunc && currentFunc !== '__overall__' && currentType.startsWith('viz_')) {
+    renderViz();
+    return;
+  }
+  document.getElementById('viz-root').style.display = 'none';
+  document.getElementById('media-grid-wrap').style.display = viewMode === 'function' ? '' : 'none';
   if (!currentFunc || !mediaIndex || !(mediaIndex.types || []).length) return;
 
   // Function-level types (landscape/convergence): single full-width cell

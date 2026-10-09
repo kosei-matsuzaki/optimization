@@ -135,6 +135,9 @@
       </div>
       <div class="view-selector" id="media-selector"></div>
 
+      <!-- Function mode: interactive views (static/viz.js) -->
+      <div id="viz-root" style="display:none;"></div>
+
       <!-- Function mode: multi-method grid -->
       <div id="media-grid-wrap" style="display:none;">
         <div class="media-grid" id="media-grid"></div>
@@ -222,5 +225,6 @@
 
 {% block scripts %}
 <script id="page-data" type="application/json">{{ {"run_id": run_id, "dims": dims, "dims_data": dims_data, "all_results_meta": all_results_meta} | tojson }}</script>
+<script src="/static/viz.js"></script>
 <script src="/static/result.js"></script>
 {% endblock %}

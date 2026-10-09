@@ -60,6 +60,12 @@ def publish(src: Path, name: str | None, note: str | None, force: bool) -> Path:
         for csv_path in sorted(d.rglob("*.csv")):
             rel = csv_path.relative_to(src)
             total += _gzip_copy(csv_path, dst / rel.with_name(rel.name + ".gz"))
+        # convergence curves for the UI (already gzipped JSON, a few KB each)
+        for gz in sorted(d.rglob("curves/*.json.gz")):
+            out = dst / gz.relative_to(src)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(gz, out)
+            total += out.stat().st_size
     meta.update({
         "published_at": datetime.now().isoformat(timespec="seconds"),
         "published_from": platform.node(),

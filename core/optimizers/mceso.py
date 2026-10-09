@@ -133,10 +133,29 @@ class _MCESOState:
     sol_archive_x: list[np.ndarray] = field(default_factory=list)
     sol_archive_f: list[float] = field(default_factory=list)
     ir_basin_centroids: list[np.ndarray] = field(default_factory=list)  # abandoned-basin memory
+    # Diagnostics for the results UI (recording only — nothing here is read by
+    # the search, no RNG is drawn and no evaluation is spent to fill it).
+    # eval_channel: one code per evaluation (TRACE_CHANNELS); trace_gen: one row
+    # per generation (TRACE_GEN_KEYS); trace_events: (eval count, kind).
+    eval_channel: bytearray = field(default_factory=bytearray)
+    trace_gen: dict = field(default_factory=dict)
+    trace_events: list = field(default_factory=list)
+    gen_counts: tuple = (0, 0, 0, 0, 0)
 
     @property
     def budget_left(self) -> bool:
         return len(self.history_f) < self.max_evals
+
+
+# Channel that produced each evaluation (trace["eval_channel"]).
+TRACE_CHANNELS = ("close", "droplet", "airborne", "momentum", "migratory",
+                  "reseed", "init", "local_search")
+_CH_RESEED, _CH_INIT, _CH_LS, _CH_UNKNOWN = 5, 6, 7, 255
+# Router route per generation (trace["gen"]["route"]); 0 = not committed yet.
+TRACE_ROUTES = ("pending", "keepair", "droplet", "close")
+TRACE_GEN_KEYS = ("evals", "n_pop", "sigma", "best_f", "n_elite", "no_improve",
+                  "drilling", "route", "cond", "align", "mgap",
+                  "n_close", "n_droplet", "n_air", "n_mom", "n_mig", "cc_cond")
 
 
 class MultiChannelEpidemicOptimizer(BaseOptimizer):
@@ -902,6 +921,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     and len(st.history_f) >= (1.0 - self.ls_final_frac) * max_evals):
                 st.ls_done = True
                 self._final_local_search(st)
+                self._pad_eval_channel(st, _CH_LS)
 
         # Reported set: the surviving hosts, the strain reservoir, and the answer
         # archive of every basin drilled and abandoned.
@@ -916,7 +936,25 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         result.history_no_improve = st.history_no_improve
         result.history_eval_count = st.history_eval_count
         result.history_sigma_eval = st.history_sigma_eval
+        result.trace = self._trace_result(st)
         return result
+
+    # ── diagnostics for the results UI (recording only) ────────────────────
+    @staticmethod
+    def _pad_eval_channel(st: _MCESOState, code: int) -> None:
+        missing = len(st.history_f) - len(st.eval_channel)
+        if missing > 0:
+            st.eval_channel.extend([code] * missing)
+
+    def _trace_result(self, st: _MCESOState) -> dict:
+        self._pad_eval_channel(st, _CH_UNKNOWN)
+        return {
+            "gen": {k: list(v) for k, v in st.trace_gen.items()},
+            "eval_channel": bytes(st.eval_channel[:len(st.history_f)]),
+            "channels": TRACE_CHANNELS,
+            "routes": TRACE_ROUTES,
+            "events": list(st.trace_events),
+        }
 
     # ── run lifecycle ───────────────────────────────────────────────────────
     def _init_state(self, max_evals: int) -> _MCESOState:
@@ -954,6 +992,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         st.history_f = pop_f.tolist()
         st.history_pop = [pop_x.copy()]
         st.history_pop_sigma = [float(sigma) * self._host_sigma_scale(pop_f, pop_age)]
+        st.eval_channel = bytearray([_CH_INIT] * len(st.history_f))
+        st.trace_gen = {k: [] for k in TRACE_GEN_KEYS}
         return st
 
     # ── informed restart (reservoir re-ignition + herd-immunity repulsion) ──
@@ -1089,6 +1129,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             mult = self.hunt_no_improve_mult
         stagnated = st.no_improve >= mult * self._stagnation_window()
         if sigma_bottomed and stagnated:
+            if not st.has_exhausted:
+                st.trace_events.append((len(st.history_f), "exhausted"))
             st.has_exhausted = True
         return sigma_bottomed and stagnated
 
@@ -1208,6 +1250,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         #   basin switch: wipe best, fully uniform, σ_init reset
         #   else:         fully uniform, best preserved, smaller σ
         basin_switch = self._spillover_basin_switch(st)
+        st.trace_events.append((len(st.history_f), "basin_switch" if basin_switch else "spillover"))
         sigma_restart = (st.sigma_init if basin_switch
                          else st.sigma_init * self.restart_sigma_ratio)
         div_ratio = 1.0
@@ -1265,6 +1308,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.history_x.append(new_x.copy())
             st.history_f.append(f_new)
             st.history_sigma_eval.append(sig_log)
+            st.eval_channel.append(_CH_RESEED)
             if f_new < st.best_so_far:
                 st.best_so_far = f_new
             if not st.budget_left:
@@ -1720,6 +1764,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             dead_orig_f = None
 
         if n_dead == 0:
+            st.gen_counts = (0, 0, 0, 0, 0)
             st.pop_age += 1
             # No offspring this gen → no σ signal, so σ is held unchanged. When
             # all individuals are elite no births occur and history_f never grows
@@ -1771,6 +1816,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.gen_all_parents = []
             if st.pop_dx is None or st.pop_dx.shape != st.pop_x.shape:
                 st.pop_dx = np.zeros_like(st.pop_x)
+
+        st.gen_counts = (n_local, n_h2h, n_air, n_mom, n_mig)
 
         # Log-scale quality anchored to the global (history-wide) best. When the
         # population converges to a local optimum, all f_i ≈ f_pop_max but
@@ -1825,6 +1872,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self._place_and_compete(
             st, new_xs, _sigma_children, n_dead,
             dead_global, dead_orig_x, dead_orig_f)
+        # Channel of each child evaluated this generation (children are evaluated
+        # in the concatenation order above; the budget may stop it early).
+        codes = bytearray()
+        for code, cnt in enumerate(st.gen_counts):
+            codes.extend([code] * cnt)
+        st.eval_channel.extend(codes[:len(st.history_f) - st.gen_eval_start])
+        self._pad_eval_channel(st, _CH_UNKNOWN)
 
         self._adapt_sigma(st, gen_best_before)
 
@@ -2064,3 +2118,26 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         st.history_n_elite.append(st.last_n_elite)
         st.history_no_improve.append(int(st.no_improve))
         st.history_eval_count.append(len(st.history_f))
+        self._record_trace(st)
+
+    def _record_trace(self, st: _MCESOState) -> None:
+        """One row of internals for the results UI. Reads state only."""
+        t = st.trace_gen
+        if not t:
+            return
+        cc_cond = float("nan")
+        if st.cc_C is not None:
+            ev = np.linalg.eigvalsh(st.cc_C)
+            if ev[0] > 0:
+                cc_cond = float(np.log10(ev[-1] / ev[0]))
+        route = st.channel_route
+        row = (len(st.history_f), int(self.n_pop), float(st.sigma), float(st.best_so_far),
+               int(st.last_n_elite), int(st.no_improve),
+               int(st.sigma < st.span * self.precision_sigma_ratio),
+               TRACE_ROUTES.index(route) if route in TRACE_ROUTES else 0,
+               float("nan") if st.cc_logratio_ema is None else float(st.cc_logratio_ema),
+               float("nan") if st.cc_align_ema is None else float(st.cc_align_ema),
+               float("nan") if st.cc_mgap_ema is None else float(st.cc_mgap_ema),
+               *(int(c) for c in st.gen_counts), cc_cond)
+        for k, v in zip(TRACE_GEN_KEYS, row):
+            t[k].append(v)

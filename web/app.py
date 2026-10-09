@@ -23,7 +23,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, redirect, render_template, request, send_file, url_for
 
-from app_lib import config, jobs, results
+from app_lib import config, jobs, replay, results
 
 app = Flask(__name__)
 
@@ -381,6 +381,47 @@ def api_result_data(run_id: str):
         for dim in dims
     }
     return jsonify({"dims": dims, "dims_data": dims_data})
+
+
+# ── data for the interactive figures ──────────────────────────────────────────────
+
+@app.route("/api/curves/<run_id>/<dim>/<func>")
+def api_curves(run_id: str, dim: str, func: str):
+    data = results.read_curves(run_id, dim, func)
+    return (jsonify(data), 200) if data else (jsonify({"error": "no curves"}), 404)
+
+
+@app.route("/api/mceso-runs/<run_id>/<dim>")
+def api_mceso_runs(run_id: str, dim: str):
+    run_dir = results.run_path(run_id)
+    if run_dir is None:
+        return jsonify({"error": "not found"}), 404
+    return jsonify({"rows": results.read_mceso_runs(run_dir, dim)})
+
+
+@app.route("/api/replay/<run_id>/<dim>/<func>/<method>/<int:seed>")
+def api_replay(run_id: str, dim: str, func: str, method: str, seed: int):
+    """Re-run one seeded run and return everything it did (web/app_lib/replay.py)."""
+    try:
+        body = replay.replay(run_id, dim, func, method, seed)
+    except LookupError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:  # an optimizer that fails to run here
+        return jsonify({"error": f"{type(e).__name__}: {e}"}), 500
+    return app.response_class(body, mimetype="application/json")
+
+
+@app.route("/api/landscape/<int:dim>/<func>")
+def api_landscape(dim: str, func: str):
+    a = request.args.get("a", 0, type=int)
+    b = request.args.get("b", 1, type=int)
+    if not (0 <= a < dim and 0 <= b < dim and a != b):
+        return jsonify({"error": "bad axes"}), 400
+    try:
+        body = replay.landscape(dim, func, a, b)
+    except LookupError as e:
+        return jsonify({"error": str(e)}), 404
+    return app.response_class(body, mimetype="application/json")
 
 
 @app.route("/api/overall/<run_id>/<dim>")

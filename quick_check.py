@@ -57,6 +57,7 @@ from core.optimizers.lib_wrappers import (IMODEOptimizer, LSHADEcnEpSinOptimizer
                                           JSOOptimizer as JSOLibOptimizer,
                                           LSRTDEOptimizer as LSRTDELibOptimizer,
                                           NGOptOptimizer, NGPortfolioOptimizer)
+from core.run_data import save_curves, append_mceso_runs
 from core.runner import (run_experiment, summarize, wilcoxon_vs_reference,
                          peak_metrics, niching_peak_metrics, niching_peak_counts)
 from core.visualize import (
@@ -706,6 +707,10 @@ def _run_dim(benchmarks: list, dim_dir: Path, n_runs: int, max_evals: int,
             save_landscape_svg(bench, output_dir=dim_dir)
             save_convergence_svg(bench, results_per_method, output_dir=dim_dir)
         save_stats(bench, results_per_method, times_per_method, output_dir=dim_dir)
+        # Small data the results UI draws from (convergence, router / restarts);
+        # always written, figures or not (core/run_data.py).
+        save_curves(dim_dir, bench, results_per_method)
+        append_mceso_runs(dim_dir, bench, results_per_method)
         _append_wilcoxon(dim_dir, bench.name, results_per_method, reference="MC-ESO")
         _append_wilcoxon_pr(dim_dir, bench, results_per_method, reference="MC-ESO")
 

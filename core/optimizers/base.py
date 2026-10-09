@@ -34,6 +34,11 @@ class OptimizeResult:
     # scoring every visited point instead would hand a perfect peak ratio to any
     # method that samples densely enough, including pure random search.
     final_solutions: list[np.ndarray] = field(default_factory=list)
+    # Method-specific diagnostics for the results UI (MC-ESO: per-generation
+    # internals, the channel that produced each evaluation, spillover events —
+    # see MultiChannelEpidemicOptimizer._trace_result). Recording only: never
+    # read back by the search. Empty for methods that do not fill it.
+    trace: dict = field(default_factory=dict)
 
 
 class BaseOptimizer(ABC):

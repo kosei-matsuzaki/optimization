@@ -42,9 +42,24 @@ python3 web/app.py
 
 | モード | 説明 |
 |---|---|
-| **Function** | 関数を選択 → 選択した可視化タイプを全手法グリッドで表示 |
+| **Function** | 関数を選択 → 下の「図（関数ビュー）」の 3 つの対話的な図と、`--viz` の run なら画像タブ |
 | **Method** | 手法を選択 → 選択した可視化タイプを全関数グリッドで表示 |
 | **Compare** | 関数・手法をマルチセレクト → 関数×手法のマトリクスグリッドで比較 |
+
+### 図（関数ビュー、2026-10-09 から）
+
+画像を run の最後に焼く方式から、**データを保存して UI が描く**方式に移した（`static/viz.js`）。図はすべての run で見られる（画像の無い run、共有 `runs/` の run でも）。
+
+| タブ | 中身 | データの出どころ |
+|---|---|---|
+| **収束** | 手法ごとの f − f* の中央値（全 run）、MC-ESO の四分位の帯、1e-10 の線。凡例にカーソルで手法を強調、図の上にカーソルでその評価回数の値を一覧 | run が書く `dim{N}/curves/{Func}.json.gz`（`core/run_data.save_curves`） |
+| **探索の様子** | 手法と run（全 seed、到達 / 未到達つき）を選び、評価回数のスライダーと再生で動かす。地図: 評価点（MC-ESO は子を作った経路で色分け）・集団（2D は宿主ごとの σ の円）・最良点の軌跡・☆ 大域最適。横に、評価ごとの f − f* と最適解までの距離（どちらも全評価、次元に依らない）、座標ごとの集団の広がりのヒートマップ | **その run を再実行**（`/api/replay`）。背景は `/api/landscape` |
+| **MC-ESO の内部** | 全 run の表（ルート、確定時点、スピルオーバー・盆地乗換えの回数、経路の割合、集団サイズ）。行を押すとその run の内部状態: 最良値、σ（drilling を灰色）、集団サイズ、系統の数、子の作り方の割合、ルーター信号 3 つ（固有値比・軸への揃い・座標方向の隙間）と閾値、学習共分散の条件数（3 次元以上）、停滞カウンタ。縦線がスピルオーバー / 盆地乗換え / 最初に掘り切った時点 | 表は run が書く `dim{N}/mceso_runs.csv`（`core/run_data.append_mceso_runs`）、内部状態は再実行の `trace` |
+
+- **3 次元以上**: 地図は横軸・縦軸の座標を選んだ 2 座標への投影で、背景は**最適解を通るその 2 座標の断面**（他の座標は最適解の値に固定）。f − f* と距離の散布図、座標ごとの広がりは次元に依らず読める。
+- **再実行**: run は seed = run 番号 × 100 で決まるので、同じ seed で回し直せばその run になる（2D で 1〜2 秒、10D で数秒、結果はサーバーのメモリに 24 件までキャッシュ）。**記録された最終値と比べ、一致すれば「再実行・記録と一致」、違えば警告を出す**（run の後にコードが変わった、または mealpy 系のように seed で再現しない手法）。
+- 関数地形は run ごとに作らない。`/api/landscape` がその場で格子を計算し（120×120、2D で 0.1 秒以下）、サーバーのメモリにキャッシュする。
+- URL の `?view=viz_search` などで開くタブを指定できる。手法・比較ビューは従来どおり画像（`--viz` の run のみ）。
 
 ---
 
@@ -144,6 +159,10 @@ web/
 | POST | `/api/results/<run_id>/rename` | 結果ディレクトリ名の変更 |
 | DELETE | `/api/results/<run_id>` | 結果ディレクトリの削除 |
 | GET | `/api/stats/<run_id>/<dim>/<func>` | per-run 詳細統計 CSV |
+| GET | `/api/curves/<run_id>/<dim>/<func>` | 収束の中央値・四分位（`curves/{Func}.json.gz`） |
+| GET | `/api/mceso-runs/<run_id>/<dim>` | MC-ESO の全 run の要約（`mceso_runs.csv`） |
+| GET | `/api/replay/<run_id>/<dim>/<func>/<method>/<seed>` | その run を再実行して全評価点（float32 base64）、f − f*、最適解までの距離、経路、集団（最大 240 コマ）、MC-ESO の内部状態、記録との一致を返す（`app_lib/replay.py`） |
+| GET | `/api/landscape/<dim>/<func>?a=&b=` | 最適解を通る x_a–x_b 平面の f の格子（log10、120×120） |
 | GET | `/api/media-index/<run_id>/<dim>` | 可視化ファイルの索引 |
 | GET | `/api/result-data/<run_id>` | 次元・関数・summary・wilcoxon |
 | GET | `/api/overall/<run_id>/<dim>` | 全関数横断の Friedman ランキング。`scopes`（例 `["bbob","custom","all"]`）と `by_suite`（各スイートの完全ペイロード: leaderboard / friedman / func_categories / func_tags / func_scores …）を返す。トップレベルは後方互換のため既定スコープ（混在時は `all`）のペイロードを併載 |
