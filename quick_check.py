@@ -435,6 +435,12 @@ _OPTIMIZERS = {
     # round 2: does removing airborne stack with the router / the evolution path?
     "v1_noair_cpath": (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True}),
     "v1_noair_rtC":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "router_signal": "learned"}),
+    # On top of v1_noairHD: stronger selection / smaller start from 3D up (2D unchanged).
+    "v2_k50":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_kill_fraction": 0.5}),
+    "v2_k35":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_kill_fraction": 0.35}),
+    "v2_pi8":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_pop_init_mult": 8.0}),
+    "v2_k50_pi8":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_kill_fraction": 0.5,
+                                                       "hd_pop_init_mult": 8.0}),
     "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,
                                                        "router_signal": "learned"}),
     "v1_noFrz":       (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 0}),

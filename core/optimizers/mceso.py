@@ -398,6 +398,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         migratory_jump_ratio: float = 0.2,     # jump magnitude, × span
         # ── Greedy (μ+λ) replacement ───────────────────────────────────
         kill_fraction: float = 0.25,           # fraction of active killed per gen (by f)
+        # Overrides of kill_fraction / pop_init_mult from dimension 3 up (None =
+        # same as 2D, the default). The 2026-10-09 10D probe: kill 0.5 took the
+        # F12 median gap 3.5e-2 → 2.5e-4, pop_init 8·D took F13 1.6e-7 → 3.6e-10;
+        # both are tuned 2D values, so the overrides leave 2D bit-identical.
+        hd_kill_fraction: "float | None" = None,
+        hd_pop_init_mult: "float | None" = None,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
         # others in the very next one. Real epidemics have a latent period —
@@ -768,6 +774,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.n_pop = (n_pop if n_pop is not None
                       else max(20, int(round(n_pop_dim_mult * self.dim))))
         self.pop_schedule = pop_schedule
+        if hd_pop_init_mult is not None and self.dim >= 3:
+            pop_init_mult = hd_pop_init_mult
         self.pop_init_mult = pop_init_mult
         self.pop_final_mult = pop_final_mult
         self.pop_min = pop_min
@@ -802,7 +810,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.log_slope_threshold = log_slope_threshold
         self.h2h_ratio = h2h_ratio
         self.h2h_F = h2h_F
-        self.kill_fraction = kill_fraction
+        self.kill_fraction = (hd_kill_fraction if hd_kill_fraction is not None and self.dim >= 3
+                              else kill_fraction)
         self.incubation_gens = incubation_gens
         self.restart_no_improve_threshold = restart_no_improve_threshold
         self.restart_window_dim_scale = restart_window_dim_scale
