@@ -82,6 +82,9 @@ class _MCESOState:
     loc_try: float = 0.0
     alt_gens: int = 0
     alt_extinct: bool = False
+    # cc_front_path: previous front position and the accumulated path.
+    front_m: "np.ndarray | None" = None
+    front_p: "np.ndarray | None" = None
     gen_alt_parent_f: "np.ndarray | None" = None
     # Parent positions of this generation's offspring (same order as the
     # concatenated children) and the σ used, so the accepted steps can be
@@ -462,6 +465,21 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # the run. Meant for "reassort": separable landscapes keep it, valleys
         # and rotated ones should not.
         hd_alt_extinct: "float | None" = None,
+        # Rank-one update of the learned C along the drift of the outbreak front
+        # (≥3D; off by default): m = log-weighted mean of the best half of the
+        # hosts, p ← (1−c_c)p + √(c_c(2−c_c)μ_eff)·(m_t − m_{t−1})/σ,
+        # C ← (1−c1)C + c1·ppᵀ with CMA-ES's c_c, c1. Unlike cc_path, which sums
+        # each child's step from its own parent (directions cancel), the front
+        # moves consistently along a valley's long axis — the information CMA-ES
+        # uses to learn F12-BentCigar. The mean is forgotten at each spillover.
+        cc_front_path: bool = False,
+        # σ success rule from dimension 3 up (None = "the best improved this
+        # generation", the 2D rule). With ~40 births per generation at 10D the
+        # chance that one of them improves the best stays high, so σ hovers at
+        # 0.02–0.1 while 10D F12 gains one decade per ~8500 evaluations
+        # (2026-10-10 trace). Here σ grows when more than this fraction of the
+        # close-contact children beat their own parent (a 1/5-type rule).
+        hd_sigma_success: "float | None" = None,
         hd_alt_extinct_gens: int = 10,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
@@ -858,6 +876,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.hd_alt_ill_off = hd_alt_ill_off
         self.sigma_floor_ill_ratio = sigma_floor_ill_ratio
         self.hd_alt_extinct = hd_alt_extinct
+        self.cc_front_path = cc_front_path
+        self.hd_sigma_success = hd_sigma_success
         self.hd_alt_extinct_gens = hd_alt_extinct_gens
         self._pop_final_open = (max(pop_min, int(round(hd_pop_final_open * self.dim)))
                                 if hd_pop_final_open is not None and self.dim >= 3 else None)
@@ -1449,6 +1469,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             if not st.budget_left:
                 break
         st.sigma = sigma_restart
+        st.front_m = None
         st.no_improve = 0
         st.basin_best = float(np.min(st.pop_f))
         st.log_best_ref = math.log10(max(st.best_so_far, 1e-300))
@@ -1656,6 +1677,28 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.gen_all_parents.append(st.pop_x[h2h_parents_gi].copy())
         new_h2h = self._reflect(h2h_offspring, st.lo, st.hi)
         return new_h2h, h2h_step_norms
+
+    def _update_front_path(self, st: _MCESOState) -> None:
+        """cc_front_path: rank-one update along the outbreak front's drift."""
+        n, D = self.n_pop, self.dim
+        mu = max(2, n // 2)
+        order = np.argsort(st.pop_f)[:mu]
+        w = np.log(mu + 0.5) - np.log(np.arange(1, mu + 1))
+        w = w / w.sum()
+        m = w @ st.pop_x[order]
+        if st.front_m is not None and st.front_m.shape == m.shape and st.sigma > 0:
+            mu_eff = 1.0 / float(np.sum(w ** 2))
+            c_c = 4.0 / (D + 4.0)
+            c1 = 2.0 / ((D + 1.3) ** 2 + mu_eff)
+            if st.front_p is None:
+                st.front_p = np.zeros(D)
+            st.front_p = ((1.0 - c_c) * st.front_p
+                          + math.sqrt(c_c * (2.0 - c_c) * mu_eff) * (m - st.front_m) / st.sigma)
+            C = (1.0 - c1) * st.cc_C + c1 * np.outer(st.front_p, st.front_p)
+            tr = float(np.trace(C))
+            if tr > 1e-300 and np.all(np.isfinite(C)):
+                st.cc_C = C * (D / tr)
+        st.front_m = m
 
     def _alt_reproduction(self, st: _MCESOState, n_local: int, alt_start: int,
                           n_alt: int) -> None:
@@ -2088,7 +2131,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.gen_n_h2h = 0
             if st.cc_C is None:
                 st.cc_C = np.eye(self.dim)
-            st.cc_p = None
+                st.cc_p = None
         st.gen_h2h_start, st.gen_h2h_count = n_local, n_h2h
         if self.h2h_cr_heritable:
             st.gen_child_cr = []
@@ -2132,6 +2175,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self._place_and_compete(
             st, new_xs, _sigma_children, n_dead,
             dead_global, dead_orig_x, dead_orig_f)
+        if (self.cc_front_path and self._cc_dim_gate() > 0.0 and st.cc_C is not None
+                and len(st.history_sigma_global) >= st.cc_freeze_until):
+            self._update_front_path(st)
         if self.hd_alt_extinct is not None and n_alt > 0 and not st.alt_extinct:
             self._alt_reproduction(st, n_local, n_dead - n_alt, n_alt)
         # Channel of each child evaluated this generation (children are evaluated
@@ -2157,7 +2203,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             sigma_floor_eff = span * self.sigma_floor_ill_ratio
         if self.sigma_pin_evals_frac > 0.0 and in_drilling:
             st.last_drill_eval = len(st.history_f)
-        if st.best_so_far < gen_best_before:
+        improved = st.best_so_far < gen_best_before
+        if (self.hd_sigma_success is not None and self.dim >= 3
+                and st.gen_parent_f is not None and st.gen_n_local > 0):
+            f = np.asarray(st.history_f[st.gen_eval_start:st.gen_eval_start + st.gen_n_local])
+            m = min(len(f), len(st.gen_parent_f))
+            if m > 0:
+                improved = float(np.mean(f[:m] < st.gen_parent_f[:m])) > self.hd_sigma_success
+        if improved:
             st.sigma *= self._sigma_up_eff(st)
         elif (self.sigma_flat_expand and not in_drilling
               and self._generation_is_flat(st, gen_best_before)):

@@ -481,6 +481,14 @@ _OPTIMIZERS = {
     "v1_rasX05":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort", "hd_alt_drill": False, "hd_alt_extinct": 0.5}),
     "v1_ras1X1":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort1",
                                                        "hd_alt_drill": False, "hd_alt_extinct": 1.0}),
+    # Evolution path re-test after the reset bug (cc_p was cleared every generation until 2026-10-10),
+    # and the outbreak-front drift path.
+    "v1_cpath2":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True}),
+    "v1_front":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_front_path": True}),
+    # 1/5-type σ success rule from 3D up.
+    "v1_ss10":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_sigma_success": 0.1}),
+    "v1_ss20":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_sigma_success": 0.2}),
+    "v1_ss05":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_sigma_success": 0.05}),
     "v1_crR":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True,
                                                        "router_signal": "learned"}),
     "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,
