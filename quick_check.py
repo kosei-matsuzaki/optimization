@@ -425,6 +425,13 @@ _OPTIMIZERS = {
                        {"pop_schedule": "fixed", "cc_spill_freeze_gens": 0, "cc_mu_frac": 0.0}),
     # Ablation of the 2026-10-08 default: remove one of its three changes.
     "v1_noPop":       (MultiChannelEpidemicOptimizer, {"pop_schedule": "fixed"}),
+    # 2026-10-09 arms from the internal-state diagnosis (docs/history.md); all on
+    # top of the current default, none changes 2D except v1_popfin8.
+    "v1_rtC":         (MultiChannelEpidemicOptimizer, {"router_signal": "learned"}),
+    "v1_cpath":       (MultiChannelEpidemicOptimizer, {"cc_path": True}),
+    "v1_noairHD":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0}),
+    "v1_h2h50HD":     (MultiChannelEpidemicOptimizer, {"cc_h2h_ratio": 0.5}),
+    "v1_popfin8":     (MultiChannelEpidemicOptimizer, {"pop_final_mult": 8.0}),
     "v1_noFrz":       (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 0}),
     "v1_noMu":        (MultiChannelEpidemicOptimizer, {"cc_mu_frac": 0.0}),
     # 2026-10-06 improvement candidates (all defaults unchanged).

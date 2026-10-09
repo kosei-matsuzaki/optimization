@@ -71,6 +71,8 @@ class _MCESOState:
     # by construction — unlike C_pop, which is re-estimated every generation from
     # a population drawn from it and collapses to rank ≈ 2 of 10 in high dim.
     cc_C: "np.ndarray | None" = None
+    # Evolution path of the learned covariance (cc_path; zero = never moved).
+    cc_p: "np.ndarray | None" = None
     # Parent positions of this generation's offspring (same order as the
     # concatenated children) and the σ used, so the accepted steps can be
     # recovered for the update. Written only when the persistent covariance is on.
@@ -669,6 +671,21 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Keep the learned covariance across ordinary spillovers (reset only on a
         # full basin switch). See the note at the reset site.
         cc_keep_on_spillover: bool = True,
+        # Router signal source once the dimension gate is open (≥3D). "pop" (the
+        # default) commits from the instantaneous population covariance, which
+        # cannot be estimated in high dimension (docs/history.md 2026-08: in 10D
+        # the router sits on KEEP-AIR for every function). "learned" ignores
+        # C_pop there and latches DROPLET as soon as the learned covariance's
+        # log10 condition reaches router_learned_cond — ill-conditioned functions
+        # cross 3 within 2.5k–7.6k evaluations, multimodal ones never do
+        # (2026-10-09 diagnosis). 2D is untouched (the gate is 0 there).
+        router_signal: str = "pop",
+        router_learned_cond: float = 3.0,
+        # Rank-one update of the learned covariance along an evolution path
+        # (CMA-ES constants c_c = 4/(n+4), c1 = 2/((n+1.3)^2 + μ_eff)). Rejected
+        # in 2026-08 when the learner saw 0.1–0.3 accepted steps per generation;
+        # re-tested now that cc_mu_frac=0.5 feeds it half of the close children.
+        cc_path: bool = False,
         # How much of the sampling shape comes from the persistent C rather than
         # the instantaneous C_pop. The two are complementary, not alternatives:
         # C_pop is right immediately wherever the population can align with the
@@ -811,6 +828,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self._mom_on = mom_ratio > 0.0 or bool(
             route_mix and any(v[1] > 0.0 for v in route_mix.values()))
         self.cc_keep_on_spillover = cc_keep_on_spillover
+        self.router_signal = router_signal
+        self.router_learned_cond = router_learned_cond
+        self.cc_path = cc_path
         self.cc_persist_frac = cc_persist_frac
         self.cc_air_ratio = cc_air_ratio
         self.cc_h2h_ratio = cc_h2h_ratio
@@ -1031,6 +1051,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # to rank 9.08 just as it was getting there, and cycles forever at
             # median f 37.8.
             st.cc_C = np.eye(self.dim)
+            st.cc_p = None
         # Remember the basin we are about to abandon (its current best location).
         best_i = int(np.argmin(st.pop_f))
         st.ir_basin_centroids.append(st.pop_x[best_i].copy())
@@ -1618,6 +1639,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Base ratios, tapered toward the close-contact-dominant setting the
         # persistent-covariance learner needs once the dimension gate opens.
         air_r, h2h_r = self._cc_channel_ratios()
+        learned_router = (self.router_signal == "learned" and self.channel_schedule
+                          and self._cc_dim_gate() > 0.0)
+        if learned_router and st.channel_route != "droplet" and st.cc_C is not None:
+            ev = np.linalg.eigvalsh(st.cc_C)
+            if ev[0] > 0 and math.log10(ev[-1] / ev[0]) >= self.router_learned_cond:
+                st.channel_route = "droplet"            # latched, any generation
         air_base = 0.0 if drilling else air_r
         if not self.channel_schedule:
             return air_base, h2h_r
@@ -1629,6 +1656,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # properties, so a single committed route removes the generation-to-
         # generation flip-flop that otherwise perturbs threshold-borderline
         # functions (F04/F14) and even leaks keep-air functions (F06) off base.
+        if st.channel_route is None and learned_router:
+            return air_base, h2h_r                      # base until the learned C latches
         if st.channel_route is None:
             if st.cc_logratio_ema is None or st.cc_align_ema is None:
                 return air_base, h2h_r                  # KEEP-AIR (base) while warming
@@ -1840,6 +1869,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.gen_n_h2h = 0
             if st.cc_C is None:
                 st.cc_C = np.eye(self.dim)
+            st.cc_p = None
         st.gen_h2h_start, st.gen_h2h_count = n_local, n_h2h
         new_local, sigma_i = self._close_contact_children(
             st, n_local, weights, log_f_max, log_f_spread)
@@ -2104,6 +2134,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             rank_mu = (Y.T @ Y) / len(Y)
         c = min(1.0, self.cc_learning_rate)
         C = (1.0 - c) * st.cc_C + c * rank_mu
+        if self.cc_path:
+            n, mu_eff = self.dim, float(len(Y))
+            cc_c = 4.0 / (n + 4.0)
+            c1 = 2.0 / ((n + 1.3) ** 2 + mu_eff)
+            if st.cc_p is None:
+                st.cc_p = np.zeros(n)
+            st.cc_p = (1.0 - cc_c) * st.cc_p + math.sqrt(cc_c * (2.0 - cc_c) * mu_eff) * Y.mean(axis=0)
+            C = (1.0 - c1) * C + c1 * np.outer(st.cc_p, st.cc_p)
         tr = float(np.trace(C))
         if tr > 1e-300 and np.all(np.isfinite(C)):
             st.cc_C = C * (self.dim / tr)      # mean eigenvalue 1
