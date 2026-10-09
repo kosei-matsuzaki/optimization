@@ -432,6 +432,11 @@ _OPTIMIZERS = {
     "v1_noairHD":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0}),
     "v1_h2h50HD":     (MultiChannelEpidemicOptimizer, {"cc_h2h_ratio": 0.5}),
     "v1_popfin8":     (MultiChannelEpidemicOptimizer, {"pop_final_mult": 8.0}),
+    # round 2: does removing airborne stack with the router / the evolution path?
+    "v1_noair_cpath": (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True}),
+    "v1_noair_rtC":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "router_signal": "learned"}),
+    "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,
+                                                       "router_signal": "learned"}),
     "v1_noFrz":       (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 0}),
     "v1_noMu":        (MultiChannelEpidemicOptimizer, {"cc_mu_frac": 0.0}),
     # 2026-10-06 improvement candidates (all defaults unchanged).
