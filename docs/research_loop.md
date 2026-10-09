@@ -100,7 +100,7 @@
 
 ---
 
-1. **空気感染なし（3 次元以上）の 2 候補を正準環境で測る（2D / 5D / 10D）。**
+1. **空気感染なし（3 次元以上）の 2 候補を正準環境で測る（2D / 5D / 10D）。** (claimed 2026-10-09 12:31 UTC)
    2D: `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,v1_noairHD,v1_noair_rtC"`。
    5D: `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,v1_noairHD,v1_noair_rtC"`。
    10D: `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,v1_noairHD,v1_noair_rtC"`。
