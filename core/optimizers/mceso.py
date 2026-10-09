@@ -688,6 +688,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # competition decides which survive — selection, not a learned schedule.
         h2h_cr_heritable: bool = False,
         h2h_cr_tau: float = 0.1,
+        # h2h_cr_heritable from dimension 3 up only, and only off the DROPLET
+        # route (once the router latches DROPLET the droplet CR is h2h_CR again).
+        # The canonical run (2026-10-08 job 1) had plain crher gain 5D F03 +30 /
+        # F04 +10 but cost 2D F23 −25 / F17 −15 and 10D F07 −30; the dimension
+        # gate keeps 2D bit-identical and the route gate is meant to keep the
+        # ill-conditioned functions (F07) on the tuned CR.
+        hd_cr_heritable: bool = False,
         # End-phase local search (as in IMODE / EBOwithCMAR / UMOEA-II): once
         # (1 − ls_final_frac) of the budget is spent, run SciPy SLSQP (finite-
         # difference gradients, box bounds) from the best host with at most
@@ -855,7 +862,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.route_mix = route_mix
         self.h2h_adapt = h2h_adapt
         self.h2h_cr_mix = h2h_cr_mix
-        self.h2h_cr_heritable = h2h_cr_heritable
+        self.h2h_cr_heritable = h2h_cr_heritable or (hd_cr_heritable and self.dim >= 3)
+        self.hd_cr_heritable = hd_cr_heritable
         self.h2h_cr_tau = h2h_cr_tau
         self.ls_final_frac = ls_final_frac
         self.ls_budget_frac = ls_budget_frac
@@ -1532,7 +1540,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             c = rng.integers(0, n, size=n_h2h)
             d = rng.integers(0, n, size=n_h2h)
             diff = diff + (st.pop_x[c] - st.pop_x[d])
-        if self.h2h_cr_heritable:
+        if self.h2h_cr_heritable and self.hd_cr_heritable and st.channel_route == "droplet":
+            CRv = np.full(n_h2h, float(self.h2h_CR))
+            st.gen_child_cr.append(CRv.copy())
+            Fcol, CRcol = self.h2h_F, CRv[:, None]
+        elif self.h2h_cr_heritable:
             CRv = st.pop_cr[h2h_parents_gi].copy()
             redraw = rng.random(n_h2h) < self.h2h_cr_tau
             CRv[redraw] = rng.random(int(redraw.sum()))
