@@ -75,6 +75,14 @@ class _MCESOState:
     cc_p: "np.ndarray | None" = None
     # hd_pop_final_open: the learned C has reached 10^router_learned_cond (latched).
     cc_ill: bool = False
+    # hd_alt_extinct bookkeeping: decayed win / try sums per route, generations.
+    alt_win: float = 0.0
+    alt_try: float = 0.0
+    loc_win: float = 0.0
+    loc_try: float = 0.0
+    alt_gens: int = 0
+    alt_extinct: bool = False
+    gen_alt_parent_f: "np.ndarray | None" = None
     # Parent positions of this generation's offspring (same order as the
     # concatenated children) and the σ used, so the accepted steps can be
     # recovered for the update. Written only when the persistent covariance is on.
@@ -445,6 +453,16 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # 1e-9 at gap 5e-10 and the ridge stalls, whereas the 1e-6 floor keeps σ
         # large enough to travel along the learned C's long axis (2026-10-10).
         sigma_floor_ill_ratio: "float | None" = None,
+        # Extinction of the fourth route (None = never). Each generation counts
+        # how often its children beat their own parent, against the same rate
+        # for close-contact children (decayed sums, half-life ~7 generations).
+        # After hd_alt_extinct_gens generations, if its rate falls below
+        # hd_alt_extinct × the close-contact rate (an effective reproduction
+        # number below the resident strain's), the route dies for the rest of
+        # the run. Meant for "reassort": separable landscapes keep it, valleys
+        # and rotated ones should not.
+        hd_alt_extinct: "float | None" = None,
+        hd_alt_extinct_gens: int = 10,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
         # others in the very next one. Real epidemics have a latent period —
@@ -839,6 +857,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.hd_alt_drill = hd_alt_drill
         self.hd_alt_ill_off = hd_alt_ill_off
         self.sigma_floor_ill_ratio = sigma_floor_ill_ratio
+        self.hd_alt_extinct = hd_alt_extinct
+        self.hd_alt_extinct_gens = hd_alt_extinct_gens
         self._pop_final_open = (max(pop_min, int(round(hd_pop_final_open * self.dim)))
                                 if hd_pop_final_open is not None and self.dim >= 3 else None)
         self._n_pop0 = self.n_pop          # ipop_growth restores this at each run start
@@ -1637,6 +1657,27 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         new_h2h = self._reflect(h2h_offspring, st.lo, st.hi)
         return new_h2h, h2h_step_norms
 
+    def _alt_reproduction(self, st: _MCESOState, n_local: int, alt_start: int,
+                          n_alt: int) -> None:
+        """hd_alt_extinct: compare how often the fourth route's children and
+        the close-contact children beat their own parent; kill the route when its
+        rate stays below hd_alt_extinct × the close-contact rate."""
+        f = np.asarray(st.history_f[st.gen_eval_start:], dtype=float)
+        decay = 0.9
+        if st.gen_parent_f is not None and n_local > 0:
+            m = min(n_local, len(f), len(st.gen_parent_f))
+            st.loc_win = decay * st.loc_win + float(np.sum(f[:m] < st.gen_parent_f[:m]))
+            st.loc_try = decay * st.loc_try + m
+        if st.gen_alt_parent_f is not None:
+            m = max(0, min(n_alt, len(f) - alt_start))
+            st.alt_win = decay * st.alt_win + float(np.sum(f[alt_start:alt_start + m]
+                                                           < st.gen_alt_parent_f[:m]))
+            st.alt_try = decay * st.alt_try + m
+        st.alt_gens += 1
+        if st.alt_gens >= self.hd_alt_extinct_gens and st.alt_try > 0 and st.loc_try > 0:
+            if st.alt_win / st.alt_try < self.hd_alt_extinct * st.loc_win / st.loc_try:
+                st.alt_extinct = True
+
     def _alt_children(self, st: _MCESOState, n_alt: int,
                       weights: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Multi-parent route (``hd_alt``). Returns (children, step norms)."""
@@ -1672,6 +1713,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             else:
                 kids = np.where(mask, Xb, Xa)
             ref = Xa
+            st.gen_alt_parent_f = st.pop_f[a].copy()
         kids = self._reflect(kids, st.lo, st.hi)
         return kids, np.linalg.norm(kids - ref, axis=1)
 
@@ -2010,6 +2052,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             n_local = n_dead - n_air - n_h2h - n_mig
         n_alt = 0
         if (self._alt is not None and (self.hd_alt_drill or not in_drilling_now)
+                and not st.alt_extinct
                 and not (self.hd_alt_ill_off and self._update_cc_ill(st))):
             n_alt = min(n_local, int(round(self.hd_alt_ratio * n_dead)))
             n_local -= n_alt
@@ -2089,6 +2132,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self._place_and_compete(
             st, new_xs, _sigma_children, n_dead,
             dead_global, dead_orig_x, dead_orig_f)
+        if self.hd_alt_extinct is not None and n_alt > 0 and not st.alt_extinct:
+            self._alt_reproduction(st, n_local, n_dead - n_alt, n_alt)
         # Channel of each child evaluated this generation (children are evaluated
         # in the concatenation order above; the budget may stop it early).
         codes = bytearray()

@@ -476,6 +476,11 @@ _OPTIMIZERS = {
     "v1_fl10i":       (MultiChannelEpidemicOptimizer, {"sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6}),
     "v1_noair_fl10i": (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10,
                                                        "sigma_floor_ill_ratio": 1e-6}),
+    # Reassortment that dies out when it reproduces worse than close contact.
+    "v1_rasX1":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort", "hd_alt_drill": False, "hd_alt_extinct": 1.0}),
+    "v1_rasX05":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort", "hd_alt_drill": False, "hd_alt_extinct": 0.5}),
+    "v1_ras1X1":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort1",
+                                                       "hd_alt_drill": False, "hd_alt_extinct": 1.0}),
     "v1_crR":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True,
                                                        "router_signal": "learned"}),
     "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,
