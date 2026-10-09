@@ -472,6 +472,10 @@ _OPTIMIZERS = {
     "v1_epiDI10":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "epi", "hd_alt_drill": False, "hd_alt_ill_off": True, "hd_alt_ratio": 0.1}),
     "v1_epiDI_fl10":  (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "epi", "hd_alt_drill": False, "hd_alt_ill_off": True,
                                                        "sigma_floor_ratio": 1e-10}),
+    # σ floor 1e-10, back to 1e-6 once the learned C is ill-conditioned (≥3D).
+    "v1_fl10i":       (MultiChannelEpidemicOptimizer, {"sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6}),
+    "v1_noair_fl10i": (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10,
+                                                       "sigma_floor_ill_ratio": 1e-6}),
     "v1_crR":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True,
                                                        "router_signal": "learned"}),
     "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,

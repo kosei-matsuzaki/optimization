@@ -439,6 +439,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # 10^router_learned_cond (valleys: epicentre samples land off the curved
         # Rosenbrock valley and waste budget — 5D F08 −20pt in the screen).
         hd_alt_ill_off: bool = False,
+        # σ floor once the learned C is ill-conditioned (≥3D; None = always
+        # sigma_floor_ratio). A floor of 1e-10 lifted 2D F23 75→100 / F18 95→100
+        # and 5D F23 10→60, but 5D F13 (sharp ridge) fell 100→70: σ collapses to
+        # 1e-9 at gap 5e-10 and the ridge stalls, whereas the 1e-6 floor keeps σ
+        # large enough to travel along the learned C's long axis (2026-10-10).
+        sigma_floor_ill_ratio: "float | None" = None,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
         # others in the very next one. Real epidemics have a latent period —
@@ -832,6 +838,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.hd_alt_ratio = hd_alt_ratio
         self.hd_alt_drill = hd_alt_drill
         self.hd_alt_ill_off = hd_alt_ill_off
+        self.sigma_floor_ill_ratio = sigma_floor_ill_ratio
         self._pop_final_open = (max(pop_min, int(round(hd_pop_final_open * self.dim)))
                                 if hd_pop_final_open is not None and self.dim >= 3 else None)
         self._n_pop0 = self.n_pop          # ipop_growth restores this at each run start
@@ -2101,6 +2108,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         span = st.span
         in_drilling = st.sigma < span * self.precision_sigma_ratio
         sigma_floor_eff = span * self.sigma_floor_ratio
+        if self.sigma_floor_ill_ratio is not None and self._update_cc_ill(st):
+            sigma_floor_eff = span * self.sigma_floor_ill_ratio
         if self.sigma_pin_evals_frac > 0.0 and in_drilling:
             st.last_drill_eval = len(st.history_f)
         if st.best_so_far < gen_best_before:
