@@ -272,6 +272,8 @@ CI 経由で取得（`analysis/mmo2024/e134/refs/fieldsend2014_nmmso_cec.txt.gz`
 ### 比較手法の候補の洗い出し（2026-10-06 調査）
 
 **最も近い先行手法: EA4eig**（Bujok, Kolenovsky, Janisch, CEC 2022 優勝）。単一の共有集団で CoBiDE・IDEbd・CMA-ES・jSO を併用し、世代ごとに成功カウンタのルーレットで手法を 1 つ選ぶ（下限 1/20 でリセット）。DE 系は枠ごとに貪欲に置換、CMA-ES は最悪個体と比べて置換。Biedrzycki（*Evolutionary Computation*, 採録版、[PDF](https://staff.elka.pw.edu.pl/~rbiedrzy/publ/Ea4EigSimplifying.pdf)）は成分を削った jSO＋IDEbd（CMA-ES を除く）の方が CEC2022 で良く、BBOB 10D / 40D でも検証、元の MATLAB にバグがあったと報告し C++ 簡略版を公開。**MC-ESO との差は配分の決め方（地形ルーター 対 成功率）にほぼ限られる。**
+
+**「複数の生成法で実際に評価させて選ぶ」の先行: CoDE**（Wang, Cai & Zhang, IEEE TEVC 15(1), 2011）。個体ごとに 3 つの試行ベクトル生成戦略（rand/1/bin・rand/2/bin・current-to-rand/1）を、3 組の (F, CR) 候補から無作為に組んで同時に作り、実評価で最良の 1 本を親と競わせる。MC-ESO の「判別器を置かず実評価の選択に裁定させる」はこの構造と重なる。差は、CoDE が個体ごとに全戦略の子を作る（評価 3 倍）のに対し MC-ESO はチャネル配分で子の数を分ける点と、配分を地形ルーターが変える点。2026-10-09 に professor の指摘で追記（本文は未確認、書誌のみ）。
 - 共有集団の CMA＋DE: LSHADE-SPACMA（CEC2017 3 位）、ELSHADE-SPACMA（CEC2018 3 位）。
 - 3 手法以上の枠組み: AMALGAM-SO、HMHH、MOS（BBOB-2010 データあり）、UMOEA-II（CEC2016 2 位）、EBOwithCMAR（CEC2017 1 位）、HSES（CEC2018 1 位、段階的）、IMODE（CEC2020 1 位、mealpy に実装）、APGSK-IMODE（CEC2021 3 位）、ICMAES-ILS（CEC2013 1 位）。nevergrad の Portfolio / NGOpt（pip で入る）。
 - 混成でない最新の DE: jSO（CEC2017 2 位）、L-SRTDE（CEC2024 1 位）。minionpy / pyade に実装。
