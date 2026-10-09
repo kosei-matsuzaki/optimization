@@ -1,0 +1,16 @@
+MC-ESO-v0: MC-ESO better 13 / worse 0  (p=nan, all runs tied: 1)
+   better: F01(A12=0.78,large), F07(A12=0.98,large), F13(A12=0.92,large), F02(A12=0.68,medium), F20(A12=0.76,large), F04(A12=0.71,medium), F10(A12=0.66,medium), F16(A12=0.72,large), F11(A12=0.71,large), F17(A12=0.96,large), F23(A12=0.73,large), F12(A12=0.78,large), F18(A12=0.95,large)
+   worse : none
+   A12 magnitudes of the 13 significant: {'large': 10, 'medium': 3}
+v1_noPop: MC-ESO better 8 / worse 1  (p=nan, all runs tied: 1)
+   better: F01(A12=0.79,large), F07(A12=0.93,large), F02(A12=0.75,large), F04(A12=0.71,large), F16(A12=0.77,large), F11(A12=0.69,medium), F17(A12=0.96,large), F18(A12=0.85,large)
+   worse : F09(A12=0.20,large)
+   A12 magnitudes of the 9 significant: {'large': 8, 'medium': 1}
+v1_noFrz: MC-ESO better 3 / worse 0  (p=nan, all runs tied: 5)
+   better: F13(A12=0.74,large), F12(A12=0.62,small), F18(A12=0.54,negligible)
+   worse : none
+   A12 magnitudes of the 3 significant: {'large': 1, 'small': 1, 'negligible': 1}
+v1_noMu: MC-ESO better 4 / worse 1  (p=nan, all runs tied: 2)
+   better: F13(A12=0.78,large), F08(A12=0.79,large), F14(A12=0.94,large), F11(A12=0.66,medium)
+   worse : F12(A12=0.42,small)
+   A12 magnitudes of the 5 significant: {'large': 3, 'medium': 1, 'small': 1}

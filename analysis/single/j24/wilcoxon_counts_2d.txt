@@ -1,0 +1,8 @@
+MC-ESO-v0: MC-ESO better 1 / worse 0  (p=nan, all runs tied: 15)
+   better: F17(A12=0.77,large)
+   worse : none
+   A12 magnitudes of the 1 significant: {'large': 1}
+v1_noPop: MC-ESO better 1 / worse 0  (p=nan, all runs tied: 15)
+   better: F17(A12=0.77,large)
+   worse : none
+   A12 magnitudes of the 1 significant: {'large': 1}

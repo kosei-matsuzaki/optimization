@@ -1,0 +1,12 @@
+functions=24  methods=5
+
+method         SR@1e-2   SR@1e-4   SR@1e-7  SR@1e-10   evals_own  (nf)  evals_pair  ref_pair  (nf)
+--------------------------------------------------------------------------------------------------
+MC-ESO          70.00%    68.54%    62.71%    59.17%      4202.4    21           -         -     -
+MC-ESO-v0       55.42%    51.88%    47.08%    43.12%      5240.9    20      5240.9    4171.1    20
+v1_noPop        56.04%    51.46%    48.33%    47.29%      4448.1    18      4448.1    4047.9    18
+v1_noFrz        71.04%    67.92%    62.08%    59.17%      3940.9    19      3940.9    3816.2    19
+v1_noMu         69.38%    67.71%    61.88%    58.75%      4040.6    21      4040.6    4202.4    21
+
+evals_own  = averaged over functions where THIS method succeeds (nf)
+evals_pair = averaged over functions where BOTH it and MC-ESO succeed; ref_pair = MC-ESO on the same set

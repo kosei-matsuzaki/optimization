@@ -1,0 +1,10 @@
+SR@1e-10, one element of the 2026-10-08 default removed at a time
+(ref = MC-ESO = pop_pow2_frzmu; 24 BBOB functions, n=20)
+
+arm         removed element                      2D              5D
+---------------------------------------------------------------------------
+MC-ESO      (new default)                   93.33%          59.17%
+v1_noPop    pop_schedule pow2 16D->4D       92.08% (-1.25)  47.29% (-11.88)
+v1_noFrz    cc_spill_freeze_gens 50 -> 0    not run         59.17% (+0.00)
+v1_noMu     cc_mu_frac 0.5 -> 0.0           not run         58.75% (-0.42)
+MC-ESO-v0   all three (old default)         92.08% (-1.25)  43.12% (-16.04)

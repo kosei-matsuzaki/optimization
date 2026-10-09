@@ -1,0 +1,43 @@
+Per-function SR@1e-10 (%),  ref = MC-ESO,  24 functions
+
+function                     MC-ESO  MC-ESO-v0   v1_noPopd:MC-ESO-v0 d:v1_noPop
+-------------------------------------------------------------------------------
+F01-Sphere                      100        100        100         +0         +0
+F02-EllipsoidalSep              100        100        100         +0         +0
+F03-RastriginSep                100        100        100         +0         +0
+F04-BucheRastrigin               85         95         95        +10        +10
+F05-LinearSlope                 100        100        100         +0         +0
+F06-AttractiveSector            100         95         95         -5         -5
+F07-StepEllipsoidal             100        100        100         +0         +0
+F08-Rosenbrock                  100        100        100         +0         +0
+F09-RosenbrockRot               100        100        100         +0         +0
+F10-EllipsoidalRot              100        100        100         +0         +0
+F11-Discus                      100        100        100         +0         +0
+F12-BentCigar                   100        100        100         +0         +0
+F13-SharpRidge                  100        100        100         +0         +0
+F14-DiffPowers                  100        100        100         +0         +0
+F15-RastriginRot                100        100        100         +0         +0
+F16-Weierstrass                 100        100        100         +0         +0
+F17-SchafferF7                   95         60         60        -35        -35
+F18-SchafferF7ill                80         90         90        +10        +10
+F19-GriewankRosenbrock          100        100        100         +0         +0
+F20-Schwefel                     90         95         95         +5         +5
+F21-Gallagher101                100        100        100         +0         +0
+F22-Gallagher21                 100        100        100         +0         +0
+F23-Katsuura                     75         75         75         +0         +0
+F24-LunacekRastrigin             15          0          0        -15        -15
+
+Overall mean SR@1e-10 and diff vs ref:
+  MC-ESO          93.33%  (n=24)
+  MC-ESO-v0       92.08%  (n=24)   (-1.25pt vs MC-ESO)
+  v1_noPop        92.08%  (n=24)   (-1.25pt vs MC-ESO)
+
+Functions whose SR@1e-10 differs from ref:
+  MC-ESO-v0: 6 changed: F04 85->95, F06 100->95, F17 95->60, F18 80->90, F20 90->95, F24 15->0
+  v1_noPop: 6 changed: F04 85->95, F06 100->95, F17 95->60, F18 80->90, F20 90->95, F24 15->0
+
+Paired evals_succ_mean (functions where ref and the arm both succeed):
+  MC-ESO-v0         677.7  vs ref    766.7  (nf=23)
+  v1_noPop          677.7  vs ref    766.7  (nf=23)
+
+wrote analysis/single/j24/per_function_sr1e10_2d.csv

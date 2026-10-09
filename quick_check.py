@@ -439,6 +439,16 @@ _OPTIMIZERS = {
                                                        "router_signal": "learned"}),
     "v1_noFrz":       (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 0}),
     "v1_noMu":        (MultiChannelEpidemicOptimizer, {"cc_mu_frac": 0.0}),
+    # Candidates on top of the 2026-10-08 default (v1_* = relative to new default).
+    "v1_crmix":       (MultiChannelEpidemicOptimizer, {"h2h_cr_mix": (0.1, 0.9)}),
+    "v1_crlow":       (MultiChannelEpidemicOptimizer, {"h2h_CR": 0.2}),
+    "v1_h2hA":        (MultiChannelEpidemicOptimizer, {"h2h_adapt": True}),
+    "v1_pop32":       (MultiChannelEpidemicOptimizer, {"pop_init_mult": 32.0}),
+    "v1_gate2":       (MultiChannelEpidemicOptimizer, {"cc_gate_mahal": 2.0}),
+    "v1_rcf30":       (MultiChannelEpidemicOptimizer, {"route_commit_frac": 0.30}),
+    "v1_crher":       (MultiChannelEpidemicOptimizer, {"h2h_cr_heritable": True}),
+    "v1_crher_rcf30": (MultiChannelEpidemicOptimizer,
+                       {"h2h_cr_heritable": True, "route_commit_frac": 0.30}),
     # 2026-10-06 improvement candidates (all defaults unchanged).
     # A. population-size schedules
     "pop_lin16":      (MultiChannelEpidemicOptimizer,
