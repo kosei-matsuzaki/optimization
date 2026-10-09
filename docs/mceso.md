@@ -288,6 +288,10 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `cond_droplet_thresh` | 3.0 | commit 時 cond EMA がこれ超で DROPLET |
 | `align_close_thresh` | 0.965 | commit 時 algA EMA がこれ超（かつ mgap 条件）で CLOSE |
 | `close_mgap_thresh` | 0.36 | CLOSE の追加条件（mgap EMA。regular separable F04≈0.41 と deceptive F17≈0.29 を分離）|
+| `router_signal` / `router_learned_cond` | `"pop"` / 3.0 | **診断用（2026-10-09、既定不変）**。`"learned"` で 3 次元以上のルーターを学習共分散で駆動する: その log10 条件数が `router_learned_cond` に達した時点で DROPLET に固定（世代を問わない）、それまでは基本配分。集団共分散は高次元で推定できず、10D では全関数が KEEP-AIR に留まるため。2D は次元ゲートが 0 なので bit 一致 |
+| `cc_path` | False | **診断用（2026-10-09、不採用）**。学習共分散に進化パスの rank-1 更新（CMA-ES の定数）を足す |
+| `hd_kill_fraction` / `hd_pop_init_mult` | None / None | **診断用（2026-10-09、既定不変）**。3 次元以上でだけ `kill_fraction` / `pop_init_mult` を置き換える（None で 2D と同じ値）。2D は bit 一致 |
+| `h2h_cr_heritable` / `hd_cr_heritable` | False / False | **診断用**。前者は飛沫感染の CR を宿主ごとに持たせ子に継承する（jDE 方式、`h2h_cr_tau`=0.1 で引き直し）。後者はそれを 3 次元以上でだけ、かつ DROPLET 経路に固定される前だけ有効にする（固定後は `h2h_CR`）。2D は bit 一致 |
 
 ---
 
