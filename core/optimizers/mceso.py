@@ -418,6 +418,19 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # (DE) channel takes this share until the learned C is ill-conditioned
         # (None = off). A uniform 0.5 broke the 10D valleys (2026-10-09 round 1).
         hd_h2h_open: "float | None" = None,
+        # A fourth transmission route from dimension 3 up (None = off), taking
+        # hd_alt_ratio of each generation's births from the close-contact share.
+        # Every route in MC-ESO breeds from ONE parent; these breed from several:
+        #   "epi"       outbreak epicentre — the log-weighted mean of the best half
+        #               of the hosts plus N(0, σ²·C_learned) (recombination, the
+        #               ingredient that lets CMA-ES follow a multimodal funnel);
+        #   "reassort"  genome reassortment — two hosts drawn by fitness swap
+        #               each coordinate with probability 1/2 (no new noise);
+        #   "reassort1" the same, a single coordinate;
+        #   "reassortE" reassortment in the eigenbasis of the learned C.
+        # Children are logged on the migratory channel code.
+        hd_alt: "str | None" = None,
+        hd_alt_ratio: float = 0.2,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
         # others in the very next one. Real epidemics have a latent period —
@@ -807,6 +820,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             self.n_pop = max(20, int(round(pop_init_mult * self.dim)))
         self._pop_final = max(pop_min, int(round(pop_final_mult * self.dim)))
         self._h2h_open = hd_h2h_open if self.dim >= 3 else None
+        self._alt = hd_alt if self.dim >= 3 else None
+        self.hd_alt_ratio = hd_alt_ratio
         self._pop_final_open = (max(pop_min, int(round(hd_pop_final_open * self.dim)))
                                 if hd_pop_final_open is not None and self.dim >= 3 else None)
         self._n_pop0 = self.n_pop          # ipop_growth restores this at each run start
@@ -1605,6 +1620,44 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         new_h2h = self._reflect(h2h_offspring, st.lo, st.hi)
         return new_h2h, h2h_step_norms
 
+    def _alt_children(self, st: _MCESOState, n_alt: int,
+                      weights: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Multi-parent route (``hd_alt``). Returns (children, step norms)."""
+        if n_alt <= 0:
+            return np.empty((0, self.dim)), np.empty(0)
+        rng, n, D = st.rng, self.n_pop, self.dim
+        C = st.cc_C if st.cc_C is not None else np.eye(D)
+        ev, V = np.linalg.eigh(C)
+        ev = np.maximum(ev / max(float(ev.mean()), 1e-30), self.cc_cov_floor)
+        if self._alt == "epi":
+            mu = max(2, n // 2)
+            order = np.argsort(st.pop_f)[:mu]
+            w = np.log(mu + 0.5) - np.log(np.arange(1, mu + 1))
+            w = w / w.sum()
+            m = w @ st.pop_x[order]
+            z = rng.standard_normal((n_alt, D)) @ (V * np.sqrt(ev)[None, :]).T
+            kids = m[None, :] + st.sigma * z
+            ref = np.repeat(m[None, :], n_alt, axis=0)
+        else:
+            a = rng.choice(n, size=n_alt, p=weights)
+            b = rng.choice(n, size=n_alt, p=weights)
+            same = a == b
+            b[same] = (b[same] + 1 + rng.integers(0, n - 1, int(same.sum()))) % n
+            Xa, Xb = st.pop_x[a], st.pop_x[b]
+            if self._alt == "reassort1":
+                mask = np.zeros((n_alt, D), bool)
+                mask[np.arange(n_alt), rng.integers(0, D, n_alt)] = True
+            else:
+                mask = rng.random((n_alt, D)) < 0.5
+            if self._alt == "reassortE":
+                Ya, Yb = Xa @ V, Xb @ V
+                kids = np.where(mask, Yb, Ya) @ V.T
+            else:
+                kids = np.where(mask, Xb, Xa)
+            ref = Xa
+        kids = self._reflect(kids, st.lo, st.hi)
+        return kids, np.linalg.norm(kids - ref, axis=1)
+
     def _airborne_children(self, st: _MCESOState, n_air: int,
                            air_sigma_vec) -> np.ndarray:
         """Airborne transmission — population-independent long-range spread:
@@ -1938,6 +1991,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if n_local < 0:                     # migratory overflow → trim it
             n_mig = max(0, n_mig + n_local)
             n_local = n_dead - n_air - n_h2h - n_mig
+        n_alt = 0
+        if self._alt is not None:
+            n_alt = min(n_local, int(round(self.hd_alt_ratio * n_dead)))
+            n_local -= n_alt
         n_mom = 0
         if self._mom_on:
             n_mom = (min(n_local, max(1, int(round(mom_share * n_dead))))
@@ -1947,7 +2004,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             if st.pop_dx is None or st.pop_dx.shape != st.pop_x.shape:
                 st.pop_dx = np.zeros_like(st.pop_x)
 
-        st.gen_counts = (n_local, n_h2h, n_air, n_mom, n_mig)
+        st.gen_counts = (n_local, n_h2h, n_air, n_mom, n_mig + n_alt)
 
         # Log-scale quality anchored to the global (history-wide) best. When the
         # population converges to a local optimum, all f_i ≈ f_pop_max but
@@ -1988,7 +2045,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Migratory is generated last so that when the channel is off (n_mig = 0)
         # no RNG is drawn and the run stays bit-identical to base.
         new_mig = self._migratory_children(st, n_mig)
-        new_xs = np.concatenate([new_local, new_h2h, new_air, new_mom, new_mig], axis=0)
+        new_alt, alt_step = self._alt_children(st, n_alt, weights)
+        new_xs = np.concatenate([new_local, new_h2h, new_air, new_mom, new_mig, new_alt], axis=0)
 
         # Per-child sigma: local→σ_i, h2h→|step|, air→air_sigma_vec, mig→jump
         _sc: list[np.ndarray] = []
@@ -2002,6 +2060,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             _sc.append(mom_step_norms)
         if n_mig > 0:
             _sc.append(np.full(n_mig, float(self.migratory_jump_ratio * span)))
+        if n_alt > 0:
+            _sc.append(alt_step)
         _sigma_children = np.concatenate(_sc) if _sc else np.array([])
 
         # Evaluate offspring and resolve host competition (placement + rollback +

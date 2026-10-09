@@ -452,6 +452,12 @@ _OPTIMIZERS = {
     "v1_ho70":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_h2h_open": 0.7}),
     "v1_ho50_pfo8":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_h2h_open": 0.5,
                                                        "hd_pop_final_open": 8.0}),
+    # Multi-parent fourth route from 3D up (hd_alt), on top of v1_noairHD.
+    "v1_epi":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "epi", "hd_alt_ratio": 0.2}),
+    "v1_epi10":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "epi", "hd_alt_ratio": 0.1}),
+    "v1_ras":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort", "hd_alt_ratio": 0.2}),
+    "v1_ras1":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort1", "hd_alt_ratio": 0.2}),
+    "v1_rasE":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassortE", "hd_alt_ratio": 0.2}),
     "v1_crR":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True,
                                                        "router_signal": "learned"}),
     "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,
