@@ -100,6 +100,14 @@
 
 ---
 
+1. **空気感染なし（3 次元以上）の 2 候補を正準環境で測る（2D / 5D / 10D）。**
+   2D: `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,v1_noairHD,v1_noair_rtC"`。
+   5D: `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,v1_noairHD,v1_noair_rtC"`。
+   10D: `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,v1_noairHD,v1_noair_rtC"`。
+   **背景**: 2026-10-09 にローカル（Windows）で、学習共分散の診断から作った 8 腕を測った（[history.md](history.md) の 2026-10-09）。`v1_noairHD`（`cc_air_ratio=0`）は 2D が全関数 bit 一致、5D +2.5pt / 10D +1.0pt。`v1_noair_rtC`（さらにルーターを学習共分散で駆動）は 5D +3.1pt / 10D +0.8pt。どちらかを既定にする前に、正準環境で同じ差が出るかを確かめる。
+   **集計**: 標準の集計を次元ごとに。MC-ESO の行は 2D 93.33% / 5D 59.17% / 10D 42.08%（`analysis/single/j24/`・`j25/`）と一致するはず（一致したかを書く）。**2D で 2 腕が MC-ESO と全関数一致したか**を書く（一致しなければ、動いた関数をすべて列挙）。5D / 10D は F03 / F07 / F08 / F09 / F15 / F16 / F17 / F18 / F21 / F22 の SR@1e-10 と `evals_succ_mean` を 3 腕並べて書く。
+   **記録**: `analysis/single/j28/`（次元ごとに別ファイル）。
+
 
 ## 規則
 
