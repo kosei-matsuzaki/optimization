@@ -87,6 +87,7 @@ class _MCESOState:
     front_p: "np.ndarray | None" = None
     # hd_wave_lambda: a wave has run since the last meaningful improvement.
     wave_spent: bool = False
+    handover_done: bool = False
     gen_alt_parent_f: "np.ndarray | None" = None
     # Parent positions of this generation's offspring (same order as the
     # concatenated children) and the σ used, so the accepted steps can be
@@ -500,6 +501,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         wave_quality: "float | None" = None,
         # Also run the wave at dimension 2 (hd_wave_lambda is ≥3D otherwise).
         wave_2d: bool = False,
+        # Whiten the wave by the learned C when it is ill-conditioned (the wave
+        # then starts from the shape the outbreak has learned instead of the
+        # identity; 10D F12 spent ~3000 evaluations re-learning it).
+        wave_use_C: bool = False,
+        # Containment hand-over (≥3D, needs hd_wave_lambda): once the learned C
+        # is ill-conditioned and σ has entered the drilling regime, run one wave
+        # (whitened, σ0 = current σ) without waiting for a stall.
+        wave_ill_handover: bool = False,
+        # Hand over as soon as the learned C is ill-conditioned (False = wait for
+        # σ to enter the drilling regime as well).
+        wave_handover_drill: bool = True,
         hd_alt_extinct_gens: int = 10,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
@@ -902,6 +914,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.wave_sigma_ratio = wave_sigma_ratio
         self.wave_budget_frac = wave_budget_frac
         self.wave_quality = wave_quality
+        self.wave_use_C = wave_use_C
+        self.wave_ill_handover = wave_ill_handover
+        self.wave_handover_drill = wave_handover_drill
         self.hd_alt_extinct_gens = hd_alt_extinct_gens
         self._pop_final_open = (max(pop_min, int(round(hd_pop_final_open * self.dim)))
                                 if hd_pop_final_open is not None and self.dim >= 3 else None)
@@ -1417,6 +1432,16 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         Returns ``True`` iff the eval budget was exhausted inside the event, in
         which case the caller breaks the generation loop.
         """
+        if (self._wave_lambda is not None and self.wave_ill_handover and not st.handover_done
+                and (not self.wave_handover_drill
+                     or st.sigma < st.span * self.precision_sigma_ratio)
+                and self._update_cc_ill(st)):
+            st.handover_done = True
+            st.trace_events.append((len(st.history_f), "handover"))
+            self._recombination_wave(st, sigma0=st.sigma, budget_frac=1.0)
+            self._pad_eval_channel(st, _CH_LS)
+            if not st.budget_left:
+                return True
         if not self._spillover_should_fire(st):
             return False
         if (self._wave_lambda is not None and not st.wave_spent
@@ -2011,30 +2036,42 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 if st.pop_dx is not None and st.pop_dx.shape == st.pop_x.shape:
                     st.pop_dx[w] = 0.0
 
-    def _recombination_wave(self, st: _MCESOState) -> None:
+    def _recombination_wave(self, st: _MCESOState, sigma0: "float | None" = None,
+                            budget_frac: "float | None" = None) -> None:
         """hd_wave_lambda: a (μ/μ_w, λ) weighted-recombination wave (the cma
         package's CMA-ES) from the best host; every evaluation goes through the
         history. Its best replaces the worst host."""
         import cma
-        cap = min(int(self.wave_budget_frac * st.max_evals),
-                  st.max_evals - len(st.history_f))
+        frac = self.wave_budget_frac if budget_frac is None else budget_frac
+        cap = min(int(frac * st.max_evals), st.max_evals - len(st.history_f))
         lam = max(4, int(round(self._wave_lambda * self.dim)))
         if cap < 2 * lam:
             return
         lo, hi = float(np.min(st.lo)), float(np.max(st.hi))
         x0 = st.pop_x[int(np.argmin(st.pop_f))].copy()
-        es = cma.CMAEvolutionStrategy(
-            x0, self.wave_sigma_ratio * st.span,
-            {"popsize": lam, "verbose": -9, "seed": int(st.rng.integers(1, 2 ** 31 - 1)),
-             "bounds": [lo, hi], "tolfun": 1e-15, "tolx": 1e-16, "tolfunhist": 0,
-             "maxfevals": cap})
+        s0 = self.wave_sigma_ratio * st.span if sigma0 is None else float(sigma0)
+        L = None
+        if (self.wave_use_C or sigma0 is not None) and st.cc_C is not None and self._update_cc_ill(st):
+            ev, V = np.linalg.eigh(st.cc_C)
+            ev = np.maximum(ev / max(float(ev.mean()), 1e-30), self.cc_cov_floor)
+            L = V * np.sqrt(ev)[None, :]
+        opts = {"popsize": lam, "verbose": -9, "seed": int(st.rng.integers(1, 2 ** 31 - 1)),
+                "tolfun": 1e-15, "tolx": 1e-16, "tolfunhist": 0, "maxfevals": cap}
+        if L is None:
+            opts["bounds"] = [lo, hi]
+            es = cma.CMAEvolutionStrategy(x0, s0, opts)
+        else:
+            es = cma.CMAEvolutionStrategy(np.zeros(self.dim), s0, opts)
         start = len(st.history_f)
         best_x, best_f = None, float("inf")
         while not es.stop() and st.budget_left and len(st.history_f) - start + lam <= cap:
             X = es.ask()
             F = []
             for x in X:
-                x = np.clip(np.asarray(x, dtype=float), st.lo, st.hi)
+                x = np.asarray(x, dtype=float)
+                if L is not None:
+                    x = x0 + L @ x
+                x = np.clip(x, st.lo, st.hi)
                 f = float(self.func(x))
                 self._record_eval(st, x, f, float(es.sigma))
                 F.append(f)
