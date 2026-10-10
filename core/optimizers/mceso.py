@@ -498,6 +498,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Gallagher (F21 / F22) stalls at local optima with f ≈ 1e-2·|f_init| and
         # needs the spillovers the wave replaces; Schaffer stalls ~1e-6·|f_init|.
         wave_quality: "float | None" = None,
+        # Also run the wave at dimension 2 (hd_wave_lambda is ≥3D otherwise).
+        wave_2d: bool = False,
         hd_alt_extinct_gens: int = 10,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
@@ -896,7 +898,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.hd_alt_extinct = hd_alt_extinct
         self.cc_front_path = cc_front_path
         self.hd_sigma_success = hd_sigma_success
-        self._wave_lambda = hd_wave_lambda if self.dim >= 3 else None
+        self._wave_lambda = hd_wave_lambda if (self.dim >= 3 or wave_2d) else None
         self.wave_sigma_ratio = wave_sigma_ratio
         self.wave_budget_frac = wave_budget_frac
         self.wave_quality = wave_quality
