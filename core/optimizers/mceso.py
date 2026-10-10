@@ -494,6 +494,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         hd_wave_lambda: "float | None" = None,
         wave_sigma_ratio: float = 0.01,
         wave_budget_frac: float = 0.25,
+        # Run the wave only once best_so_far ≤ this × |f_init| (None = always).
+        # Gallagher (F21 / F22) stalls at local optima with f ≈ 1e-2·|f_init| and
+        # needs the spillovers the wave replaces; Schaffer stalls ~1e-6·|f_init|.
+        wave_quality: "float | None" = None,
         hd_alt_extinct_gens: int = 10,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
@@ -895,6 +899,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self._wave_lambda = hd_wave_lambda if self.dim >= 3 else None
         self.wave_sigma_ratio = wave_sigma_ratio
         self.wave_budget_frac = wave_budget_frac
+        self.wave_quality = wave_quality
         self.hd_alt_extinct_gens = hd_alt_extinct_gens
         self._pop_final_open = (max(pop_min, int(round(hd_pop_final_open * self.dim)))
                                 if hd_pop_final_open is not None and self.dim >= 3 else None)
@@ -1413,7 +1418,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if not self._spillover_should_fire(st):
             return False
         if (self._wave_lambda is not None and not st.wave_spent
-                and not self._basin_exhausted(st)):
+                and not self._basin_exhausted(st)
+                and (self.wave_quality is None
+                     or st.best_so_far <= self.wave_quality * st.f_init_scale)):
             st.wave_spent = True
             st.trace_events.append((len(st.history_f), "wave"))
             self._recombination_wave(st)

@@ -497,6 +497,12 @@ _OPTIMIZERS = {
     "v1_wave8":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 8.0}),
     "v1_wave4":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0}),
     "v1_wave8s1":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 8.0, "wave_sigma_ratio": 0.1}),
+    # Wave variants: budget cap, σ0, quality gate.
+    "v1_w4b10":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0, "wave_budget_frac": 0.1}),
+    "v1_w4s1":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0, "wave_sigma_ratio": 0.1}),
+    "v1_w4q3":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0, "wave_quality": 1e-3}),
+    "v1_w8s1q3":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 8.0, "wave_sigma_ratio": 0.1,
+                                                       "wave_quality": 1e-3}),
     "v1_crR":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True,
                                                        "router_signal": "learned"}),
     "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,
