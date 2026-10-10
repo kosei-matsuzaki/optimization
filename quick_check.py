@@ -489,6 +489,10 @@ _OPTIMIZERS = {
     "v1_ss10":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_sigma_success": 0.1}),
     "v1_ss20":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_sigma_success": 0.2}),
     "v1_ss05":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_sigma_success": 0.05}),
+    # Both leads together: conditional σ floor + 1/5-type σ success rule (≥3D).
+    "v1_fl10i_ss05":  (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05}),
+    "v1_fl10i_ss10":  (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.1}),
+    "v1_fl10i_ss03":  (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.03}),
     "v1_crR":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True,
                                                        "router_signal": "learned"}),
     "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,
