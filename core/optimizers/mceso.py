@@ -1501,6 +1501,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         elif self.reassort_donors == "top":
             order = [int(i) for i in np.argsort(st.pop_f) if int(i) != bi]
             donors += [st.pop_x[i] for i in order[:self.reassort_top_hosts]]
+        elif self.reassort_donors == "top2":
+            # The best few remembered optima and the best few hosts: the answer
+            # archive grows to 200 points and a 10D pass over it cost ~850
+            # evaluations per sweep (10D F22 swept 4–5 times on small gains).
+            k = self.reassort_top_hosts
+            mem = sorted(zip(st.sol_archive_f, range(len(st.sol_archive_x))))[:k]
+            donors = [st.sol_archive_x[j] for _, j in mem] + [x for x in st.ir_archive_x]
+            order = [int(i) for i in np.argsort(st.pop_f) if int(i) != bi]
+            donors += [st.pop_x[i] for i in order[:k]]
         if not donors:
             return
         D = np.asarray(donors, dtype=float)
