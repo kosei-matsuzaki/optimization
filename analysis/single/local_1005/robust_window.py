@@ -4,7 +4,9 @@ from core.benchmarks import BENCHMARKS_10D_BY_NAME as B
 from core.optimizers.mceso import MultiChannelEpidemicOptimizer as M
 FUN=['F10-EllipsoidalRot','F11-Discus','F12-BentCigar','F14-DiffPowers']
 WIN=[150,300,600]
-CFG={'base':{},'frz50':{'cc_spill_freeze_gens':50},'gate2':{'cc_gate_mahal':2.0},'gate3':{'cc_gate_mahal':3.0},'gate5':{'cc_gate_mahal':5.0}}
+# The gate2/3/5 configs (cc_gate_mahal 2/3/5) of robust_window.txt were dropped when the
+# parameter was removed from mceso.py (2026-10-12); recover them from git history to rerun.
+CFG={'base':{},'frz50':{'cc_spill_freeze_gens':50}}
 def job(a):
     fn,w,c,s=a
     r=M(B[fn],seed=s*100,restart_no_improve_threshold=w,**CFG[c]).optimize(max_evals=25000)

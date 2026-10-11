@@ -71,24 +71,12 @@ class _MCESOState:
     # by construction — unlike C_pop, which is re-estimated every generation from
     # a population drawn from it and collapses to rank ≈ 2 of 10 in high dim.
     cc_C: "np.ndarray | None" = None
-    # Evolution path of the learned covariance (cc_path; zero = never moved).
-    cc_p: "np.ndarray | None" = None
-    # hd_pop_final_open: the learned C has reached 10^router_learned_cond (latched).
+    # The learned C has reached 10^router_learned_cond (latched; σ floor and
+    # the containment hand-over read it).
     cc_ill: bool = False
-    # hd_alt_extinct bookkeeping: decayed win / try sums per route, generations.
-    alt_win: float = 0.0
-    alt_try: float = 0.0
-    loc_win: float = 0.0
-    loc_try: float = 0.0
-    alt_gens: int = 0
-    alt_extinct: bool = False
-    # cc_front_path: previous front position and the accumulated path.
-    front_m: "np.ndarray | None" = None
-    front_p: "np.ndarray | None" = None
     # hd_wave_lambda: a wave has run since the last meaningful improvement.
     wave_spent: bool = False
     handover_done: bool = False
-    gen_alt_parent_f: "np.ndarray | None" = None
     # Parent positions of this generation's offspring (same order as the
     # concatenated children) and the σ used, so the accepted steps can be
     # recovered for the update. Written only when the persistent covariance is on.
@@ -99,38 +87,12 @@ class _MCESOState:
     gen_n_local: int = 0
     gen_parent_f: "np.ndarray | None" = None
     # len(history_f) when this generation's children started being evaluated —
-    # lets σ adaptation see the generation's own f values (flat-fitness rule).
+    # lets σ adaptation see the generation's own f values (hd_sigma_success)
+    # and the trace assign each evaluation its channel.
     gen_eval_start: int = 0
     # Generation index (len(history_sigma_global)) before which the learned C
     # is frozen after a spillover (cc_spill_freeze_gens).
     cc_freeze_until: int = 0
-    # cc_learn_droplet: how many children came from the droplet channel, and
-    # their parents' f (the "beat your parent" test for droplet steps).
-    gen_n_h2h: int = 0
-    gen_h2h_parent_f: "np.ndarray | None" = None
-    # mom_ratio: each host's birth displacement (child − parent), and the
-    # parents of this generation's children in channel order.
-    pop_dx: "np.ndarray | None" = None
-    gen_all_parents: list = field(default_factory=list)
-    # h2h_adapt: success-history memories for the droplet channel's F / CR, and
-    # this generation's per-child values with the droplet children's index range.
-    h2h_mF: "np.ndarray | None" = None
-    h2h_mCR: "np.ndarray | None" = None
-    h2h_k: int = 0
-    gen_h2h_Fv: "np.ndarray | None" = None
-    gen_h2h_CRv: "np.ndarray | None" = None
-    gen_h2h_start: int = 0
-    gen_h2h_count: int = 0
-    ls_done: bool = False
-    # h2h_cr_heritable: each host's droplet CR, and this generation's children's
-    # CRs in channel order (inherited from the parent; droplet may redraw).
-    pop_cr: "np.ndarray | None" = None
-    gen_child_cr: list = field(default_factory=list)
-    # Evaluation count at which σ was last inside the drilling regime. The
-    # pathology — σ pinned by its own control law so the precision scale is
-    # never reached — shows up as this falling far behind the current count
-    # (see sigma_pin_evals_frac).
-    last_drill_eval: int = 0
     log_best_ref: float = 0.0
     evals_since_reset: int = 0
     consecutive_failed_spillovers: int = 0
@@ -169,7 +131,10 @@ class _MCESOState:
         return len(self.history_f) < self.max_evals
 
 
-# Channel that produced each evaluation (trace["eval_channel"]).
+# Channel that produced each evaluation (trace["eval_channel"]). "momentum" and
+# "migratory" (codes 3 / 4, and n_mom / n_mig in the generation rows) belong to
+# removed experimental channels: they are always 0 now, kept so that recorded
+# traces and the results UI keep decoding with the same layout.
 TRACE_CHANNELS = ("close", "droplet", "airborne", "momentum", "migratory",
                   "reseed", "init", "local_search")
 _CH_RESEED, _CH_INIT, _CH_LS, _CH_UNKNOWN = 5, 6, 7, 255
@@ -273,21 +238,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # per generation (kill_fraction · n_pop) — hence re-measured as an arm.
         # Any value ≤ 10 leaves dim 2 at n_pop = 20 (bit-identical there).
         n_pop_dim_mult: float = 4.0,
-        # IPOP-style growth: each basin switch multiplies n_pop by this (1.0 = off),
-        # up to ipop_max_mult × the initial n_pop. A larger population opened
-        # F07-StepEllipsoidal at d10 (5% → 40% at n_pop 80) but a fixed larger
-        # population halves the generations on easy functions; those never
-        # basin-switch, so growing only on a switch charges only the runs that stall.
-        ipop_growth: float = 1.0,
-        ipop_max_mult: float = 8.0,
-        # What grows the population: "switch" (basin switch only) or "spillover"
-        # (any spillover). On F07 d10 most restarts are ordinary spillovers —
-        # 2 of 3 probed seeds never basin-switched — so "switch" rarely fires there.
-        ipop_trigger: str = "switch",
-        # "failstreak": grow only on a spillover that follows this many
-        # consecutive failed spillovers (F07 stalls with ~13 failed spillovers per
-        # run; F08/F09 have 2-6 in total, mostly while still progressing).
-        ipop_fail_streak: int = 3,
         # Population-size schedule. "linear" (default since 2026-10-08) starts at
         # max(20, pop_init_mult·D) and shrinks with the budget spent to
         # max(pop_min, pop_final_mult·D), removing the worst hosts (L-SHADE's
@@ -386,96 +336,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # late enough that the conditioning EMA has developed (droplet functions
         # reach cond ~3-7 by here, others stay ≤ ~2.7).
         route_commit_gen: int = 120,
-        # Commit the route at this fraction of the budget instead of at
-        # route_commit_gen (None = use the generation count). With the shrinking
-        # population, generation 120 is only ~17% of the budget at d10, before
-        # the population covariance shows F12 / F13 / F14's conditioning (cond EMA
-        # 2.6-2.9 vs threshold 3.0; 3.8-4.2 at 30%).
-        route_commit_frac: "float | None" = None,
-        # ── Migratory (vector-borne) channel: stuck-gated structured escape ──
-        # A 4th transmission channel modelling a carrier moving the pathogen to a
-        # distant region. It fires ONLY when a run is stuck — drilled in (σ below
-        # the drilling threshold) yet stagnating (no_improve ≥ threshold) — i.e.
-        # precision has already stalled, so diverting some offspring costs no
-        # productive precision evals. Offspring are structured long jumps from the
-        # current best: half along the population's principal covariance axis
-        # (valley/ridge escape for F13/F14), half isotropic (multimodal escape for
-        # F18/F23), at migratory_jump_ratio × span. Because offspring go through
-        # μ+λ greedy rollback and best_f is the min over all evals, this channel
-        # can only lower best_f or be ignored — it CANNOT reduce SR@1e-10. Off by
-        # default (bit-identical to base when disabled — no offspring, no RNG draws).
-        migratory_channel: bool = False,
-        migratory_ratio: float = 0.34,         # share of a stuck gen's offspring
-        # Stagnation gate. Kept BELOW the spillover threshold (300) so migratory
-        # fires before the population is reset, but well above the transient
-        # stagnation of a still-recovering run (e.g. F14's delayed breakthrough) so
-        # those runs are not perturbed — the loose 100 regressed F14/F17/F19.
-        migratory_no_improve_thresh: int = 200,
-        migratory_jump_ratio: float = 0.2,     # jump magnitude, × span
         # ── Greedy (μ+λ) replacement ───────────────────────────────────
         kill_fraction: float = 0.25,           # fraction of active killed per gen (by f)
-        # Overrides of kill_fraction / pop_init_mult from dimension 3 up (None =
-        # same as 2D, the default). The 2026-10-09 10D probe: kill 0.5 took the
-        # F12 median gap 3.5e-2 → 2.5e-4, pop_init 8·D took F13 1.6e-7 → 3.6e-10;
-        # both are tuned 2D values, so the overrides leave 2D bit-identical.
-        hd_kill_fraction: "float | None" = None,
-        hd_pop_init_mult: "float | None" = None,
-        # Landscape-dependent end of the population shrink, from dimension 3 up
-        # (None = off). The shrink ends at max(pop_min, this·D) until the learned
-        # covariance's log10 condition reaches router_learned_cond, and at
-        # pop_final_mult·D once it has (latched for the run). Round 1 of
-        # 2026-10-09: a final 8·D lifted 5D F16 25→85 / F03 10→40 but broke the
-        # 10D valleys F08 / F09 90→10–15; the valleys' learned C crosses 10^3,
-        # the multimodal functions' mostly does not.
-        hd_pop_final_open: "float | None" = None,
-        # Same latch, for the droplet share: from dimension 3 up the droplet
-        # (DE) channel takes this share until the learned C is ill-conditioned
-        # (None = off). A uniform 0.5 broke the 10D valleys (2026-10-09 round 1).
-        hd_h2h_open: "float | None" = None,
-        # A fourth transmission route from dimension 3 up (None = off), taking
-        # hd_alt_ratio of each generation's births from the close-contact share.
-        # Every route in MC-ESO breeds from ONE parent; these breed from several:
-        #   "epi"       outbreak epicentre — the log-weighted mean of the best half
-        #               of the hosts plus N(0, σ²·C_learned) (recombination, the
-        #               ingredient that lets CMA-ES follow a multimodal funnel);
-        #   "reassort"  genome reassortment — two hosts drawn by fitness swap
-        #               each coordinate with probability 1/2 (no new noise);
-        #   "reassort1" the same, a single coordinate;
-        #   "reassortE" reassortment in the eigenbasis of the learned C.
-        # Children are logged on the migratory channel code.
-        hd_alt: "str | None" = None,
-        hd_alt_ratio: float = 0.2,
-        # Whether the fourth route keeps running once σ is in the drilling regime.
-        # The 2026-10-09 screen (5D, on) cost the valleys F06 / F08 / F09 10–40pt;
-        # airborne is off in drilling for the same reason.
-        hd_alt_drill: bool = True,
-        # Stop the fourth route for good once the learned C reaches
-        # 10^router_learned_cond (valleys: epicentre samples land off the curved
-        # Rosenbrock valley and waste budget — 5D F08 −20pt in the screen).
-        hd_alt_ill_off: bool = False,
         # σ floor once the learned C is ill-conditioned (≥3D; None = always
         # sigma_floor_ratio). A floor of 1e-10 lifted 2D F23 75→100 / F18 95→100
         # and 5D F23 10→60, but 5D F13 (sharp ridge) fell 100→70: σ collapses to
         # 1e-9 at gap 5e-10 and the ridge stalls, whereas the 1e-6 floor keeps σ
         # large enough to travel along the learned C's long axis (2026-10-10).
         sigma_floor_ill_ratio: "float | None" = 1e-6,  # default since 2026-10-12 (v1_w4q3E)
-        # Extinction of the fourth route (None = never). Each generation counts
-        # how often its children beat their own parent, against the same rate
-        # for close-contact children (decayed sums, half-life ~7 generations).
-        # After hd_alt_extinct_gens generations, if its rate falls below
-        # hd_alt_extinct × the close-contact rate (an effective reproduction
-        # number below the resident strain's), the route dies for the rest of
-        # the run. Meant for "reassort": separable landscapes keep it, valleys
-        # and rotated ones should not.
-        hd_alt_extinct: "float | None" = None,
-        # Rank-one update of the learned C along the drift of the outbreak front
-        # (≥3D; off by default): m = log-weighted mean of the best half of the
-        # hosts, p ← (1−c_c)p + √(c_c(2−c_c)μ_eff)·(m_t − m_{t−1})/σ,
-        # C ← (1−c1)C + c1·ppᵀ with CMA-ES's c_c, c1. Unlike cc_path, which sums
-        # each child's step from its own parent (directions cancel), the front
-        # moves consistently along a valley's long axis — the information CMA-ES
-        # uses to learn F12-BentCigar. The mean is forgotten at each spillover.
-        cc_front_path: bool = False,
         # σ success rule from dimension 3 up (None = "the best improved this
         # generation", the 2D rule). With ~40 births per generation at 10D the
         # chance that one of them improves the best stays high, so σ hovers at
@@ -499,8 +367,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Gallagher (F21 / F22) stalls at local optima with f ≈ 1e-2·|f_init| and
         # needs the spillovers the wave replaces; Schaffer stalls ~1e-6·|f_init|.
         wave_quality: "float | None" = 1e-3,  # default since 2026-10-12 (v1_w4q3E)
-        # Also run the wave at dimension 2 (hd_wave_lambda is ≥3D otherwise).
-        wave_2d: bool = False,
         # Whiten the wave by the learned C when it is ill-conditioned (the wave
         # then starts from the shape the outbreak has learned instead of the
         # identity; 10D F12 spent ~3000 evaluations re-learning it).
@@ -512,25 +378,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Hand over as soon as the learned C is ill-conditioned (False = wait for
         # σ to enter the drilling regime as well).
         wave_handover_drill: bool = False,  # default since 2026-10-12 (v1_w4q3E)
-        hd_alt_extinct_gens: int = 10,
-        # ── Incubation (the E of SEIR) ───────────────────────────────────────
-        # MC-ESO models S→I only: a host infected this generation can infect
-        # others in the very next one. Real epidemics have a latent period —
-        # exposed hosts are not yet infectious — and its absence is what drives
-        # the measured degeneracy: the newest best individual immediately becomes
-        # the preferred parent, the next generation clusters around it, and the
-        # population's effective rank collapses (1.98 of 10 at dim 10, 5.74 of 20
-        # at dim 20, on every function including the isotropic Sphere). The
-        # estimate→sample→estimate loop closes because reproduction is dominated
-        # by whatever was just created.
-        #
-        # Requiring a host to survive ``incubation_gens`` generations before it
-        # may be drawn as a parent keeps the parent pool older and more spread
-        # out, so offspring are generated from a wider subspace. pop_age already
-        # exists (it modulates σ_i) and is simply not consulted by selection.
-        # 0 = off, and the run is bit-identical (weights are untouched, so the
-        # RNG draw sequence is unchanged).
-        incubation_gens: int = 0,
         # ── Restart on stagnation ──────────────────────────────────────
         restart_no_improve_threshold: int = 300,  # no_improve count that triggers restart
         # ``no_improve`` counts EVALUATIONS, but stagnation is a *generational*
@@ -576,8 +423,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # across the search domain. Best is preserved unless the streak of failed
         # spillovers triggers a full basin switch below.
         basin_switch_after_failed_spillovers: int = 2,  # streak → wipe best & reset σ
-        basin_switch_at_sigma_floor: bool = False,      # switch regardless of the quality
-                                                       # floor once σ has bottomed out
         basin_switch_quality_rel_floor: float = 1e-2,   # basin switch suppressed when
                                                         # best_so_far / |f_init| ≤ this
         solution_archive_max: int = 200,                # answer-archive capacity; 0 = off
@@ -601,43 +446,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Multiplicative step-size adaptation. Once σ < span × precision_sigma_ratio
         # the contraction switches to sigma_drill_down to drill to FP precision.
         sigma_up: float = 1.1,                 # gentle expansion when improving
-        # ── σ-pinning detector ───────────────────────────────────────────────
-        # The multiplicative rule equilibrates where the generation improvement
-        # rate equals
-        #     s* = ln(1/sigma_down) / (ln(sigma_up) + ln(1/sigma_down)) = 0.350,
-        # a value independent of BOTH dimension and problem. The realised rate is
-        # not: 0.033-0.060 on every function at dim 2, but 0.27-0.34 at dim 10,
-        # where F08/F09 sit right at s* and never enter drilling mode at all
-        # (σ stalls at 5e-3 span, median f ≈ 1). More budget cannot help; it is a
-        # fixed point of the control law.
-        #
-        # Detect that state directly rather than special-casing dimension: count
-        # consecutive generations in which σ stays above the drilling threshold,
-        # and once the count passes sigma_pin_gens damp sigma_up so s* itself
-        # moves up and σ can contract again. Measured drilling shares say this
-        # separates cleanly — 0.0% on the pinned dim-10 functions (the counter
-        # grows without bound) against 33-64% everywhere at dim 2/3 (the counter
-        # is reset constantly), so the detector is silent at the low dimensions
-        # the defaults are tuned for. Note the improvement-rate EMA was tried
-        # first and does NOT discriminate: it is dominated by the easy early
-        # generations and fired on 43-99% of generations at dim 10, multimodal
-        # functions included.
-        # The threshold is a fraction of the eval budget rather than a fixed
-        # generation count, because the initial descent is legitimately spent
-        # above the drilling threshold at every dimension — only failing to get
-        # there for a large share of the whole run is pathological.
-        # 0 disables the detector (bit-identical: no state is read).
-        # Failing to drill is necessary but NOT sufficient: a run that is still
-        # descending fast simply has not finished its coarse phase (measured:
-        # F01-Sphere at dim 20 drills only 23% of generations yet is progressing
-        # by orders of magnitude, and damping it there cost SR@1e-10 95% → 70%).
-        # The pathology is drilling starvation AND stalled progress, so the
-        # detector also requires no_improve — which is already reset only on a
-        # *meaningful* log-f slope, so it is exactly a "progress has stalled"
-        # counter — to have reached a fraction of the spillover window.
-        sigma_pin_evals_frac: float = 0.0,     # share of budget without drilling → pinned
-        sigma_pin_stagnant_frac: float = 0.5,  # × stagnation window of no_improve
-        sigma_pin_damp: float = 0.25,          # sigma_up ** this while pinned
         sigma_down: float = 0.95,              # gentle contraction when not
         sigma_floor_ratio: float = 1e-10,      # σ_global absolute floor (× span); 1e-6 until 2026-10-12
         sigma_ceil_ratio: float = 1.0,         # σ_global absolute ceiling (× span)
@@ -645,15 +453,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                                                # (scale-invariant; replaces absolute
                                                # drilling_threshold)
         sigma_drill_down: float = 0.85,        # σ contraction in drilling mode
-        # Flat-fitness rule (CMA-ES's own): on a plateau no child can strictly
-        # improve, so the success rule above shrinks σ every generation until it
-        # is smaller than the plateau and the run freezes (traced on
-        # F07-StepEllipsoidal d10: all 40 hosts share one f value and σ reaches
-        # the 1e-6·span floor, 25 spillovers per run all ending the same way).
-        # When True, a generation that does not improve but where at least half
-        # of the children tie the pre-generation best expands σ instead.
-        # Outside drilling only, so FP-limit ties at deep precision are untouched.
-        sigma_flat_expand: bool = False,
         # ── Misc ───────────────────────────────────────────────────────
         log_slope_threshold: float = 1e-4,     # min log10(f) slope counted as improvement
         # ── h2h binomial crossover (always on) ────────────────────────
@@ -718,18 +517,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # at dim 2 — bit-identical — and 1 at cc_dim_ref and above.
         cc_dim_ref: int = 10,
         cc_learning_rate: float = 0.05,
-        # The rank-μ update currently averages the steps of every child that beat
-        # its parent, i.e. it uses a BINARY success signal. CMA-ES instead weights
-        # the selected offspring by their f rank, with most of the mass on the
-        # best. Measured at dim 20 the learned C spans plenty of directions
-        # (effective rank 11.4 of 20, against 2.8 of 10 at dim 10) yet barely
-        # improves the conditioning the algorithm sees (F08: cond_H 8.2e4,
-        # effective 5.5e4, versus 1.8e3 → 44 at dim 10) — it is picking up
-        # directions, but not the right ones. The higher the dimension, the more
-        # mediocre-but-successful directions dilute the signal, which is what
-        # rank weighting suppresses. 0 = uniform over successes (previous
-        # behaviour); > 0 = weight ∝ exp(−this × rank/count).
-        cc_rank_weight: float = 0.0,
         # Adoption rule for the rank-μ update (2026-09-29, arm only — default 0.0
         # keeps the historical rule bit-for-bit). The learned C is currently fed
         # only by close-contact children that BEAT THEIR OWN PARENT, which at
@@ -744,91 +531,19 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # squeezing more out of the same one or two samples (the four rejected
         # attempts, docs/history.md:865 / :979 / :1041, all did the latter).
         cc_mu_frac: float = 0.5,               # default since 2026-10-08 (was 0.0)
-        # Apply cc_mu_frac only in runs the channel router committed to the
-        # droplet (ill-conditioned) route. At d5 the top-μ rule lifted the
-        # ill-conditioned group (+9pt) but cost the Rastrigin family (F03 15→0%,
-        # その183); gating by route keeps it off the multimodal runs.
-        cc_mu_droplet_only: bool = False,
         # Generations after an ordinary spillover during which the learned C is
         # not updated (0 = off). On F12-BentCigar d10 the learned C reaches cond
         # 1e5-1e6 when spillovers are disabled, but with them (33 per run) it
         # oscillates at 1e2-1e4: the steps that succeed right after a uniform
         # reseed come from far-off, high-f hosts and say nothing about the basin.
         cc_spill_freeze_gens: int = 50,        # default since 2026-10-08 (was 0)
-        # Provenance gate (intrinsic alternative to the freeze timer): only
-        # children whose parent lies within this many σ·sqrt(dim) of the
-        # incumbent best, measured in the learned C's metric, update C (0 = off).
-        # Right after a uniform reseed the far-off parents fall outside; in the
-        # steady state the population's own spread stays inside.
-        cc_gate_mahal: float = 0.0,
-        # Cross-channel learning: surviving droplet (DE-type) children that beat
-        # their parent also update the learned C, as unit-direction samples
-        # scaled to √d (DE steps follow the population spread, not σ). Close-
-        # contact successes alone are 0.1-0.3 per generation at d10 (sample
-        # starvation); droplet takes 40% of the children and is otherwise unused.
-        cc_learn_droplet: bool = False,
-        # How droplet steps are scaled before entering C: "unit" (Euclidean
-        # length √d) or "mahal" (length √d in the current C's metric — the
-        # normalisation a step drawn from σ·C^½·N(0, I) already has).
-        cc_learn_droplet_norm: str = "unit",
-        # Momentum channel: this share of the children (taken from close-contact)
-        # is placed at host + κ·dx, dx = the displacement that created the host,
-        # κ ~ U(1, 2). Continues a lineage's last move; active in drilling too.
-        mom_ratio: float = 0.0,
-        # Router v2: per-route (droplet share, momentum share), airborne removed.
-        # Keys "pre" (before the route commits), "droplet", "close", "keepair".
-        # The route itself is decided by the existing deterministic router (same
-        # covariance features and thresholds); only what each route does changes.
-        # None (default) keeps the original air-routing behaviour.
-        route_mix: "dict | None" = None,
-        # Droplet F / CR adaptation (SHADE-style success history, H = 6, memories
-        # start at h2h_F / h2h_CR). A success is a droplet child that survives
-        # host competition strictly better than the host it replaced; memories
-        # are updated with Δf-weighted Lehmer means. False keeps fixed F / CR.
-        h2h_adapt: bool = False,
-        # Per-child droplet CR drawn uniformly from these values (None = fixed
-        # h2h_CR). (0.1, 0.9) lets host competition arbitrate between coordinate-
-        # wise moves (separable functions; DE solves F03 / F04 / F20 with low CR)
-        # and whole-vector moves, without learning which one works.
-        h2h_cr_mix: "tuple | None" = None,
-        # Heritable droplet CR (jDE-style self-adaptation, Brest et al. 2006):
-        # every host carries a CR, children inherit their parent's, a droplet
-        # child redraws it from U(0, 1) with probability h2h_cr_tau, and host
-        # competition decides which survive — selection, not a learned schedule.
-        h2h_cr_heritable: bool = False,
-        h2h_cr_tau: float = 0.1,
-        # h2h_cr_heritable from dimension 3 up only, and only off the DROPLET
-        # route (once the router latches DROPLET the droplet CR is h2h_CR again).
-        # The canonical run (2026-10-08 job 1) had plain crher gain 5D F03 +30 /
-        # F04 +10 but cost 2D F23 −25 / F17 −15 and 10D F07 −30; the dimension
-        # gate keeps 2D bit-identical and the route gate is meant to keep the
-        # ill-conditioned functions (F07) on the tuned CR.
-        hd_cr_heritable: bool = False,
-        # End-phase local search (as in IMODE / EBOwithCMAR / UMOEA-II): once
-        # (1 − ls_final_frac) of the budget is spent, run SciPy SLSQP (finite-
-        # difference gradients, box bounds) from the best host with at most
-        # ls_budget_frac × max_evals evaluations, every one recorded and counted;
-        # its best point replaces the worst host and the run continues. 0 = off.
-        ls_final_frac: float = 0.0,
-        ls_budget_frac: float = 0.05,
         # Keep the learned covariance across ordinary spillovers (reset only on a
         # full basin switch). See the note at the reset site.
         cc_keep_on_spillover: bool = True,
-        # Router signal source once the dimension gate is open (≥3D). "pop" (the
-        # default) commits from the instantaneous population covariance, which
-        # cannot be estimated in high dimension (docs/history.md 2026-08: in 10D
-        # the router sits on KEEP-AIR for every function). "learned" ignores
-        # C_pop there and latches DROPLET as soon as the learned covariance's
-        # log10 condition reaches router_learned_cond — ill-conditioned functions
-        # cross 3 within 2.5k–7.6k evaluations, multimodal ones never do
-        # (2026-10-09 diagnosis). 2D is untouched (the gate is 0 there).
-        router_signal: str = "pop",
+        # "Ill-conditioned" threshold for the learned covariance: the latch
+        # (_update_cc_ill) fires once its log10 condition number reaches this,
+        # and sigma_floor_ill_ratio / the containment hand-over read the latch.
         router_learned_cond: float = 3.0,
-        # Rank-one update of the learned covariance along an evolution path
-        # (CMA-ES constants c_c = 4/(n+4), c1 = 2/((n+1.3)^2 + μ_eff)). Rejected
-        # in 2026-08 when the learner saw 0.1–0.3 accepted steps per generation;
-        # re-tested now that cc_mu_frac=0.5 feeds it half of the close children.
-        cc_path: bool = False,
         # How much of the sampling shape comes from the persistent C rather than
         # the instantaneous C_pop. The two are complementary, not alternatives:
         # C_pop is right immediately wherever the population can align with the
@@ -898,40 +613,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.n_pop = (n_pop if n_pop is not None
                       else max(20, int(round(n_pop_dim_mult * self.dim))))
         self.pop_schedule = pop_schedule
-        if hd_pop_init_mult is not None and self.dim >= 3:
-            pop_init_mult = hd_pop_init_mult
         self.pop_init_mult = pop_init_mult
         self.pop_final_mult = pop_final_mult
         self.pop_min = pop_min
         self.pop_shrink_power = pop_shrink_power
-        self.ipop_fail_streak = ipop_fail_streak
         if pop_schedule == "linear" and n_pop is None:
             # An explicit n_pop is the initial size of the schedule.
             self.n_pop = max(20, int(round(pop_init_mult * self.dim)))
         self._pop_final = max(pop_min, int(round(pop_final_mult * self.dim)))
-        self._h2h_open = hd_h2h_open if self.dim >= 3 else None
-        self._alt = hd_alt if self.dim >= 3 else None
-        self.hd_alt_ratio = hd_alt_ratio
-        self.hd_alt_drill = hd_alt_drill
-        self.hd_alt_ill_off = hd_alt_ill_off
         self.sigma_floor_ill_ratio = sigma_floor_ill_ratio
-        self.hd_alt_extinct = hd_alt_extinct
-        self.cc_front_path = cc_front_path
         self.hd_sigma_success = hd_sigma_success
-        self._wave_lambda = hd_wave_lambda if (self.dim >= 3 or wave_2d) else None
+        self._wave_lambda = hd_wave_lambda if self.dim >= 3 else None
         self.wave_sigma_ratio = wave_sigma_ratio
         self.wave_budget_frac = wave_budget_frac
         self.wave_quality = wave_quality
         self.wave_use_C = wave_use_C
         self.wave_ill_handover = wave_ill_handover
         self.wave_handover_drill = wave_handover_drill
-        self.hd_alt_extinct_gens = hd_alt_extinct_gens
-        self._pop_final_open = (max(pop_min, int(round(hd_pop_final_open * self.dim)))
-                                if hd_pop_final_open is not None and self.dim >= 3 else None)
-        self._n_pop0 = self.n_pop          # ipop_growth restores this at each run start
-        self.ipop_growth = ipop_growth
-        self.ipop_max_mult = ipop_max_mult
-        self.ipop_trigger = ipop_trigger
+        self._n_pop0 = self.n_pop          # initial size; restored at each run start
         self.sigma = sigma
         self.air_ratio = air_ratio
         self.n_elite_max = n_elite_max
@@ -944,25 +643,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.align_close_thresh = align_close_thresh
         self.close_mgap_thresh = close_mgap_thresh
         self.cond_droplet_early = cond_droplet_early
-        self.route_commit_frac = route_commit_frac
         self.route_commit_gen = route_commit_gen
-        self.migratory_channel = migratory_channel
-        self.migratory_ratio = migratory_ratio
-        self.migratory_no_improve_thresh = migratory_no_improve_thresh
-        self.migratory_jump_ratio = migratory_jump_ratio
         self.log_slope_threshold = log_slope_threshold
         self.h2h_ratio = h2h_ratio
         self.h2h_F = h2h_F
-        self.kill_fraction = (hd_kill_fraction if hd_kill_fraction is not None and self.dim >= 3
-                              else kill_fraction)
-        self.incubation_gens = incubation_gens
+        self.kill_fraction = kill_fraction
         self.restart_no_improve_threshold = restart_no_improve_threshold
         self.restart_window_dim_scale = restart_window_dim_scale
         self.softmax_beta = softmax_beta
         self.restart_sigma_ratio = restart_sigma_ratio
         self.restart_quality_rel_floor = restart_quality_rel_floor
         self.basin_switch_after_failed_spillovers = basin_switch_after_failed_spillovers
-        self.basin_switch_at_sigma_floor = basin_switch_at_sigma_floor
         self.basin_switch_quality_rel_floor = basin_switch_quality_rel_floor
         self.solution_archive_max = solution_archive_max
         self.exhausted_sigma_tol = exhausted_sigma_tol
@@ -970,15 +661,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.hunt_no_improve_mult = hunt_no_improve_mult
         self.hunt_level_tol = hunt_level_tol
         self.sigma_up = sigma_up
-        self.sigma_pin_evals_frac = sigma_pin_evals_frac
-        self.sigma_pin_stagnant_frac = sigma_pin_stagnant_frac
-        self.sigma_pin_damp = sigma_pin_damp
         self.sigma_down = sigma_down
         self.sigma_floor_ratio = sigma_floor_ratio
         self.sigma_ceil_ratio = sigma_ceil_ratio
         self.precision_sigma_ratio = precision_sigma_ratio
         self.sigma_drill_down = sigma_drill_down
-        self.sigma_flat_expand = sigma_flat_expand
         self.h2h_CR = h2h_CR
         self.empirical_cov_floor = empirical_cov_floor
         self.cov_floor_low = cov_floor_low
@@ -987,28 +674,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.cov_ratio_beta = cov_ratio_beta
         self.cc_dim_ref = cc_dim_ref
         self.cc_learning_rate = cc_learning_rate
-        self.cc_rank_weight = cc_rank_weight
         self.cc_mu_frac = cc_mu_frac
-        self.cc_mu_droplet_only = cc_mu_droplet_only
         self.cc_spill_freeze_gens = cc_spill_freeze_gens
-        self.cc_gate_mahal = cc_gate_mahal
-        self.cc_learn_droplet = cc_learn_droplet
-        self.cc_learn_droplet_norm = cc_learn_droplet_norm
-        self.mom_ratio = mom_ratio
-        self.route_mix = route_mix
-        self.h2h_adapt = h2h_adapt
-        self.h2h_cr_mix = h2h_cr_mix
-        self.h2h_cr_heritable = h2h_cr_heritable or (hd_cr_heritable and self.dim >= 3)
-        self.hd_cr_heritable = hd_cr_heritable
-        self.h2h_cr_tau = h2h_cr_tau
-        self.ls_final_frac = ls_final_frac
-        self.ls_budget_frac = ls_budget_frac
-        self._mom_on = mom_ratio > 0.0 or bool(
-            route_mix and any(v[1] > 0.0 for v in route_mix.values()))
         self.cc_keep_on_spillover = cc_keep_on_spillover
-        self.router_signal = router_signal
         self.router_learned_cond = router_learned_cond
-        self.cc_path = cc_path
         self.cc_persist_frac = cc_persist_frac
         self.cc_air_ratio = cc_air_ratio
         self.cc_h2h_ratio = cc_h2h_ratio
@@ -1116,11 +785,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 break
             self._run_generation(st)
             self._record_generation(st)
-            if (self.ls_final_frac > 0.0 and not st.ls_done and st.budget_left
-                    and len(st.history_f) >= (1.0 - self.ls_final_frac) * max_evals):
-                st.ls_done = True
-                self._final_local_search(st)
-                self._pad_eval_channel(st, _CH_LS)
 
         # Reported set: the surviving hosts, the strain reservoir, and the answer
         # archive of every basin drilled and abandoned.
@@ -1230,7 +894,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # to rank 9.08 just as it was getting there, and cycles forever at
             # median f 37.8.
             st.cc_C = np.eye(self.dim)
-            st.cc_p = None
         # Remember the basin we are about to abandon (its current best location).
         best_i = int(np.argmin(st.pop_f))
         st.ir_basin_centroids.append(st.pop_x[best_i].copy())
@@ -1337,26 +1000,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.has_exhausted = True
         return sigma_bottomed and stagnated
 
-    def _equilibrium_rate(self) -> float:
-        """Improvement rate at which the multiplicative σ rule sits still."""
-        lu, ld = math.log(self.sigma_up), math.log(1.0 / self.sigma_down)
-        return ld / (lu + ld) if (lu + ld) > 0 else 1.0
-
-    def _sigma_up_eff(self, st: _MCESOState) -> float:
-        """σ growth factor, damped while σ has been unable to reach the drilling
-        threshold for a long time — i.e. it is pinned at its own equilibrium.
-        Damping raises that equilibrium so σ can contract again."""
-        if self.sigma_pin_evals_frac <= 0.0:
-            return self.sigma_up
-        starved = len(st.history_f) - st.last_drill_eval
-        if starved < self.sigma_pin_evals_frac * st.max_evals:
-            return self.sigma_up
-        # …and progress must actually have stalled: a run still descending fast
-        # is in its coarse phase, not pinned.
-        if st.no_improve < self.sigma_pin_stagnant_frac * self._stagnation_window():
-            return self.sigma_up
-        return self.sigma_up ** self.sigma_pin_damp
-
     def _cc_dim_gate(self) -> float:
         """How strongly the persistent-covariance machinery applies at this
         dimension: 0 at dim 2 (so the tuned low-dim behaviour is bit-identical)
@@ -1417,21 +1060,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         only after a streak of failed spillovers (suppressed near precision)."""
         if self._basin_exhausted(st):
             return True
-        if (self.basin_switch_at_sigma_floor
-                and st.sigma <= self.exhausted_sigma_tol * st.span * self.sigma_floor_ratio
-                and st.consecutive_failed_spillovers
-                >= self.basin_switch_after_failed_spillovers):
-            # σ has bottomed out: nothing more can be drilled here, so the
-            # relative-progress reading is not evidence of being in a good basin
-            # and must not veto the switch. On F07-StepEllipsoidal at dim 10 the
-            # run sits on a plateau at f 0.43-2.18 against f_init 96-184, i.e. a
-            # ratio of 2.4e-3..1.2e-2, which the quality floor (1e-2) reads as
-            # "already precise" — and the run then never escapes, while IPOP and
-            # BIPOP, which restart unconditionally, solve it 95-100% of the time.
-            # Note also that _basin_exhausted's own stagnation test is nearly
-            # unreachable: it wants no_improve >= 3x the stagnation window, but an
-            # ordinary spillover fires at 1x and resets that counter to 0.
-            return True
         return (st.consecutive_failed_spillovers >= self.basin_switch_after_failed_spillovers
                 and st.best_so_far > self.basin_switch_quality_rel_floor * st.f_init_scale)
 
@@ -1478,20 +1106,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         div_ratio = 1.0
 
         best_pre_spillover = st.best_so_far
-        if self.ipop_growth > 1.0 and (
-                basin_switch or self.ipop_trigger == "spillover"
-                or (self.ipop_trigger == "failstreak"
-                    and st.consecutive_failed_spillovers >= self.ipop_fail_streak)):
-            # IPOP-style: grow before the reseed below. np.resize keeps the first
-            # n_pop rows in place (so best_idx_global stays valid); every slot
-            # past them is reseeded, since reseed_idx spans the new n_pop.
-            cap = int(round(self.ipop_max_mult * self._n_pop0))
-            new_n = min(cap, int(round(self.n_pop * self.ipop_growth)))
-            if new_n > self.n_pop:
-                self.n_pop = new_n
-                st.pop_x = np.resize(st.pop_x, (new_n, self.dim))
-                st.pop_f = np.resize(st.pop_f, new_n)
-                st.pop_age = np.zeros(new_n, dtype=int)
         if basin_switch:
             # Wipe everything — including the current best — and re-seed all slots
             # uniformly. best_so_far is preserved as a tracker of the historical
@@ -1525,11 +1139,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.pop_x[i] = new_x
             st.pop_f[i] = f_new
             st.pop_age[i] = 0
-            if st.pop_dx is not None and st.pop_dx.shape == st.pop_x.shape:
-                st.pop_dx[i] = 0.0
-            if (self.h2h_cr_heritable and st.pop_cr is not None
-                    and st.pop_cr.shape[0] == st.pop_x.shape[0]):
-                st.pop_cr[i] = rng.random()
             st.history_x.append(new_x.copy())
             st.history_f.append(f_new)
             st.history_sigma_eval.append(sig_log)
@@ -1539,7 +1148,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             if not st.budget_left:
                 break
         st.sigma = sigma_restart
-        st.front_m = None
         st.no_improve = 0
         st.basin_best = float(np.min(st.pop_f))
         st.log_best_ref = math.log10(max(st.best_so_far, 1e-300))
@@ -1607,10 +1215,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         noise = rng.standard_normal((n_local, self.dim))
         raw_noise = noise.copy()   # kept for the persistent-C stream below
         local_parent_x = st.pop_x[gi_arr].copy()
-        if self.h2h_cr_heritable:
-            st.gen_child_cr.append(st.pop_cr[gi_arr].copy())
-        if self._mom_on:
-            st.gen_all_parents.append(local_parent_x.copy())
         sigma_i = st.sigma * host_scale
         if self._cc_dim_gate() > 0.0:
             st.gen_parent_x.append(local_parent_x.copy())
@@ -1700,39 +1304,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             c = rng.integers(0, n, size=n_h2h)
             d = rng.integers(0, n, size=n_h2h)
             diff = diff + (st.pop_x[c] - st.pop_x[d])
-        if self.h2h_cr_heritable and self.hd_cr_heritable and st.channel_route == "droplet":
-            CRv = np.full(n_h2h, float(self.h2h_CR))
-            st.gen_child_cr.append(CRv.copy())
-            Fcol, CRcol = self.h2h_F, CRv[:, None]
-        elif self.h2h_cr_heritable:
-            CRv = st.pop_cr[h2h_parents_gi].copy()
-            redraw = rng.random(n_h2h) < self.h2h_cr_tau
-            CRv[redraw] = rng.random(int(redraw.sum()))
-            st.gen_child_cr.append(CRv.copy())
-            Fcol, CRcol = self.h2h_F, CRv[:, None]
-        elif self.h2h_adapt:
-            if st.h2h_mF is None:
-                st.h2h_mF = np.full(6, float(self.h2h_F))
-                st.h2h_mCR = np.full(6, float(self.h2h_CR))
-            ri = rng.integers(0, 6, n_h2h)
-            Fv = st.h2h_mF[ri] + 0.1 * np.tan(np.pi * (rng.random(n_h2h) - 0.5))
-            Fv = np.where(Fv <= 0.0, 0.05, np.minimum(Fv, 1.0))
-            CRv = np.clip(rng.normal(st.h2h_mCR[ri], 0.1), 0.0, 1.0)
-            st.gen_h2h_Fv, st.gen_h2h_CRv = Fv, CRv
-            Fcol, CRcol = Fv[:, None], CRv[:, None]
-        elif self.h2h_cr_mix is not None:
-            CRv = rng.choice(np.asarray(self.h2h_cr_mix, dtype=float), n_h2h)
-            Fcol, CRcol = self.h2h_F, CRv[:, None]
-        else:
-            Fcol, CRcol = self.h2h_F, self.h2h_CR
         if len(elite_arr) > 0:
             strain_pos = self._droplet_strain_positions(st, elite_arr, n_h2h)
             best_pull = strain_pos - parents_x
-            h2h_step = Fcol * (best_pull + diff)
+            h2h_step = self.h2h_F * (best_pull + diff)
         else:
-            h2h_step = Fcol * diff
+            h2h_step = self.h2h_F * diff
         h2h_trial = parents_x + h2h_step
-        cr_mask = rng.random((n_h2h, self.dim)) < CRcol
+        cr_mask = rng.random((n_h2h, self.dim)) < self.h2h_CR
         forced = rng.integers(0, self.dim, size=n_h2h)
         cr_mask[np.arange(n_h2h), forced] = True
         h2h_offspring = np.where(cr_mask, h2h_trial, st.pop_x[h2h_parents_gi])
@@ -1741,94 +1320,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if self._cc_dim_gate() > 0.0:
             st.gen_parent_x.append(st.pop_x[h2h_parents_gi].copy())
             st.gen_sigma_used.append(h2h_step_norms.copy())
-            st.gen_n_h2h = n_h2h
-            st.gen_h2h_parent_f = st.pop_f[h2h_parents_gi].copy()
-        if self._mom_on:
-            st.gen_all_parents.append(st.pop_x[h2h_parents_gi].copy())
         new_h2h = self._reflect(h2h_offspring, st.lo, st.hi)
         return new_h2h, h2h_step_norms
-
-    def _update_front_path(self, st: _MCESOState) -> None:
-        """cc_front_path: rank-one update along the outbreak front's drift."""
-        n, D = self.n_pop, self.dim
-        mu = max(2, n // 2)
-        order = np.argsort(st.pop_f)[:mu]
-        w = np.log(mu + 0.5) - np.log(np.arange(1, mu + 1))
-        w = w / w.sum()
-        m = w @ st.pop_x[order]
-        if st.front_m is not None and st.front_m.shape == m.shape and st.sigma > 0:
-            mu_eff = 1.0 / float(np.sum(w ** 2))
-            c_c = 4.0 / (D + 4.0)
-            c1 = 2.0 / ((D + 1.3) ** 2 + mu_eff)
-            if st.front_p is None:
-                st.front_p = np.zeros(D)
-            st.front_p = ((1.0 - c_c) * st.front_p
-                          + math.sqrt(c_c * (2.0 - c_c) * mu_eff) * (m - st.front_m) / st.sigma)
-            C = (1.0 - c1) * st.cc_C + c1 * np.outer(st.front_p, st.front_p)
-            tr = float(np.trace(C))
-            if tr > 1e-300 and np.all(np.isfinite(C)):
-                st.cc_C = C * (D / tr)
-        st.front_m = m
-
-    def _alt_reproduction(self, st: _MCESOState, n_local: int, alt_start: int,
-                          n_alt: int) -> None:
-        """hd_alt_extinct: compare how often the fourth route's children and
-        the close-contact children beat their own parent; kill the route when its
-        rate stays below hd_alt_extinct × the close-contact rate."""
-        f = np.asarray(st.history_f[st.gen_eval_start:], dtype=float)
-        decay = 0.9
-        if st.gen_parent_f is not None and n_local > 0:
-            m = min(n_local, len(f), len(st.gen_parent_f))
-            st.loc_win = decay * st.loc_win + float(np.sum(f[:m] < st.gen_parent_f[:m]))
-            st.loc_try = decay * st.loc_try + m
-        if st.gen_alt_parent_f is not None:
-            m = max(0, min(n_alt, len(f) - alt_start))
-            st.alt_win = decay * st.alt_win + float(np.sum(f[alt_start:alt_start + m]
-                                                           < st.gen_alt_parent_f[:m]))
-            st.alt_try = decay * st.alt_try + m
-        st.alt_gens += 1
-        if st.alt_gens >= self.hd_alt_extinct_gens and st.alt_try > 0 and st.loc_try > 0:
-            if st.alt_win / st.alt_try < self.hd_alt_extinct * st.loc_win / st.loc_try:
-                st.alt_extinct = True
-
-    def _alt_children(self, st: _MCESOState, n_alt: int,
-                      weights: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Multi-parent route (``hd_alt``). Returns (children, step norms)."""
-        if n_alt <= 0:
-            return np.empty((0, self.dim)), np.empty(0)
-        rng, n, D = st.rng, self.n_pop, self.dim
-        C = st.cc_C if st.cc_C is not None else np.eye(D)
-        ev, V = np.linalg.eigh(C)
-        ev = np.maximum(ev / max(float(ev.mean()), 1e-30), self.cc_cov_floor)
-        if self._alt == "epi":
-            mu = max(2, n // 2)
-            order = np.argsort(st.pop_f)[:mu]
-            w = np.log(mu + 0.5) - np.log(np.arange(1, mu + 1))
-            w = w / w.sum()
-            m = w @ st.pop_x[order]
-            z = rng.standard_normal((n_alt, D)) @ (V * np.sqrt(ev)[None, :]).T
-            kids = m[None, :] + st.sigma * z
-            ref = np.repeat(m[None, :], n_alt, axis=0)
-        else:
-            a = rng.choice(n, size=n_alt, p=weights)
-            b = rng.choice(n, size=n_alt, p=weights)
-            same = a == b
-            b[same] = (b[same] + 1 + rng.integers(0, n - 1, int(same.sum()))) % n
-            Xa, Xb = st.pop_x[a], st.pop_x[b]
-            if self._alt == "reassort1":
-                mask = np.zeros((n_alt, D), bool)
-                mask[np.arange(n_alt), rng.integers(0, D, n_alt)] = True
-            else:
-                mask = rng.random((n_alt, D)) < 0.5
-            if self._alt == "reassortE":
-                Ya, Yb = Xa @ V, Xb @ V
-                kids = np.where(mask, Yb, Ya) @ V.T
-            else:
-                kids = np.where(mask, Xb, Xa)
-            ref = Xa
-            st.gen_alt_parent_f = st.pop_f[a].copy()
-        kids = self._reflect(kids, st.lo, st.hi)
-        return kids, np.linalg.norm(kids - ref, axis=1)
 
     def _airborne_children(self, st: _MCESOState, n_air: int,
                            air_sigma_vec) -> np.ndarray:
@@ -1840,64 +1333,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             return np.empty((0, self.dim))
         rng = st.rng
         air_parents_gi = rng.integers(0, self.n_pop, size=n_air)
-        if self.h2h_cr_heritable:
-            st.gen_child_cr.append(st.pop_cr[air_parents_gi].copy())
         noise_air = rng.standard_normal((n_air, self.dim))
         if self._cc_dim_gate() > 0.0:
             st.gen_parent_x.append(st.pop_x[air_parents_gi].copy())
             st.gen_sigma_used.append(np.full(n_air, float(np.max(air_sigma_vec))))
-        if self._mom_on:
-            st.gen_all_parents.append(st.pop_x[air_parents_gi].copy())
         return self._reflect(st.pop_x[air_parents_gi] + noise_air * air_sigma_vec,
                              st.lo, st.hi)
-
-    def _momentum_children(self, st: _MCESOState, n_mom: int,
-                           weights: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Momentum transmission: x_child = x_host + κ·dx_host, κ ~ U(1, 2), where
-        dx_host is the displacement that created the host. Hosts without one
-        (fresh reseeds) fall back to a close-contact-scale isotropic step."""
-        if n_mom <= 0:
-            return np.empty((0, self.dim)), np.empty(0)
-        rng = st.rng
-        gi = rng.choice(self.n_pop, size=n_mom, p=weights)
-        if self.h2h_cr_heritable:
-            st.gen_child_cr.append(st.pop_cr[gi].copy())
-        kappa = rng.uniform(1.0, 2.0, size=n_mom)
-        dx = st.pop_dx[gi]
-        norms = np.linalg.norm(dx, axis=1)
-        iso = rng.standard_normal((n_mom, self.dim)) * st.sigma
-        step = np.where((norms > 0.0)[:, None], kappa[:, None] * dx, iso)
-        st.gen_all_parents.append(st.pop_x[gi].copy())
-        return (self._reflect(st.pop_x[gi] + step, st.lo, st.hi),
-                np.linalg.norm(step, axis=1))
-
-    def _migratory_children(self, st: _MCESOState, n_mig: int) -> np.ndarray:
-        """Migratory (vector-borne) transmission — stuck-gated structured escape.
-
-        Long jumps from the current best (magnitude ``migratory_jump_ratio`` ×
-        span): half along the population's principal covariance axis (valley/ridge
-        escape), half isotropic (multimodal escape). Only invoked when the run is
-        stuck (caller gates on drilling + stagnation), so it never diverts
-        productive precision. Offspring compete via μ+λ rollback, so this can only
-        improve best_f, never worsen SR@1e-10."""
-        if n_mig <= 0:
-            return np.empty((0, self.dim))
-        rng = st.rng
-        x_best = st.pop_x[int(np.argmin(st.pop_f))]
-        jump = self.migratory_jump_ratio * st.span
-        v_max = None
-        if self.dim >= 2:
-            cov = np.cov(st.pop_x, rowvar=False)
-            if isinstance(cov, np.ndarray) and cov.shape == (self.dim, self.dim):
-                _, eigvecs = np.linalg.eigh(cov)
-                v_max = eigvecs[:, -1]
-        out = np.empty((n_mig, self.dim))
-        for k in range(n_mig):
-            if v_max is not None and rng.random() < 0.5:
-                out[k] = x_best + rng.choice([-1.0, 1.0]) * jump * v_max   # along ridge/valley
-            else:
-                out[k] = x_best + jump * rng.standard_normal(self.dim)     # isotropic escape
-        return self._reflect(out, st.lo, st.hi)
 
     # ── σ-regime channel schedule ───────────────────────────────────────────
     def _channel_ratios(self, st: _MCESOState) -> tuple[float, float]:
@@ -1945,14 +1386,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Base ratios, tapered toward the close-contact-dominant setting the
         # persistent-covariance learner needs once the dimension gate opens.
         air_r, h2h_r = self._cc_channel_ratios()
-        if self._h2h_open is not None and not self._update_cc_ill(st):
-            h2h_r = self._h2h_open
-        learned_router = (self.router_signal == "learned" and self.channel_schedule
-                          and self._cc_dim_gate() > 0.0)
-        if learned_router and st.channel_route != "droplet" and st.cc_C is not None:
-            ev = np.linalg.eigvalsh(st.cc_C)
-            if ev[0] > 0 and math.log10(ev[-1] / ev[0]) >= self.router_learned_cond:
-                st.channel_route = "droplet"            # latched, any generation
         air_base = 0.0 if drilling else air_r
         if not self.channel_schedule:
             return air_base, h2h_r
@@ -1964,16 +1397,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # properties, so a single committed route removes the generation-to-
         # generation flip-flop that otherwise perturbs threshold-borderline
         # functions (F04/F14) and even leaks keep-air functions (F06) off base.
-        if st.channel_route is None and learned_router:
-            return air_base, h2h_r                      # base until the learned C latches
         if st.channel_route is None:
             if st.cc_logratio_ema is None or st.cc_align_ema is None:
                 return air_base, h2h_r                  # KEEP-AIR (base) while warming
             if st.cc_logratio_ema > self.cond_droplet_early:
                 st.channel_route = "droplet"             # early high-cond → ill-cond valley
-            elif (len(st.history_f) < self.route_commit_frac * st.max_evals
-                  if self.route_commit_frac is not None
-                  else len(st.history_sigma_global) < self.route_commit_gen):
+            elif len(st.history_sigma_global) < self.route_commit_gen:
                 return air_base, h2h_r                  # KEEP-AIR (base) until checkpoint
             # Checkpoint: commit from the stabilized EMA values, then lock.
             elif st.cc_logratio_ema > self.cond_droplet_thresh:
@@ -2000,54 +1429,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         return air_tapered, h2h_r
 
     # ── one generation (μ+λ greedy step) ────────────────────────────────────
-    def _final_local_search(self, st: _MCESOState) -> None:
-        """SLSQP from the best host; every evaluation goes through the history."""
-        from scipy.optimize import minimize
-
-        class _Out(Exception):
-            pass
-
-        cap = min(int(self.ls_budget_frac * st.max_evals),
-                  st.max_evals - len(st.history_f))
-        if cap <= self.dim + 1:
-            return
-        lo, hi = st.lo, st.hi
-        start = len(st.history_f)
-        best = {"x": None, "f": float("inf")}
-
-        def fun(x):
-            if len(st.history_f) - start >= cap:
-                raise _Out()
-            x = np.clip(np.asarray(x, dtype=float), lo, hi)
-            f = float(self.func(x))
-            st.history_x.append(x.copy())
-            st.history_f.append(f)
-            st.history_sigma_eval.append(float("nan"))
-            if f < st.best_so_far:
-                st.best_so_far = f
-            if f < st.basin_best:
-                st.basin_best = f
-            if f < best["f"]:
-                best["x"], best["f"] = x.copy(), f
-            return f
-
-        x0 = st.pop_x[int(np.argmin(st.pop_f))].copy()
-        try:
-            minimize(fun, x0, method="SLSQP", bounds=[(lo, hi)] * self.dim,
-                     options={"maxiter": 10 ** 6, "ftol": 1e-15})
-        except _Out:
-            pass
-        except (ValueError, FloatingPointError, np.linalg.LinAlgError):
-            pass
-        if best["x"] is not None:
-            w = int(np.argmax(st.pop_f))
-            if best["f"] < st.pop_f[w]:
-                st.pop_x[w] = best["x"]
-                st.pop_f[w] = best["f"]
-                st.pop_age[w] = 0
-                if st.pop_dx is not None and st.pop_dx.shape == st.pop_x.shape:
-                    st.pop_dx[w] = 0.0
-
     def _recombination_wave(self, st: _MCESOState, sigma0: "float | None" = None,
                             budget_frac: "float | None" = None) -> None:
         """hd_wave_lambda: a (μ/μ_w, λ) weighted-recombination wave (the cma
@@ -2100,8 +1481,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 st.pop_x[w] = best_x
                 st.pop_f[w] = best_f
                 st.pop_age[w] = 0
-                if st.pop_dx is not None and st.pop_dx.shape == st.pop_x.shape:
-                    st.pop_dx[w] = 0.0
 
     def _update_cc_ill(self, st: _MCESOState) -> bool:
         """Latch: has the learned covariance reached 10^router_learned_cond?"""
@@ -2114,28 +1493,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         """Linear population-size reduction: drop the worst hosts down to the
         size scheduled for the evaluations spent so far."""
         frac = len(st.history_f) / max(st.max_evals, 1)
-        final = self._pop_final
-        if self._pop_final_open is not None and not self._update_cc_ill(st):
-            final = self._pop_final_open
-        if final != self._pop_final:
-            target = int(round(final + (self._n_pop0 - final) * (1.0 - frac) ** self.pop_shrink_power))
-            target = max(final, min(self.n_pop, target))
-        elif self.pop_shrink_power == 1.0:
+        if self.pop_shrink_power == 1.0:
             # Exactly the formula the canonical pop_lin* runs used.
             target = int(round(self._n_pop0 + (self._pop_final - self._n_pop0) * frac))
         else:
             target = int(round(self._pop_final
                                + (self._n_pop0 - self._pop_final)
                                * (1.0 - frac) ** self.pop_shrink_power))
-        if final == self._pop_final:
-            target = max(self._pop_final, min(self.n_pop, target))
+        target = max(self._pop_final, min(self.n_pop, target))
         if target >= self.n_pop:
             return
         keep = np.sort(np.argsort(st.pop_f)[:target])
-        if st.pop_dx is not None and st.pop_dx.shape[0] == st.pop_x.shape[0]:
-            st.pop_dx = st.pop_dx[keep]
-        if st.pop_cr is not None and st.pop_cr.shape[0] == st.pop_x.shape[0]:
-            st.pop_cr = st.pop_cr[keep]
         st.pop_x = st.pop_x[keep]
         st.pop_f = st.pop_f[keep]
         st.pop_age = st.pop_age[keep]
@@ -2147,7 +1515,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         slots with greedy rollback, age survivors, and adapt σ_global."""
         if self.pop_schedule == "linear":
             self._shrink_population(st)
-        rng, span, n = st.rng, st.span, self.n_pop
+        span, n = st.span, self.n_pop
         gen_best_before = st.best_so_far  # snapshot for σ adaptation
 
         # Strain coexistence: niched-elite pool for the droplet channel's
@@ -2183,57 +1551,22 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             return
 
         weights = self._softmax_weights(st.pop_f)
-        if self.incubation_gens > 0:
-            # Latent (freshly infected) hosts are not yet infectious.
-            eligible = st.pop_age >= self.incubation_gens
-            if eligible.any():
-                masked = weights * eligible
-                total = float(masked.sum())
-                if total > 0.0:
-                    weights = masked / total
 
         # 3-channel split: close-contact (local Gaussian), droplet (h2h
         # DE/current-to-best), airborne (random spread). Airborne is pure noise —
         # the σ-regime schedule (_channel_ratios) tapers it off as σ contracts so
         # precision grinding isn't disrupted (reaching 0 in drilling mode).
         air_ratio_eff, h2h_ratio_eff = self._channel_ratios(st)
-        mom_share = self.mom_ratio
-        if self.route_mix is not None:
-            mix = self.route_mix.get(st.channel_route or "pre", self.route_mix["pre"])
-            air_ratio_eff, h2h_ratio_eff, mom_share = 0.0, float(mix[0]), float(mix[1])
         n_air = max(0, int(round(air_ratio_eff * n_dead)))
         n_h2h = max(0, int(round(h2h_ratio_eff * n_dead))) if n >= 3 else 0
         # If rounding overflows, trim airborne first (preserves the
         # droplet/close-contact intent).
         if n_air + n_h2h > n_dead:
             n_air = max(0, n_dead - n_h2h)
-        # Migratory (vector-borne) channel: only when stuck (drilled in AND
-        # stagnating). It draws from the close-contact share (airborne is already 0
-        # in drilling), giving stalled precision offspring a structured escape.
-        in_drilling_now = st.sigma < span * self.precision_sigma_ratio
-        migratory_active = (self.migratory_channel and in_drilling_now
-                            and st.no_improve >= self.migratory_no_improve_thresh)
-        n_mig = max(0, int(round(self.migratory_ratio * n_dead))) if migratory_active else 0
-        n_local = n_dead - n_air - n_h2h - n_mig
-        if n_local < 0:                     # migratory overflow → trim it
-            n_mig = max(0, n_mig + n_local)
-            n_local = n_dead - n_air - n_h2h - n_mig
-        n_alt = 0
-        if (self._alt is not None and (self.hd_alt_drill or not in_drilling_now)
-                and not st.alt_extinct
-                and not (self.hd_alt_ill_off and self._update_cc_ill(st))):
-            n_alt = min(n_local, int(round(self.hd_alt_ratio * n_dead)))
-            n_local -= n_alt
-        n_mom = 0
-        if self._mom_on:
-            n_mom = (min(n_local, max(1, int(round(mom_share * n_dead))))
-                     if mom_share > 0.0 else 0)
-            n_local -= n_mom
-            st.gen_all_parents = []
-            if st.pop_dx is None or st.pop_dx.shape != st.pop_x.shape:
-                st.pop_dx = np.zeros_like(st.pop_x)
+        n_local = n_dead - n_air - n_h2h
 
-        st.gen_counts = (n_local, n_h2h, n_air, n_mom, n_mig + n_alt)
+        # The momentum / migratory slots (always 0) keep the trace layout.
+        st.gen_counts = (n_local, n_h2h, n_air, 0, 0)
 
         # Log-scale quality anchored to the global (history-wide) best. When the
         # population converges to a local optimum, all f_i ≈ f_pop_max but
@@ -2253,31 +1586,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.gen_parent_x = []
             st.gen_sigma_used = []
             st.gen_n_local = 0
-            st.gen_n_h2h = 0
             if st.cc_C is None:
                 st.cc_C = np.eye(self.dim)
-                st.cc_p = None
-        st.gen_h2h_start, st.gen_h2h_count = n_local, n_h2h
-        if self.h2h_cr_heritable:
-            st.gen_child_cr = []
-            if st.pop_cr is None:
-                st.pop_cr = rng.random(self.n_pop)
-            elif st.pop_cr.shape[0] != self.n_pop:
-                extra = self.n_pop - st.pop_cr.shape[0]
-                st.pop_cr = (np.concatenate([st.pop_cr, rng.random(extra)])
-                             if extra > 0 else st.pop_cr[:self.n_pop])
         new_local, sigma_i = self._close_contact_children(
             st, n_local, weights, log_f_max, log_f_spread)
         new_h2h, h2h_step_norms = self._droplet_children(st, n_h2h, weights, elite_arr)
         new_air = self._airborne_children(st, n_air, air_sigma_vec)
-        new_mom, mom_step_norms = self._momentum_children(st, n_mom, weights)
-        # Migratory is generated last so that when the channel is off (n_mig = 0)
-        # no RNG is drawn and the run stays bit-identical to base.
-        new_mig = self._migratory_children(st, n_mig)
-        new_alt, alt_step = self._alt_children(st, n_alt, weights)
-        new_xs = np.concatenate([new_local, new_h2h, new_air, new_mom, new_mig, new_alt], axis=0)
+        new_xs = np.concatenate([new_local, new_h2h, new_air], axis=0)
 
-        # Per-child sigma: local→σ_i, h2h→|step|, air→air_sigma_vec, mig→jump
+        # Per-child sigma: local→σ_i, h2h→|step|, air→air_sigma_vec
         _sc: list[np.ndarray] = []
         if n_local > 0:
             _sc.append(sigma_i)
@@ -2285,12 +1602,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             _sc.append(h2h_step_norms)
         if n_air > 0:
             _sc.append(np.full(n_air, float(air_sigma_vec)))
-        if n_mom > 0:
-            _sc.append(mom_step_norms)
-        if n_mig > 0:
-            _sc.append(np.full(n_mig, float(self.migratory_jump_ratio * span)))
-        if n_alt > 0:
-            _sc.append(alt_step)
         _sigma_children = np.concatenate(_sc) if _sc else np.array([])
 
         # Evaluate offspring and resolve host competition (placement + rollback +
@@ -2300,11 +1611,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self._place_and_compete(
             st, new_xs, _sigma_children, n_dead,
             dead_global, dead_orig_x, dead_orig_f)
-        if (self.cc_front_path and self._cc_dim_gate() > 0.0 and st.cc_C is not None
-                and len(st.history_sigma_global) >= st.cc_freeze_until):
-            self._update_front_path(st)
-        if self.hd_alt_extinct is not None and n_alt > 0 and not st.alt_extinct:
-            self._alt_reproduction(st, n_local, n_dead - n_alt, n_alt)
         # Channel of each child evaluated this generation (children are evaluated
         # in the concatenation order above; the budget may stop it early).
         codes = bytearray()
@@ -2326,8 +1632,6 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         sigma_floor_eff = span * self.sigma_floor_ratio
         if self.sigma_floor_ill_ratio is not None and self._update_cc_ill(st):
             sigma_floor_eff = span * self.sigma_floor_ill_ratio
-        if self.sigma_pin_evals_frac > 0.0 and in_drilling:
-            st.last_drill_eval = len(st.history_f)
         improved = st.best_so_far < gen_best_before
         if (self.hd_sigma_success is not None and self.dim >= 3
                 and st.gen_parent_f is not None and st.gen_n_local > 0):
@@ -2336,23 +1640,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             if m > 0:
                 improved = float(np.mean(f[:m] < st.gen_parent_f[:m])) > self.hd_sigma_success
         if improved:
-            st.sigma *= self._sigma_up_eff(st)
-        elif (self.sigma_flat_expand and not in_drilling
-              and self._generation_is_flat(st, gen_best_before)):
             st.sigma *= self.sigma_up
         else:
             st.sigma *= self.sigma_drill_down if in_drilling else self.sigma_down
         st.sigma = max(sigma_floor_eff, min(st.sigma, span * self.sigma_ceil_ratio))
-
-    @staticmethod
-    def _generation_is_flat(st: _MCESOState, gen_best_before: float) -> bool:
-        """At least half of this generation's children tie the pre-generation
-        best exactly (the plateau signature; CMA-ES tests f[0] == f[0.7λ])."""
-        fs = st.history_f[st.gen_eval_start:]
-        if not fs:
-            return False
-        n_tie = sum(1 for f in fs if f == gen_best_before)
-        return 2 * n_tie >= len(fs)
 
     # ── host competition (overridable for niching variants) ──────────────────
     def _record_eval(self, st: _MCESOState, x: np.ndarray, f: float,
@@ -2393,26 +1684,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         spatially separated basins survive simultaneously.
         """
         replaced_slots: list[int] = []
-        track_dx = self._mom_on and st.pop_dx is not None
-        track_cr = self.h2h_cr_heritable and st.pop_cr is not None
-        if track_cr:
-            child_cr = (np.concatenate(st.gen_child_cr) if st.gen_child_cr
-                        else np.empty(0))
-            old_cr: list[float] = []
-        if track_dx:
-            all_par = (np.concatenate(st.gen_all_parents, axis=0)
-                       if st.gen_all_parents else np.empty((0, self.dim)))
-            old_dx: list[np.ndarray] = []
         for k in range(min(n_dead, len(new_xs))):
             slot = int(dead_global[k])
             x = new_xs[k]
-            if track_cr:
-                old_cr.append(float(st.pop_cr[slot]))
-                if k < len(child_cr):
-                    st.pop_cr[slot] = child_cr[k]
-            if track_dx:
-                old_dx.append(st.pop_dx[slot].copy())
-                st.pop_dx[slot] = (x - all_par[k]) if k < len(all_par) else 0.0
             f = float(self.func(x))
             st.pop_x[slot] = x
             st.pop_f[slot] = f
@@ -2431,30 +1705,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 if dead_orig_f[k] < st.pop_f[slot]:
                     st.pop_x[slot] = dead_orig_x[k]
                     st.pop_f[slot] = dead_orig_f[k]
-                    if track_dx:
-                        st.pop_dx[slot] = old_dx[k]
-                    if track_cr:
-                        st.pop_cr[slot] = old_cr[k]
                 elif self._cc_dim_gate() > 0.0:
                     survived.append((k, st.pop_x[slot].copy(), st.pop_f[slot]))
         if (self._cc_dim_gate() > 0.0
                 and len(st.history_sigma_global) >= st.cc_freeze_until):
             self._update_cc_cov(st, survived)
-        if self.h2h_adapt and st.gen_h2h_Fv is not None and dead_orig_f is not None:
-            sF, sCR, dF = [], [], []
-            for k, slot in enumerate(replaced_slots):
-                j = k - st.gen_h2h_start
-                if 0 <= j < st.gen_h2h_count and st.pop_f[slot] < dead_orig_f[k]:
-                    sF.append(st.gen_h2h_Fv[j]); sCR.append(st.gen_h2h_CRv[j])
-                    dF.append(dead_orig_f[k] - st.pop_f[slot])
-            if sF:
-                w = np.asarray(dF) / np.sum(dF)
-                sF, sCR = np.asarray(sF), np.asarray(sCR)
-                st.h2h_mF[st.h2h_k] = float(np.sum(w * sF ** 2) / np.sum(w * sF))
-                den = float(np.sum(w * sCR))
-                st.h2h_mCR[st.h2h_k] = float(np.sum(w * sCR ** 2) / den) if den > 0 else 0.0
-                st.h2h_k = (st.h2h_k + 1) % 6
-            st.gen_h2h_Fv = None
 
         # Age active survivors (per-generation).
         replaced_mask = np.zeros(self.n_pop, dtype=bool)
@@ -2484,43 +1739,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         cand_f = []
         cand_beat = []
         pf = st.gen_parent_f
-        gate_cinv = None
-        if self.cc_gate_mahal > 0.0:
-            gate_cinv = np.linalg.inv(st.cc_C)
-            gate_best = st.pop_x[int(np.argmin(st.pop_f))]
-            gate_r2 = (self.cc_gate_mahal * st.sigma) ** 2 * self.dim
         for k, child_x, child_f in survived:
             # Only close-contact children are drawn from C; droplet and airborne
             # follow different distributions and would bias the estimate.
-            is_drop = (self.cc_learn_droplet
-                       and st.gen_n_local <= k < st.gen_n_local + st.gen_n_h2h)
-            if (k >= st.gen_n_local and not is_drop) or k >= len(parents) or k >= len(sigmas):
-                continue
-            if is_drop:
-                d = child_x - parents[k]
-                nd = float(np.linalg.norm(d))
-                hf = st.gen_h2h_parent_f
-                j = k - st.gen_n_local
-                if nd <= 1e-300 or hf is None or j >= len(hf) or not (child_f < hf[j]):
-                    continue
-                if self.cc_learn_droplet_norm == "mahal":
-                    if gate_cinv is None:
-                        gate_cinv = np.linalg.inv(st.cc_C)
-                        if self.cc_gate_mahal <= 0.0:
-                            gate_r2 = float("inf")
-                            gate_best = parents[k]
-                    nd = math.sqrt(max(float(d @ gate_cinv @ d), 1e-300))
-                cand_y.append(d * (math.sqrt(self.dim) / nd))
-                cand_f.append(child_f)
-                cand_beat.append(True)
+            if k >= st.gen_n_local or k >= len(parents) or k >= len(sigmas):
                 continue
             sig = float(sigmas[k])
             if sig <= 1e-300:
                 continue
-            if gate_cinv is not None:
-                dp = parents[k] - gate_best
-                if float(dp @ gate_cinv @ dp) > gate_r2:
-                    continue
             # Historical rule: the step must be a genuine success — better than the
             # host that spawned it — because the placement test only asks it to beat
             # a worst-quartile host, which is not a success criterion (measured
@@ -2532,8 +1758,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             cand_beat.append(beat)
         if not cand_y:
             return
-        if self.cc_mu_frac > 0.0 and (not self.cc_mu_droplet_only
-                                      or st.channel_route == "droplet"):
+        if self.cc_mu_frac > 0.0:
             # Top-μ of this generation's placed close-contact children, by f.
             # Selection only, in the generation's own order so the estimate does
             # not depend on the sort being stable.
@@ -2543,29 +1768,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         else:
             sel = [i for i in range(len(cand_f)) if cand_beat[i]]
         ys = [cand_y[i] for i in sel]
-        fs = [cand_f[i] for i in sel]
         if not ys:
             return
         Y = np.asarray(ys)
-        if self.cc_rank_weight > 0.0 and len(fs) == len(Y):
-            # Rank-weighted: best child first, weight decaying exponentially.
-            order = np.argsort(np.asarray(fs))
-            w = np.exp(-self.cc_rank_weight * np.arange(len(Y)) / max(1, len(Y)))
-            w = w / w.sum()
-            Yw = Y[order] * np.sqrt(w)[:, None]
-            rank_mu = Yw.T @ Yw
-        else:
-            rank_mu = (Y.T @ Y) / len(Y)
+        rank_mu = (Y.T @ Y) / len(Y)
         c = min(1.0, self.cc_learning_rate)
         C = (1.0 - c) * st.cc_C + c * rank_mu
-        if self.cc_path:
-            n, mu_eff = self.dim, float(len(Y))
-            cc_c = 4.0 / (n + 4.0)
-            c1 = 2.0 / ((n + 1.3) ** 2 + mu_eff)
-            if st.cc_p is None:
-                st.cc_p = np.zeros(n)
-            st.cc_p = (1.0 - cc_c) * st.cc_p + math.sqrt(cc_c * (2.0 - cc_c) * mu_eff) * Y.mean(axis=0)
-            C = (1.0 - c1) * C + c1 * np.outer(st.cc_p, st.cc_p)
         tr = float(np.trace(C))
         if tr > 1e-300 and np.all(np.isfinite(C)):
             st.cc_C = C * (self.dim / tr)      # mean eigenvalue 1

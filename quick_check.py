@@ -236,6 +236,10 @@ _DIM_REGISTRIES: dict[int, dict[str, object]] = {
 # comparison: MC-ESO vs the 9 baselines. Diagnostic / ablation variants are NOT
 # registered here (they live in core/optimizers/mceso_ablations.py and can be
 # added back temporarily when isolating a mechanism's contribution).
+# Arms of rejected mechanisms whose parameters were removed from mceso.py
+# (2026-10-12: IPOP growth, momentum / migratory / multi-parent routes, droplet
+# CR adaptation, evolution paths, provenance gate, …) are gone with them; their
+# records stay in docs/history.md and the git history.
 _OPTIMIZERS = {
     # ── Hybrid / SOTA comparison candidates (2026-10-06; docs/baselines.md) ──
     "EA4eig":           (EA4eigOptimizer,           {}),
@@ -342,14 +346,6 @@ _OPTIMIZERS = {
     # (measured effective parent count 20.0 of 20 at dim 2). Regression pin for
     # the audit — see docs/history.md「全パラメータの次元不変性 監査」.
     "dimf_softmax0":  (MultiChannelEpidemicOptimizer, {"softmax_beta": 0.0}),
-    # σ-pinning detector (2026-08-25): σ equilibrates at a dimension-independent
-    # improvement rate (0.350), which the realised rate meets at dim 10, pinning
-    # σ above the drilling threshold — F08/F09 never drill at all. Detected
-    # directly as "no drilling for 30% of the budget", which fires on 68-74% of
-    # generations there and on 0% of the multimodal functions that every
-    # dimension-scaled variant regressed.
-    "pin30d5":        (MultiChannelEpidemicOptimizer,
-                       {"sigma_pin_evals_frac": 0.30, "sigma_pin_damp": 0.5}),
     # Split close-contact stream (2026-08-26): half the close-contact offspring
     # are shaped by the instantaneous C_pop and half by a persistent rank-μ C
     # started at the identity, with host competition deciding which shape was
@@ -376,47 +372,17 @@ _OPTIMIZERS = {
     #   npop8        — n_pop = 8·dim (twice the children, hence C samples, per gen)
     #   npop8_ccmu50 — the same plus the top-half rank-μ selection
     #   ccmu50_lr10  — more samples per update, so afford twice the rate
-    #   flat         — CMA-ES flat-fitness rule: ties to the best expand σ
-    # All but `flat` are bit-identical to MC-ESO at dim 2.
+    # All are bit-identical to MC-ESO at dim 2.
     "npop8":          (MultiChannelEpidemicOptimizer, {"n_pop_dim_mult": 8.0}),
     "npop8_ccmu50":   (MultiChannelEpidemicOptimizer,
                        {"n_pop_dim_mult": 8.0, "cc_mu_frac": 0.50}),
     "ccmu50_lr10":    (MultiChannelEpidemicOptimizer,
                        {"cc_mu_frac": 0.50, "cc_learning_rate": 0.10}),
-    "flat":           (MultiChannelEpidemicOptimizer, {"sigma_flat_expand": True}),
-    # 2026-10-05 (local session). npop8 opened F07 but cost every easy function
-    # half its generations; IPOP-style growth enlarges the population only on a
-    # restart. On F07 d10 the restarts are ordinary spillovers (basin switches are
-    # rare), so the growth is triggered by any spillover.
-    "ipopS15":        (MultiChannelEpidemicOptimizer,
-                       {"ipop_growth": 1.5, "ipop_trigger": "spillover", "ipop_max_mult": 4.0}),
-    "ipopS15_ccmu50": (MultiChannelEpidemicOptimizer,
-                       {"ipop_growth": 1.5, "ipop_trigger": "spillover", "ipop_max_mult": 4.0,
-                        "cc_mu_frac": 0.50}),
     # Freeze the learned C for N generations after an ordinary spillover. On
     # F12 d10 the uniform reseed's first successes are isotropic and wash the
     # learned elongation out (cond stuck at 1e2-1e4; 1e5-1e6 without spillovers).
     "ccfrz25":        (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 25}),
     "ccfrz50":        (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 50}),
-    # Provenance gate: learn C only from children of parents within
-    # 2·σ·sqrt(dim) of the best in the learned metric (no timer).
-    "ccgate2":        (MultiChannelEpidemicOptimizer, {"cc_gate_mahal": 2.0}),
-    "ccgate3":        (MultiChannelEpidemicOptimizer, {"cc_gate_mahal": 3.0}),
-    "ccgate2_ccmu50": (MultiChannelEpidemicOptimizer,
-                       {"cc_gate_mahal": 2.0, "cc_mu_frac": 0.50}),
-    # 2026-10-06 (local session). Cross-channel learning: droplet successes also
-    # update the learned C (sample starvation: close-contact alone yields
-    # 0.1-0.3 successes per generation at d10).
-    "ccdrop":         (MultiChannelEpidemicOptimizer, {"cc_learn_droplet": True}),
-    "ccdrop_gate2":   (MultiChannelEpidemicOptimizer,
-                       {"cc_learn_droplet": True, "cc_gate_mahal": 2.0}),
-    # Momentum channel: continue a lineage's last move (κ·dx, κ ~ U(1, 2)).
-    "mom10":          (MultiChannelEpidemicOptimizer, {"mom_ratio": 0.10}),
-    "mom10_noAir":    (MultiChannelEpidemicOptimizer,
-                       {"mom_ratio": 0.10, "air_ratio": 0.0, "cc_air_ratio": 0.0}),
-    "mom10_noAir_gate2": (MultiChannelEpidemicOptimizer,
-                       {"mom_ratio": 0.10, "air_ratio": 0.0, "cc_air_ratio": 0.0,
-                        "cc_gate_mahal": 2.0}),
     # Pre-2026-10-08 default (fixed population, no learned-C freeze, beat-parent
     # rule) — the reference every arm below was measured against. Arms defined
     # before 2026-10-08 set only the parameters they change, so they now run ON
@@ -457,64 +423,18 @@ _OPTIMIZERS = {
     "v1_noPop":       (MultiChannelEpidemicOptimizer, {"pop_schedule": "fixed"}),
     # 2026-10-09 arms from the internal-state diagnosis (docs/history.md); all on
     # top of the current default, none changes 2D except v1_popfin8.
-    "v1_rtC":         (MultiChannelEpidemicOptimizer, {"router_signal": "learned"}),
-    "v1_cpath":       (MultiChannelEpidemicOptimizer, {"cc_path": True}),
     "v1_noairHD":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0}),
     "v1_h2h50HD":     (MultiChannelEpidemicOptimizer, {"cc_h2h_ratio": 0.5}),
     "v1_popfin8":     (MultiChannelEpidemicOptimizer, {"pop_final_mult": 8.0}),
-    # round 2: does removing airborne stack with the router / the evolution path?
-    "v1_noair_cpath": (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True}),
-    "v1_noair_rtC":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "router_signal": "learned"}),
-    # On top of v1_noairHD: stronger selection / smaller start from 3D up (2D unchanged).
-    "v1_k50":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_kill_fraction": 0.5}),
-    "v1_k35":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_kill_fraction": 0.35}),
-    "v1_pi8":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_pop_init_mult": 8.0}),
-    "v1_k50_pi8":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_kill_fraction": 0.5,
-                                                       "hd_pop_init_mult": 8.0}),
-    # jDE-style CR self-adaptation from 3D up, off the DROPLET route only.
-    "v1_cr":          (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True}),
-    # Landscape-dependent final population: 8·D (6·D) until the learned C is ill-conditioned.
-    "v1_pfo8":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_pop_final_open": 8.0}),
-    "v1_pfo6":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_pop_final_open": 6.0}),
-    "v1_pfo12":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_pop_final_open": 12.0}),
-    # Droplet share while the learned C is not ill-conditioned (same latch as v1_pfo*).
-    "v1_ho50":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_h2h_open": 0.5}),
-    "v1_ho70":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_h2h_open": 0.7}),
-    "v1_ho50_pfo8":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_h2h_open": 0.5,
-                                                       "hd_pop_final_open": 8.0}),
-    # Multi-parent fourth route from 3D up (hd_alt), on top of v1_noairHD.
-    "v1_epi":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "epi", "hd_alt_ratio": 0.2}),
-    "v1_epi10":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "epi", "hd_alt_ratio": 0.1}),
-    "v1_ras":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort", "hd_alt_ratio": 0.2}),
-    "v1_ras1":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort1", "hd_alt_ratio": 0.2}),
-    "v1_rasE":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassortE", "hd_alt_ratio": 0.2}),
-    # Same, switched off in the drilling regime (like airborne).
-    "v1_epiD":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "epi", "hd_alt_ratio": 0.2, "hd_alt_drill": False}),
-    "v1_rasD":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort", "hd_alt_ratio": 0.2, "hd_alt_drill": False}),
-    "v1_ras1D":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort1", "hd_alt_ratio": 0.2, "hd_alt_drill": False}),
-    "v1_rasED":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassortE", "hd_alt_ratio": 0.2, "hd_alt_drill": False}),
     # σ floor (1e-6·span) re-test: _fl08 was judged adoptable on 2026-09-12 but never adopted.
     "v1_fl08":        (MultiChannelEpidemicOptimizer, {"sigma_floor_ratio": 1e-8}),
     "v1_fl10":        (MultiChannelEpidemicOptimizer, {"sigma_floor_ratio": 1e-10}),
     "v1_noair_fl08":  (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-8}),
     "v1_noair_fl10":  (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10}),
-    "v1_epiDI":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "epi", "hd_alt_drill": False, "hd_alt_ill_off": True}),
-    "v1_epiDI10":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "epi", "hd_alt_drill": False, "hd_alt_ill_off": True, "hd_alt_ratio": 0.1}),
-    "v1_epiDI_fl10":  (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "epi", "hd_alt_drill": False, "hd_alt_ill_off": True,
-                                                       "sigma_floor_ratio": 1e-10}),
     # σ floor 1e-10, back to 1e-6 once the learned C is ill-conditioned (≥3D).
     "v1_fl10i":       (MultiChannelEpidemicOptimizer, {"sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6}),
     "v1_noair_fl10i": (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10,
                                                        "sigma_floor_ill_ratio": 1e-6}),
-    # Reassortment that dies out when it reproduces worse than close contact.
-    "v1_rasX1":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort", "hd_alt_drill": False, "hd_alt_extinct": 1.0}),
-    "v1_rasX05":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort", "hd_alt_drill": False, "hd_alt_extinct": 0.5}),
-    "v1_ras1X1":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_alt": "reassort1",
-                                                       "hd_alt_drill": False, "hd_alt_extinct": 1.0}),
-    # Evolution path re-test after the reset bug (cc_p was cleared every generation until 2026-10-10),
-    # and the outbreak-front drift path.
-    "v1_cpath2":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True}),
-    "v1_front":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_front_path": True}),
     # 1/5-type σ success rule from 3D up.
     "v1_ss10":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_sigma_success": 0.1}),
     "v1_ss20":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_sigma_success": 0.2}),
@@ -536,28 +456,15 @@ _OPTIMIZERS = {
     "v1_w4s1q3":      (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0, "wave_sigma_ratio": 0.1, "wave_quality": 1e-3}),
     "v1_w4q4":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0, "wave_quality": 1e-4}),
     "v1_w4q2":        (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0, "wave_quality": 1e-2}),
-    "v1_w4q3_2d":     (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0, "wave_quality": 1e-3, "wave_2d": True}),
-    "v1_w4s1q3_2d":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0, "wave_sigma_ratio": 0.1, "wave_quality": 1e-3, "wave_2d": True}),
     "v1_w4q3C":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0, "wave_quality": 1e-3, "wave_use_C": True}),
     "v1_w4q3H":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0, "wave_quality": 1e-3, "wave_use_C": True, "wave_ill_handover": True}),
     "v1_w4q3E":       (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "sigma_floor_ratio": 1e-10, "sigma_floor_ill_ratio": 1e-6, "hd_sigma_success": 0.05, "hd_wave_lambda": 4.0, "wave_quality": 1e-3, "wave_use_C": True, "wave_ill_handover": True,
                                                        "wave_handover_drill": False}),
-    "v1_crR":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "hd_cr_heritable": True,
-                                                       "router_signal": "learned"}),
-    "v1_noair_all":   (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.0, "cc_path": True,
-                                                       "router_signal": "learned"}),
     "v1_noFrz":       (MultiChannelEpidemicOptimizer, {"cc_spill_freeze_gens": 0}),
     "v1_noMu":        (MultiChannelEpidemicOptimizer, {"cc_mu_frac": 0.0}),
     # Candidates on top of the 2026-10-08 default (v1_* = relative to new default).
-    "v1_crmix":       (MultiChannelEpidemicOptimizer, {"h2h_cr_mix": (0.1, 0.9)}),
     "v1_crlow":       (MultiChannelEpidemicOptimizer, {"h2h_CR": 0.2}),
-    "v1_h2hA":        (MultiChannelEpidemicOptimizer, {"h2h_adapt": True}),
     "v1_pop32":       (MultiChannelEpidemicOptimizer, {"pop_init_mult": 32.0}),
-    "v1_gate2":       (MultiChannelEpidemicOptimizer, {"cc_gate_mahal": 2.0}),
-    "v1_rcf30":       (MultiChannelEpidemicOptimizer, {"route_commit_frac": 0.30}),
-    "v1_crher":       (MultiChannelEpidemicOptimizer, {"h2h_cr_heritable": True}),
-    "v1_crher_rcf30": (MultiChannelEpidemicOptimizer,
-                       {"h2h_cr_heritable": True, "route_commit_frac": 0.30}),
     # 2026-10-06 improvement candidates (all defaults unchanged).
     # A. population-size schedules
     "pop_lin16":      (MultiChannelEpidemicOptimizer,
@@ -582,38 +489,11 @@ _OPTIMIZERS = {
     "pop_pow3_frzmu": (MultiChannelEpidemicOptimizer,
                        {"pop_schedule": "linear", "pop_init_mult": 16.0, "pop_final_mult": 4.0,
                         "pop_shrink_power": 3.0, "cc_spill_freeze_gens": 50, "cc_mu_frac": 0.50}),
-    "pop_pow2_gate2": (MultiChannelEpidemicOptimizer,
-                       {"pop_schedule": "linear", "pop_init_mult": 16.0, "pop_final_mult": 4.0,
-                        "pop_shrink_power": 2.0, "cc_gate_mahal": 2.0}),
-    "pop_lin16_gate2": (MultiChannelEpidemicOptimizer,
-                       {"pop_schedule": "linear", "pop_init_mult": 16.0, "pop_final_mult": 4.0,
-                        "cc_gate_mahal": 2.0}),
     "pop_lin16_frzmu": (MultiChannelEpidemicOptimizer,
                        {"pop_schedule": "linear", "pop_init_mult": 16.0, "pop_final_mult": 4.0,
                         "cc_spill_freeze_gens": 50, "cc_mu_frac": 0.50}),
-    "ipop_fail3":     (MultiChannelEpidemicOptimizer,
-                       {"ipop_growth": 1.5, "ipop_trigger": "failstreak",
-                        "ipop_fail_streak": 3, "ipop_max_mult": 4.0}),
-    # B. router v2: no airborne; per-route (droplet, momentum) shares
-    "rv2":            (MultiChannelEpidemicOptimizer,
-                       {"route_mix": {"pre": (0.4, 0.1), "droplet": (0.3, 0.2),
-                                      "close": (0.3, 0.1), "keepair": (0.5, 0.0)}}),
-    "rv2_flat":       (MultiChannelEpidemicOptimizer,
-                       {"route_mix": {"pre": (0.4, 0.1), "droplet": (0.4, 0.1),
-                                      "close": (0.4, 0.1), "keepair": (0.4, 0.1)}}),
-    # C. droplet F / CR success-history adaptation
-    "h2hA":           (MultiChannelEpidemicOptimizer, {"h2h_adapt": True}),
-    # D. end-phase SLSQP local search
-    "lsfin":          (MultiChannelEpidemicOptimizer,
-                       {"ls_final_frac": 0.10, "ls_budget_frac": 0.05}),
     "ccfrz50_ccmu50": (MultiChannelEpidemicOptimizer,
                        {"cc_spill_freeze_gens": 50, "cc_mu_frac": 0.50}),
-    # cc_mu_frac only in runs routed as ill-conditioned (droplet): at d5 the
-    # ungated rule cost the Rastrigin family (その183).
-    "ccmu50_drop":    (MultiChannelEpidemicOptimizer,
-                       {"cc_mu_frac": 0.50, "cc_mu_droplet_only": True}),
-    "ccmu100_drop":   (MultiChannelEpidemicOptimizer,
-                       {"cc_mu_frac": 1.00, "cc_mu_droplet_only": True}),
     #  Pre-fix reference: reset the learned covariance on every spillover.
     #  Tracing F12-BentCigar showed that reset destroying a covariance that was
     #  on its way to the extreme elongation the function needs (effective rank
