@@ -124,6 +124,12 @@
 
 ## 作業ログ
 
+### 2026-10-11 ジョブなし（main のマージが衝突して停止） — **`git merge --no-edit origin/main` が `docs/research_loop.md` で衝突。ルールに従い `git merge --abort` して測定は一切実行していない。解消は対話セッションの担当**
+
+- 衝突したファイル: **`docs/research_loop.md` のみ**（1 箇所、`## 測定ジョブ（上から実行する）` と `## 規則` の間）。`core/optimizers/mceso.py` / `docs/history.md` / `quick_check.py` は自動マージできていた（abort で巻き戻し済み）。衝突の内容は、research-loop 側（HEAD `2469eb1`）が 2026-10-09 のジョブ 1 を完了して**キューを空にした**のに対し、main 側（`cecbc03`「キュー: 候補 v1_w4q3E と途中段階を 1 ジョブにまとめて正準環境で測る」）が**同じ位置に新しいジョブ（`MC-ESO,v1_noairHD,v1_noair_fl10i,v1_w4q3,v1_w4q3E` の 2D/5D/10D、記録先 `analysis/single/j28/`）を追記した**という、削除と追記の衝突。なお main は今回の fetch で forced update されている（`4ba2a26...cecbc03`）。
+- そのため**ジョブは取っていない**（claim マーカーも書いていない）。research-loop 単体のキューは空、main 側の新ジョブは未マージなので実行対象として確定できず、ジョブの取り込み方（どちらの版を採るか）は判断になるため測定ルーチンでは決めない。
+- 測定は未実行＝セットアップ・コマンド・集計・`analysis/` への書き出しはいずれも無し。`scripts/check_doc_size.py` は commit 前に実行した（結果は下の commit に反映）。
+
 ### 2026-10-09 ジョブ1 空気感染なし（3 次元以上）の 2 候補を正準環境で測る — **MC-ESO の参照値は 3 次元すべて一致して再現（2D 93.33 / 5D 59.17 / 10D 42.08%）。2D は 2 腕とも全 24 関数が bit 一致。10D は `v1_noairHD` +0.83pt / `v1_noair_rtC` +0.62pt だが、5D は −0.21pt / −1.04pt ＝ ローカル（Windows）の 5D +2.5 / +3.1pt は正準環境で再現しなかった。10D の +1.0 / +0.8pt はおおむね再現**（採否の判断はしない）
 
 - 実行: ジョブ記載の 3 コマンド（`--methods "MC-ESO,v1_noairHD,v1_noair_rtC"`、n=20）。2D は 6 関数 × 4 shard（label `j28_d2_s1-4`、`--max-evals 5000`、wall 10.1 分 12:34:21→12:44:24）、5D は 6 関数 × 4 shard（`j28_d5_s1-4`、`--dim 5 --max-evals 12500`、wall 18.4 分 12:44:45→13:03:10）、10D は 4 関数 × 6 shard（`j28_d10_s1-6`、`--dim 10 --max-evals 25000`、wall 27.4 分 13:03:16→13:30:42）。関数は stride 配分（重い多峰・弱構造を shard 間に散らす）。**3 次元すべて 24/24 そろった**（merged summary 各 72 行＝3 手法×24、wilcoxon 各 48 行＝2 手法×24、(関数, 手法) の重複・欠落ともゼロ、全 14 shard `status=done`）。numpy 2.4.6 / cma 4.5.0。
