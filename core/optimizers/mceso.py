@@ -627,6 +627,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Gallagher's coordinate swaps also improve, so improvement alone does
         # not tell separable landscapes apart (5D F21 90→65 without the test).
         reassort_additivity: "float | None" = None,
+        # Number of pairs checked: the best coordinate paired with the next
+        # reassort_pairs best ones (all must be additive). One pair let 10D
+        # F22 (Gallagher 21 peaks) through by chance (75→55).
+        reassort_pairs: int = 1,
         ir_reignite_sigma_ratio: float = 0.05,
         ir_repel_radius_ratio: float = 0.1,
         ir_repel_max_tries: int = 20,
@@ -710,6 +714,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.reassort_sweep = reassort_sweep
         self.reassort_budget_frac = reassort_budget_frac
         self.reassort_additivity = reassort_additivity
+        self.reassort_pairs = reassort_pairs
         self.ir_reignite_sigma_ratio = ir_reignite_sigma_ratio
         self.ir_repel_radius_ratio = ir_repel_radius_ratio
         self.ir_repel_max_tries = ir_repel_max_tries
@@ -1504,18 +1509,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                         per_coord[i] = (d, v)
             if first_pass and self.reassort_additivity is not None:
                 first_pass = False
-                top = sorted(per_coord.items(), key=lambda kv: kv[1][0])[:2]
-                additive = False
-                if len(top) == 2 and st.budget_left:
-                    (i, (di, vi)), (j, (dj, vj)) = top
-                    x = best_x.copy()
-                    x[i], x[j] = vi, vj
-                    f = float(self.func(x))
-                    self._record_eval(st, x, f, float("nan"))
-                    dij = f - best_f
-                    additive = abs(dij - (di + dj)) <= self.reassort_additivity * (abs(di) + abs(dj))
-                    if f < trial_best_f:
-                        trial_best_x, trial_best_f = x, f
+                top = sorted(per_coord.items(), key=lambda kv: kv[1][0])[:1 + self.reassort_pairs]
+                additive = len(top) == 1 + self.reassort_pairs
+                if additive:
+                    i, (di, vi) = top[0]
+                    for j, (dj, vj) in top[1:]:
+                        if not st.budget_left:
+                            additive = False
+                            break
+                        x = best_x.copy()
+                        x[i], x[j] = vi, vj
+                        f = float(self.func(x))
+                        self._record_eval(st, x, f, float("nan"))
+                        dij = f - best_f
+                        if f < trial_best_f:
+                            trial_best_x, trial_best_f = x, f
+                        if abs(dij - (di + dj)) > self.reassort_additivity * (abs(di) + abs(dj)):
+                            additive = False
+                            break
                 if not additive:
                     st.sweep_dead = True
                     if trial_best_x is not None and trial_best_f < float(st.pop_f[bi]):

@@ -422,6 +422,8 @@ _OPTIMIZERS = {
                                                        "reassort_additivity": 0.1}),
     "v2_rsA25":       (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True,
                                                        "reassort_additivity": 0.25}),
+    "v2_rsA2":        (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True,
+                                                       "reassort_additivity": 0.1, "reassort_pairs": 2}),
     "v2_ir3_noFrz":   (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0}),
     "v2_irT_noFrz_noSS": (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0,
                                                        "hd_sigma_success": None}),
