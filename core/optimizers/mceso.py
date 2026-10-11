@@ -382,7 +382,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # σ to enter the drilling regime as well).
         wave_handover_drill: bool = False,
         # Population of the containment hand-over wave: None = the same λ as the
-        # stall wave (hd_wave_lambda·D); 0 = CMA-ES's default 4 + ⌊3 ln D⌋.
+        # stall wave (hd_wave_lambda·D); 0 = CMA-ES's default 4 + ⌊3 ln D⌋;
+        # a negative −k = k × that default.
         # 10D F12: every failing run spent its ~18800 hand-over evaluations and
         # stopped at 1e-8..1e-9 with λ = 40; a single valley wants a small λ.
         wave_handover_lambda: "float | None" = None,
@@ -1603,8 +1604,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         cap = min(int(frac * st.max_evals), st.max_evals - len(st.history_f))
         if lam_mult is None:
             lam = max(4, int(round(self._wave_lambda * self.dim)))
-        elif lam_mult <= 0:
+        elif lam_mult == 0:
             lam = 4 + int(3 * math.log(self.dim))
+        elif lam_mult < 0:
+            lam = int(round(-lam_mult * (4 + int(3 * math.log(self.dim)))))
         else:
             lam = max(4, int(round(lam_mult * self.dim)))
         if cap < 2 * lam:
