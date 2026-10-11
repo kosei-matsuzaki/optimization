@@ -619,6 +619,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # on the rotated F15 it does nothing.
         reassort_sweep: bool = False,
         reassort_budget_frac: float = 0.1,
+        # Additivity test (None = off): after the first pass of a sweep, combine
+        # the two best improving swaps on different coordinates (one extra
+        # evaluation). On a separable landscape their changes in f add up; if
+        # |Δ_ij − (Δ_i + Δ_j)| exceeds this fraction of |Δ_i| + |Δ_j| (or fewer
+        # than two coordinates improve), sweeps stop for the rest of the run.
+        # Gallagher's coordinate swaps also improve, so improvement alone does
+        # not tell separable landscapes apart (5D F21 90→65 without the test).
+        reassort_additivity: "float | None" = None,
         ir_reignite_sigma_ratio: float = 0.05,
         ir_repel_radius_ratio: float = 0.1,
         ir_repel_max_tries: int = 20,
@@ -701,6 +709,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.ir_archive_frac_hd = ir_archive_frac_hd
         self.reassort_sweep = reassort_sweep
         self.reassort_budget_frac = reassort_budget_frac
+        self.reassort_additivity = reassort_additivity
         self.ir_reignite_sigma_ratio = ir_reignite_sigma_ratio
         self.ir_repel_radius_ratio = ir_repel_radius_ratio
         self.ir_repel_max_tries = ir_repel_max_tries
@@ -1470,8 +1479,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         D = np.asarray(donors, dtype=float)
         tol = 1e-9 * st.span
         improved = True
+        first_pass = True
         while improved and st.budget_left and len(st.history_f) - start < cap:
             improved = False
+            per_coord: dict = {}            # coordinate -> (Δf, value) of its best swap
             vals = {}
             for i in range(self.dim):
                 for v in np.unique(D[:, i]):
@@ -1488,6 +1499,28 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     self._record_eval(st, x, f, float("nan"))
                     if f < trial_best_f:
                         trial_best_x, trial_best_f = x, f
+                    d = f - best_f
+                    if d < 0 and (i not in per_coord or d < per_coord[i][0]):
+                        per_coord[i] = (d, v)
+            if first_pass and self.reassort_additivity is not None:
+                first_pass = False
+                top = sorted(per_coord.items(), key=lambda kv: kv[1][0])[:2]
+                additive = False
+                if len(top) == 2 and st.budget_left:
+                    (i, (di, vi)), (j, (dj, vj)) = top
+                    x = best_x.copy()
+                    x[i], x[j] = vi, vj
+                    f = float(self.func(x))
+                    self._record_eval(st, x, f, float("nan"))
+                    dij = f - best_f
+                    additive = abs(dij - (di + dj)) <= self.reassort_additivity * (abs(di) + abs(dj))
+                    if f < trial_best_f:
+                        trial_best_x, trial_best_f = x, f
+                if not additive:
+                    st.sweep_dead = True
+                    if trial_best_x is not None and trial_best_f < float(st.pop_f[bi]):
+                        st.pop_x[bi], st.pop_f[bi], st.pop_age[bi] = trial_best_x, trial_best_f, 0
+                    return
             if trial_best_x is not None:
                 best_x, best_f = trial_best_x, trial_best_f
                 improved = True
