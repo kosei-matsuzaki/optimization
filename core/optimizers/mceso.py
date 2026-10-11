@@ -458,7 +458,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # and 5D F23 10→60, but 5D F13 (sharp ridge) fell 100→70: σ collapses to
         # 1e-9 at gap 5e-10 and the ridge stalls, whereas the 1e-6 floor keeps σ
         # large enough to travel along the learned C's long axis (2026-10-10).
-        sigma_floor_ill_ratio: "float | None" = None,
+        sigma_floor_ill_ratio: "float | None" = 1e-6,  # default since 2026-10-12 (v1_w4q3E)
         # Extinction of the fourth route (None = never). Each generation counts
         # how often its children beat their own parent, against the same rate
         # for close-contact children (decayed sums, half-life ~7 generations).
@@ -482,7 +482,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # 0.02–0.1 while 10D F12 gains one decade per ~8500 evaluations
         # (2026-10-10 trace). Here σ grows when more than this fraction of the
         # close-contact children beat their own parent (a 1/5-type rule).
-        hd_sigma_success: "float | None" = None,
+        hd_sigma_success: "float | None" = 0.05,  # default since 2026-10-12 (v1_w4q3E)
         # Recombination wave on a stall (≥3D; None = off). When a spillover is
         # about to fire on a basin that is not drilled out, and no wave has run
         # since the last meaningful improvement, run a non-elitist weighted-
@@ -492,26 +492,26 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # host. 2026-10-11: from MC-ESO's stuck points on 5D F17 / F18, CMA-ES
         # with λ = 8 fails but λ = 40 (8·D) reaches 1e-10 in 8/8 and 7/8 runs,
         # while the spillover re-drills the same point ~7 times per run.
-        hd_wave_lambda: "float | None" = None,
+        hd_wave_lambda: "float | None" = 4.0,  # default since 2026-10-12 (v1_w4q3E)
         wave_sigma_ratio: float = 0.01,
         wave_budget_frac: float = 0.25,
         # Run the wave only once best_so_far ≤ this × |f_init| (None = always).
         # Gallagher (F21 / F22) stalls at local optima with f ≈ 1e-2·|f_init| and
         # needs the spillovers the wave replaces; Schaffer stalls ~1e-6·|f_init|.
-        wave_quality: "float | None" = None,
+        wave_quality: "float | None" = 1e-3,  # default since 2026-10-12 (v1_w4q3E)
         # Also run the wave at dimension 2 (hd_wave_lambda is ≥3D otherwise).
         wave_2d: bool = False,
         # Whiten the wave by the learned C when it is ill-conditioned (the wave
         # then starts from the shape the outbreak has learned instead of the
         # identity; 10D F12 spent ~3000 evaluations re-learning it).
-        wave_use_C: bool = False,
+        wave_use_C: bool = True,  # default since 2026-10-12 (v1_w4q3E)
         # Containment hand-over (≥3D, needs hd_wave_lambda): once the learned C
         # is ill-conditioned and σ has entered the drilling regime, run one wave
         # (whitened, σ0 = current σ) without waiting for a stall.
-        wave_ill_handover: bool = False,
+        wave_ill_handover: bool = True,  # default since 2026-10-12 (v1_w4q3E)
         # Hand over as soon as the learned C is ill-conditioned (False = wait for
         # σ to enter the drilling regime as well).
-        wave_handover_drill: bool = True,
+        wave_handover_drill: bool = False,  # default since 2026-10-12 (v1_w4q3E)
         hd_alt_extinct_gens: int = 10,
         # ── Incubation (the E of SEIR) ───────────────────────────────────────
         # MC-ESO models S→I only: a host infected this generation can infect
@@ -639,7 +639,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         sigma_pin_stagnant_frac: float = 0.5,  # × stagnation window of no_improve
         sigma_pin_damp: float = 0.25,          # sigma_up ** this while pinned
         sigma_down: float = 0.95,              # gentle contraction when not
-        sigma_floor_ratio: float = 1e-6,       # σ_global absolute floor (× span)
+        sigma_floor_ratio: float = 1e-10,      # σ_global absolute floor (× span); 1e-6 until 2026-10-12
         sigma_ceil_ratio: float = 1.0,         # σ_global absolute ceiling (× span)
         precision_sigma_ratio: float = 1e-3,   # σ < span × this → drilling mode
                                                # (scale-invariant; replaces absolute
@@ -851,7 +851,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # discriminator is needed — which is exactly what having several
         # transmission routes is for.
         cc_persist_frac: float = 0.5,
-        cc_air_ratio: float = 0.10,            # airborne share once the gate is open
+        cc_air_ratio: float = 0.0,             # airborne share once the gate is open; 0.10 until 2026-10-12
         # 0.25, not 0.20: the droplet channel's binomial crossover is what
         # protects coordinate-wise structure, and starving it costs
         # F02-EllipsoidalSep at dim 20 (100% → 15%, a12 = 1.00). 0.25 restores

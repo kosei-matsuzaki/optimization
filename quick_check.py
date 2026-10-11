@@ -421,6 +421,16 @@ _OPTIMIZERS = {
     # rule) — the reference every arm below was measured against. Arms defined
     # before 2026-10-08 set only the parameters they change, so they now run ON
     # TOP of the new default; their recorded numbers are relative to MC-ESO-v0.
+    # Pre-2026-10-12 default (pop_pow2_frzmu): the reference every v1_* arm was
+    # measured against. v1_* arms set only what they change; the rest is filled
+    # with this default below, so their recorded numbers reproduce.
+    "MC-ESO-v1":      (MultiChannelEpidemicOptimizer, {}),
+    # Ablations of the 2026-10-12 default (v1_w4q3E): remove one of its parts.
+    "v2_air":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.10}),
+    "v2_fl6":         (MultiChannelEpidemicOptimizer, {"sigma_floor_ratio": 1e-6, "sigma_floor_ill_ratio": None}),
+    "v2_noSS":        (MultiChannelEpidemicOptimizer, {"hd_sigma_success": None}),
+    "v2_noWave":      (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": None}),
+    "v2_noHand":      (MultiChannelEpidemicOptimizer, {"wave_ill_handover": False, "wave_use_C": False}),
     "MC-ESO-v0":      (MultiChannelEpidemicOptimizer,
                        {"pop_schedule": "fixed", "cc_spill_freeze_gens": 0, "cc_mu_frac": 0.0}),
     # Ablation of the 2026-10-08 default: remove one of its three changes.
@@ -648,10 +658,19 @@ _OPTIMIZERS = {
 # Arms of the new default are "MC-ESO" itself and the v1_* ablations.
 _V0_DEFAULTS = {"pop_schedule": "fixed", "pop_shrink_power": 1.0,
                 "cc_spill_freeze_gens": 0, "cc_mu_frac": 0.0}
+# The 2026-10-12 default change (v1_w4q3E adopted). MC-ESO-v1 and the v1_* arms
+# (and everything older) are filled with the pre-change values; "MC-ESO" and the
+# v2_* arms run on the new default.
+_V1_DEFAULTS = {"cc_air_ratio": 0.10, "sigma_floor_ratio": 1e-6, "sigma_floor_ill_ratio": None,
+                "hd_sigma_success": None, "hd_wave_lambda": None, "wave_quality": None,
+                "wave_use_C": False, "wave_ill_handover": False, "wave_handover_drill": True}
 for _name, (_cls, _kw) in list(_OPTIMIZERS.items()):
     if (isinstance(_cls, type) and issubclass(_cls, MultiChannelEpidemicOptimizer)
-            and _name != "MC-ESO" and not _name.startswith("v1_")):
-        _OPTIMIZERS[_name] = (_cls, {**_V0_DEFAULTS, **_kw})
+            and _name != "MC-ESO" and not _name.startswith("v2_")):
+        if _name.startswith("v1_") or _name == "MC-ESO-v1":
+            _OPTIMIZERS[_name] = (_cls, {**_V1_DEFAULTS, **_kw})
+        else:
+            _OPTIMIZERS[_name] = (_cls, {**_V1_DEFAULTS, **_V0_DEFAULTS, **_kw})
 
 
 # Methods that take a per-benchmark `sigma0` initial step.

@@ -63,6 +63,21 @@ def _recorded_best(run_dir: Path, dim: str, func: str, method: str, seed: int):
     return None
 
 
+# "MC-ESO" names the default of the day. A run recorded before a default
+# change is replayed with the arm that keeps the default it was run with.
+_DEFAULT_CHANGES = (("2026-10-08", "MC-ESO-v0"), ("2026-10-12", "MC-ESO-v1"))
+
+
+def _method_at(method: str, meta: dict) -> str:
+    if method != "MC-ESO":
+        return method
+    created = str(meta.get("created_at") or "")[:10]
+    for date, arm in _DEFAULT_CHANGES:
+        if created and created < date:
+            return arm
+    return method
+
+
 @functools.lru_cache(maxsize=24)
 def replay(run_id: str, dim_name: str, func: str, method: str, seed: int) -> str:
     """JSON (as a string, so the LRU cache holds the encoded payload)."""
@@ -79,7 +94,7 @@ def replay(run_id: str, dim_name: str, func: str, method: str, seed: int) -> str
         raise LookupError(f"method {method} is not registered any more")
     max_evals = int(meta.get("max_evals") or 2500 * dim)
 
-    cls, kwargs = qc._OPTIMIZERS[method]
+    cls, kwargs = qc._OPTIMIZERS[_method_at(method, meta)]
     kw = {**kwargs}
     if cls in qc._SIGMA_USERS:
         kw["sigma0"] = 0.2 * (bench.bounds[1] - bench.bounds[0])
