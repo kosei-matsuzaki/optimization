@@ -100,7 +100,7 @@
 
 ---
 
-1. **既定値の候補 `v1_w4q3E` とその途中段階を正準環境で測る（2D / 5D / 10D）。** ユーザーはこの結果を見て採否を決める。
+1. **既定値の候補 `v1_w4q3E` とその途中段階を正準環境で測る（2D / 5D / 10D）。** ユーザーはこの結果を見て採否を決める。 (claimed 2026-10-11 12:30 UTC)
    2D: `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,v1_noair_fl10i,v1_w4q3,v1_w4q3E"`。
    5D: `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,v1_noair_fl10i,v1_w4q3,v1_w4q3E"`。
    10D: `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,v1_noair_fl10i,v1_w4q3,v1_w4q3E"`。
