@@ -1,0 +1,52 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=2   ref=MC-ESO
+run: merged_d2
+functions: 24   methods: MC-ESO, v1_noair_fl10i, v1_w4q3, v1_w4q3E
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            93.3%   94.8%   95.6%   95.8%         880            
+  v1_noair_fl10i    95.0%   95.0%   95.6%   95.8%         880         0/2
+  v1_w4q3           95.0%   95.0%   95.6%   95.8%         880         0/2
+  v1_w4q3E          95.0%   95.0%   95.6%   95.8%         880         0/2
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%  v1_noair_fl10i 100%              289/289
+  F02-EllipsoidalSep              100%  v1_noair_fl10i 100%              637/637
+  F03-RastriginSep                100%  v1_noair_fl10i 100%            1182/1182
+  F04-BucheRastrigin               85%   v1_noair_fl10i 85%            2019/2019
+  F05-LinearSlope                 100%  v1_noair_fl10i 100%              422/422
+  F06-AttractiveSector            100%  v1_noair_fl10i 100%              580/580
+  F07-StepEllipsoidal             100%  v1_noair_fl10i 100%              215/215
+  F08-Rosenbrock                  100%  v1_noair_fl10i 100%              440/440
+  F09-RosenbrockRot               100%  v1_noair_fl10i 100%              559/559
+  F10-EllipsoidalRot              100%  v1_noair_fl10i 100%              646/646
+  F11-Discus                      100%  v1_noair_fl10i 100%              633/633
+  F12-BentCigar                   100%  v1_noair_fl10i 100%              668/668
+  F13-SharpRidge                  100%  v1_noair_fl10i 100%              795/795
+  F14-DiffPowers                  100%  v1_noair_fl10i 100%              397/397
+  F15-RastriginRot                100%  v1_noair_fl10i 100%            1159/1159
+  F16-Weierstrass                 100%  v1_noair_fl10i 100%              752/752
+  F17-SchafferF7                   95%   v1_noair_fl10i 95%              931/931
+  F18-SchafferF7ill                80%   v1_noair_fl10i 95%            1229/1229  <-- ref behind
+  F19-GriewankRosenbrock          100%  v1_noair_fl10i 100%              859/859
+  F20-Schwefel                     90%   v1_noair_fl10i 90%            1217/1217
+  F21-Gallagher101                100%  v1_noair_fl10i 100%              270/270
+  F22-Gallagher21                 100%  v1_noair_fl10i 100%              270/270
+  F23-Katsuura                     75%  v1_noair_fl10i 100%            1466/1468  <-- ref behind
+  F24-LunacekRastrigin             15%   v1_noair_fl10i 15%            3475/3475
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F06-AttractiveSector   vs v1_noair_fl10i p=0.00937 A12=0.20 (large)
+  F06-AttractiveSector   vs v1_w4q3        p=0.00937 A12=0.20 (large)
+  F06-AttractiveSector   vs v1_w4q3E       p=0.00937 A12=0.20 (large)
+  F23-Katsuura           vs v1_noair_fl10i p=0.0251 A12=0.32 (medium)
+  F23-Katsuura           vs v1_w4q3        p=0.0251 A12=0.32 (medium)
+  F23-Katsuura           vs v1_w4q3E       p=0.0251 A12=0.32 (medium)
+
