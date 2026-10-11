@@ -894,7 +894,7 @@ SR@1e-10 は 2D 94.0 / 5D 56.9 / 10D 41.9% で、同じ PC の quick と一致�
 | `v1_w4q3H` | 95.2 | 67.5 | 51.9 | 7/0・11/1 | 10D F13 5→100、F17 0→45、F12 0→20、F18 0→15 |
 | **`v1_w4q3E`** | **95.2** | **67.9** | **53.1** | 7/0・11/1 | 5D F17 80→90、F18 45→75。10D **F13 5→100、F12 0→50、F17 0→45、F18 0→15**。**悪化なし** |
 - `v1_w4q3E` の `evals_succ_mean`: 5D 4020（MC-ESO 4094）、10D 10166（11831）。
-- 同じ PC の 33 手法（`runs/20261009_*_allmethods_*`）の中で 2D 1 位、5D 3 位（ELSHADE-SPACMA 74.6、LSHADE-SPACMA 72.5 の次）、10D 2 位（LSHADE-SPACMA 53.8 の次）。比較 5 手法（CMA-ES / IPOP / BIPOP / DE / L-SHADE）の中では全次元で 1 位。現 MC-ESO は 10D で比較 5 手法中 4 位。
+- 同じ PC の 33 手法（当時の `runs/20261009_*_allmethods_*`。2026-10-12 に `runs/20261012_*_allmethods2_*` へ差し替え）の中で 2D 1 位、5D 3 位（ELSHADE-SPACMA 74.6、LSHADE-SPACMA 72.5 の次）、10D 2 位（LSHADE-SPACMA 53.8 の次）。比較 5 手法（CMA-ES / IPOP / BIPOP / DE / L-SHADE）の中では全次元で 1 位。現 MC-ESO は 10D で比較 5 手法中 4 位。
 - **新規性の注意**: 終盤を CMA-ES に渡す構成は HCMA / ICMAES-ILS / LSHADE-SPACMA と同じ系統。主張できるのは「切り替えの時期を MC-ESO 自身の内部信号（学習共分散の悪条件化、品質、停滞）で決める」こと。切り替え後に使っているのは `cma` パッケージそのもの。
 
 ### 2026-10-12 既定値を変更（ユーザー承認）— `v1_w4q3E` を MC-ESO の既定にする

@@ -130,7 +130,8 @@ function renderResults(dim) {
 // Reading notes, computed from the same data so they cannot drift from the table.
 function notesFor(run, order, ref) {
   const o = run.overall;
-  const others = order.filter(m => m !== ref && m !== `${ref}-v0`);
+  // Earlier defaults of MC-ESO (MC-ESO-v0, -v1, …) are not "existing methods".
+  const others = order.filter(m => m !== ref && !m.startsWith(`${ref}-v`));
   const refSr = o[ref]['sr_1e-10'];
   const better = others.filter(m => o[m]['sr_1e-10'] > refSr + 1e-9);
   const tied = others.filter(m => Math.abs(o[m]['sr_1e-10'] - refSr) < 1e-9);
@@ -145,8 +146,9 @@ function notesFor(run, order, ref) {
   }
   s += '</p>';
 
-  const v0 = `${ref}-v0`;
-  if (o[v0]) {
+  // Compare with the most recent earlier default present in the run.
+  const v0 = [`${ref}-v1`, `${ref}-v0`].find(m => o[m]);
+  if (v0) {
     const diff = (refSr - o[v0]['sr_1e-10']) * 100;
     const up = [], down = [];
     run.funcs.forEach(f => {
