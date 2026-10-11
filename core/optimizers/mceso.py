@@ -631,6 +631,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # reassort_pairs best ones (all must be additive). One pair let 10D
         # F22 (Gallagher 21 peaks) through by chance (75→55).
         reassort_pairs: int = 1,
+        # Donors: "memory" = only the remembered optima (answer archive and
+        # strain reservoir); "all" also uses the other hosts. With the hosts a
+        # 10D pass costs 1000+ evaluations and every run pays it once
+        # (10D Gallagher −10 / −20pt).
+        reassort_donors: str = "all",
+        reassort_top_hosts: int = 10,       # donors="top": the best this many hosts
         ir_reignite_sigma_ratio: float = 0.05,
         ir_repel_radius_ratio: float = 0.1,
         ir_repel_max_tries: int = 20,
@@ -715,6 +721,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.reassort_budget_frac = reassort_budget_frac
         self.reassort_additivity = reassort_additivity
         self.reassort_pairs = reassort_pairs
+        self.reassort_donors = reassort_donors
+        self.reassort_top_hosts = reassort_top_hosts
         self.ir_reignite_sigma_ratio = ir_reignite_sigma_ratio
         self.ir_repel_radius_ratio = ir_repel_radius_ratio
         self.ir_repel_max_tries = ir_repel_max_tries
@@ -1478,7 +1486,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         bi = int(np.argmin(st.pop_f))
         best_x, best_f = st.pop_x[bi].copy(), float(st.pop_f[bi])
         donors = [x for x in st.sol_archive_x] + [x for x in st.ir_archive_x]
-        donors += [st.pop_x[i] for i in range(len(st.pop_f)) if i != bi]
+        if self.reassort_donors == "all":
+            donors += [st.pop_x[i] for i in range(len(st.pop_f)) if i != bi]
+        elif self.reassort_donors == "top":
+            order = [int(i) for i in np.argsort(st.pop_f) if int(i) != bi]
+            donors += [st.pop_x[i] for i in order[:self.reassort_top_hosts]]
         if not donors:
             return
         D = np.asarray(donors, dtype=float)
