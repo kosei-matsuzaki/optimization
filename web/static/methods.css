@@ -49,6 +49,9 @@
 .mt-p { font-size: 14.5px; line-height: 1.85; color: var(--text); max-width: 72ch; margin-bottom: 12px; }
 .mt-p em, .mt-lead em { font-style: normal; font-weight: 600; }
 .mt-small { font-size: 13px; color: var(--text-2); line-height: 1.75; }
+.mt-list { font-size: 14.5px; line-height: 1.85; max-width: 72ch; margin: 0 0 12px 1.2em; }
+.mt-list li { margin-bottom: 6px; }
+.mt-list b { font-weight: 600; }
 .mt-main code {
   font-family: var(--mono); font-size: 12.5px;
   background: var(--surface); border: 1px solid var(--border-light);

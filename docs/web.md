@@ -161,7 +161,7 @@ web/
 | GET | `/api/stats/<run_id>/<dim>/<func>` | per-run 詳細統計 CSV |
 | GET | `/api/curves/<run_id>/<dim>/<func>` | 収束の中央値・四分位（`curves/{Func}.json.gz`） |
 | GET | `/api/mceso-runs/<run_id>/<dim>` | MC-ESO の全 run の要約（`mceso_runs.csv`） |
-| GET | `/api/replay/<run_id>/<dim>/<func>/<method>/<seed>` | その run を再実行して全評価点（float32 base64）、f − f*、最適解までの距離、経路、集団（最大 240 コマ）、MC-ESO の内部状態、記録との一致を返す（`app_lib/replay.py`） |
+| GET | `/api/replay/<run_id>/<dim>/<func>/<method>/<seed>` | その run を再実行して全評価点（float32 base64）、f − f*、最適解までの距離、経路、集団（最大 240 コマ）、MC-ESO の内部状態、記録との一致を返す（`app_lib/replay.py`）。手法名 `MC-ESO` は、run の作成日が既定値の変更（2026-10-08 / 10-12）より前なら当時の既定（`MC-ESO-v0` / `MC-ESO-v1`）で再実行する |
 | GET | `/api/landscape/<dim>/<func>?a=&b=` | 最適解を通る x_a–x_b 平面の f の格子（log10、120×120） |
 | GET | `/api/media-index/<run_id>/<dim>` | 可視化ファイルの索引 |
 | GET | `/api/result-data/<run_id>` | 次元・関数・summary・wilcoxon |
