@@ -881,9 +881,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # from IPOP's blind restart. Verified non-harmful across BBOB dim2/dim3
         # and the CEC2022 dim10 hold-out (no significant regressions).
         ir_archive_frac: float = 0.5,
-        # Re-ignition share once the dimension gate is fully open (None = the
-        # same at every dimension). Tapered like the channel shares: 2D keeps
-        # ir_archive_frac, cc_dim_ref and above use this. 2026-10-12 sweep:
+        # Re-ignition share from dimension 3 up (None = the same at every
+        # dimension). A step, not a taper: tapered with the dimension gate it is
+        # still 0.31 at 5D, and that alone erases the 5D Gallagher gain
+        # (F21 stays 40, F22 70→60). 2026-10-12 sweep:
         # without re-ignition 5D F21 40→95 / F22 70→100, 10D F21 10→80 /
         # F22 35→65 (re-seeding around archived strains keeps returning the
         # search to the peaks it already knows), while 2D loses F23 −15.
@@ -1273,9 +1274,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     cand = rng.uniform(lo, hi, dim)
             return cand
         # Reservoir re-ignition.
-        ir_frac = self.ir_archive_frac
-        if self.ir_archive_frac_hd is not None:
-            ir_frac += self._cc_dim_gate() * (self.ir_archive_frac_hd - ir_frac)
+        ir_frac = (self.ir_archive_frac_hd
+                   if self.ir_archive_frac_hd is not None and self.dim >= 3
+                   else self.ir_archive_frac)
         if st.ir_archive_x and rng.random() < ir_frac:
             k = rng.integers(0, len(st.ir_archive_x))
             sigma = self.ir_reignite_sigma_ratio * st.span
