@@ -437,6 +437,9 @@ _OPTIMIZERS = {
     "v2_rsT2s":       (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True,
                                                        "reassort_additivity": 0.02, "reassort_donors": "top2",
                                                        "reassort_min_dim": 3}),
+    # Hand-over wave population (on top of v2_rsT2s): CMA default λ / 2·D.
+    "v2_hl0":         (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "reassort_min_dim": 3, "wave_handover_lambda": 0}),
+    "v2_hl2":         (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "reassort_min_dim": 3, "wave_handover_lambda": 2.0}),
     "v2_ir3_noFrz":   (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0}),
     "v2_irT_noFrz_noSS": (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0,
                                                        "hd_sigma_success": None}),

@@ -380,7 +380,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         wave_ill_handover: bool = True,  # default since 2026-10-12 (v1_w4q3E)
         # Hand over as soon as the learned C is ill-conditioned (False = wait for
         # σ to enter the drilling regime as well).
-        wave_handover_drill: bool = False,  # default since 2026-10-12 (v1_w4q3E)
+        wave_handover_drill: bool = False,
+        # Population of the containment hand-over wave: None = the same λ as the
+        # stall wave (hd_wave_lambda·D); 0 = CMA-ES's default 4 + ⌊3 ln D⌋.
+        # 10D F12: every failing run spent its ~18800 hand-over evaluations and
+        # stopped at 1e-8..1e-9 with λ = 40; a single valley wants a small λ.
+        wave_handover_lambda: "float | None" = None,  # default since 2026-10-12 (v1_w4q3E)
         # ── Restart on stagnation ──────────────────────────────────────
         restart_no_improve_threshold: int = 300,  # no_improve count that triggers restart
         # ``no_improve`` counts EVALUATIONS, but stagnation is a *generational*
@@ -670,6 +675,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.wave_use_C = wave_use_C
         self.wave_ill_handover = wave_ill_handover
         self.wave_handover_drill = wave_handover_drill
+        self.wave_handover_lambda = wave_handover_lambda
         self._n_pop0 = self.n_pop          # initial size; restored at each run start
         self.sigma = sigma
         self.air_ratio = air_ratio
@@ -1126,7 +1132,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 and self._update_cc_ill(st)):
             st.handover_done = True
             st.trace_events.append((len(st.history_f), "handover"))
-            self._recombination_wave(st, sigma0=st.sigma, budget_frac=1.0)
+            self._recombination_wave(st, sigma0=st.sigma, budget_frac=1.0,
+                                     lam_mult=self.wave_handover_lambda)
             self._pad_eval_channel(st, _CH_LS)
             if not st.budget_left:
                 return True
@@ -1578,14 +1585,20 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.pop_age[bi] = 0
 
     def _recombination_wave(self, st: _MCESOState, sigma0: "float | None" = None,
-                            budget_frac: "float | None" = None) -> None:
+                            budget_frac: "float | None" = None,
+                            lam_mult: "float | None" = None) -> None:
         """hd_wave_lambda: a (μ/μ_w, λ) weighted-recombination wave (the cma
         package's CMA-ES) from the best host; every evaluation goes through the
         history. Its best replaces the worst host."""
         import cma
         frac = self.wave_budget_frac if budget_frac is None else budget_frac
         cap = min(int(frac * st.max_evals), st.max_evals - len(st.history_f))
-        lam = max(4, int(round(self._wave_lambda * self.dim)))
+        if lam_mult is None:
+            lam = max(4, int(round(self._wave_lambda * self.dim)))
+        elif lam_mult <= 0:
+            lam = 4 + int(3 * math.log(self.dim))
+        else:
+            lam = max(4, int(round(lam_mult * self.dim)))
         if cap < 2 * lam:
             return
         lo, hi = float(np.min(st.lo)), float(np.max(st.hi))
