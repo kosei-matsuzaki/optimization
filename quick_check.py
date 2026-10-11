@@ -414,6 +414,10 @@ _OPTIMIZERS = {
     # the v2_irT* results in history were measured with the earlier taper).
     "v2_irT":         (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0}),
     "v2_irT_noFrz":   (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0}),
+    # Reassortment sweep from remembered optima on a stall (all dims), on top of v2_ir3_noFrz.
+    "v2_rs":          (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True}),
+    "v2_rs05":        (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True,
+                                                       "reassort_budget_frac": 0.05}),
     "v2_ir3_noFrz":   (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0}),
     "v2_irT_noFrz_noSS": (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0,
                                                        "hd_sigma_success": None}),

@@ -76,6 +76,9 @@ class _MCESOState:
     cc_ill: bool = False
     # hd_wave_lambda: a wave has run since the last meaningful improvement.
     wave_spent: bool = False
+    # reassort_sweep: a sweep has run since the last meaningful improvement.
+    sweep_spent: bool = False
+    sweep_dead: bool = False        # a sweep found nothing: the strain died out
     handover_done: bool = False
     # Parent positions of this generation's offspring (same order as the
     # concatenated children) and the σ used, so the accepted steps can be
@@ -604,6 +607,18 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # F22 35→65 (re-seeding around archived strains keeps returning the
         # search to the peaks it already knows), while 2D loses F23 −15.
         ir_archive_frac_hd: "float | None" = None,
+        # Reassortment sweep on a stall (off by default). When a spillover is
+        # about to fire on a landscape the learned C does not call ill-
+        # conditioned, and no sweep has run since the last meaningful
+        # improvement, first swap single coordinates of the best host with the
+        # coordinates of remembered optima (answer archive, strain reservoir,
+        # the other hosts); keep the best improving swap and repeat until none
+        # improves or reassort_budget_frac of the budget is spent. 2026-10-12
+        # probe: on 5D F03 / F04 every best single swap removes exactly one
+        # coordinate sitting in a neighbouring Rastrigin well (gap 2 → 1 → 0);
+        # on the rotated F15 it does nothing.
+        reassort_sweep: bool = False,
+        reassort_budget_frac: float = 0.1,
         ir_reignite_sigma_ratio: float = 0.05,
         ir_repel_radius_ratio: float = 0.1,
         ir_repel_max_tries: int = 20,
@@ -684,6 +699,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.cc_cov_floor = cc_cov_floor
         self.ir_archive_frac = ir_archive_frac
         self.ir_archive_frac_hd = ir_archive_frac_hd
+        self.reassort_sweep = reassort_sweep
+        self.reassort_budget_frac = reassort_budget_frac
         self.ir_reignite_sigma_ratio = ir_reignite_sigma_ratio
         self.ir_repel_radius_ratio = ir_repel_radius_ratio
         self.ir_repel_max_tries = ir_repel_max_tries
@@ -1093,6 +1110,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             self._recombination_wave(st)
             self._pad_eval_channel(st, _CH_LS)
             return not st.budget_left
+        if (self.reassort_sweep and not st.sweep_spent and not st.sweep_dead
+                and st.consecutive_failed_spillovers >= 1
+                and not self._basin_exhausted(st) and not self._update_cc_ill(st)):
+            st.sweep_spent = True
+            st.trace_events.append((len(st.history_f), "reassort"))
+            self._reassort_sweep(st)
+            self._pad_eval_channel(st, _CH_LS)
+            return not st.budget_left
 
         rng, lo, hi = st.rng, st.lo, st.hi
 
@@ -1101,6 +1126,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         #   else:         fully uniform, best preserved, smaller σ
         basin_switch = self._spillover_basin_switch(st)
         st.trace_events.append((len(st.history_f), "basin_switch" if basin_switch else "spillover"))
+        st.sweep_spent = False          # reassort_sweep: next stall sweeps again
         sigma_restart = (st.sigma_init if basin_switch
                          else st.sigma_init * self.restart_sigma_ratio)
         div_ratio = 1.0
@@ -1429,6 +1455,49 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         return air_tapered, h2h_r
 
     # ── one generation (μ+λ greedy step) ────────────────────────────────────
+    def _reassort_sweep(self, st: _MCESOState) -> None:
+        """reassort_sweep: greedy single-coordinate swaps of the best host with
+        remembered optima; every evaluation goes through the history."""
+        cap = min(int(self.reassort_budget_frac * st.max_evals),
+                  st.max_evals - len(st.history_f))
+        start = len(st.history_f)
+        bi = int(np.argmin(st.pop_f))
+        best_x, best_f = st.pop_x[bi].copy(), float(st.pop_f[bi])
+        donors = [x for x in st.sol_archive_x] + [x for x in st.ir_archive_x]
+        donors += [st.pop_x[i] for i in range(len(st.pop_f)) if i != bi]
+        if not donors:
+            return
+        D = np.asarray(donors, dtype=float)
+        tol = 1e-9 * st.span
+        improved = True
+        while improved and st.budget_left and len(st.history_f) - start < cap:
+            improved = False
+            vals = {}
+            for i in range(self.dim):
+                for v in np.unique(D[:, i]):
+                    if abs(v - best_x[i]) > tol:
+                        vals.setdefault(i, []).append(float(v))
+            trial_best_x, trial_best_f = None, best_f
+            for i, vs in vals.items():
+                for v in vs:
+                    if not st.budget_left or len(st.history_f) - start >= cap:
+                        break
+                    x = best_x.copy()
+                    x[i] = v
+                    f = float(self.func(x))
+                    self._record_eval(st, x, f, float("nan"))
+                    if f < trial_best_f:
+                        trial_best_x, trial_best_f = x, f
+            if trial_best_x is not None:
+                best_x, best_f = trial_best_x, trial_best_f
+                improved = True
+        if not best_f < float(st.pop_f[bi]):
+            st.sweep_dead = True            # reassortment does not spread here
+        if best_f < float(st.pop_f[bi]):
+            st.pop_x[bi] = best_x
+            st.pop_f[bi] = best_f
+            st.pop_age[bi] = 0
+
     def _recombination_wave(self, st: _MCESOState, sigma0: "float | None" = None,
                             budget_frac: "float | None" = None) -> None:
         """hd_wave_lambda: a (μ/μ_w, λ) weighted-recombination wave (the cma
@@ -1664,6 +1733,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             if self._meaningful_improvement(f, st.log_best_ref, st.evals_since_reset):
                 st.no_improve = 0
                 st.wave_spent = False
+                st.sweep_spent = False
                 st.log_best_ref = math.log10(max(f, 1e-300))
                 st.evals_since_reset = 0
             else:
