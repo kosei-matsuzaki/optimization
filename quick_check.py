@@ -444,6 +444,11 @@ _OPTIMIZERS = {
     "v2_elite1":      (MultiChannelEpidemicOptimizer, {"n_elite_max": 1}),
     "v2_noDrillDown": (MultiChannelEpidemicOptimizer, {"sigma_drill_down": 0.95}),
     "v2_noAir2D":     (MultiChannelEpidemicOptimizer, {"air_ratio": 0.0}),
+    # Re-ignition tapered to 0 with the dimension gate, and the simplified forms.
+    "v2_irT":         (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0}),
+    "v2_irT_noFrz":   (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0}),
+    "v2_irT_noFrz_noSS": (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0,
+                                                       "hd_sigma_success": None}),
     "MC-ESO-v0":      (MultiChannelEpidemicOptimizer,
                        {"pop_schedule": "fixed", "cc_spill_freeze_gens": 0, "cc_mu_frac": 0.0}),
     # Ablation of the 2026-10-08 default: remove one of its three changes.

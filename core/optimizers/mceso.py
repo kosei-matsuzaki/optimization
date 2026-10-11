@@ -881,6 +881,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # from IPOP's blind restart. Verified non-harmful across BBOB dim2/dim3
         # and the CEC2022 dim10 hold-out (no significant regressions).
         ir_archive_frac: float = 0.5,
+        # Re-ignition share once the dimension gate is fully open (None = the
+        # same at every dimension). Tapered like the channel shares: 2D keeps
+        # ir_archive_frac, cc_dim_ref and above use this. 2026-10-12 sweep:
+        # without re-ignition 5D F21 40→95 / F22 70→100, 10D F21 10→80 /
+        # F22 35→65 (re-seeding around archived strains keeps returning the
+        # search to the peaks it already knows), while 2D loses F23 −15.
+        ir_archive_frac_hd: "float | None" = None,
         ir_reignite_sigma_ratio: float = 0.05,
         ir_repel_radius_ratio: float = 0.1,
         ir_repel_max_tries: int = 20,
@@ -1006,6 +1013,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.cc_h2h_ratio = cc_h2h_ratio
         self.cc_cov_floor = cc_cov_floor
         self.ir_archive_frac = ir_archive_frac
+        self.ir_archive_frac_hd = ir_archive_frac_hd
         self.ir_reignite_sigma_ratio = ir_reignite_sigma_ratio
         self.ir_repel_radius_ratio = ir_repel_radius_ratio
         self.ir_repel_max_tries = ir_repel_max_tries
@@ -1265,7 +1273,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     cand = rng.uniform(lo, hi, dim)
             return cand
         # Reservoir re-ignition.
-        if st.ir_archive_x and rng.random() < self.ir_archive_frac:
+        ir_frac = self.ir_archive_frac
+        if self.ir_archive_frac_hd is not None:
+            ir_frac += self._cc_dim_gate() * (self.ir_archive_frac_hd - ir_frac)
+        if st.ir_archive_x and rng.random() < ir_frac:
             k = rng.integers(0, len(st.ir_archive_x))
             sigma = self.ir_reignite_sigma_ratio * st.span
             return self._reflect(
