@@ -5,7 +5,7 @@
 
 共通条件（特記しない限り）: BBOB-24（F01-F24）、n=20、予算は目安 2500×D、`./run.sh quick --all`、比較は MC-ESO を reference とする Wilcoxon（両側 α=0.05、A12 併記）。
 Custom（C01-C11）と CI（`./run.sh trigger`）はどの回も使っていない。表の `---` は成功 0。
-**0〜6 節の MC-ESO の値は 2026-10-08 より前の既定（現在の `MC-ESO-v0`）のもの。** 新既定の基準値は測り直し中（[research_loop.md](research_loop.md) の測定ジョブ）。
+**現在の既定（2026-10-12〜、[mceso.md](mceso.md) の「高次元の終盤」）の正準値**（`analysis/single/j29/`）: SR@1e-10 **2D 95.00 / 5D 68.33 / 10D 52.71%**。旧既定と両方で成功のある関数の `evals_succ_mean` は 5D 4202 → 4130、10D 11689 → 9316。旧既定 `MC-ESO-v1`（2026-10-08〜11）は 93.33 / 59.17 / 42.08%（`j24`・`j25`・`j28`・`j29` で一致して再現）。**0〜6 節の MC-ESO の値はさらに前の既定（`MC-ESO-v0`）のもの。** 現在の既定と比較手法を同じ run に並べた値は測定ジョブ（[research_loop.md](research_loop.md)）。
 
 ---
 
