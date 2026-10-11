@@ -637,6 +637,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # (10D Gallagher −10 / −20pt).
         reassort_donors: str = "all",
         reassort_top_hosts: int = 10,       # donors="top": the best this many hosts
+        # Smallest dimension that sweeps (2D lost F18 −15 with sweeps on).
+        reassort_min_dim: int = 2,
+        # When the additivity test fails, discard the sweep: the population and
+        # the stagnation counters are restored, so the spillover it stood in
+        # for still fires (an accepted Gallagher improvement delayed it: 10D
+        # F22 75→45).
+        reassort_discard: bool = False,
         ir_reignite_sigma_ratio: float = 0.05,
         ir_repel_radius_ratio: float = 0.1,
         ir_repel_max_tries: int = 20,
@@ -723,6 +730,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.reassort_pairs = reassort_pairs
         self.reassort_donors = reassort_donors
         self.reassort_top_hosts = reassort_top_hosts
+        self.reassort_min_dim = reassort_min_dim
+        self.reassort_discard = reassort_discard
         self.ir_reignite_sigma_ratio = ir_reignite_sigma_ratio
         self.ir_repel_radius_ratio = ir_repel_radius_ratio
         self.ir_repel_max_tries = ir_repel_max_tries
@@ -1132,7 +1141,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             self._recombination_wave(st)
             self._pad_eval_channel(st, _CH_LS)
             return not st.budget_left
-        if (self.reassort_sweep and not st.sweep_spent and not st.sweep_dead
+        if (self.reassort_sweep and self.dim >= self.reassort_min_dim
+                and not st.sweep_spent and not st.sweep_dead
                 and st.consecutive_failed_spillovers >= 1
                 and not self._basin_exhausted(st) and not self._update_cc_ill(st)):
             st.sweep_spent = True
@@ -1497,6 +1507,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         tol = 1e-9 * st.span
         improved = True
         first_pass = True
+        saved = (st.no_improve, st.log_best_ref, st.evals_since_reset)
         while improved and st.budget_left and len(st.history_f) - start < cap:
             improved = False
             per_coord: dict = {}            # coordinate -> (Δf, value) of its best swap
@@ -1541,6 +1552,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                             break
                 if not additive:
                     st.sweep_dead = True
+                    if self.reassort_discard:
+                        st.no_improve, st.log_best_ref, st.evals_since_reset = saved
+                        return
                     if trial_best_x is not None and trial_best_f < float(st.pop_f[bi]):
                         st.pop_x[bi], st.pop_f[bi], st.pop_age[bi] = trial_best_x, trial_best_f, 0
                     return
