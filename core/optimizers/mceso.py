@@ -385,7 +385,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # stall wave (hd_wave_lambda·D); 0 = CMA-ES's default 4 + ⌊3 ln D⌋.
         # 10D F12: every failing run spent its ~18800 hand-over evaluations and
         # stopped at 1e-8..1e-9 with λ = 40; a single valley wants a small λ.
-        wave_handover_lambda: "float | None" = None,  # default since 2026-10-12 (v1_w4q3E)
+        wave_handover_lambda: "float | None" = None,
+        # IPOP-style restarts inside the hand-over: when the wave stops itself
+        # with budget left, restart it from its best point with λ doubled.
+        # A small λ suits a single valley (10D F12 50→100 at λ = 2·D) and a
+        # large one the Schaffer ripples (5D F18 75→55 at λ = 2·D).
+        wave_handover_restart: bool = False,  # default since 2026-10-12 (v1_w4q3E)
         # ── Restart on stagnation ──────────────────────────────────────
         restart_no_improve_threshold: int = 300,  # no_improve count that triggers restart
         # ``no_improve`` counts EVALUATIONS, but stagnation is a *generational*
@@ -676,6 +681,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.wave_ill_handover = wave_ill_handover
         self.wave_handover_drill = wave_handover_drill
         self.wave_handover_lambda = wave_handover_lambda
+        self.wave_handover_restart = wave_handover_restart
         self._n_pop0 = self.n_pop          # initial size; restored at each run start
         self.sigma = sigma
         self.air_ratio = air_ratio
@@ -1133,7 +1139,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.handover_done = True
             st.trace_events.append((len(st.history_f), "handover"))
             self._recombination_wave(st, sigma0=st.sigma, budget_frac=1.0,
-                                     lam_mult=self.wave_handover_lambda)
+                                     lam_mult=self.wave_handover_lambda,
+                                     restart=self.wave_handover_restart)
             self._pad_eval_channel(st, _CH_LS)
             if not st.budget_left:
                 return True
@@ -1586,7 +1593,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
     def _recombination_wave(self, st: _MCESOState, sigma0: "float | None" = None,
                             budget_frac: "float | None" = None,
-                            lam_mult: "float | None" = None) -> None:
+                            lam_mult: "float | None" = None,
+                            restart: bool = False) -> None:
         """hd_wave_lambda: a (μ/μ_w, λ) weighted-recombination wave (the cma
         package's CMA-ES) from the best host; every evaluation goes through the
         history. Its best replaces the worst host."""
@@ -1609,33 +1617,40 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             ev, V = np.linalg.eigh(st.cc_C)
             ev = np.maximum(ev / max(float(ev.mean()), 1e-30), self.cc_cov_floor)
             L = V * np.sqrt(ev)[None, :]
-        opts = {"popsize": lam, "verbose": -9, "seed": int(st.rng.integers(1, 2 ** 31 - 1)),
-                "tolfun": 1e-15, "tolx": 1e-16, "tolfunhist": 0, "maxfevals": cap}
-        if L is None:
-            opts["bounds"] = [lo, hi]
-            es = cma.CMAEvolutionStrategy(x0, s0, opts)
-        else:
-            es = cma.CMAEvolutionStrategy(np.zeros(self.dim), s0, opts)
         start = len(st.history_f)
         best_x, best_f = None, float("inf")
-        while not es.stop() and st.budget_left and len(st.history_f) - start + lam <= cap:
-            X = es.ask()
-            F = []
-            for x in X:
-                x = np.asarray(x, dtype=float)
-                if L is not None:
-                    x = x0 + L @ x
-                x = np.clip(x, st.lo, st.hi)
-                f = float(self.func(x))
-                self._record_eval(st, x, f, float(es.sigma))
-                F.append(f)
-                if f < best_f:
-                    best_x, best_f = x.copy(), f
-                if not st.budget_left:
+        while True:
+            opts = {"popsize": lam, "verbose": -9, "seed": int(st.rng.integers(1, 2 ** 31 - 1)),
+                    "tolfun": 1e-15, "tolx": 1e-16, "tolfunhist": 0,
+                    "maxfevals": cap - (len(st.history_f) - start)}
+            if L is None:
+                opts["bounds"] = [lo, hi]
+                es = cma.CMAEvolutionStrategy(x0, s0, opts)
+            else:
+                es = cma.CMAEvolutionStrategy(np.zeros(self.dim), s0, opts)
+            while not es.stop() and st.budget_left and len(st.history_f) - start + lam <= cap:
+                X = es.ask()
+                F = []
+                for x in X:
+                    x = np.asarray(x, dtype=float)
+                    if L is not None:
+                        x = x0 + L @ x
+                    x = np.clip(x, st.lo, st.hi)
+                    f = float(self.func(x))
+                    self._record_eval(st, x, f, float(es.sigma))
+                    F.append(f)
+                    if f < best_f:
+                        best_x, best_f = x.copy(), f
+                    if not st.budget_left:
+                        break
+                if len(F) < len(X):
                     break
-            if len(F) < len(X):
+                es.tell(X, F)
+            lam *= 2
+            if (not restart or best_x is None or not st.budget_left
+                    or len(st.history_f) - start + 2 * lam > cap):
                 break
-            es.tell(X, F)
+            x0 = best_x.copy()
         if best_x is not None:
             w = int(np.argmax(st.pop_f))
             if best_f < st.pop_f[w]:
