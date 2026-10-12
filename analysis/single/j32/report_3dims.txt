@@ -1,0 +1,125 @@
+### dim=2  (24 functions)
+
+[OVERALL] mean over 24 functions
+method              1e-2    1e-4    1e-7    1e-10  evals_own(nf)   evals_pair_vs_ref(nf)
+MC-ESO            95.83%  95.62%  95.00%   95.00%     879.7(24)      879.7 vs 879.7 (nf=24)
+v2_ir3_noFrz      95.83%  95.62%  95.00%   95.00%     879.7(24)      879.7 vs 879.7 (nf=24)
+v2_noIR           95.21%  95.00%  94.79%   94.17%     866.9(24)      866.9 vs 879.7 (nf=24)
+
+[PER-FUNCTION SR@1e-10 changes vs MC-ESO] (only functions that moved)
+  v2_ir3_noFrz: 0 functions moved
+  v2_noIR: 5 functions moved
+    F23-Katsuura               100 ->    85  (-15pt)
+    F03-RastriginSep           100 ->    95  (-5pt)
+    F04-BucheRastrigin          85 ->    80  (-5pt)
+    F19-GriewankRosenbrock     100 ->    95  (-5pt)
+    F20-Schwefel                90 ->   100  (+10pt)
+
+[all-arms SR@1e-10 == 0] 
+[all-arms SR@1e-10 == 100] F01-Sphere, F02-EllipsoidalSep, F05-LinearSlope, F06-AttractiveSector, F07-StepEllipsoidal, F08-Rosenbrock, F09-RosenbrockRot, F10-EllipsoidalRot, F11-Discus, F12-BentCigar, F13-SharpRidge, F14-DiffPowers, F15-RastriginRot, F16-Weierstrass, F21-Gallagher101, F22-Gallagher21
+
+[FOCUS] SR@1e-10 / evals_succ_mean  (MC-ESO / v2_ir3_noFrz / v2_noIR)
+  F03-RastriginSep         SR 100% / 100% / 95%        evals 1182 / 1182 / 1417
+  F15-RastriginRot         SR 100% / 100% / 100%       evals 1159 / 1159 / 1064
+  F21-Gallagher101         SR 100% / 100% / 100%       evals 270 / 270 / 274
+  F22-Gallagher21          SR 100% / 100% / 100%       evals 270 / 270 / 270
+  F23-Katsuura             SR 100% / 100% / 85%        evals 1468 / 1468 / 1587
+
+[WILCOXON] ref=MC-ESO, alpha=0.05 two-sided, best_f, A12 direction, p=nan non-significant
+  v2_ir3_noFrz: MC-ESO wins 0 / losses 0 (p=nan treated non-sig: 24)
+  v2_noIR: MC-ESO wins 1 / losses 1 (p=nan treated non-sig: 14)
+    WIN F23-Katsuura A12=0.59 small
+    LOSS F24-LunacekRastrigin A12=0.31 medium
+### dim=5  (24 functions)
+
+[OVERALL] mean over 24 functions
+method              1e-2    1e-4    1e-7    1e-10  evals_own(nf)   evals_pair_vs_ref(nf)
+MC-ESO            71.25%  70.83%  69.38%   68.12%    4143.7(22)     4143.7 vs 4143.7 (nf=22)
+v2_ir3_noFrz      73.33%  72.92%  71.46%   70.42%    3893.9(21)     3893.9 vs 3956.3 (nf=21)
+v2_noIR           73.54%  72.92%  71.46%   70.00%    3868.3(20)     3868.3 vs 3933.2 (nf=20)
+
+[PER-FUNCTION SR@1e-10 changes vs MC-ESO] (only functions that moved)
+  v2_ir3_noFrz: 5 functions moved
+    F15-RastriginRot            35 ->    15  (-20pt)
+    F03-RastriginSep            25 ->    15  (-10pt)
+    F19-GriewankRosenbrock       5 ->     0  (-5pt)
+    F22-Gallagher21             60 ->   100  (+40pt)
+    F21-Gallagher101            45 ->    95  (+50pt)
+  v2_noIR: 7 functions moved
+    F15-RastriginRot            35 ->    15  (-20pt)
+    F23-Katsuura                45 ->    35  (-10pt)
+    F16-Weierstrass             85 ->    80  (-5pt)
+    F19-GriewankRosenbrock       5 ->     0  (-5pt)
+    F20-Schwefel                 5 ->     0  (-5pt)
+    F22-Gallagher21             60 ->   100  (+40pt)
+    F21-Gallagher101            45 ->    95  (+50pt)
+
+[all-arms SR@1e-10 == 0] F04-BucheRastrigin, F24-LunacekRastrigin
+[all-arms SR@1e-10 == 100] F01-Sphere, F02-EllipsoidalSep, F05-LinearSlope, F06-AttractiveSector, F07-StepEllipsoidal, F10-EllipsoidalRot, F11-Discus, F12-BentCigar, F13-SharpRidge, F14-DiffPowers
+
+[FOCUS] SR@1e-10 / evals_succ_mean  (MC-ESO / v2_ir3_noFrz / v2_noIR)
+  F03-RastriginSep         SR 25% / 15% / 25%          evals 5542 / 5616 / 6718
+  F15-RastriginRot         SR 35% / 15% / 15%          evals 7312 / 4991 / 4598
+  F21-Gallagher101         SR 45% / 95% / 95%          evals 4239 / 4279 / 4416
+  F22-Gallagher21          SR 60% / 100% / 100%        evals 2724 / 2812 / 3024
+  F23-Katsuura             SR 45% / 45% / 35%          evals 6082 / 5280 / 6301
+
+[WILCOXON] ref=MC-ESO, alpha=0.05 two-sided, best_f, A12 direction, p=nan non-significant
+  v2_ir3_noFrz: MC-ESO wins 2 / losses 2 (p=nan treated non-sig: 11)
+    LOSS F21-Gallagher101 A12=0.22 large
+    LOSS F22-Gallagher21 A12=0.28 large
+    WIN F03-RastriginSep A12=0.79 large
+    WIN F04-BucheRastrigin A12=0.75 large
+  v2_noIR: MC-ESO wins 2 / losses 2 (p=nan treated non-sig: 13)
+    LOSS F21-Gallagher101 A12=0.22 large
+    LOSS F22-Gallagher21 A12=0.28 large
+    WIN F19-GriewankRosenbrock A12=0.76 large
+    WIN F04-BucheRastrigin A12=0.86 large
+### dim=10  (24 functions)
+
+[OVERALL] mean over 24 functions
+method              1e-2    1e-4    1e-7    1e-10  evals_own(nf)   evals_pair_vs_ref(nf)
+MC-ESO            60.00%  56.67%  54.38%   52.29%   10072.9(18)    10072.9 vs 10072.9 (nf=18)
+v2_ir3_noFrz      64.17%  61.04%  58.54%   56.46%   10636.9(17)    10636.9 vs 9486.5 (nf=17)
+v2_noIR           63.75%  60.83%  58.33%   56.46%   11222.2(18)    11222.2 vs 10072.9 (nf=18)
+
+[PER-FUNCTION SR@1e-10 changes vs MC-ESO] (only functions that moved)
+  v2_ir3_noFrz: 4 functions moved
+    F07-StepEllipsoidal        100 ->    95  (-5pt)
+    F16-Weierstrass              5 ->     0  (-5pt)
+    F22-Gallagher21             35 ->    70  (+35pt)
+    F21-Gallagher101            10 ->    85  (+75pt)
+  v2_noIR: 5 functions moved
+    F16-Weierstrass              5 ->    10  (+5pt)
+    F17-SchafferF7              30 ->    35  (+5pt)
+    F18-SchafferF7ill           25 ->    30  (+5pt)
+    F22-Gallagher21             35 ->    60  (+25pt)
+    F21-Gallagher101            10 ->    70  (+60pt)
+
+[all-arms SR@1e-10 == 0] F03-RastriginSep, F04-BucheRastrigin, F15-RastriginRot, F19-GriewankRosenbrock, F20-Schwefel, F23-Katsuura, F24-LunacekRastrigin
+[all-arms SR@1e-10 == 100] F01-Sphere, F02-EllipsoidalSep, F05-LinearSlope, F06-AttractiveSector, F09-RosenbrockRot, F10-EllipsoidalRot, F11-Discus, F13-SharpRidge, F14-DiffPowers
+
+[FOCUS] SR@1e-10 / evals_succ_mean  (MC-ESO / v2_ir3_noFrz / v2_noIR)
+  F03-RastriginSep         SR 0% / 0% / 0%             evals - / - / -
+  F15-RastriginRot         SR 0% / 0% / 0%             evals - / - / -
+  F21-Gallagher101         SR 10% / 85% / 70%          evals 3340 / 12639 / 13101
+  F22-Gallagher21          SR 35% / 70% / 60%          evals 3514 / 11892 / 9624
+  F23-Katsuura             SR 0% / 0% / 0%             evals 12740 / 14213 / 18077
+
+[WILCOXON] ref=MC-ESO, alpha=0.05 two-sided, best_f, A12 direction, p=nan non-significant
+  v2_ir3_noFrz: MC-ESO wins 6 / losses 2 (p=nan treated non-sig: 10)
+    WIN F17-SchafferF7 A12=0.54 negligible
+    LOSS F21-Gallagher101 A12=0.06 large
+    LOSS F22-Gallagher21 A12=0.30 medium
+    WIN F03-RastriginSep A12=0.73 large
+    WIN F15-RastriginRot A12=0.79 large
+    WIN F19-GriewankRosenbrock A12=0.72 large
+    WIN F04-BucheRastrigin A12=0.94 large
+    WIN F24-LunacekRastrigin A12=0.66 medium
+  v2_noIR: MC-ESO wins 4 / losses 2 (p=nan treated non-sig: 10)
+    LOSS F21-Gallagher101 A12=0.10 large
+    LOSS F22-Gallagher21 A12=0.28 large
+    WIN F03-RastriginSep A12=0.73 large
+    WIN F15-RastriginRot A12=0.81 large
+    WIN F04-BucheRastrigin A12=0.94 large
+    WIN F24-LunacekRastrigin A12=0.72 large

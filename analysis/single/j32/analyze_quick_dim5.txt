@@ -1,0 +1,50 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=5   ref=MC-ESO
+run: m5
+meta: n_runs=20 max_evals=12500 set=all-d5 commit=d07e9bb
+functions: 24   methods: MC-ESO, v2_noIR, v2_ir3_noFrz
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            68.1%   69.4%   70.8%   71.2%        4144            
+  v2_noIR           70.0%   71.5%   72.9%   73.5%        3868         2/2
+  v2_ir3_noFrz      70.4%   71.5%   72.9%   73.3%        3894         2/2
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%         v2_noIR 100%            1743/1743
+  F02-EllipsoidalSep              100%         v2_noIR 100%            3590/3590
+  F03-RastriginSep                 25%          v2_noIR 25%            5542/6718
+  F04-BucheRastrigin                0%           v2_noIR 0%                    -
+  F05-LinearSlope                 100%         v2_noIR 100%            2392/2392
+  F06-AttractiveSector            100%         v2_noIR 100%            3537/3537
+  F07-StepEllipsoidal             100%         v2_noIR 100%            1671/1770
+  F08-Rosenbrock                   90%          v2_noIR 90%            3873/3873
+  F09-RosenbrockRot                95%          v2_noIR 95%            3717/3727
+  F10-EllipsoidalRot              100%         v2_noIR 100%            3495/3495
+  F11-Discus                      100%         v2_noIR 100%            3435/3435
+  F12-BentCigar                   100%         v2_noIR 100%            5991/5991
+  F13-SharpRidge                  100%         v2_noIR 100%            3745/3745
+  F14-DiffPowers                  100%         v2_noIR 100%            2095/2095
+  F15-RastriginRot                 35%          v2_noIR 15%            7312/4598
+  F16-Weierstrass                  85%     v2_ir3_noFrz 85%            3837/4023
+  F17-SchafferF7                   85%          v2_noIR 85%            3971/3971
+  F18-SchafferF7ill                60%          v2_noIR 60%            5674/5674
+  F19-GriewankRosenbrock            5%           v2_noIR 0%                    -
+  F20-Schwefel                      5%      v2_ir3_noFrz 5%            4417/5725
+  F21-Gallagher101                 45%          v2_noIR 95%            4239/4416  <-- ref behind
+  F22-Gallagher21                  60%         v2_noIR 100%            2724/3024  <-- ref behind
+  F23-Katsuura                     45%     v2_ir3_noFrz 45%            6082/5280
+  F24-LunacekRastrigin              0%           v2_noIR 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F21-Gallagher101       vs v2_ir3_noFrz   p=0.00474 A12=0.22 (large)
+  F21-Gallagher101       vs v2_noIR        p=0.00604 A12=0.22 (large)
+  F22-Gallagher21        vs v2_ir3_noFrz   p=0.00769 A12=0.28 (large)
+  F22-Gallagher21        vs v2_noIR        p=0.00769 A12=0.28 (large)
+
