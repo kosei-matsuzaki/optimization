@@ -452,6 +452,8 @@ _OPTIMIZERS = {
     # Stall wave also at 2D (on top of v2_wq2).
     "v2_wq2_2d":      (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 2, "reassort_scan": 200, "wave_quality": 1e-2, "wave_min_dim": 2}),
     "v2_wq1_2d":      (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 2, "reassort_scan": 200, "wave_quality": 1e-1, "wave_min_dim": 2}),
+    # On top of v2_scan2d: a stall wave still beating the best when its share runs out continues.
+    "v2_follow":      (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 2, "reassort_scan": 200, "wave_follow": True}),
     "v2_ir3_noFrz":   (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0}),
     "v2_irT_noFrz_noSS": (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0,
                                                        "hd_sigma_success": None}),

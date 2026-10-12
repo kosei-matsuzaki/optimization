@@ -1,5 +1,5 @@
 {
- "n_params": 82,
+ "n_params": 85,
  "groups": [
   {
    "label": "集団と選択",
@@ -649,6 +649,19 @@
      ],
      "meaning": "<b>実験中（候補 <code>v2_hlC</code> で −2）</b>。封じ込めの波の集団サイズ: None = 停滞時の波と同じ <code>hd_wave_lambda × D</code>、0 = CMA-ES 既定 4 + ⌊3 ln D⌋、負の −k = その k 倍、正 = その × D。後者は止まったら λ を倍にして再起動（不採用）",
      "status": "experimental"
+    },
+    {
+     "names": [
+      "wave_min_dim",
+      "wave_follow"
+     ],
+     "doc_default": "3 / False",
+     "code_default": [
+      "3",
+      "False"
+     ],
+     "meaning": "組換え波（停滞時・封じ込め）を使う最小次元（2 で 2D でも停滞時の波）／<b>実験中（候補 <code>v2_follow</code>）</b>: 停滞時の波が予算の割り当てを使い切った時点で流行の最良をまだ上回っていれば、残り予算でそのまま続ける（run に 1 回、封じ込めは別に残る）",
+     "status": ""
     }
    ]
   },
@@ -706,6 +719,17 @@
      ],
      "meaning": "掃引する最小次元（候補は 3）／加法性が無いと判定したとき掃引の結果を捨てる（不採用）",
      "status": ""
+    },
+    {
+     "names": [
+      "reassort_scan"
+     ],
+     "doc_default": "None",
+     "code_default": [
+      "None"
+     ],
+     "meaning": "<b>実験中（候補 <code>v2_scan2d</code> で 200）</b>。加法性の検査が変数分離と判定したとき、座標ごとの 1 次元走査（この数の格子点 ＋ 最良の格子のまわりの 3 分探索、最大 2 周、掃引とは別予算）で各座標の大域最適を求める",
+     "status": "experimental"
     }
    ]
   },

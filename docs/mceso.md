@@ -298,6 +298,7 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `reassort_additivity` / `reassort_pairs` | None / 1 | 掃引の加法性の検査: 最良の座標と次点の座標の交換を同時に試し、効果の差が前者 ×（単独の効果の和）を超えたら以後の掃引を止める。候補は 0.02 / 1。後者は検査する組の数 |
 | `reassort_donors` / `reassort_top_hosts` | `"all"` / 10 | 掃引の提供元。`all` = 記憶 ＋ 全宿主、`memory` = 記憶だけ、`top` = 記憶 ＋ 上位の宿主、`top2` = 記憶の上位 ＋ 上位の宿主（候補）。後者がその「上位」の数 |
 | `reassort_min_dim` / `reassort_discard` | 2 / False | 掃引する最小次元（候補は 3）／加法性が無いと判定したとき掃引の結果を捨てる（不採用）|
+| `reassort_scan` | None | **実験中（候補 `v2_scan2d` で 200）**。加法性の検査が変数分離と判定したとき、座標ごとの 1 次元走査（この数の格子点 ＋ 最良の格子のまわりの 3 分探索、最大 2 周、掃引とは別予算）で各座標の大域最適を求める |
 | `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象、情報化再播種のアーカイブ容量も兼ねる） |
 | `niche_radius_ratio` | 0.1 | 系統間の最小距離（span に対する比率、スケール不変。BBOB span=10 で実効 1.0、絶対値版と数学的に同一） |
 | `log_slope_threshold` | 1e-4 | 「意味ある改善」の log10(f) 減少スロープ閾値 |
@@ -317,6 +318,7 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `hd_wave_lambda` / `wave_sigma_ratio` / `wave_budget_frac` / `wave_quality` | **4** / 0.01 / 0.25 / **1e-3**（2026-10-12）| 停滞時の組換え波（3 次元以上）。λ = この値 × D、σ0 = 2 番目 × span、予算の上限、best ≤ 4 番目 × \|f_init\| のときだけ打つ。None で波なし |
 | `wave_use_C` / `wave_ill_handover` / `wave_handover_drill` | **True** / **True** / **False**（2026-10-12）| 学習共分散が悪条件なら波をそれで白色化する／悪条件になった時点で残り予算を波に渡す（封じ込め）／True なら σ が drilling に入るまで待つ |
 | `wave_handover_lambda` / `wave_handover_restart` | None / False | **実験中（候補 `v2_hlC` で −2）**。封じ込めの波の集団サイズ: None = 停滞時の波と同じ `hd_wave_lambda × D`、0 = CMA-ES 既定 4 + ⌊3 ln D⌋、負の −k = その k 倍、正 = その × D。後者は止まったら λ を倍にして再起動（不採用）|
+| `wave_min_dim` / `wave_follow` | 3 / False | 組換え波（停滞時・封じ込め）を使う最小次元（2 で 2D でも停滞時の波）／**実験中（候補 `v2_follow`）**: 停滞時の波が予算の割り当てを使い切った時点で流行の最良をまだ上回っていれば、残り予算でそのまま続ける（run に 1 回、封じ込めは別に残る）|
 | `router_learned_cond` | 3.0 | 学習共分散の「悪条件」の閾値（log10 条件数）。これに達するとラッチが立ち（run 中は戻らない）、σ 下限（`sigma_floor_ill_ratio`）と封じ込め（`wave_ill_handover`）がそれを読む |
 
 ---

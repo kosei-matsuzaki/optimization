@@ -128,6 +128,7 @@ class _MCESOState:
     trace_gen: dict = field(default_factory=dict)
     trace_events: list = field(default_factory=list)
     gen_counts: tuple = (0, 0, 0, 0, 0)
+    follow_done: bool = False     # wave_follow: one extension per run
 
     @property
     def budget_left(self) -> bool:
@@ -671,6 +672,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # 2026-10-12 default; 2 also runs the stall wave at 2D, where the
         # 2026-10-11 test with the 1e-3 quality gate never fired on F24).
         wave_min_dim: int = 3,
+        # Let a stall wave that is still beating the outbreak's best when its
+        # share runs out continue on the rest of the budget (once per run; the
+        # containment hand-over stays available). 2026-10-12 trace of
+        # v2_scan2d on 10D F17: successful runs spent ~8000 evaluations of
+        # close contact between the stall wave and the late hand-over.
+        wave_follow: bool = False,
         ir_reignite_sigma_ratio: float = 0.05,
         ir_repel_radius_ratio: float = 0.1,
         ir_repel_max_tries: int = 20,
@@ -694,6 +701,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.wave_sigma_ratio = wave_sigma_ratio
         self.wave_budget_frac = wave_budget_frac
         self.wave_quality = wave_quality
+        self.wave_follow = wave_follow
         self.wave_use_C = wave_use_C
         self.wave_ill_handover = wave_ill_handover
         self.wave_handover_drill = wave_handover_drill
@@ -1170,7 +1178,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                      or st.best_so_far <= self.wave_quality * st.f_init_scale)):
             st.wave_spent = True
             st.trace_events.append((len(st.history_f), "wave"))
-            self._recombination_wave(st)
+            self._recombination_wave(st, follow=self.wave_follow)
             self._pad_eval_channel(st, _CH_LS)
             return not st.budget_left
         if (self.reassort_sweep and self.dim >= self.reassort_min_dim
@@ -1674,7 +1682,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
     def _recombination_wave(self, st: _MCESOState, sigma0: "float | None" = None,
                             budget_frac: "float | None" = None,
                             lam_mult: "float | None" = None,
-                            restart: bool = False) -> None:
+                            restart: bool = False, follow: bool = False) -> None:
         """hd_wave_lambda: a (μ/μ_w, λ) weighted-recombination wave (the cma
         package's CMA-ES) from the best host; every evaluation goes through the
         history. Its best replaces the worst host."""
@@ -1701,6 +1709,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             L = V * np.sqrt(ev)[None, :]
         start = len(st.history_f)
         best_x, best_f = None, float("inf")
+        best_before = st.best_so_far
         while True:
             opts = {"popsize": lam, "verbose": -9, "seed": int(st.rng.integers(1, 2 ** 31 - 1)),
                     "tolfun": 1e-15, "tolx": 1e-16, "tolfunhist": 0,
@@ -1728,6 +1737,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 if len(F) < len(X):
                     break
                 es.tell(X, F)
+                if (follow and len(st.history_f) - start + lam > cap
+                        and best_f < best_before and not st.follow_done):
+                    st.follow_done = True
+                    st.trace_events.append((len(st.history_f), "follow"))
+                    cap = st.max_evals - start
+                    es.opts["maxfevals"] = cap
             lam *= 2
             if (not restart or best_x is None or not st.budget_left
                     or len(st.history_f) - start + 2 * lam > cap):
