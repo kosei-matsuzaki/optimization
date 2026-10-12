@@ -8,6 +8,14 @@ Usage:
     python quick_check.py --n-runs 5 --max-evals 3000
 """
 from __future__ import annotations
+import os
+import sys
+
+# --instance / --seed-offset must reach core.benchmarks / core.runner before they
+# are imported (and the --jobs workers inherit the environment).
+for _flag, _env in (("--instance", "BBOB_INSTANCE"), ("--seed-offset", "SEED_OFFSET")):
+    if _flag in sys.argv[:-1]:
+        os.environ[_env] = sys.argv[sys.argv.index(_flag) + 1]
 import argparse
 import csv
 import numpy as np
@@ -934,6 +942,12 @@ if __name__ == "__main__":
                         help="Skip landscape / convergence / animation rendering and "
                              "write only the CSVs. Rendering scales with the number of "
                              "evaluations, so large-budget runs need this.")
+    parser.add_argument("--instance", type=int, default=1,
+                        help="BBOB instance (default 1, the one every tuning run used). "
+                             "Other instances re-draw each function's shift and rotation.")
+    parser.add_argument("--seed-offset", type=int, default=0,
+                        help="Added to every run's seed (run i uses offset + 100·i). "
+                             "Default 0 = the seeds every tuning run used.")
     parser.add_argument("--jobs", type=int, default=1,
                         help="Worker processes. Each (function, method) pair runs in "
                              "its own task; outputs are written in the serial order and "

@@ -1,9 +1,14 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable
+import os
 import re
 import numpy as np
 import ioh
+
+# BBOB instance for the quick registries (quick_check --instance sets it before
+# this module is imported, so --jobs workers build the same instance).
+BBOB_INSTANCE = int(os.environ.get("BBOB_INSTANCE", "1"))
 
 
 # ── Shape tags ───────────────────────────────────────────────────────────────
@@ -224,7 +229,9 @@ def _make_ioh_benchmark(problem_id, name: str, category: str, dim: int,
     )
 
 
-def _make_bbob(fid: int, name: str, category: str, dim: int, instance: int = 1) -> BenchmarkFunction:
+def _make_bbob(fid: int, name: str, category: str, dim: int,
+               instance: "int | None" = None) -> BenchmarkFunction:
+    instance = BBOB_INSTANCE if instance is None else instance
     return _make_ioh_benchmark(fid, name, category, dim, instance,
                                problem_class=ioh.ProblemClass.BBOB)
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import os
 import time
 import zlib
 import numpy as np
@@ -55,7 +56,10 @@ def run_experiment(
                 f"{benchmark.name}|{noise_model}|{i}".encode())
             bench_i = dataclasses.replace(benchmark, func=make_noisy_func(
                 benchmark.func, noise_model, np.random.default_rng(noise_seed)))
-        opt = optimizer_cls(bench_i, seed=i * 100, **optimizer_kwargs)
+        # SEED_OFFSET (quick_check --seed-offset) shifts every run's seed, for
+        # measuring on seeds that were never used while tuning.
+        opt = optimizer_cls(bench_i, seed=int(os.environ.get("SEED_OFFSET", "0")) + i * 100,
+                            **optimizer_kwargs)
         t0 = time.perf_counter()
         result = opt.optimize(max_evals=max_evals)
         times.append(time.perf_counter() - t0)
