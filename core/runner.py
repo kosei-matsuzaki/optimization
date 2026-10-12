@@ -38,8 +38,12 @@ def run_experiment(
     n_runs: int = 10,
     max_evals: int = 5000,
     noise_model: str | None = None,
+    post=None,
     **optimizer_kwargs,
 ) -> tuple[list[OptimizeResult], list[float]]:
+    # ``post`` (optional) is applied to each result as soon as its run ends, so
+    # a caller can drop the per-evaluation history before the next run starts
+    # (quick --jobs at 200k evaluations ran out of memory holding 20 runs).
     results: list[OptimizeResult] = []
     times: list[float] = []
     for i in range(n_runs):
@@ -57,7 +61,7 @@ def run_experiment(
         times.append(time.perf_counter() - t0)
         if noise_model:
             result = _rescore_noiseless(result, benchmark.func)
-        results.append(result)
+        results.append(post(result) if post is not None else result)
     return results, times
 
 

@@ -615,13 +615,32 @@ _VIZ_ONLY_FIELDS = ("history_pop", "history_pop_sigma", "history_sigma_global",
 
 
 def _run_one(bench, method: str, n_runs: int, max_evals: int,
-             noise: str | None) -> tuple[list, list]:
+             noise: str | None, post=None) -> tuple[list, list]:
     """All runs of one method on one function (the unit of work for --jobs)."""
     cls, kwargs = _OPTIMIZERS[method]
     sigma0 = 0.2 * (bench.bounds[1] - bench.bounds[0])
     kw = {**kwargs, **({"sigma0": sigma0} if cls in _SIGMA_USERS else {})}
     return run_experiment(cls, bench, n_runs=n_runs, max_evals=max_evals,
-                          noise_model=noise, **kw)
+                          noise_model=noise, post=post, **kw)
+
+
+def _slim_result(r, bench):
+    """What the parent needs from a --jobs worker's run, without the per-point
+    history: best values, the f history as an array, the trace, and the
+    known-optima masks the peak counter would compute from history_x."""
+    import dataclasses
+    from core.runner import PEAK_THRESHOLDS, optima_found_mask
+    masks = {}
+    if bench.optima_pos:
+        span = bench.bounds[1] - bench.bounds[0]
+        for thr in PEAK_THRESHOLDS:   # peak_metrics' levels and default radius
+            masks[(thr, 0.02)] = optima_found_mask(r, bench.optima_pos, span, thr, 0.02).tolist()
+    s = dataclasses.replace(r, history_x=[],
+                            history_f=np.asarray(r.history_f, dtype=float),
+                            history_best=np.asarray(r.history_best, dtype=float),
+                            **{k: [] for k in _VIZ_ONLY_FIELDS})
+    s.found_masks = masks
+    return s
 
 
 def _bench_key(bench) -> tuple[str, int, str]:
@@ -644,23 +663,9 @@ def _bench_from_key(key: tuple[str, int, str]):
 
 
 def _worker_task(key, method, n_runs, max_evals, noise, slim):
-    import dataclasses
-    results, times = _run_one(_bench_from_key(key), method, n_runs, max_evals, noise)
-    if slim:
-        from core.runner import PEAK_THRESHOLDS, optima_found_mask
-        bench = _bench_from_key(key)
-        span = bench.bounds[1] - bench.bounds[0]
-        slimmed = []
-        for r in results:
-            masks = {}
-            if bench.optima_pos:
-                for thr in PEAK_THRESHOLDS:   # peak_metrics' levels and default radius
-                    masks[(thr, 0.02)] = optima_found_mask(r, bench.optima_pos, span, thr, 0.02).tolist()
-            s = dataclasses.replace(r, history_x=[], **{k: [] for k in _VIZ_ONLY_FIELDS})
-            s.found_masks = masks
-            slimmed.append(s)
-        results = slimmed
-    return results, times
+    bench = _bench_from_key(key)
+    post = (lambda r: _slim_result(r, bench)) if slim else None
+    return _run_one(bench, method, n_runs, max_evals, noise, post=post)
 
 
 def _parallel_results(benchmarks: list, methods: list[str], n_runs: int,
