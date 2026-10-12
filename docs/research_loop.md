@@ -126,13 +126,6 @@
    **集計**: 標準の集計。F12 / F13 / F17 / F18 の SR@1e-10 と `evals_succ_mean` を 3 手法並べる。
    **記録**: `analysis/single/j34/`。
 
-1. **既定値の候補 `v1_w4q3E` とその途中段階を正準環境で測る（2D / 5D / 10D）。** ユーザーはこの結果を見て採否を決める。
-   2D: `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,v1_noair_fl10i,v1_w4q3,v1_w4q3E"`。
-   5D: `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --methods "MC-ESO,v1_noair_fl10i,v1_w4q3,v1_w4q3E"`。
-   10D: `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,v1_noair_fl10i,v1_w4q3,v1_w4q3E"`。
-   **背景**（[history.md](history.md) の 2026-10-09〜11）: 腕は 4 段の積み重ね。`v1_noairHD`（3 次元以上で空気感染なし）→ `v1_noair_fl10i`（＋ σ 下限 1e-10、学習共分散が悪条件なら 1e-6）→ `v1_w4q3`（＋ 3 次元以上で σ を「最良更新で増やす」のをやめる ＋ 停滞時の組換え波）→ `v1_w4q3E`（＋ 学習共分散が悪条件になったら白色化した組換え波に残り予算を渡す）。`v1_noairHD` の正準値は j28 で測定済み（2D 全関数一致、5D −0.21 / 10D +0.83pt。ローカルの 5D +2.5pt は再現しなかった）ので今回は外した。ローカル（Windows）では SR@1e-10 が MC-ESO 94.0 / 56.9 / 41.9% → `v1_w4q3E` 95.2 / 67.9 / 53.1%。組換え波は `cma` パッケージを使う（requirements にある）。
-   **集計**: 標準の集計を次元ごとに。MC-ESO の行は 2D 93.33% / 5D 59.17% / 10D 42.08%（`analysis/single/j24/`・`j25/`）と一致するはず（一致したかを書く）。**2D で SR@1e-10 を下げた関数があれば最初に書く**（ローカルでは 2D の変化は F18 95→100・F23 75→100 のみ）。5D / 10D は 3 腕それぞれについて、MC-ESO からの関数別 SR@1e-10 の変化を全関数列挙する。F12 / F13 / F16 / F17 / F18 / F23 の SR@1e-10 と `evals_succ_mean` を 4 手法並べて書く。
-   **記録**: `analysis/single/j29/`（次元ごとに別ファイル）。1 コマンドが 90 分を超えるなら関数で分割してよい（分割したと書く）。
 
 ## 規則
 
