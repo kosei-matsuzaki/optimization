@@ -443,6 +443,9 @@ _OPTIMIZERS = {
     "v2_hl2r":        (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "reassort_min_dim": 3, "wave_handover_lambda": 2.0, "wave_handover_restart": True}),
     "v2_hl0r":        (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "reassort_min_dim": 3, "wave_handover_lambda": 0, "wave_handover_restart": True}),
     "v2_hlC":         (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "reassort_min_dim": 3, "wave_handover_lambda": -2.0}),
+    # Separable decomposition after the additivity test (on top of v2_hlC); 3D+ and all dims.
+    "v2_scan":        (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 3, "reassort_scan": 200}),
+    "v2_scan2d":      (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 2, "reassort_scan": 200}),
     "v2_ir3_noFrz":   (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0}),
     "v2_irT_noFrz_noSS": (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0,
                                                        "hd_sigma_success": None}),
