@@ -100,7 +100,7 @@
 
 ---
 
-1. **【一般化の検証 1/3】調整に使っていない instance と seed で 2D を測る。**
+1. **【一般化の検証 1/3】調整に使っていない instance と seed で 2D を測る。** (claimed 2026-10-12 19:31 UTC)
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --instance I --seed-offset 7 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"` を **I = 2, 3, 4 の 3 回**（label `j37d2i2` / `j37d2i3` / `j37d2i4`）。
    **背景**: これまでの調整・判定はすべて BBOB の instance 1、seed 0〜1900 の同じ 20 個で行った。比較手法は既定値のまま。MC-ESO の優位のうち、同じ問題で選び続けたことによる上振れがどれだけあるかを測る。7 手法は現在の既定・最新の候補と、5D / 10D の 34 手法比較の上位。
    **集計**: instance ごとと 3 instance 平均の [1] 全体表（7 手法、SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean`）、7 手法の SR@1e-10 の順位、Wilcoxon（ref=MC-ESO）の勝ち負けの数。比べるための instance 1 の値は [findings.md](findings.md) と `runs/20261012_*_allmethods2_*`（ローカル）にある。
