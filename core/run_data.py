@@ -57,7 +57,10 @@ def save_curves(dim_dir: Path, bench, results_per_method: dict) -> None:
 MCESO_RUN_FIELDS = ["function", "method", "seed", "best_f", "route", "route_commit_evals",
                     "n_spillover", "n_basin_switch", "exhausted_evals",
                     "frac_close", "frac_droplet", "frac_airborne", "frac_reseed",
-                    "n_pop_first", "n_pop_last"]
+                    "n_pop_first", "n_pop_last",
+                    # 2026-10-12: recombination waves (stall / hand-over) and
+                    # reassortment sweeps; older files lack these columns.
+                    "n_wave", "n_handover", "n_reassort", "frac_wave", "frac_reassort"]
 
 
 def append_mceso_runs(dim_dir: Path, bench, results_per_method: dict) -> None:
@@ -87,6 +90,11 @@ def append_mceso_runs(dim_dir: Path, bench, results_per_method: dict) -> None:
                 "frac_airborne": f"{np.sum(ch == 2) / total:.3f}",
                 "frac_reseed": f"{np.sum(ch == 5) / total:.3f}",
                 "n_pop_first": g["n_pop"][0], "n_pop_last": g["n_pop"][-1],
+                "n_wave": sum(1 for e in ev if e[1] == "wave"),
+                "n_handover": sum(1 for e in ev if e[1] == "handover"),
+                "n_reassort": sum(1 for e in ev if e[1] == "reassort"),
+                "frac_wave": f"{np.sum(ch == 7) / total:.3f}",
+                "frac_reassort": f"{np.sum(ch == 8) / total:.3f}",
             })
     if not rows:
         return

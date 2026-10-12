@@ -593,6 +593,11 @@ details[open] > .overall-details-summary::before { transform: rotate(90deg); }
 .viz-ev-spill { stroke: #9aa5b1; stroke-width: 1; stroke-dasharray: 2 3; }
 .viz-ev-switch { stroke: var(--danger); stroke-width: 1; opacity: .55; }
 .viz-ev-exh { stroke: var(--accent); stroke-width: 1.4; }
+.viz-ev-wave { stroke: #7b3fa8; stroke-width: 1.2; opacity: .8; }
+.viz-wave-span { fill: #7b3fa8; opacity: .08; }
+.viz-sweep-span { fill: #d6338a; opacity: .10; }
+.viz-ev-hand { stroke: #7b3fa8; stroke-width: 2.4; }
+.viz-ev-reassort { stroke: #d6338a; stroke-width: 1.2; stroke-dasharray: 4 2; }
 
 .viz-curves { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 18px; }
 .viz-curves-plot { position: relative; min-width: 0; }
@@ -657,6 +662,9 @@ details[open] > .overall-details-summary::before { transform: rotate(90deg); }
 .viz-k.spill { border-color: #9aa5b1; border-top-style: dashed; }
 .viz-k.switch { border-color: var(--danger); }
 .viz-k.exh { border-color: var(--accent); }
+.viz-k.wave { border-color: #7b3fa8; }
+.viz-k.hand { border-color: #7b3fa8; border-top-width: 3px; }
+.viz-k.reassort { border-color: #d6338a; border-top-style: dashed; }
 .viz-k.commit { border-color: var(--text-2); border-top-style: dotted; }
 .viz-k[style] { height: 8px; border: none; width: 10px; border-radius: 2px; }
 

@@ -21,8 +21,14 @@
   const colorOf = m => METHOD_COLOR[m] || (m === 'MC-ESO-v0' ? '#5fb3a8' : null);
   const CHANNEL = {               // trace channel codes (core/optimizers/mceso.py TRACE_CHANNELS)
     0: ['接触感染', '#0e6b63'], 1: ['飛沫感染', '#c08a1e'], 2: ['空気感染', '#3d6f99'],
-    3: ['慣性', '#7a5c99'], 4: ['移動', '#6b7480'], 5: ['スピルオーバーの撒き直し', '#c2412d'],
-    6: ['初期集団', '#9aa5b1'], 7: ['局所探索', '#17202b'],
+    3: ['慣性（廃止）', '#7a5c99'], 4: ['移動（廃止）', '#6b7480'], 5: ['撒き直し（スピルオーバー）', '#c2412d'],
+    6: ['初期集団', '#9aa5b1'], 7: ['組換え波', '#7b3fa8'], 8: ['再集合の掃引', '#d6338a'],
+  };
+  // Events in trace.events: [evals, kind]. Line class and legend label.
+  const EVENT = {
+    spillover: ['viz-ev-spill', 'スピルオーバー（撒き直し）'], basin_switch: ['viz-ev-switch', '盆地の乗換え（最良点も捨てて撒き直す）'],
+    exhausted: ['viz-ev-exh', '最初の谷を掘り切った時点'], wave: ['viz-ev-wave', '停滞時の組換え波'],
+    handover: ['viz-ev-hand', '封じ込め（残り予算を組換え波へ）'], reassort: ['viz-ev-reassort', '再集合の掃引'],
   };
   const ROUTE = { pending: ['未確定', '#d5dadd'], keepair: ['KEEP-AIR', '#3d6f99'],
                   droplet: ['DROPLET', '#c08a1e'], close: ['CLOSE', '#0e6b63'] };
@@ -451,23 +457,26 @@
 
     const routeChip = r => { const [lab, col] = ROUTE[r] || [r, MUTED]; return `<span class="viz-route" style="--c:${col}">${esc(lab)}</span>`; };
     const share = r => {
-      const parts = [['frac_close', 0], ['frac_droplet', 1], ['frac_airborne', 2], ['frac_reseed', 5]];
+      const parts = [['frac_close', 0], ['frac_droplet', 1], ['frac_airborne', 2], ['frac_reseed', 5], ['frac_wave', 7], ['frac_reassort', 8]];
       return `<span class="viz-share">${parts.map(([k, c]) => `<i style="width:${(parseFloat(r[k]) || 0) * 100}%;background:${CHANNEL[c][1]}" title="${CHANNEL[c][0]} ${Math.round((parseFloat(r[k]) || 0) * 100)}%"></i>`).join('')}</span>`;
     };
     let tableHtml;
     if (mine.length) {
       const counts = {}; mine.forEach(r => { counts[r.route] = (counts[r.route] || 0) + 1; });
+      const hasWave = mine.some(r => r.n_wave != null && r.n_wave !== '');
+      const shareKeys = [0, 1, 2, 5].concat(hasWave ? [7, 8] : []);
       tableHtml = `
         <div class="viz-route-sum">全 ${mine.length} run のルート: ${Object.entries(counts).map(([r, c]) => `${routeChip(r)} ${c}`).join('　')}</div>
         <div class="viz-runs-wrap"><table class="viz-runs">
-          <thead><tr><th>seed</th><th>到達</th><th>最終 f</th><th>ルート</th><th>確定</th><th>スピルオーバー</th><th>盆地乗換え</th><th>経路の割合</th><th>集団</th></tr></thead>
+          <thead><tr><th>seed</th><th>到達</th><th>最終 f</th><th>ルート</th><th>確定</th><th>スピルオーバー</th><th>盆地乗換え</th>${hasWave ? '<th>組換え波</th><th>封じ込め</th><th>掃引</th>' : ''}<th>評価の使い道</th><th>集団</th></tr></thead>
           <tbody>${mine.map(r => {
             const ok = parseFloat(r.best_f) <= 1e-10;
             return `<tr data-seed="${r.seed}" class="${String(r.seed) === String(state.seed) ? 'is-sel' : ''}">
               <td>${r.seed}</td><td class="${ok ? 'ok' : 'ng'}">${ok ? '✓' : '✕'}</td><td>${fmtE(parseFloat(r.best_f))}</td>
               <td>${routeChip(r.route)}</td><td>${r.route_commit_evals ? fmtInt(+r.route_commit_evals) : '—'}</td>
-              <td>${r.n_spillover}</td><td>${r.n_basin_switch}</td><td>${share(r)}</td><td>${r.n_pop_first}→${r.n_pop_last}</td></tr>`;
-          }).join('')}</tbody></table></div>`;
+              <td>${r.n_spillover}</td><td>${r.n_basin_switch}</td>${hasWave ? `<td>${r.n_wave}</td><td>${r.n_handover}</td><td>${r.n_reassort}</td>` : ''}<td>${share(r)}</td><td>${r.n_pop_first}→${r.n_pop_last}</td></tr>`;
+          }).join('')}</tbody></table></div>
+        <p class="viz-caption">評価の使い道 = 全評価のうち、どの作り方で作った点を評価したかの割合: ${shareKeys.map(c => `<span class="viz-k" style="background:${CHANNEL[c][1]}"></span>${CHANNEL[c][0]}`).join('　')}。${hasWave ? '残りの灰色は初期集団。' : '残りの灰色は初期集団と、この run の要約が記録していない組換え波・再集合の掃引（2026-10-12 より前の形式）。下の図には出る。'}</p>`;
     } else {
       tableHtml = `<p class="viz-note">この run には全 run の要約（mceso_runs.csv）がありません。run を選ぶと、その run を再実行して内部状態を出します。</p>
         <label class="viz-inline">run <select data-k="seed">${seedOptions(fromStats, state.method, state.seed)}</select></label>`;
@@ -503,13 +512,28 @@
     body.innerHTML = '';
     const evMarks = d.trace.events || [];
     const panels = [];
+    // Spans of evaluations spent in recombination waves (code 7) or sweeps (8):
+    // no generation is recorded inside them, so the per-generation lines are
+    // straight across; shade them so this is visible.
+    const chW = d.channel ? bytes(d.channel) : null, spans = [];
+    if (chW) {
+      let s0 = -1, code = -1;
+      for (let i = 0; i <= chW.length; i++) {
+        const c = i < chW.length ? chW[i] : -1;
+        const inSpan = c === 7 || c === 8;
+        if (inSpan && s0 < 0) { s0 = i; code = c; }
+        if ((!inSpan || c !== code) && s0 >= 0) { spans.push([s0 + 1, i, code]); s0 = inSpan ? i : -1; code = c; }
+      }
+    }
     const panel = (title, opts, drawFn) => {
       const box = document.createElement('div'); box.className = 'viz-panel'; body.appendChild(box);
       const F = frame(box, { width: W, height: opts.h || 120, x0: 1, x1: n, y0: opts.y0, y1: opts.y1, yTicks: opts.yTicks,
         yFmt: opts.yFmt, yLabel: title, showX: !!opts.showX, xLabel: opts.showX ? '評価回数' : '', m: { l: 64, r: 14, t: 16, b: opts.showX ? 30 : 8 } });
+      spans.forEach(([a, b, c]) => svg('rect', { x: F.X(a), y: F.m.t, width: Math.max(1, F.X(b) - F.X(a)), height: F.h,
+        class: c === 7 ? 'viz-wave-span' : 'viz-sweep-span' }, F.g));
       // events
       evMarks.forEach(([e, kind]) => {
-        const cls = kind === 'basin_switch' ? 'viz-ev-switch' : kind === 'exhausted' ? 'viz-ev-exh' : 'viz-ev-spill';
+        const cls = (EVENT[kind] || EVENT.spillover)[0];
         svg('line', { x1: F.X(e), x2: F.X(e), y1: F.m.t, y2: F.m.t + F.h, class: cls }, F.g);
       });
       drawFn(F);
@@ -549,7 +573,32 @@
     panel('集団サイズ', { y0: 0, y1: r3[1], h: 90 }, F => svg('path', { d: path(ev, np, F.X, F.Y), class: 'viz-l', stroke: INK2 }, F.g));
     panel('系統の数', { y0: 0, y1: Math.max(...g.n_elite, 1) + 1, h: 80, yTicks: niceTicks(0, Math.max(...g.n_elite, 1) + 1, 3) }, F =>
       svg('path', { d: path(ev, g.n_elite, F.X, F.Y), class: 'viz-l', stroke: INK2 }, F.g));
-    // channel shares (stacked)
+    // channel shares (stacked): per evaluation when the run's channel codes are
+    // available (shows the waves / sweeps, which are not generations), else per generation
+    const chB = d.channel ? bytes(d.channel) : null;
+    if (chB && chB.length) {
+      panel('評価の使い道（評価回数で区切った割合）', { y0: 0, y1: 1, h: 110, yTicks: [0, 0.5, 1], yFmt: v => `${v * 100}%` }, F => {
+        const nb = Math.min(300, chB.length), codes = [0, 1, 2, 5, 6, 7, 8];
+        const frac = codes.map(() => new Float32Array(nb)), edges = [];
+        for (let b = 0; b < nb; b++) {
+          const a0 = Math.floor(b * chB.length / nb), a1 = Math.max(a0 + 1, Math.floor((b + 1) * chB.length / nb));
+          edges.push([a0 + 1, a1]);
+          for (let i = a0; i < a1; i++) { const k = codes.indexOf(chB[i]); if (k >= 0) frac[k][b] += 1 / (a1 - a0); }
+        }
+        let base = new Float32Array(nb);
+        codes.forEach((c, k) => {
+          if (!frac[k].some(v => v > 0)) return;
+          const up = [], dn = [];
+          for (let b = 0; b < nb; b++) {
+            const top = base[b] + frac[k][b];
+            up.push(`${F.X(edges[b][0]).toFixed(1)},${F.Y(top).toFixed(1)}L${F.X(edges[b][1]).toFixed(1)},${F.Y(top).toFixed(1)}`);
+            dn.push(`${F.X(edges[b][1]).toFixed(1)},${F.Y(base[b]).toFixed(1)}L${F.X(edges[b][0]).toFixed(1)},${F.Y(base[b]).toFixed(1)}`);
+            base[b] = top;
+          }
+          svg('path', { d: `M${up.join('L')}L${dn.reverse().join('L')}Z`, fill: CHANNEL[c][1], opacity: 0.85 }, F.g);
+        });
+      });
+    } else
     panel('子の作り方の割合（世代ごと）', { y0: 0, y1: 1, h: 110, yTicks: [0, 0.5, 1], yFmt: v => `${v * 100}%` }, F => {
       const keys = [['n_close', 0], ['n_droplet', 1], ['n_air', 2], ['n_mom', 3], ['n_mig', 4]];
       const tot = ev.map((_, i) => keys.reduce((s, [k]) => s + (g[k][i] || 0), 0) || 1);
@@ -594,8 +643,12 @@
       svg('path', { d: path(ev, g.no_improve, F.X, F.Y), class: 'viz-l', stroke: INK2 }, F.g);
     });
     const leg = document.createElement('p'); leg.className = 'viz-caption';
-    leg.innerHTML = '縦線: <span class="viz-k spill"></span>スピルオーバー　<span class="viz-k switch"></span>盆地の乗換え　<span class="viz-k exh"></span>最初の谷を掘り切った時点　<span class="viz-k commit"></span>ルートの確定点（' + TH.commit_gen + ' 世代）。帯の色: 子の作り方 ' +
-      [0, 1, 2].map(c => `<span class="viz-k" style="background:${CHANNEL[c][1]}"></span>${CHANNEL[c][0]}`).join('　');
+    const kinds = [...new Set(evMarks.map(e => e[1]))].filter(k => EVENT[k]);
+    const usedCh = chB ? [...new Set(chB)].filter(c => CHANNEL[c] && c !== 6).sort((a, b) => a - b) : [0, 1, 2];
+    leg.innerHTML = '縦線: ' + kinds.map(k => `<span class="viz-k ${EVENT[k][0].replace('viz-ev-', '')}"></span>${EVENT[k][1]}`).join('　') +
+      '　<span class="viz-k commit"></span>ルートの確定点（' + TH.commit_gen + ' 世代）。<br>帯の色（評価の使い道）: ' +
+      usedCh.map(c => `<span class="viz-k" style="background:${CHANNEL[c][1]}"></span>${CHANNEL[c][0]}`).join('　') + '　灰色は初期集団。' +
+      (spans.length ? '<br>薄い紫・桃色の帯 = 組換え波・再集合の掃引の区間。この間は MC-ESO の世代が進まないので、世代ごとに記録する線（最良値・σ・集団・信号）は区間の前後を直線でつないでいる。' : '');
     body.appendChild(leg);
 
     // shared crosshair

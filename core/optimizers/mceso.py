@@ -139,8 +139,11 @@ class _MCESOState:
 # removed experimental channels: they are always 0 now, kept so that recorded
 # traces and the results UI keep decoding with the same layout.
 TRACE_CHANNELS = ("close", "droplet", "airborne", "momentum", "migratory",
-                  "reseed", "init", "local_search")
-_CH_RESEED, _CH_INIT, _CH_LS, _CH_UNKNOWN = 5, 6, 7, 255
+                  "reseed", "init", "wave", "reassort")
+# 7 was "local_search" (the end-phase SLSQP, removed 2026-10-12); since then it
+# is the recombination wave (stall wave and containment hand-over). 8 is the
+# reassortment sweep. Codes 3 / 4 (momentum / migratory) are never written.
+_CH_RESEED, _CH_INIT, _CH_LS, _CH_SWEEP, _CH_UNKNOWN = 5, 6, 7, 8, 255
 # Router route per generation (trace["gen"]["route"]); 0 = not committed yet.
 TRACE_ROUTES = ("pending", "keepair", "droplet", "close")
 TRACE_GEN_KEYS = ("evals", "n_pop", "sigma", "best_f", "n_elite", "no_improve",
@@ -1163,7 +1166,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.sweep_spent = True
             st.trace_events.append((len(st.history_f), "reassort"))
             self._reassort_sweep(st)
-            self._pad_eval_channel(st, _CH_LS)
+            self._pad_eval_channel(st, _CH_SWEEP)
             return not st.budget_left
 
         rng, lo, hi = st.rng, st.lo, st.hi
