@@ -100,7 +100,7 @@
 
 ---
 
-1. **【一般化の検証 3/3】同じく 10D。** `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --instance I --seed-offset 7 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"` を I = 2, 3, 4（label `j39d10i2` ほか）。90 分に収まらなければ規則どおり残りを書き戻す。集計は【一般化の検証 1/3】と同じ。**記録**: `analysis/single/j39/`。
+1. **【一般化の検証 3/3】同じく 10D。** `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --instance I --seed-offset 7 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"` を I = 2, 3, 4（label `j39d10i2` ほか）。90 分に収まらなければ規則どおり残りを書き戻す。集計は【一般化の検証 1/3】と同じ。**記録**: `analysis/single/j39/`。 (claimed 2026-10-12 22:30 UTC)
 2. **【公式予算 1/3】CEC2017 の公式予算 10000·D で 5D を測る（instance 1）。**
    `./run.sh quick --all --dim 5 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j40d5`）。
    **背景**: 判定の予算 2500·D は CEC2017 の公式予算の 4 分の 1。L-SHADE 系・EBO は公式予算に合わせて設計されていて、10D の 4 倍予算では L-SHADE が 56 → 69% に伸び、旧 MC-ESO との差が −35pt に開いた（2026-10-08）。現在の版で同じことが起きるかを測る。
