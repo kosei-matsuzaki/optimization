@@ -1,0 +1,90 @@
+===== dim10  functions=24  methods=7 =====
+
+[A] OVERALL (mean over 24 functions, %)  + pairwise evals_succ_mean vs MC-ESO
+  method            1e-2    1e-4    1e-7   1e-10     evalsMC   evalsM nFunc
+  ------------------------------------------------------------------------
+  MC-ESO          60.00   56.67   54.38   52.29      9916.0   9916.0    17
+  MC-ESO-v1       56.25   48.96   43.96   42.08      8109.7  10495.3    13
+  CMA-ES          47.71   45.00   44.17   41.67      9441.8   3698.1    12
+  IPOP-CMA-ES     61.25   59.38   53.33   49.79     10115.5   6165.6    15
+  BIPOP-CMA-ES    58.75   56.04   53.33   48.96      9513.2   6650.3    15
+  DE              28.54   22.29   16.04   15.42      7324.2   6880.3     6
+  L-SHADE         66.04   58.75   47.92   32.08      8295.5  16457.1    11
+
+[B] RANKING by SR@1e-10
+  1. MC-ESO          52.29%
+  2. IPOP-CMA-ES     49.79%
+  3. BIPOP-CMA-ES    48.96%
+  4. MC-ESO-v1       42.08%
+  5. CMA-ES          41.67%
+  6. L-SHADE         32.08%
+  7. DE              15.42%
+
+[C] PER-FUNCTION SR@1e-10 (%) all methods
+  function                      MC-ESO   MC-ESO-v1      CMA-ES IPOP-CMA-ES BIPOP-CMA-E          DE     L-SHADE
+  F01-Sphere                       100         100         100         100         100         100         100
+  F02-EllipsoidalSep               100         100         100         100         100          95         100
+  F03-RastriginSep                   0           0           0           0           0           0          10
+  F04-BucheRastrigin                 0           0           0           0           0           0           0
+  F05-LinearSlope                  100         100         100         100         100         100         100
+  F06-AttractiveSector             100         100         100         100         100           0          90
+  F07-StepEllipsoidal              100          85           0         100         100          40         100
+  F08-Rosenbrock                    95          95          80         100         100           0          20
+  F09-RosenbrockRot                100          90          90         100         100           0          20
+  F10-EllipsoidalRot               100         100         100         100         100           0          35
+  F11-Discus                       100         100         100         100         100           0          95
+  F12-BentCigar                     55           0         100         100         100           0           0
+  F13-SharpRidge                   100           5          15          25          25           0           0
+  F14-DiffPowers                   100         100         100         100         100           0          80
+  F15-RastriginRot                   0           0           0           0           0           0           0
+  F16-Weierstrass                    5           0           0          40           5           0           0
+  F17-SchafferF7                    30           0           0           0           0          15           0
+  F18-SchafferF7ill                 25           0           0           5           0           0           0
+  F19-GriewankRosenbrock             0           0           0           0           0           0           0
+  F20-Schwefel                       0           0           0           0           0           5           0
+  F21-Gallagher101                  10           5          15          25          25          15          20
+  F22-Gallagher21                   35          30           0           0          20           0           0
+  F23-Katsuura                       0           0           0           0           0           0           0
+  F24-LunacekRastrigin               0           0           0           0           0           0           0
+
+[D] SR@1e-10 CHANGE  MC-ESO-v1 (old default) -> MC-ESO (new default)
+  + F07-StepEllipsoidal        85 ->   100  (+15)
+  + F09-RosenbrockRot          90 ->   100  (+10)
+  + F12-BentCigar               0 ->    55  (+55)
+  + F13-SharpRidge              5 ->   100  (+95)
+  + F16-Weierstrass             0 ->     5  (+5)
+  + F17-SchafferF7              0 ->    30  (+30)
+  + F18-SchafferF7ill           0 ->    25  (+25)
+  + F21-Gallagher101            5 ->    10  (+5)
+  + F22-Gallagher21            30 ->    35  (+5)
+  changed: 9  improved: 9  worsened: 0  unchanged: 15
+
+[E] MC-ESO behind BEST of the 5 comparison methods by >=15pt on SR@1e-10
+  F12-BentCigar            MC-ESO    55  best IPOP-CMA-ES    100  gap +45
+  F16-Weierstrass          MC-ESO     5  best IPOP-CMA-ES     40  gap +35
+  F21-Gallagher101         MC-ESO    10  best IPOP-CMA-ES     25  gap +15
+
+[F] WILCOXON vs MC-ESO (ref), alpha=0.05, two-sided
+  MC-ESO-v1      MC-ESO better  9 / MC-ESO-v1 better  2
+      MC-ESO>: F01 A12=0.75 large, F06 A12=1.00 large, F08 A12=0.93 large, F09 A12=1.00 large, F10 A12=1.00 large, F11 A12=0.80 large, F12 A12=0.94 large, F13 A12=1.00 large, F14 A12=1.00 large
+      MC-ESO-v1>: F20 A12=0.30 medium, F23 A12=0.27 large
+  CMA-ES         MC-ESO better 16 / CMA-ES better  2
+      MC-ESO>: F02 A12=0.79 large, F03 A12=0.97 large, F04 A12=0.93 large, F07 A12=1.00 large, F08 A12=0.81 large, F09 A12=0.97 large, F10 A12=1.00 large, F11 A12=0.97 large, F13 A12=1.00 large, F14 A12=1.00 large, F15 A12=0.90 large, F16 A12=0.95 large, F17 A12=0.85 large, F18 A12=0.87 large, F22 A12=0.75 large, F24 A12=0.69 medium
+      CMA-ES>: F06 A12=0.11 large, F12 A12=0.26 large
+  IPOP-CMA-ES    MC-ESO better 10 / IPOP-CMA-ES better  3
+      MC-ESO>: F01 A12=1.00 large, F05 A12=0.90 large, F06 A12=0.99 large, F08 A12=0.81 large, F09 A12=0.97 large, F10 A12=1.00 large, F11 A12=0.97 large, F13 A12=1.00 large, F14 A12=1.00 large, F23 A12=0.82 large
+      IPOP-CMA-ES>: F12 A12=0.43 small, F18 A12=0.33 medium, F20 A12=0.19 large
+  BIPOP-CMA-ES   MC-ESO better 11 / BIPOP-CMA-ES better  3
+      MC-ESO>: F01 A12=1.00 large, F05 A12=0.90 large, F06 A12=0.99 large, F08 A12=0.71 large, F09 A12=0.93 large, F10 A12=1.00 large, F11 A12=0.90 large, F13 A12=1.00 large, F14 A12=1.00 large, F19 A12=0.69 medium, F23 A12=0.61 small
+      BIPOP-CMA-ES>: F12 A12=0.40 small, F20 A12=0.12 large, F21 A12=0.29 medium
+  DE             MC-ESO better 14 / DE better  4
+      MC-ESO>: F06 A12=1.00 large, F07 A12=0.80 large, F08 A12=0.99 large, F09 A12=1.00 large, F10 A12=1.00 large, F11 A12=1.00 large, F12 A12=1.00 large, F13 A12=1.00 large, F14 A12=1.00 large, F15 A12=0.83 large, F16 A12=1.00 large, F19 A12=0.99 large, F23 A12=0.99 large, F24 A12=1.00 large
+      DE>: F03 A12=0.13 large, F04 A12=0.17 large, F20 A12=0.01 large, F21 A12=0.34 medium
+  L-SHADE        MC-ESO better 12 / L-SHADE better  5
+      MC-ESO>: F06 A12=1.00 large, F08 A12=0.95 large, F09 A12=1.00 large, F10 A12=1.00 large, F11 A12=1.00 large, F12 A12=1.00 large, F13 A12=1.00 large, F14 A12=1.00 large, F16 A12=1.00 large, F19 A12=0.86 large, F23 A12=0.93 large, F24 A12=0.76 large
+      L-SHADE>: F03 A12=0.00 large, F04 A12=0.00 large, F18 A12=0.30 medium, F20 A12=0.00 large, F21 A12=0.17 large
+
+[G] CONSISTENCY vs j29 (same arms, previous run)
+  MC-ESO (j30 52.29%) vs j29 v1_w4q3E (52.71%): 1 differ
+      F17-SchafferF7           j29    40 -> j30    30
+  MC-ESO-v1 (j30 42.08%) vs j29 MC-ESO (42.08%): ALL 24 FUNCTIONS MATCH
