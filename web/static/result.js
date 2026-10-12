@@ -1032,7 +1032,9 @@ async function buildUnifiedTable(func) {
     or:    ['desc', (r, i) => parseFloat(r.mean_optima_rate)],
   };
   const sortAttr = k => `data-sort="${k}" class="sortable${unifiedSort.key === k ? ' sorted' : ''}" title="クリックで並べ替え"`;
-  const markText = k => unifiedSort.key === k ? (unifiedSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+  // Same affordance as the ranking table: every sortable header shows ↕,
+  // the active one ▲ / ▼.
+  const markText = k => unifiedSort.key === k ? (unifiedSort.dir === 'asc' ? '▲' : '▼') : '↕';
   const sortMark = k => `<span class="sort-mark">${markText(k)}</span>`;
   const SR_SORT_KEYS = ['sr4', 'sr7', 'sr10'];
   const srSubHead = SR_TARGET_LABELS.map((lbl, i) =>
