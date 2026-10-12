@@ -1,0 +1,89 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=5   ref=MC-ESO
+run: 20261012_221454_j38d5i4_quick
+meta: n_runs=20 max_evals=12500 set=all-d5 commit=6355fd2
+functions: 24   methods: LSHADE-SPACMA, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, MC-ESO, v2_scan2d
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  LSHADE-SPACMA     73.5%   74.2%   74.8%   75.0%        4994         2/8
+  EBOwithCMAR       65.8%   68.8%   79.2%   82.1%        7785         8/6
+  ELSHADE-SPACMA    76.7%   77.1%   79.4%   80.0%        6597         3/8
+  IPOP-CMA-ES       57.3%   63.8%   65.4%   65.8%        3651        10/0
+  L-SHADE           61.5%   67.7%   76.7%   78.3%        8267         8/4
+  MC-ESO            65.6%   68.3%   70.6%   71.5%        4203            
+  v2_scan2d         76.5%   77.7%   80.0%   80.4%        4079         0/4
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%   LSHADE-SPACMA 100%            1753/2188
+  F02-EllipsoidalSep              100%   LSHADE-SPACMA 100%            3505/3449
+  F03-RastriginSep                 30%     EBOwithCMAR 100%            4683/9591  <-- ref behind
+  F04-BucheRastrigin                5%         L-SHADE 100%           9699/10397  <-- ref behind
+  F05-LinearSlope                 100%   LSHADE-SPACMA 100%            2480/3499
+  F06-AttractiveSector            100%   LSHADE-SPACMA 100%            3385/4146
+  F07-StepEllipsoidal             100%   LSHADE-SPACMA 100%            1618/2255
+  F08-Rosenbrock                  100%   LSHADE-SPACMA 100%            3697/5761
+  F09-RosenbrockRot               100%   LSHADE-SPACMA 100%            3913/5066
+  F10-EllipsoidalRot              100%   LSHADE-SPACMA 100%            3412/3944
+  F11-Discus                      100%   LSHADE-SPACMA 100%            3492/3431
+  F12-BentCigar                    90%     IPOP-CMA-ES 100%            5482/2384  <-- ref behind
+  F13-SharpRidge                  100%   LSHADE-SPACMA 100%            3805/4307
+  F14-DiffPowers                  100%   LSHADE-SPACMA 100%            2083/2516
+  F15-RastriginRot                 10%   ELSHADE-SPACMA 45%           9396/10578  <-- ref behind
+  F16-Weierstrass                  65%        v2_scan2d 75%            3908/4859  <-- ref behind
+  F17-SchafferF7                   85%   LSHADE-SPACMA 100%            3769/4244  <-- ref behind
+  F18-SchafferF7ill                55%    LSHADE-SPACMA 95%            4190/4748  <-- ref behind
+  F19-GriewankRosenbrock            5%     LSHADE-SPACMA 0%           5034/12037
+  F20-Schwefel                     10%    LSHADE-SPACMA 80%            5480/6330  <-- ref behind
+  F21-Gallagher101                 65%  ELSHADE-SPACMA 100%            1394/4432  <-- ref behind
+  F22-Gallagher21                  45%      EBOwithCMAR 90%            2608/8174  <-- ref behind
+  F23-Katsuura                     10%        v2_scan2d 20%            7881/5293  <-- ref behind
+  F24-LunacekRastrigin              0%     LSHADE-SPACMA 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F03-RastriginSep       vs EBOwithCMAR    p=0.000981 A12=0.15 (large)
+  F03-RastriginSep       vs ELSHADE-SPACMA p=0.000981 A12=0.15 (large)
+  F03-RastriginSep       vs L-SHADE        p=0.000981 A12=0.17 (large)
+  F03-RastriginSep       vs LSHADE-SPACMA  p=0.00122 A12=0.18 (large)
+  F03-RastriginSep       vs v2_scan2d      p=0.000981 A12=0.15 (large)
+  F04-BucheRastrigin     vs EBOwithCMAR    p=1.91e-06 A12=0.00 (large)
+  F04-BucheRastrigin     vs ELSHADE-SPACMA p=1.91e-06 A12=0.01 (large)
+  F04-BucheRastrigin     vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F04-BucheRastrigin     vs LSHADE-SPACMA  p=0.000708 A12=0.12 (large)
+  F04-BucheRastrigin     vs v2_scan2d      p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs ELSHADE-SPACMA p=0.00753 A12=0.30 (medium)
+  F06-AttractiveSector   vs LSHADE-SPACMA  p=0.00134 A12=0.23 (large)
+  F15-RastriginRot       vs EBOwithCMAR    p=0.00169 A12=0.16 (large)
+  F15-RastriginRot       vs LSHADE-SPACMA  p=0.0486 A12=0.32 (medium)
+  F17-SchafferF7         vs ELSHADE-SPACMA p=0.00102 A12=0.04 (large)
+  F17-SchafferF7         vs LSHADE-SPACMA  p=8.83e-05 A12=0.00 (large)
+  F18-SchafferF7ill      vs ELSHADE-SPACMA p=0.0228 A12=0.18 (large)
+  F18-SchafferF7ill      vs LSHADE-SPACMA  p=0.000515 A12=0.03 (large)
+  F20-Schwefel           vs EBOwithCMAR    p=0.000235 A12=0.10 (large)
+  F20-Schwefel           vs ELSHADE-SPACMA p=0.000196 A12=0.07 (large)
+  F20-Schwefel           vs L-SHADE        p=9.54e-06 A12=0.11 (large)
+  F20-Schwefel           vs LSHADE-SPACMA  p=0.000247 A12=0.09 (large)
+  F21-Gallagher101       vs EBOwithCMAR    p=0.0284 A12=0.37 (small)
+  F21-Gallagher101       vs ELSHADE-SPACMA p=0.018 A12=0.33 (medium)
+  F21-Gallagher101       vs v2_scan2d      p=0.0173 A12=0.36 (medium)
+  F22-Gallagher21        vs EBOwithCMAR    p=0.015 A12=0.26 (large)
+  F22-Gallagher21        vs ELSHADE-SPACMA p=0.00885 A12=0.29 (medium)
+  F22-Gallagher21        vs L-SHADE        p=0.00287 A12=0.25 (large)
+  F22-Gallagher21        vs LSHADE-SPACMA  p=0.0231 A12=0.33 (medium)
+  F22-Gallagher21        vs v2_scan2d      p=0.00335 A12=0.30 (medium)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v2_scan2d              mean rank   3.40   best on 16/24
+   2. EBOwithCMAR            mean rank   3.56   best on 14/24
+   3. LSHADE-SPACMA          mean rank   3.88   best on 13/24
+   4. ELSHADE-SPACMA         mean rank   3.96   best on 13/24
+   5. L-SHADE                mean rank   4.17   best on 14/24
+   6. MC-ESO                 mean rank   4.27   best on 14/24  <- ref
+   7. IPOP-CMA-ES            mean rank   4.77   best on 12/24
+

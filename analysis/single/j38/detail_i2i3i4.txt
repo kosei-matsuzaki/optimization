@@ -1,0 +1,341 @@
+instances present: ['i2', 'i3', 'i4']   functions: 24
+  i2: rows=168  unique (func,method) for the 7 methods=168  funcs=24  methods=7
+  i3: rows=168  unique (func,method) for the 7 methods=168  funcs=24  methods=7
+  i4: rows=168  unique (func,method) for the 7 methods=168  funcs=24  methods=7
+
+## [1] OVERALL per instance and 3-instance mean (5D BBOB-24, n=20, 12500 evals)
+
+### instance 2
+method             SR1e-2   SR1e-4   SR1e-7  SR1e-10    evals       nf
+----------------------------------------------------------------------
+MC-ESO              70.00    69.79    68.33    66.88   4430.9       22
+v2_scan2d           77.50    76.04    74.17    73.12   4145.3       22
+ELSHADE-SPACMA      81.04    79.79    77.50    76.88   6554.5       21
+LSHADE-SPACMA       74.38    73.54    72.50    72.50   4630.6       20
+EBOwithCMAR         81.88    79.38    70.42    66.88   7307.5       17
+IPOP-CMA-ES         66.46    64.79    62.92    58.12   3230.4       19
+L-SHADE             78.12    75.42    66.67    61.46   7995.2       18
+
+### instance 3
+method             SR1e-2   SR1e-4   SR1e-7  SR1e-10    evals       nf
+----------------------------------------------------------------------
+MC-ESO              71.04    69.79    68.54    67.29   3958.6       22
+v2_scan2d           80.21    79.58    78.12    76.88   3852.0       22
+ELSHADE-SPACMA      80.62    80.21    76.25    75.62   6577.1       21
+LSHADE-SPACMA       77.29    76.46    74.79    73.12   5025.2       21
+EBOwithCMAR         81.25    79.79    70.83    64.38   7393.2       17
+IPOP-CMA-ES         65.21    63.96    62.29    57.29   2628.2       19
+L-SHADE             78.12    76.88    66.46    60.42   7625.9       16
+
+### instance 4
+method             SR1e-2   SR1e-4   SR1e-7  SR1e-10    evals       nf
+----------------------------------------------------------------------
+MC-ESO              71.46    70.62    68.33    65.62   4202.9       23
+v2_scan2d           80.42    80.00    77.71    76.46   3687.0       21
+ELSHADE-SPACMA      80.00    79.38    77.08    76.67   6330.7       20
+LSHADE-SPACMA       75.00    74.79    74.17    73.54   4641.6       20
+EBOwithCMAR         82.08    79.17    68.75    65.83   7430.6       17
+IPOP-CMA-ES         65.83    65.42    63.75    57.29   3114.2       19
+L-SHADE             78.33    76.67    67.71    61.46   8003.1       18
+
+### 3-instance mean (i2,i3,i4)
+method             SR1e-2   SR1e-4   SR1e-7  SR1e-10    evals       nf
+----------------------------------------------------------------------
+MC-ESO              70.83    70.07    68.40    66.60   4197.5     22.3
+v2_scan2d           79.38    78.54    76.67    75.49   3894.8     21.7
+ELSHADE-SPACMA      80.56    79.79    76.94    76.39   6487.5     20.7
+LSHADE-SPACMA       75.56    74.93    73.82    73.06   4765.8     20.3
+EBOwithCMAR         81.74    79.44    70.00    65.69   7377.1     17.0
+IPOP-CMA-ES         65.83    64.72    62.99    57.57   2990.9     19.0
+L-SHADE             78.19    76.32    66.94    61.11   7874.7     17.3
+
+### instance 1 reference (tuning instance; MC-ESO/5 baselines from runs/20261012_020743_allmethods2_d5_quick, v2_scan2d from analysis/single/j36/summary_dim5.csv)
+method             SR1e-2   SR1e-4   SR1e-7  SR1e-10    evals       nf
+----------------------------------------------------------------------
+MC-ESO              71.25    70.83    69.38    68.12   4143.7       22
+v2_scan2d           81.04    80.21    79.38    78.33   3926.5       22
+ELSHADE-SPACMA      78.54    77.92    76.25    74.58   6350.6       20
+LSHADE-SPACMA       75.00    74.17    72.92    72.50   4956.7       21
+EBOwithCMAR         81.88    78.96    69.79    63.75   7213.3       16
+IPOP-CMA-ES         64.38    62.92    61.46    56.88   2691.2       20
+L-SHADE             77.50    75.83    65.42    60.00   7875.1       17
+
+## [1b] evals_succ_mean on the functions where BOTH MC-ESO and the baseline succeed (pair mean)
+  baseline           nf     MC-ESO   baseline
+### instance 2
+  v2_scan2d          22     4430.9     4145.3
+  ELSHADE-SPACMA     21     4388.3     6554.5
+  LSHADE-SPACMA      20     4399.5     4630.6
+  EBOwithCMAR        17     4379.7     7307.5
+  IPOP-CMA-ES        18     3808.7     2817.5
+  L-SHADE            18     4042.4     7995.2
+
+### instance 3
+  v2_scan2d          21     3940.6     3812.7
+  ELSHADE-SPACMA     20     3826.2     6425.5
+  LSHADE-SPACMA      20     3846.7     4821.4
+  EBOwithCMAR        16     3757.6     7248.0
+  IPOP-CMA-ES        19     3605.8     2628.2
+  L-SHADE            15     3297.8     7434.1
+
+### instance 4
+  v2_scan2d          21     3916.0     3687.0
+  ELSHADE-SPACMA     20     3992.2     6330.7
+  LSHADE-SPACMA      20     3992.2     4641.6
+  EBOwithCMAR        17     4004.7     7430.6
+  IPOP-CMA-ES        19     3697.3     3114.2
+  L-SHADE            18     3993.6     8003.1
+
+## [2] SR@1e-10 ranking
+  instance 1 (tuning) : 1.v2_scan2d 78.33  2.ELSHADE-SPACMA 74.58  3.LSHADE-SPACMA 72.50  4.MC-ESO 68.12  5.EBOwithCMAR 63.75  6.L-SHADE 60.00  7.IPOP-CMA-ES 56.88
+  instance 2          : 1.ELSHADE-SPACMA 76.88  2.v2_scan2d 73.12  3.LSHADE-SPACMA 72.50  4.MC-ESO 66.88  5.EBOwithCMAR 66.88  6.L-SHADE 61.46  7.IPOP-CMA-ES 58.12
+  instance 3          : 1.v2_scan2d 76.88  2.ELSHADE-SPACMA 75.62  3.LSHADE-SPACMA 73.12  4.MC-ESO 67.29  5.EBOwithCMAR 64.38  6.L-SHADE 60.42  7.IPOP-CMA-ES 57.29
+  instance 4          : 1.ELSHADE-SPACMA 76.67  2.v2_scan2d 76.46  3.LSHADE-SPACMA 73.54  4.EBOwithCMAR 65.83  5.MC-ESO 65.62  6.L-SHADE 61.46  7.IPOP-CMA-ES 57.29
+  mean of i2-i4       : 1.ELSHADE-SPACMA 76.39  2.v2_scan2d 75.49  3.LSHADE-SPACMA 73.06  4.MC-ESO 66.60  5.EBOwithCMAR 65.69  6.L-SHADE 61.11  7.IPOP-CMA-ES 57.57
+
+## [3] Wilcoxon (ref=MC-ESO, p_two<0.05, direction by A12) win/loss counts per baseline
+### instance 2
+  v2_scan2d        MC-ESO better  1 / worse  4
+      better: F18(0.56,negligible)
+      worse : F03(0.03,large) F04(0.04,large) F21(0.24,large) F22(0.20,large)
+  ELSHADE-SPACMA   MC-ESO better  5 / worse  7
+      better: F13(0.68,medium) F16(0.80,large) F19(0.83,large) F23(0.99,large) F24(0.81,large)
+      worse : F03(0.03,large) F04(0.01,large) F06(0.23,large) F15(0.17,large) F17(0.05,large) F20(0.12,large) F21(0.28,large)
+  LSHADE-SPACMA    MC-ESO better  3 / worse  8
+      better: F16(0.95,large) F19(0.79,large) F23(0.97,large)
+      worse : F03(0.03,large) F04(0.14,large) F06(0.23,large) F15(0.13,large) F17(0.04,large) F18(0.13,large) F20(0.21,large) F21(0.24,large)
+  EBOwithCMAR      MC-ESO better 13 / worse  6
+      better: F06(0.77,large) F08(0.62,small) F09(0.68,medium) F10(0.80,large) F11(0.65,medium) F12(1.00,large) F13(1.00,large) F14(0.72,large) F16(0.93,large) F17(0.91,large) F18(0.89,large) F19(0.65,medium) F23(0.83,large)
+      worse : F03(0.03,large) F04(0.03,large) F15(0.09,large) F20(0.17,large) F21(0.23,large) F22(0.20,large)
+  IPOP-CMA-ES      MC-ESO better 11 / worse  0
+      better: F04(0.77,large) F06(1.00,large) F09(0.85,large) F10(0.82,large) F11(0.95,large) F12(0.65,medium) F13(1.00,large) F14(1.00,large) F17(0.84,large) F19(0.88,large) F23(0.94,large)
+  L-SHADE          MC-ESO better  9 / worse  5
+      better: F12(0.90,large) F13(1.00,large) F14(0.60,small) F16(0.93,large) F17(0.91,large) F18(0.86,large) F19(0.90,large) F23(0.97,large) F24(0.87,large)
+      worse : F03(0.03,large) F04(0.01,large) F20(0.21,large) F21(0.24,large) F22(0.26,large)
+
+### instance 3
+  v2_scan2d        MC-ESO better  0 / worse  4
+      worse : F03(0.16,large) F04(0.00,large) F21(0.33,medium) F22(0.32,medium)
+  ELSHADE-SPACMA   MC-ESO better  4 / worse  9
+      better: F12(1.00,large) F16(0.92,large) F19(0.66,medium) F23(0.99,large)
+      worse : F03(0.15,large) F04(0.01,large) F06(0.25,large) F15(0.21,large) F17(0.03,large) F18(0.18,large) F20(0.09,large) F21(0.33,medium) F22(0.28,large)
+  LSHADE-SPACMA    MC-ESO better  3 / worse  9
+      better: F12(0.95,large) F16(0.98,large) F23(0.98,large)
+      worse : F03(0.15,large) F04(0.14,large) F06(0.23,large) F15(0.17,large) F17(0.17,large) F18(0.07,large) F20(0.17,large) F21(0.33,medium) F22(0.30,medium)
+  EBOwithCMAR      MC-ESO better  8 / worse  6
+      better: F09(0.82,large) F10(0.65,medium) F12(1.00,large) F13(1.00,large) F14(0.88,large) F16(0.94,large) F23(0.77,large) F24(0.67,medium)
+      worse : F03(0.20,large) F04(0.00,large) F15(0.18,large) F20(0.13,large) F21(0.34,medium) F22(0.31,medium)
+  IPOP-CMA-ES      MC-ESO better 10 / worse  0
+      better: F03(0.60,small) F04(0.77,large) F05(0.72,large) F09(0.85,large) F11(1.00,large) F12(1.00,large) F13(1.00,large) F14(1.00,large) F19(0.79,large) F23(0.85,large)
+  L-SHADE          MC-ESO better  7 / worse  4
+      better: F12(1.00,large) F13(1.00,large) F14(0.68,medium) F16(0.95,large) F19(0.82,large) F23(0.97,large) F24(0.89,large)
+      worse : F03(0.20,large) F04(0.00,large) F20(0.14,large) F21(0.33,medium)
+
+### instance 4
+  v2_scan2d        MC-ESO better  0 / worse  4
+      worse : F03(0.15,large) F04(0.00,large) F21(0.36,medium) F22(0.30,medium)
+  ELSHADE-SPACMA   MC-ESO better  3 / worse  8
+      better: F16(0.85,large) F19(0.78,large) F23(0.99,large)
+      worse : F03(0.15,large) F04(0.01,large) F06(0.30,medium) F17(0.04,large) F18(0.18,large) F20(0.07,large) F21(0.33,medium) F22(0.29,medium)
+  LSHADE-SPACMA    MC-ESO better  2 / worse  8
+      better: F16(0.94,large) F23(0.95,large)
+      worse : F03(0.18,large) F04(0.12,large) F06(0.23,large) F15(0.32,medium) F17(0.00,large) F18(0.03,large) F20(0.09,large) F22(0.33,medium)
+  EBOwithCMAR      MC-ESO better  8 / worse  6
+      better: F09(0.68,medium) F10(0.70,medium) F12(0.90,large) F13(1.00,large) F14(0.85,large) F16(0.90,large) F18(0.90,large) F23(0.82,large)
+      worse : F03(0.15,large) F04(0.00,large) F15(0.16,large) F20(0.10,large) F21(0.37,small) F22(0.26,large)
+  IPOP-CMA-ES      MC-ESO better 10 / worse  0
+      better: F03(0.73,large) F04(0.75,large) F06(0.79,large) F08(0.88,large) F09(0.72,large) F12(0.85,large) F13(1.00,large) F14(1.00,large) F19(0.80,large) F23(0.85,large)
+  L-SHADE          MC-ESO better  8 / worse  4
+      better: F12(0.87,large) F13(1.00,large) F14(0.75,large) F16(0.89,large) F18(0.82,large) F19(0.81,large) F23(0.94,large) F24(0.68,medium)
+      worse : F03(0.17,large) F04(0.00,large) F20(0.11,large) F22(0.25,large)
+
+## [4] PER-FUNCTION SR@1e-10 (%) — all 7 methods, per instance
+### MC-ESO
+  function                  i1(ref)     i2     i3     i4  mean i2-4  diff vs i1
+  F01-Sphere                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F02-EllipsoidalSep          100.0  100.0  100.0  100.0     100.00       +0.00
+  F03-RastriginSep             25.0   10.0   30.0   30.0      23.33       -1.67  <-- changed
+  F04-BucheRastrigin            0.0    5.0    0.0    5.0       3.33       +3.33  <-- changed
+  F05-LinearSlope             100.0  100.0  100.0  100.0     100.00       +0.00
+  F06-AttractiveSector        100.0  100.0  100.0  100.0     100.00       +0.00
+  F07-StepEllipsoidal         100.0  100.0  100.0  100.0     100.00       +0.00
+  F08-Rosenbrock               90.0  100.0   95.0  100.0      98.33       +8.33  <-- changed
+  F09-RosenbrockRot            95.0  100.0  100.0  100.0     100.00       +5.00  <-- changed
+  F10-EllipsoidalRot          100.0  100.0  100.0  100.0     100.00       +0.00
+  F11-Discus                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F12-BentCigar               100.0  100.0  100.0   90.0      96.67       -3.33  <-- changed
+  F13-SharpRidge              100.0  100.0  100.0  100.0     100.00       +0.00
+  F14-DiffPowers              100.0  100.0  100.0  100.0     100.00       +0.00
+  F15-RastriginRot             35.0   10.0   10.0   10.0      10.00      -25.00  <-- changed
+  F16-Weierstrass              85.0   75.0   70.0   65.0      70.00      -15.00  <-- changed
+  F17-SchafferF7               85.0   85.0   75.0   85.0      81.67       -3.33  <-- changed
+  F18-SchafferF7ill            60.0   70.0   65.0   55.0      63.33       +3.33  <-- changed
+  F19-GriewankRosenbrock        5.0    0.0    5.0    5.0       3.33       -1.67  <-- changed
+  F20-Schwefel                  5.0   20.0   15.0   10.0      15.00      +10.00  <-- changed
+  F21-Gallagher101             45.0   45.0   65.0   65.0      58.33      +13.33  <-- changed
+  F22-Gallagher21              60.0   35.0   55.0   45.0      45.00      -15.00  <-- changed
+  F23-Katsuura                 45.0   50.0   30.0   10.0      30.00      -15.00  <-- changed
+  F24-LunacekRastrigin          0.0    0.0    0.0    0.0       0.00       +0.00
+
+### v2_scan2d
+  function                  i1(ref)     i2     i3     i4  mean i2-4  diff vs i1
+  F01-Sphere                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F02-EllipsoidalSep          100.0  100.0  100.0  100.0     100.00       +0.00
+  F03-RastriginSep            100.0  100.0  100.0  100.0     100.00       +0.00
+  F04-BucheRastrigin          100.0   10.0  100.0  100.0      70.00      -30.00  <-- changed
+  F05-LinearSlope             100.0  100.0  100.0  100.0     100.00       +0.00
+  F06-AttractiveSector        100.0  100.0  100.0  100.0     100.00       +0.00
+  F07-StepEllipsoidal         100.0  100.0  100.0  100.0     100.00       +0.00
+  F08-Rosenbrock               95.0  100.0   95.0  100.0      98.33       +3.33  <-- changed
+  F09-RosenbrockRot            95.0  100.0  100.0  100.0     100.00       +5.00  <-- changed
+  F10-EllipsoidalRot          100.0  100.0  100.0  100.0     100.00       +0.00
+  F11-Discus                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F12-BentCigar               100.0  100.0  100.0  100.0     100.00       +0.00
+  F13-SharpRidge              100.0  100.0  100.0  100.0     100.00       +0.00
+  F14-DiffPowers              100.0  100.0  100.0  100.0     100.00       +0.00
+  F15-RastriginRot             10.0    5.0   10.0    0.0       5.00       -5.00  <-- changed
+  F16-Weierstrass              90.0   70.0   65.0   75.0      70.00      -20.00  <-- changed
+  F17-SchafferF7              100.0   70.0   75.0   75.0      73.33      -26.67  <-- changed
+  F18-SchafferF7ill            65.0   60.0   65.0   75.0      66.67       +1.67  <-- changed
+  F19-GriewankRosenbrock        0.0    0.0    0.0    0.0       0.00       +0.00
+  F20-Schwefel                  5.0   15.0   10.0   10.0      11.67       +6.67  <-- changed
+  F21-Gallagher101             75.0   95.0  100.0   95.0      96.67      +21.67  <-- changed
+  F22-Gallagher21             100.0   85.0   85.0   85.0      85.00      -15.00  <-- changed
+  F23-Katsuura                 45.0   45.0   40.0   20.0      35.00      -10.00  <-- changed
+  F24-LunacekRastrigin          0.0    0.0    0.0    0.0       0.00       +0.00
+
+### ELSHADE-SPACMA
+  function                  i1(ref)     i2     i3     i4  mean i2-4  diff vs i1
+  F01-Sphere                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F02-EllipsoidalSep          100.0  100.0  100.0  100.0     100.00       +0.00
+  F03-RastriginSep            100.0  100.0  100.0  100.0     100.00       +0.00
+  F04-BucheRastrigin           90.0   90.0   90.0   85.0      88.33       -1.67  <-- changed
+  F05-LinearSlope             100.0  100.0  100.0  100.0     100.00       +0.00
+  F06-AttractiveSector        100.0  100.0  100.0  100.0     100.00       +0.00
+  F07-StepEllipsoidal         100.0  100.0  100.0  100.0     100.00       +0.00
+  F08-Rosenbrock              100.0  100.0  100.0  100.0     100.00       +0.00
+  F09-RosenbrockRot           100.0  100.0  100.0  100.0     100.00       +0.00
+  F10-EllipsoidalRot          100.0  100.0  100.0  100.0     100.00       +0.00
+  F11-Discus                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F12-BentCigar                70.0   90.0    5.0   85.0      60.00      -10.00  <-- changed
+  F13-SharpRidge              100.0  100.0  100.0  100.0     100.00       +0.00
+  F14-DiffPowers              100.0  100.0  100.0  100.0     100.00       +0.00
+  F15-RastriginRot             50.0   40.0   40.0   45.0      41.67       -8.33  <-- changed
+  F16-Weierstrass               0.0   10.0    5.0    0.0       5.00       +5.00  <-- changed
+  F17-SchafferF7               95.0   95.0  100.0   95.0      96.67       +1.67  <-- changed
+  F18-SchafferF7ill            85.0   75.0   90.0   80.0      81.67       -3.33  <-- changed
+  F19-GriewankRosenbrock        0.0    0.0    0.0    0.0       0.00       +0.00
+  F20-Schwefel                 80.0   90.0   85.0   80.0      85.00       +5.00  <-- changed
+  F21-Gallagher101             25.0   90.0  100.0  100.0      96.67      +71.67  <-- changed
+  F22-Gallagher21              95.0   65.0  100.0   70.0      78.33      -16.67  <-- changed
+  F23-Katsuura                  0.0    0.0    0.0    0.0       0.00       +0.00
+  F24-LunacekRastrigin          0.0    0.0    0.0    0.0       0.00       +0.00
+
+### LSHADE-SPACMA
+  function                  i1(ref)     i2     i3     i4  mean i2-4  diff vs i1
+  F01-Sphere                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F02-EllipsoidalSep          100.0  100.0  100.0  100.0     100.00       +0.00
+  F03-RastriginSep             95.0  100.0  100.0   95.0      98.33       +3.33  <-- changed
+  F04-BucheRastrigin           30.0   25.0   20.0   35.0      26.67       -3.33  <-- changed
+  F05-LinearSlope             100.0  100.0  100.0  100.0     100.00       +0.00
+  F06-AttractiveSector        100.0  100.0  100.0  100.0     100.00       +0.00
+  F07-StepEllipsoidal         100.0  100.0   95.0  100.0      98.33       -1.67  <-- changed
+  F08-Rosenbrock              100.0  100.0  100.0  100.0     100.00       +0.00
+  F09-RosenbrockRot           100.0  100.0  100.0  100.0     100.00       +0.00
+  F10-EllipsoidalRot          100.0  100.0  100.0  100.0     100.00       +0.00
+  F11-Discus                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F12-BentCigar               100.0  100.0   65.0   85.0      83.33      -16.67  <-- changed
+  F13-SharpRidge              100.0  100.0  100.0  100.0     100.00       +0.00
+  F14-DiffPowers              100.0  100.0  100.0  100.0     100.00       +0.00
+  F15-RastriginRot             35.0   35.0   30.0   25.0      30.00       -5.00  <-- changed
+  F16-Weierstrass               0.0    0.0    0.0    0.0       0.00       +0.00
+  F17-SchafferF7              100.0   95.0   80.0  100.0      91.67       -8.33  <-- changed
+  F18-SchafferF7ill            80.0   85.0   95.0   95.0      91.67      +11.67  <-- changed
+  F19-GriewankRosenbrock        5.0    0.0    5.0    0.0       1.67       -3.33  <-- changed
+  F20-Schwefel                 70.0   60.0   70.0   80.0      70.00       +0.00
+  F21-Gallagher101             30.0   95.0  100.0   85.0      93.33      +63.33  <-- changed
+  F22-Gallagher21              95.0   45.0   95.0   65.0      68.33      -26.67  <-- changed
+  F23-Katsuura                  0.0    0.0    0.0    0.0       0.00       +0.00
+  F24-LunacekRastrigin          0.0    0.0    0.0    0.0       0.00       +0.00
+
+### EBOwithCMAR
+  function                  i1(ref)     i2     i3     i4  mean i2-4  diff vs i1
+  F01-Sphere                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F02-EllipsoidalSep          100.0  100.0  100.0  100.0     100.00       +0.00
+  F03-RastriginSep            100.0  100.0  100.0  100.0     100.00       +0.00
+  F04-BucheRastrigin          100.0  100.0  100.0   95.0      98.33       -1.67  <-- changed
+  F05-LinearSlope             100.0  100.0  100.0  100.0     100.00       +0.00
+  F06-AttractiveSector        100.0  100.0  100.0  100.0     100.00       +0.00
+  F07-StepEllipsoidal         100.0  100.0  100.0  100.0     100.00       +0.00
+  F08-Rosenbrock              100.0  100.0  100.0  100.0     100.00       +0.00
+  F09-RosenbrockRot           100.0  100.0  100.0  100.0     100.00       +0.00
+  F10-EllipsoidalRot          100.0  100.0  100.0  100.0     100.00       +0.00
+  F11-Discus                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F12-BentCigar                 0.0   80.0   45.0   80.0      68.33      +68.33  <-- changed
+  F13-SharpRidge                0.0    0.0    0.0    0.0       0.00       +0.00
+  F14-DiffPowers              100.0  100.0  100.0  100.0     100.00       +0.00
+  F15-RastriginRot             60.0   45.0   25.0   40.0      36.67      -23.33  <-- changed
+  F16-Weierstrass               0.0    0.0    0.0    0.0       0.00       +0.00
+  F17-SchafferF7                0.0    0.0    0.0    0.0       0.00       +0.00
+  F18-SchafferF7ill             0.0    0.0    0.0    0.0       0.00       +0.00
+  F19-GriewankRosenbrock        0.0    0.0    0.0    0.0       0.00       +0.00
+  F20-Schwefel                 90.0   95.0   90.0   80.0      88.33       -1.67  <-- changed
+  F21-Gallagher101             80.0  100.0   95.0   95.0      96.67      +16.67  <-- changed
+  F22-Gallagher21             100.0   85.0   90.0   90.0      88.33      -11.67  <-- changed
+  F23-Katsuura                  0.0    0.0    0.0    0.0       0.00       +0.00
+  F24-LunacekRastrigin          0.0    0.0    0.0    0.0       0.00       +0.00
+
+### IPOP-CMA-ES
+  function                  i1(ref)     i2     i3     i4  mean i2-4  diff vs i1
+  F01-Sphere                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F02-EllipsoidalSep          100.0  100.0  100.0  100.0     100.00       +0.00
+  F03-RastriginSep              5.0    0.0   10.0    5.0       5.00       +0.00
+  F04-BucheRastrigin            0.0    0.0    0.0    0.0       0.00       +0.00
+  F05-LinearSlope             100.0  100.0  100.0  100.0     100.00       +0.00
+  F06-AttractiveSector        100.0  100.0  100.0  100.0     100.00       +0.00
+  F07-StepEllipsoidal         100.0  100.0  100.0  100.0     100.00       +0.00
+  F08-Rosenbrock              100.0  100.0  100.0  100.0     100.00       +0.00
+  F09-RosenbrockRot           100.0  100.0  100.0  100.0     100.00       +0.00
+  F10-EllipsoidalRot          100.0  100.0  100.0  100.0     100.00       +0.00
+  F11-Discus                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F12-BentCigar               100.0  100.0  100.0  100.0     100.00       +0.00
+  F13-SharpRidge               10.0   15.0   20.0    0.0      11.67       +1.67  <-- changed
+  F14-DiffPowers              100.0  100.0  100.0  100.0     100.00       +0.00
+  F15-RastriginRot              5.0   10.0    0.0   20.0      10.00       +5.00  <-- changed
+  F16-Weierstrass              55.0   90.0   55.0   70.0      71.67      +16.67  <-- changed
+  F17-SchafferF7               75.0   85.0   70.0   70.0      75.00       +0.00
+  F18-SchafferF7ill            50.0   40.0   45.0   40.0      41.67       -8.33  <-- changed
+  F19-GriewankRosenbrock        0.0    5.0    0.0    0.0       1.67       +1.67  <-- changed
+  F20-Schwefel                  5.0    0.0   10.0    5.0       5.00       +0.00
+  F21-Gallagher101             10.0   25.0   40.0   50.0      38.33      +28.33  <-- changed
+  F22-Gallagher21              50.0   25.0   25.0   15.0      21.67      -28.33  <-- changed
+  F23-Katsuura                  0.0    0.0    0.0    0.0       0.00       +0.00
+  F24-LunacekRastrigin          0.0    0.0    0.0    0.0       0.00       +0.00
+
+### L-SHADE
+  function                  i1(ref)     i2     i3     i4  mean i2-4  diff vs i1
+  F01-Sphere                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F02-EllipsoidalSep          100.0  100.0  100.0  100.0     100.00       +0.00
+  F03-RastriginSep            100.0  100.0  100.0  100.0     100.00       +0.00
+  F04-BucheRastrigin          100.0  100.0  100.0  100.0     100.00       +0.00
+  F05-LinearSlope             100.0  100.0  100.0  100.0     100.00       +0.00
+  F06-AttractiveSector        100.0  100.0  100.0  100.0     100.00       +0.00
+  F07-StepEllipsoidal         100.0  100.0  100.0  100.0     100.00       +0.00
+  F08-Rosenbrock              100.0  100.0  100.0  100.0     100.00       +0.00
+  F09-RosenbrockRot           100.0  100.0  100.0  100.0     100.00       +0.00
+  F10-EllipsoidalRot          100.0  100.0  100.0  100.0     100.00       +0.00
+  F11-Discus                  100.0  100.0  100.0  100.0     100.00       +0.00
+  F12-BentCigar                 5.0   45.0    0.0   60.0      35.00      +30.00  <-- changed
+  F13-SharpRidge               35.0   25.0   15.0   10.0      16.67      -18.33  <-- changed
+  F14-DiffPowers              100.0  100.0  100.0  100.0     100.00       +0.00
+  F15-RastriginRot              0.0    0.0    0.0    5.0       1.67       +1.67  <-- changed
+  F16-Weierstrass               0.0    0.0    0.0    0.0       0.00       +0.00
+  F17-SchafferF7                0.0    5.0    0.0    0.0       1.67       +1.67  <-- changed
+  F18-SchafferF7ill             0.0    0.0    0.0    0.0       0.00       +0.00
+  F19-GriewankRosenbrock        0.0    0.0    0.0    0.0       0.00       +0.00
+  F20-Schwefel                 30.0   40.0   65.0   25.0      43.33      +13.33  <-- changed
+  F21-Gallagher101             85.0   95.0  100.0   85.0      93.33       +8.33  <-- changed
+  F22-Gallagher21              85.0   65.0   70.0   90.0      75.00      -10.00  <-- changed
+  F23-Katsuura                  0.0    0.0    0.0    0.0       0.00       +0.00
+  F24-LunacekRastrigin          0.0    0.0    0.0    0.0       0.00       +0.00
+
