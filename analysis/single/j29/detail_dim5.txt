@@ -1,0 +1,99 @@
+=== dim5 OVERALL (mean over 24 funcs) ===
+method              1e-2    1e-4    1e-7   1e-10
+MC-ESO            70.00%  68.54%  62.71%  59.17%
+v1_noair_fl10i    71.25%  69.17%  63.96%  62.08%
+v1_w4q3           71.67%  71.46%  69.58%  67.29%
+v1_w4q3E          71.46%  70.83%  69.58%  68.33%
+
+=== evals_succ_mean, averaged over funcs where BOTH MC-ESO and the arm have successes ===
+  MC-ESO   4107.6 vs v1_noair_fl10i     4099.6  (n=20 funcs, delta=-8.0)
+  MC-ESO   4202.4 vs v1_w4q3            4138.0  (n=21 funcs, delta=-64.4)
+  MC-ESO   4202.4 vs v1_w4q3E           4129.6  (n=21 funcs, delta=-72.8)
+
+=== PER-FUNCTION SR@1e-10 (%) ===
+func                               MC-ESO   v1_noair_fl10i          v1_w4q3         v1_w4q3E
+F01-Sphere                100.00           100.00( +0.00)  100.00( +0.00)  100.00( +0.00)
+F02-EllipsoidalSep        100.00           100.00( +0.00)  100.00( +0.00)  100.00( +0.00)
+F03-RastriginSep            5.00            20.00(+15.00)   25.00(+20.00)   25.00(+20.00)
+F04-BucheRastrigin          0.00             5.00( +5.00)    0.00( +0.00)    0.00( +0.00)
+F05-LinearSlope           100.00           100.00( +0.00)  100.00( +0.00)  100.00( +0.00)
+F06-AttractiveSector      100.00           100.00( +0.00)  100.00( +0.00)  100.00( +0.00)
+F07-StepEllipsoidal       100.00           100.00( +0.00)  100.00( +0.00)  100.00( +0.00)
+F08-Rosenbrock            100.00           100.00( +0.00)   90.00(-10.00)   90.00(-10.00)
+F09-RosenbrockRot         100.00            95.00( -5.00)  100.00( +0.00)   95.00( -5.00)
+F10-EllipsoidalRot        100.00           100.00( +0.00)  100.00( +0.00)  100.00( +0.00)
+F11-Discus                100.00           100.00( +0.00)  100.00( +0.00)  100.00( +0.00)
+F12-BentCigar             100.00           100.00( +0.00)  100.00( +0.00)  100.00( +0.00)
+F13-SharpRidge            100.00           100.00( +0.00)  100.00( +0.00)  100.00( +0.00)
+F14-DiffPowers            100.00           100.00( +0.00)  100.00( +0.00)  100.00( +0.00)
+F15-RastriginRot           20.00            25.00( +5.00)   35.00(+15.00)   35.00(+15.00)
+F16-Weierstrass            50.00            45.00( -5.00)   90.00(+40.00)   85.00(+35.00)
+F17-SchafferF7             10.00            15.00( +5.00)   65.00(+55.00)   85.00(+75.00)
+F18-SchafferF7ill           5.00            15.00(+10.00)   50.00(+45.00)   65.00(+60.00)
+F19-GriewankRosenbrock      5.00             0.00( -5.00)    5.00( +0.00)    5.00( +0.00)
+F20-Schwefel                0.00             0.00( +0.00)    5.00( +5.00)    5.00( +5.00)
+F21-Gallagher101           55.00            45.00(-10.00)   45.00(-10.00)   45.00(-10.00)
+F22-Gallagher21            60.00            60.00( +0.00)   60.00( +0.00)   60.00( +0.00)
+F23-Katsuura               10.00            65.00(+55.00)   45.00(+35.00)   45.00(+35.00)
+F24-LunacekRastrigin        0.00             0.00( +0.00)    0.00( +0.00)    0.00( +0.00)
+
+--- v1_noair_fl10i: SR@1e-10 changed on 10 function(s)
+      F03-RastriginSep           5.00 ->  20.00  (+15.00pt)
+      F04-BucheRastrigin         0.00 ->   5.00  (+5.00pt)
+      F09-RosenbrockRot        100.00 ->  95.00  (-5.00pt)
+      F15-RastriginRot          20.00 ->  25.00  (+5.00pt)
+      F16-Weierstrass           50.00 ->  45.00  (-5.00pt)
+      F17-SchafferF7            10.00 ->  15.00  (+5.00pt)
+      F18-SchafferF7ill          5.00 ->  15.00  (+10.00pt)
+      F19-GriewankRosenbrock     5.00 ->   0.00  (-5.00pt)
+      F21-Gallagher101          55.00 ->  45.00  (-10.00pt)
+      F23-Katsuura              10.00 ->  65.00  (+55.00pt)
+--- v1_w4q3: SR@1e-10 changed on 9 function(s)
+      F03-RastriginSep           5.00 ->  25.00  (+20.00pt)
+      F08-Rosenbrock           100.00 ->  90.00  (-10.00pt)
+      F15-RastriginRot          20.00 ->  35.00  (+15.00pt)
+      F16-Weierstrass           50.00 ->  90.00  (+40.00pt)
+      F17-SchafferF7            10.00 ->  65.00  (+55.00pt)
+      F18-SchafferF7ill          5.00 ->  50.00  (+45.00pt)
+      F20-Schwefel               0.00 ->   5.00  (+5.00pt)
+      F21-Gallagher101          55.00 ->  45.00  (-10.00pt)
+      F23-Katsuura              10.00 ->  45.00  (+35.00pt)
+--- v1_w4q3E: SR@1e-10 changed on 10 function(s)
+      F03-RastriginSep           5.00 ->  25.00  (+20.00pt)
+      F08-Rosenbrock           100.00 ->  90.00  (-10.00pt)
+      F09-RosenbrockRot        100.00 ->  95.00  (-5.00pt)
+      F15-RastriginRot          20.00 ->  35.00  (+15.00pt)
+      F16-Weierstrass           50.00 ->  85.00  (+35.00pt)
+      F17-SchafferF7            10.00 ->  85.00  (+75.00pt)
+      F18-SchafferF7ill          5.00 ->  65.00  (+60.00pt)
+      F20-Schwefel               0.00 ->   5.00  (+5.00pt)
+      F21-Gallagher101          55.00 ->  45.00  (-10.00pt)
+      F23-Katsuura              10.00 ->  45.00  (+35.00pt)
+
+=== WILCOXON (MC-ESO = reference, alpha=0.05) ===
+  v1_noair_fl10i: MC-ESO better on 0, v1_noair_fl10i better on 1 (of 24 funcs)
+      [v1_noair_fl10i better] F06-AttractiveSector     p=0.0002919 A12=0.12 (large)
+  v1_w4q3: MC-ESO better on 0, v1_w4q3 better on 7 (of 24 funcs)
+      [v1_w4q3 better] F03-RastriginSep         p=0.03277 A12=0.28 (large)
+      [v1_w4q3 better] F06-AttractiveSector     p=0.0001316 A12=0.03 (large)
+      [v1_w4q3 better] F13-SharpRidge           p=0.03112 A12=0.31 (medium)
+      [v1_w4q3 better] F14-DiffPowers           p=0.0006676 A12=0.19 (large)
+      [v1_w4q3 better] F16-Weierstrass          p=0.0208 A12=0.30 (medium)
+      [v1_w4q3 better] F17-SchafferF7           p=0.0005856 A12=0.11 (large)
+      [v1_w4q3 better] F18-SchafferF7ill        p=0.0003948 A12=0.12 (large)
+  v1_w4q3E: MC-ESO better on 0, v1_w4q3E better on 6 (of 24 funcs)
+      [v1_w4q3E better] F03-RastriginSep         p=0.03277 A12=0.28 (large)
+      [v1_w4q3E better] F06-AttractiveSector     p=0.0001316 A12=0.03 (large)
+      [v1_w4q3E better] F13-SharpRidge           p=8.82e-05 A12=0.01 (large)
+      [v1_w4q3E better] F14-DiffPowers           p=0.0001954 A12=0.05 (large)
+      [v1_w4q3E better] F17-SchafferF7           p=0.004221 A12=0.09 (large)
+      [v1_w4q3E better] F18-SchafferF7ill        p=1.335e-05 A12=0.10 (large)
+
+=== FOCUS FUNCTIONS: SR@1e-10 / evals_succ_mean (4 methods) ===
+func                                   MC-ESO         v1_noair_fl10i                v1_w4q3               v1_w4q3E
+F12-BentCigar          100.00% /         5659 100.00% /         5911 100.00% /         6305 100.00% /         5996
+F13-SharpRidge         100.00% /         4151 100.00% /         4095 100.00% /         4181 100.00% /         3745
+F16-Weierstrass         50.00% /         3973  45.00% /         4981  90.00% /         3977  85.00% /         3837
+F17-SchafferF7          10.00% /         4462  15.00% /         4068  65.00% /         3836  85.00% /         3967
+F18-SchafferF7ill        5.00% /         4828  15.00% /         5979  50.00% /         4831  65.00% /         5650
+F23-Katsuura            10.00% /         4840  65.00% /         5104  45.00% /         6118  45.00% /         6082
