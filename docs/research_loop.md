@@ -111,6 +111,25 @@
    **集計**: 標準の集計。2D の関数別の変化を全列挙し、SR@1e-10 を下げた関数を最初に書く。5D / 10D は F01〜F05 と F20 の SR@1e-10 と `evals_succ_mean` を 3 手法並べる。
    **記録**: `analysis/single/j36/`。
 
+5. **【一般化の検証 1/3】調整に使っていない instance と seed で 2D を測る。**
+   `./run.sh quick --all --n-runs 20 --max-evals 5000 --instance I --seed-offset 7 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"` を **I = 2, 3, 4 の 3 回**（label `j37d2i2` / `j37d2i3` / `j37d2i4`）。
+   **背景**: これまでの調整・判定はすべて BBOB の instance 1、seed 0〜1900 の同じ 20 個で行った。比較手法は既定値のまま。MC-ESO の優位のうち、同じ問題で選び続けたことによる上振れがどれだけあるかを測る。7 手法は現在の既定・最新の候補と、5D / 10D の 34 手法比較の上位。
+   **集計**: instance ごとと 3 instance 平均の [1] 全体表（7 手法、SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean`）、7 手法の SR@1e-10 の順位、Wilcoxon（ref=MC-ESO）の勝ち負けの数。比べるための instance 1 の値は [findings.md](findings.md) と `runs/20261012_*_allmethods2_*`（ローカル）にある。
+   **記録**: `analysis/single/j37/`（instance ごとに別ファイル）。
+6. **【一般化の検証 2/3】同じく 5D。** `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --instance I --seed-offset 7 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"` を I = 2, 3, 4（label `j38d5i2` ほか）。集計はジョブ 5 と同じ。**記録**: `analysis/single/j38/`。
+7. **【一般化の検証 3/3】同じく 10D。** `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --instance I --seed-offset 7 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"` を I = 2, 3, 4（label `j39d10i2` ほか）。90 分に収まらなければ規則どおり残りを書き戻す。集計はジョブ 5 と同じ。**記録**: `analysis/single/j39/`。
+8. **【公式予算 1/3】CEC2017 の公式予算 10000·D で 5D を測る（instance 1）。**
+   `./run.sh quick --all --dim 5 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j40d5`）。
+   **背景**: 判定の予算 2500·D は CEC2017 の公式予算の 4 分の 1。L-SHADE 系・EBO は公式予算に合わせて設計されていて、10D の 4 倍予算では L-SHADE が 56 → 69% に伸び、旧 MC-ESO との差が −35pt に開いた（2026-10-08）。現在の版で同じことが起きるかを測る。
+   **集計**: [1] 全体表（7 手法）、7 手法の SR@1e-10 の順位、関数ごとの最良手法、Wilcoxon（ref=MC-ESO）。同じ 7 手法の 12500 評価・instance 1 の値（`runs/20261012_020743_allmethods2_d5_quick`）と並べる。
+   **記録**: `analysis/single/j40/`。
+9. **【公式予算 2/3】10D の前半 12 関数。** `./run.sh quick --all --funcs F01-Sphere,F02-EllipsoidalSep,F03-RastriginSep,F04-BucheRastrigin,F05-LinearSlope,F06-AttractiveSector,F07-StepEllipsoidal,F08-Rosenbrock,F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar --dim 10 --max-evals 100000 --n-runs 20 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j41a`）。**記録**: `analysis/single/j41/`（ジョブ 10 と合わせて 24 関数にしてから集計）。
+10. **【公式予算 3/3】10D の後半 12 関数。** 同じコマンドで `--funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`（label `j41b`）。ジョブ 9 の結果と連結して 24/24 を確かめ、ジョブ 8 と同じ集計をする。**記録**: `analysis/single/j41/`。
+11. **【20 次元 1/2】20D を判定と同じ予算 2500·D で測る。** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j42`）。90 分に収まらなければ規則どおり完走した関数までを記録し、残りを書き戻す。
+    **背景**: BBOB の標準は 2〜40 次元で、論文は 20D を併記するのが普通。CEC の上位手法は 30〜100D を主戦場にしているので、低次元だけの比較は CMA-ES 系に有利な可能性がある。
+    **集計**: ジョブ 8 と同じ。**記録**: `analysis/single/j42/`。
+12. **【20 次元 2/2】20D を公式予算 10000·D で、手法を 5 つに絞って測る。** `./run.sh quick --all --funcs FUNCS --dim 20 --max-evals 200000 --n-runs 20 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,IPOP-CMA-ES"` を 3 組に分けて回す（label `j43a` / `j43b` / `j43c`）。FUNCS は (a) `F01-Sphere,F02-EllipsoidalSep,F03-RastriginSep,F04-BucheRastrigin,F05-LinearSlope,F06-AttractiveSector,F07-StepEllipsoidal,F08-Rosenbrock`、(b) `F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar,F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass`、(c) `F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`。1 回の起動で終わる分だけ回し、残りの組は書き戻す。
+    **集計**: 24 関数がそろったら ジョブ 8 と同じ集計。**記録**: `analysis/single/j43/`。
 
 ## 規則
 

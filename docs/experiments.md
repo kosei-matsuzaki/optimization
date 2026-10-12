@@ -162,7 +162,7 @@ ioh        # BBOB / CEC2022 ベンチマーク関数（IOH Experimenter）
 
 ### BBOB 24 関数（主スイート）
 
-**BBOB（Black-Box Optimization Benchmarking）ノイズなし版全 24 関数**を使用する。BBOB は Hansen et al. (2009) が提案した連続最適化の標準ベンチマークスイートであり、GECCO の COCO ワークショップで毎年使用されている。関数は `ioh` ライブラリ（instance=1）経由で取得し、`f(x) − f_opt` に正規化することでグローバル最小値を常に 0 とする。探索範囲はすべての関数で **[-5, 5]^d**。
+**BBOB（Black-Box Optimization Benchmarking）ノイズなし版全 24 関数**を使用する。BBOB は Hansen et al. (2009) が提案した連続最適化の標準ベンチマークスイートであり、GECCO の COCO ワークショップで毎年使用されている。関数は `ioh` ライブラリ（instance=1。`./run.sh quick --instance N` で変えられる。run i の seed は 100·i で、`--seed-offset K` で K + 100·i にずらせる。どちらも調整に使っていない問題での一般化の検証用、2026-10-13 追加）経由で取得し、`f(x) − f_opt` に正規化することでグローバル最小値を常に 0 とする。探索範囲はすべての関数で **[-5, 5]^d**。
 
 > **なぜ BBOB か**
 > - 手作りの個別関数ではなく、査読済みスイートによる客観的な比較が可能
