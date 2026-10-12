@@ -100,7 +100,7 @@
 
 ---
 
-3. **CEC2022（10D、hold-out）で現在の既定・候補・比較手法を並べる。** 予算 2 通り。
+3. **CEC2022（10D、hold-out）で現在の既定・候補・比較手法を並べる。** 予算 2 通り。 (claimed 2026-10-12 16:31 UTC)
    `./run.sh quick --suite cec2022 --all --n-runs 20 --max-evals 25000 --methods "MC-ESO,v2_hlC,MC-ESO-v1,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,DE,L-SHADE,jSO,LSHADE-SPACMA,ELSHADE-SPACMA,EBOwithCMAR,EA4eig,L-SRTDE,IMODE"`、同じ `--methods` で `--max-evals 200000`（競技の公式予算）。**200000 は 1 関数ずつ（`--funcs <完全名>`）に分けて回す**（ローカルの Windows では 15 手法 × 12 関数を 1 本で回すと親がメモリ不足で落ちた。2026-10-12 に修正済みだが、1 本 90 分の上限にも当たる）。
    **背景**: ローカル 25000 評価では SR@1e-10 が `v2_hlC` 30.4%（L-SRTDE と同率 1 位）、MC-ESO 29.2%。一方、CEC 流の平均誤差の順位では MC-ESO 15 手法中 8 位、`v2_hlC` 11 位（ハイブリッド関数 G06〜G08 で DE 系に負ける）。正準環境と公式予算での位置を確かめる。CEC2022 用にハイパーパラメータは調整しない（[experiments.md](experiments.md)）。
    **集計**: 標準の集計に加え、CEC の慣例どおり **平均誤差による関数ごとの順位の平均**（誤差 1e-8 未満は 0 とみなす）を 15 手法について書く。関数別に `v2_hlC` / MC-ESO / 最良の比較手法の SR@1e-7 と中央値誤差を並べる。
