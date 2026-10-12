@@ -647,9 +647,19 @@ def _worker_task(key, method, n_runs, max_evals, noise, slim):
     import dataclasses
     results, times = _run_one(_bench_from_key(key), method, n_runs, max_evals, noise)
     if slim:
-        results = [dataclasses.replace(
-            r, history_x=np.asarray(r.history_x, dtype=float),
-            **{k: [] for k in _VIZ_ONLY_FIELDS}) for r in results]
+        from core.runner import PEAK_THRESHOLDS, optima_found_mask
+        bench = _bench_from_key(key)
+        span = bench.bounds[1] - bench.bounds[0]
+        slimmed = []
+        for r in results:
+            masks = {}
+            if bench.optima_pos:
+                for thr in PEAK_THRESHOLDS:   # peak_metrics' levels and default radius
+                    masks[(thr, 0.02)] = optima_found_mask(r, bench.optima_pos, span, thr, 0.02).tolist()
+            s = dataclasses.replace(r, history_x=[], **{k: [] for k in _VIZ_ONLY_FIELDS})
+            s.found_masks = masks
+            slimmed.append(s)
+        results = slimmed
     return results, times
 
 

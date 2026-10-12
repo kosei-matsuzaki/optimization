@@ -97,6 +97,11 @@ def optima_found_mask(
     Returns a boolean array of length ``len(optima_pos)``.
     """
     K = len(optima_pos)
+    # A --jobs worker computes these masks itself and ships them instead of the
+    # whole history_x (200k evaluations × 20 runs ran the parent out of memory).
+    pre = getattr(result, "found_masks", None)
+    if pre is not None and (threshold, radius_ratio) in pre:
+        return np.asarray(pre[(threshold, radius_ratio)], dtype=bool)
     found = np.zeros(K, dtype=bool)
     if K == 0 or len(result.history_x) == 0:   # list, or an array from a --jobs worker
         return found
