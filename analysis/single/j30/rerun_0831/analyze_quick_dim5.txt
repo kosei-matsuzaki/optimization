@@ -1,0 +1,59 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=5   ref=MC-ESO
+run: 20261012_083612_j30d5_quick
+meta: n_runs=20 max_evals=12500 set=all-d5 commit=e26c1f4
+functions: 24   methods: CMA-ES, IPOP-CMA-ES, BIPOP-CMA-ES, DE, L-SHADE, MC-ESO, MC-ESO-v1
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  CMA-ES            42.5%   47.3%   47.9%   50.6%        1407        17/1
+  IPOP-CMA-ES       57.3%   62.1%   64.4%   66.5%        3493        13/0
+  BIPOP-CMA-ES      54.4%   61.0%   64.8%   66.5%        3867        12/0
+  DE                44.0%   50.0%   53.5%   57.7%        4770        11/3
+  L-SHADE           58.5%   66.7%   75.2%   77.9%        8172        10/5
+  MC-ESO            68.3%   69.6%   70.8%   71.5%        4143            
+  MC-ESO-v1         59.2%   62.7%   68.5%   70.0%        4202         6/0
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%          CMA-ES 100%             1743/441
+  F02-EllipsoidalSep              100%          CMA-ES 100%            3590/1184
+  F03-RastriginSep                 25%         L-SHADE 100%           5542/10057  <-- ref behind
+  F04-BucheRastrigin                0%         L-SHADE 100%                    -  <-- ref behind
+  F05-LinearSlope                 100%          CMA-ES 100%             2392/562
+  F06-AttractiveSector            100%          CMA-ES 100%            3537/1073
+  F07-StepEllipsoidal             100%     IPOP-CMA-ES 100%            1671/1265
+  F08-Rosenbrock                   90%     IPOP-CMA-ES 100%            3873/2340  <-- ref behind
+  F09-RosenbrockRot                95%     IPOP-CMA-ES 100%            3717/1893  <-- ref behind
+  F10-EllipsoidalRot              100%          CMA-ES 100%            3495/1826
+  F11-Discus                      100%          CMA-ES 100%            3435/1996
+  F12-BentCigar                   100%          CMA-ES 100%            5996/3367
+  F13-SharpRidge                  100%       MC-ESO-v1 100%            3745/4151
+  F14-DiffPowers                  100%          CMA-ES 100%             2095/667
+  F15-RastriginRot                 35%        MC-ESO-v1 20%            7312/9645
+  F16-Weierstrass                  85%      IPOP-CMA-ES 65%            3837/6500
+  F17-SchafferF7                   85%               DE 95%            3967/5265  <-- ref behind
+  F18-SchafferF7ill                65%      IPOP-CMA-ES 35%            5650/5289
+  F19-GriewankRosenbrock            5%         MC-ESO-v1 5%            8080/6097
+  F20-Schwefel                      5%               DE 60%            4417/6160  <-- ref behind
+  F21-Gallagher101                 45%          L-SHADE 85%            4239/5793  <-- ref behind
+  F22-Gallagher21                  60%          L-SHADE 85%            2724/6986  <-- ref behind
+  F23-Katsuura                     45%        MC-ESO-v1 10%            6082/4840
+  F24-LunacekRastrigin              0%            CMA-ES 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F03-RastriginSep       vs DE             p=0.000738 A12=0.20 (large)
+  F03-RastriginSep       vs L-SHADE        p=0.000531 A12=0.13 (large)
+  F04-BucheRastrigin     vs DE             p=1.91e-06 A12=0.06 (large)
+  F04-BucheRastrigin     vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs CMA-ES         p=0.000476 A12=0.15 (large)
+  F20-Schwefel           vs DE             p=0.00118 A12=0.11 (large)
+  F20-Schwefel           vs L-SHADE        p=3.81e-06 A12=0.05 (large)
+  F21-Gallagher101       vs L-SHADE        p=0.00474 A12=0.27 (large)
+  F22-Gallagher21        vs L-SHADE        p=0.0166 A12=0.33 (medium)
+
