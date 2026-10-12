@@ -793,7 +793,8 @@ def niching_by_name(name: str) -> BenchmarkFunction:
     raise KeyError(name)
 
 
-def make_benchmark_by_name(name: str, dim: int) -> BenchmarkFunction:
+def make_benchmark_by_name(name: str, dim: int,
+                           instance: "int | None" = None) -> BenchmarkFunction:
     """Reconstruct a fresh benchmark from its name (for use in worker processes).
 
     Covers custom benchmarks (C*), BBOB (F*), and CEC2022 (G*). Custom
@@ -803,7 +804,7 @@ def make_benchmark_by_name(name: str, dim: int) -> BenchmarkFunction:
         return _CUSTOM_FACTORIES[name]()
     spec = next((s for s in _BBOB_SPECS if s[1] == name), None)
     if spec is not None:
-        return _make_bbob(spec[0], spec[1], spec[2], dim)
+        return _make_bbob(spec[0], spec[1], spec[2], dim, instance)
     spec = next((s for s in _CEC2022_SPECS if s[1] == name), None)
     if spec is not None:
         return _make_cec2022(spec[0], spec[1], spec[2], dim)
