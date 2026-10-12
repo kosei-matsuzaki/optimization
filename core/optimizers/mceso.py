@@ -658,6 +658,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # for still fires (an accepted Gallagher improvement delayed it: 10D
         # F22 75→45).
         reassort_discard: bool = False,
+        # Separable decomposition (None = off): when the additivity test passes,
+        # treat the landscape as separable and solve it as D one-dimensional
+        # problems — a grid of this many points over each coordinate's range,
+        # then a ternary refinement inside the best grid cell, coordinate by
+        # coordinate (two passes at most). 2026-10-12 probe from v2_hlC's final
+        # best (10 seeds): 5D F04 0→10/10, F03 8→10/10; 10D F03 4→10, F04 0→10,
+        # at ~3100 / ~5700 evaluations. F20 (coupled consecutive coordinates) and
+        # the rotated F15 do not benefit — the additivity test should refuse them.
+        reassort_scan: "int | None" = None,
         ir_reignite_sigma_ratio: float = 0.05,
         ir_repel_radius_ratio: float = 0.1,
         ir_repel_max_tries: int = 20,
@@ -748,6 +757,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.reassort_top_hosts = reassort_top_hosts
         self.reassort_min_dim = reassort_min_dim
         self.reassort_discard = reassort_discard
+        self.reassort_scan = reassort_scan
         self.ir_reignite_sigma_ratio = ir_reignite_sigma_ratio
         self.ir_repel_radius_ratio = ir_repel_radius_ratio
         self.ir_repel_max_tries = ir_repel_max_tries
@@ -1555,7 +1565,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     if f < trial_best_f:
                         trial_best_x, trial_best_f = x, f
                     d = f - best_f
-                    if d < 0 and (i not in per_coord or d < per_coord[i][0]):
+                    # The additivity test needs two coordinates, improving or
+                    # not (a run one well away has a single improving one);
+                    # with the scan off it keeps the original improving-only rule.
+                    if ((d < 0 or self.reassort_scan)
+                            and (i not in per_coord or d < per_coord[i][0])):
                         per_coord[i] = (d, v)
             if first_pass and self.reassort_additivity is not None:
                 first_pass = False
@@ -1577,6 +1591,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                         if abs(dij - (di + dj)) > self.reassort_additivity * (abs(di) + abs(dj)):
                             additive = False
                             break
+                if additive and self.reassort_scan:
+                    if trial_best_x is not None and trial_best_f < best_f:
+                        best_x, best_f = trial_best_x, trial_best_f
+                    # The scan has its own budget (two full passes); the sweep's
+                    # cap cut it off after ~4 of 5 coordinates at 5D.
+                    scan_start = len(st.history_f)
+                    scan_cap = 2 * self.dim * (int(self.reassort_scan) + 61)
+                    best_x, best_f = self._separable_scan(st, best_x, best_f, scan_start, scan_cap)
+                    if best_f < float(st.pop_f[bi]):
+                        st.pop_x[bi], st.pop_f[bi], st.pop_age[bi] = best_x, best_f, 0
+                    return
                 if not additive:
                     st.sweep_dead = True
                     if self.reassort_discard:
@@ -1594,6 +1619,53 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.pop_x[bi] = best_x
             st.pop_f[bi] = best_f
             st.pop_age[bi] = 0
+
+    def _separable_scan(self, st: _MCESOState, best_x: np.ndarray, best_f: float,
+                        start: int, cap: int) -> tuple[np.ndarray, float]:
+        """reassort_scan: coordinate-wise 1-D global search (grid + ternary
+        refinement) on a landscape the additivity test called separable."""
+        lo_v = np.broadcast_to(np.asarray(st.lo, dtype=float), (self.dim,))
+        hi_v = np.broadcast_to(np.asarray(st.hi, dtype=float), (self.dim,))
+        G = int(self.reassort_scan)
+
+        def ev(x):
+            f = float(self.func(x))
+            self._record_eval(st, x, f, float("nan"))
+            return f
+
+        def room(n):
+            return st.budget_left and len(st.history_f) - start + n <= cap
+
+        for _ in range(2):
+            changed = False
+            for i in range(self.dim):
+                if not room(G + 61):
+                    return best_x, best_f
+                grid = np.linspace(lo_v[i], hi_v[i], G)
+                fs = np.empty(G)
+                for k, v in enumerate(grid):
+                    x = best_x.copy(); x[i] = v
+                    fs[k] = ev(x)
+                k = int(np.argmin(fs))
+                a, b = grid[max(k - 1, 0)], grid[min(k + 1, G - 1)]
+                for _ in range(30):
+                    m1, m2 = a + (b - a) / 3.0, b - (b - a) / 3.0
+                    x1 = best_x.copy(); x1[i] = m1
+                    x2 = best_x.copy(); x2[i] = m2
+                    if ev(x1) < ev(x2):
+                        b = m2
+                    else:
+                        a = m1
+                xi = best_x.copy(); xi[i] = 0.5 * (a + b)
+                cand = [(fs[k], grid[k]), (ev(xi), xi[i])]
+                fbest_i, v_i = min(cand, key=lambda t: t[0])
+                if fbest_i < best_f:
+                    best_x = best_x.copy(); best_x[i] = v_i
+                    best_f = fbest_i
+                    changed = True
+            if not changed:
+                break
+        return best_x, best_f
 
     def _recombination_wave(self, st: _MCESOState, sigma0: "float | None" = None,
                             budget_frac: "float | None" = None,
