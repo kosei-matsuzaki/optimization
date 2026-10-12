@@ -124,6 +124,13 @@
 
 ## 作業ログ
 
+### 2026-10-12 ジョブなし（main のマージが衝突して停止） — **`git merge --no-edit origin/main` が `docs/research_loop.md` で衝突。ルールに従い `git merge --abort` して測定は一切実行していない。解消は対話セッションの担当**
+
+- 衝突したファイル: **`docs/research_loop.md` のみ**（1 箇所、`## 測定ジョブ（上から実行する）` と `## 規則` の間）。merge-base は `aa52efa`、research-loop 側 HEAD は `7f3b38b`、main 側は `172dd74`（「記録: 封じ込めの波の λ（v2_hlC: 5D +0.8 / 10D +2.3）。キューにジョブ 5」）。他の 252 ファイル（`core/optimizers/mceso.py`・`docs/history.md`・`quick_check.py`・`runs/`・`web/` など）は自動マージできていた（abort で巻き戻し済み）。なお main は今回の fetch で forced update されている（`4ba2a26...172dd74`）。
+- 衝突の内容は前回（2026-10-11 の同項）と同じ形の「削除と追記」。research-loop 側は j29（既定値候補 `v1_w4q3E` とその途中段階）を完了して**キューを空にした**のに対し、main 側は**同じ位置に新しいジョブ 1〜5（j30 7 手法比較 / j31 新既定の ablation / j32 `v2_ir3_noFrz` / j33 `v2_rsT2s` / j34 `v2_hlC`）を書き、さらに research-loop が削除済みの旧ジョブ 1（`v1_w4q3E` の 2D/5D/10D、記録先 `analysis/single/j29/`）も残したまま**になっている。
+- そのため**ジョブは取っていない**（claim マーカーも書いていない）。main 側の新ジョブ 1〜5 は未マージで実行対象として確定できず、どちらの版を採るか（旧ジョブ 1 を落として 1〜5 を残すのか等）は判断になるため測定ルーチンでは決めない。
+- 測定は未実行＝セットアップ（`pip install` / バージョン確認）・コマンド・集計・`analysis/` への書き出しはいずれも無し。`analysis` のファイル数は 272 のまま（上限 約 400）。`scripts/check_doc_size.py` は commit 前に実行した。
+
 ### 2026-10-11 ジョブ1 既定値候補 `v1_w4q3E` とその途中段階（2D / 5D / 10D） — **MC-ESO の参照値は 3 次元すべて一致して再現（2D 93.33 / 5D 59.17 / 10D 42.08%）。2D で SR@1e-10 を下げた関数は 3 腕とも 0 個で 3 腕すべて 95.00%（+1.67pt）。5D は `fl10i` 62.08 / `w4q3` 67.29 / `w4q3E` 68.33%（+9.17pt）、10D は 42.92 / 44.17 / 52.71%（+10.63pt）で、`w4q3E` は 10D の悪化関数が 0 個**（採否の判断はしない）
 
 - 実行: ジョブ記載の 3 コマンド（`--methods "MC-ESO,v1_noair_fl10i,v1_w4q3,v1_w4q3E"`、n=20）。2D は 6 関数 × 4 shard（label `j29_d2_s1-4`、`--max-evals 5000`、wall 12.0 分 12:38:18→12:50:20）、5D は 6 関数 × 4 shard（`j29_d5_s1-4`、`--dim 5 --max-evals 12500`、wall 17.1 分 12:55:37→13:12:43）、10D は 4 関数 × 6 shard（`j29_d10_s1-6`、`--dim 10 --max-evals 25000`、wall 25.5 分 13:12:54→13:38:21）。関数は stride 配分。**3 次元すべて 24/24 そろった**（merged summary 各 96 行＝4 手法×24、wilcoxon 各 72 行＝3 手法×24、(関数, 手法) の重複・欠落ともゼロ、全 14 shard `status=done`）。numpy 2.4.6 / cma 4.5.0。
