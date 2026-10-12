@@ -1,0 +1,45 @@
+### per-function SR@1e-10 (%), 15 methods, CEC2022 10D n=20 max_evals=25000
+| func | MC-ESO | v2_hlC | MC-ESO-v1 | CMA-ES | IPOP-CMA-ES | BIPOP-CMA-ES | DE | L-SHADE | jSO | LSHADE-SPACMA | ELSHADE-SPACMA | EBOwithCMAR | EA4eig | L-SRTDE | IMODE |
+| G01-Zakharov | 100 | 100 | 100 | 100 | 100 | 100 | 10 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| G02-Rosenbrock | 50 | 50 | 55 | 20 | 5 | 20 | 0 | 0 | 0 | 10 | 0 | 40 | 30 | 40 | 45 |
+| G03-SchafferF7 | 60 | 60 | 0 | 0 | 10 | 10 | 90 | 5 | 30 | 45 | 15 | 30 | 10 | 30 | 0 |
+| G04-Rastrigin | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 20 | 0 | 0 | 0 |
+| G05-Levy | 100 | 100 | 100 | 55 | 100 | 100 | 70 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 0 |
+| G06-Hybrid1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| G07-Hybrid2 | 5 | 0 | 0 | 0 | 0 | 0 | 10 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| G08-Hybrid3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| G09-Composition1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| G10-Composition2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| G11-Composition3 | 60 | 60 | 0 | 0 | 0 | 0 | 50 | 40 | 100 | 100 | 45 | 0 | 5 | 95 | 0 |
+| G12-Composition4 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+### evals_succ_mean, mean over functions where BOTH have successes (ref=MC-ESO)
+| method | common funcs | method | MC-ESO |
+| v2_hlC | 6 | 8639 | 9151 |
+| MC-ESO-v1 | 6 | 12026 | 9151 |
+| CMA-ES | 5 | 2209 | 8611 |
+| IPOP-CMA-ES | 5 | 6366 | 8611 |
+| BIPOP-CMA-ES | 5 | 7159 | 8611 |
+| DE | 5 | 11725 | 9212 |
+| L-SHADE | 4 | 18341 | 8552 |
+| jSO | 4 | 16974 | 8552 |
+| LSHADE-SPACMA | 5 | 15679 | 8611 |
+| ELSHADE-SPACMA | 4 | 19216 | 8552 |
+| EBOwithCMAR | 5 | 16868 | 8611 |
+| EA4eig | 5 | 16444 | 8611 |
+| L-SRTDE | 6 | 13126 | 9151 |
+| IMODE | 4 | 22530 | 8422 |
+
+### SR@1e-7 / median error: MC-ESO / v2_hlC / best baseline
+| G01-Zakharov | MC-ESO 100% / 0.000e+00 | v2_hlC 100% / 0.000e+00 | CMA-ES 100% / 0.000e+00 |
+| G02-Rosenbrock | MC-ESO 50% / 1.993e+00 | v2_hlC 50% / 1.993e+00 | IMODE 100% / 1.215e-10 |
+| G03-SchafferF7 | MC-ESO 80% / 6.821e-13 | v2_hlC 80% / 3.979e-13 | DE 90% / 0.000e+00 |
+| G04-Rastrigin | MC-ESO 0% / 5.871e+00 | v2_hlC 0% / 8.401e+00 | EBOwithCMAR 20% / 2.487e+00 |
+| G05-Levy | MC-ESO 100% / 0.000e+00 | v2_hlC 100% / 0.000e+00 | MC-ESO-v1 100% / 0.000e+00 |
+| G06-Hybrid1 | MC-ESO 0% / 2.051e+00 | v2_hlC 0% / 1.321e+01 | L-SRTDE 0% / 1.537e-01 |
+| G07-Hybrid2 | MC-ESO 5% / 2.171e+01 | v2_hlC 5% / 2.112e+01 | DE 20% / 6.289e-01 |
+| G08-Hybrid3 | MC-ESO 0% / 2.180e+01 | v2_hlC 0% / 1.249e+01 | L-SRTDE 0% / 4.369e+00 |
+| G09-Composition1 | MC-ESO 0% / 2.293e+02 | v2_hlC 0% / 2.293e+02 | BIPOP-CMA-ES 5% / 2.293e+02 |
+| G10-Composition2 | MC-ESO 0% / 1.003e+02 | v2_hlC 0% / 1.005e+02 | LSHADE-SPACMA 0% / 1.002e+02 |
+| G11-Composition3 | MC-ESO 100% / 7.003e-11 | v2_hlC 100% / 7.503e-11 | LSHADE-SPACMA 100% / 4.547e-13 |
+| G12-Composition4 | MC-ESO 0% / 1.639e+02 | v2_hlC 0% / 1.648e+02 | L-SHADE 0% / 1.614e+02 |

@@ -1,0 +1,113 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261012_merged_j35_e25k_quick
+functions: 12   methods: EA4eig, LSHADE-SPACMA, EBOwithCMAR, jSO, L-SRTDE, IMODE, ELSHADE-SPACMA, CMA-ES, IPOP-CMA-ES, BIPOP-CMA-ES, DE, L-SHADE, MC-ESO, MC-ESO-v1, v2_hlC
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  EA4eig            20.4%   34.2%   37.1%   37.1%       16444         2/5
+  LSHADE-SPACMA     29.6%   30.8%   34.2%   34.6%       15679         1/7
+  EBOwithCMAR       24.2%   33.3%   38.3%   39.2%       17404         2/6
+  jSO               27.5%   31.7%   33.3%   33.3%       16974         2/6
+  L-SRTDE           30.4%   31.7%   40.0%   41.7%       14450         3/5
+  IMODE             12.1%   24.6%   32.9%   39.2%       22530         7/1
+  ELSHADE-SPACMA    21.7%   30.8%   33.3%   33.3%       19216         1/4
+  CMA-ES            14.6%   17.5%   18.3%   25.0%        2209         9/1
+  IPOP-CMA-ES       17.9%   27.5%   31.2%   31.7%        6366         4/2
+  BIPOP-CMA-ES      19.2%   23.3%   27.9%   31.7%        8812         5/2
+  DE                19.2%   21.7%   25.4%   26.7%       11725         4/3
+  L-SHADE           20.4%   28.3%   33.3%   33.3%       18341         2/6
+  MC-ESO            31.2%   36.2%   36.7%   37.9%        9151            
+  MC-ESO-v1         21.2%   23.3%   35.8%   37.9%       12026         3/2
+  v2_hlC            30.8%   36.2%   36.7%   37.9%        8639         4/1
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  G01-Zakharov                    100%          EA4eig 100%           9763/16182
+  G02-Rosenbrock                   50%        MC-ESO-v1 55%           8847/10346  <-- ref behind
+  G03-SchafferF7                   60%               DE 90%            9367/6908  <-- ref behind
+  G04-Rastrigin                     0%      EBOwithCMAR 20%                    -  <-- ref behind
+  G05-Levy                        100%          EA4eig 100%           4959/10247
+  G06-Hybrid1                       0%            EA4eig 0%                    -
+  G07-Hybrid2                       5%               DE 10%          11848/19593  <-- ref behind
+  G08-Hybrid3                       0%            EA4eig 0%                    -
+  G09-Composition1                  0%            EA4eig 0%                    -
+  G10-Composition2                  0%            EA4eig 0%                    -
+  G11-Composition3                 60%   LSHADE-SPACMA 100%          10121/16831  <-- ref behind
+  G12-Composition4                  0%            EA4eig 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  G03-SchafferF7         vs DE             p=0.00708 A12=0.09 (large)
+  G04-Rastrigin          vs BIPOP-CMA-ES   p=9.54e-06 A12=0.03 (large)
+  G04-Rastrigin          vs EA4eig         p=0.00169 A12=0.21 (large)
+  G04-Rastrigin          vs EBOwithCMAR    p=1.91e-06 A12=0.01 (large)
+  G04-Rastrigin          vs IPOP-CMA-ES    p=0.000133 A12=0.15 (large)
+  G04-Rastrigin          vs L-SHADE        p=0.00831 A12=0.26 (large)
+  G04-Rastrigin          vs LSHADE-SPACMA  p=6.29e-05 A12=0.07 (large)
+  G04-Rastrigin          vs jSO            p=0.0153 A12=0.29 (large)
+  G06-Hybrid1            vs EA4eig         p=5.72e-06 A12=0.05 (large)
+  G06-Hybrid1            vs EBOwithCMAR    p=6.29e-05 A12=0.09 (large)
+  G06-Hybrid1            vs ELSHADE-SPACMA p=5.72e-06 A12=0.06 (large)
+  G06-Hybrid1            vs L-SHADE        p=8.2e-05 A12=0.08 (large)
+  G06-Hybrid1            vs L-SRTDE        p=3.81e-06 A12=0.03 (large)
+  G06-Hybrid1            vs LSHADE-SPACMA  p=1.33e-05 A12=0.08 (large)
+  G06-Hybrid1            vs jSO            p=5.72e-06 A12=0.05 (large)
+  G07-Hybrid2            vs DE             p=8.2e-05 A12=0.10 (large)
+  G07-Hybrid2            vs EA4eig         p=4.77e-05 A12=0.12 (large)
+  G07-Hybrid2            vs EBOwithCMAR    p=8.2e-05 A12=0.12 (large)
+  G07-Hybrid2            vs ELSHADE-SPACMA p=3.81e-06 A12=0.07 (large)
+  G07-Hybrid2            vs L-SHADE        p=1.91e-05 A12=0.10 (large)
+  G07-Hybrid2            vs L-SRTDE        p=3.81e-06 A12=0.05 (large)
+  G07-Hybrid2            vs LSHADE-SPACMA  p=3.81e-06 A12=0.06 (large)
+  G07-Hybrid2            vs MC-ESO-v1      p=0.00831 A12=0.25 (large)
+  G07-Hybrid2            vs jSO            p=3.62e-05 A12=0.16 (large)
+  G08-Hybrid3            vs EBOwithCMAR    p=0.0266 A12=0.37 (small)
+  G08-Hybrid3            vs LSHADE-SPACMA  p=0.0484 A12=0.41 (small)
+  G09-Composition1       vs BIPOP-CMA-ES   p=1.91e-06 A12=0.00 (large)
+  G09-Composition1       vs CMA-ES         p=1.91e-06 A12=0.00 (large)
+  G09-Composition1       vs DE             p=0.000708 A12=0.05 (large)
+  G09-Composition1       vs EA4eig         p=1.91e-06 A12=0.00 (large)
+  G09-Composition1       vs EBOwithCMAR    p=1.91e-06 A12=0.00 (large)
+  G09-Composition1       vs ELSHADE-SPACMA p=1.91e-06 A12=0.00 (large)
+  G09-Composition1       vs IMODE          p=1.91e-06 A12=0.00 (large)
+  G09-Composition1       vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  G09-Composition1       vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  G09-Composition1       vs L-SRTDE        p=1.91e-06 A12=0.00 (large)
+  G09-Composition1       vs LSHADE-SPACMA  p=1.91e-06 A12=0.00 (large)
+  G09-Composition1       vs MC-ESO-v1      p=0.00558 A12=0.18 (large)
+  G09-Composition1       vs jSO            p=1.91e-06 A12=0.00 (large)
+  G09-Composition1       vs v2_hlC         p=9.54e-06 A12=0.14 (large)
+  G10-Composition2       vs EA4eig         p=0.00169 A12=0.20 (large)
+  G10-Composition2       vs EBOwithCMAR    p=1.33e-05 A12=0.09 (large)
+  G10-Composition2       vs ELSHADE-SPACMA p=0.000168 A12=0.16 (large)
+  G10-Composition2       vs L-SHADE        p=4.77e-05 A12=0.12 (large)
+  G10-Composition2       vs L-SRTDE        p=3.62e-05 A12=0.14 (large)
+  G10-Composition2       vs LSHADE-SPACMA  p=1.33e-05 A12=0.06 (large)
+  G10-Composition2       vs jSO            p=0.00021 A12=0.17 (large)
+  G11-Composition3       vs L-SRTDE        p=0.000952 A12=0.09 (large)
+  G11-Composition3       vs LSHADE-SPACMA  p=1.91e-06 A12=0.00 (large)
+  G11-Composition3       vs jSO            p=0.000395 A12=0.15 (large)
+  G12-Composition4       vs L-SHADE        p=3.62e-05 A12=0.05 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. EA4eig                 mean rank   5.17   best on  3/12
+   2. LSHADE-SPACMA          mean rank   5.58   best on  5/12
+   3. L-SHADE                mean rank   5.67   best on  4/12
+   4. L-SRTDE                mean rank   5.83   best on  5/12
+   5. ELSHADE-SPACMA         mean rank   6.08   best on  3/12
+   6. EBOwithCMAR            mean rank   6.21   best on  3/12
+   7. jSO                    mean rank   6.33   best on  3/12
+   8. MC-ESO-v1              mean rank   8.42   best on  2/12
+   9. MC-ESO                 mean rank   8.71   best on  3/12  <- ref
+  10. IPOP-CMA-ES            mean rank   8.96   best on  2/12
+  11. v2_hlC                 mean rank   9.12   best on  3/12
+  12. BIPOP-CMA-ES           mean rank   9.17   best on  3/12
+  13. IMODE                  mean rank  10.25   best on  2/12
+  14. DE                     mean rank  11.42   best on  1/12
+  15. CMA-ES                 mean rank  13.08   best on  1/12
+
