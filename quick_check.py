@@ -446,6 +446,12 @@ _OPTIMIZERS = {
     # Separable decomposition after the additivity test (on top of v2_hlC); 3D+ and all dims.
     "v2_scan":        (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 3, "reassort_scan": 200}),
     "v2_scan2d":      (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 2, "reassort_scan": 200}),
+    # On top of v2_scan2d: looser wave quality gate / earlier ill-conditioning latch.
+    "v2_wq2":         (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 2, "reassort_scan": 200, "wave_quality": 1e-2}),
+    "v2_rc25":        (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 2, "reassort_scan": 200, "router_learned_cond": 2.5}),
+    # Stall wave also at 2D (on top of v2_wq2).
+    "v2_wq2_2d":      (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 2, "reassort_scan": 200, "wave_quality": 1e-2, "wave_min_dim": 2}),
+    "v2_wq1_2d":      (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 2, "reassort_scan": 200, "wave_quality": 1e-1, "wave_min_dim": 2}),
     "v2_ir3_noFrz":   (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0}),
     "v2_irT_noFrz_noSS": (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0,
                                                        "hd_sigma_success": None}),

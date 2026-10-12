@@ -667,6 +667,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # at ~3100 / ~5700 evaluations. F20 (coupled consecutive coordinates) and
         # the rotated F15 do not benefit — the additivity test should refuse them.
         reassort_scan: "int | None" = None,
+        # Smallest dimension that uses the recombination waves (3 = the
+        # 2026-10-12 default; 2 also runs the stall wave at 2D, where the
+        # 2026-10-11 test with the 1e-3 quality gate never fired on F24).
+        wave_min_dim: int = 3,
         ir_reignite_sigma_ratio: float = 0.05,
         ir_repel_radius_ratio: float = 0.1,
         ir_repel_max_tries: int = 20,
@@ -686,7 +690,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self._pop_final = max(pop_min, int(round(pop_final_mult * self.dim)))
         self.sigma_floor_ill_ratio = sigma_floor_ill_ratio
         self.hd_sigma_success = hd_sigma_success
-        self._wave_lambda = hd_wave_lambda if self.dim >= 3 else None
+        self._wave_lambda = hd_wave_lambda if self.dim >= wave_min_dim else None
         self.wave_sigma_ratio = wave_sigma_ratio
         self.wave_budget_frac = wave_budget_frac
         self.wave_quality = wave_quality
