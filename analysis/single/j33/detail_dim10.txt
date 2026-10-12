@@ -1,0 +1,69 @@
+===== dim10  run=20261012_130121_j33d10_quick =====
+functions=24  summary_rows=72  wilcoxon_rows=48
+missing cells: none   duplicate rows: 0
+
+[1] OVERALL (mean over 24 functions), SR% and evals
+  method              sr_1e-2    sr_1e-4    sr_1e-7   sr_1e-10   own_evals(nf)   pair_evals ref->arm (nf)
+  MC-ESO              60.00      56.67      54.38      52.29    10072.9(18)
+  v2_ir3_noFrz        64.17      61.04      58.54      56.46    10636.9(17)     9486.5 ->  10636.9 (17)
+  v2_rsT2s            64.58      61.67      59.58      57.92    11040.1(18)     9916.0 ->  10636.0 (17)
+
+[2] per-function SR@1e-10 change  MC-ESO -> v2_ir3_noFrz  (only functions that moved)
+    F07-StepEllipsoidal        100 ->    95  (-5pt)
+    F16-Weierstrass              5 ->     0  (-5pt)
+    F21-Gallagher101            10 ->    85  (+75pt)
+    F22-Gallagher21             35 ->    70  (+35pt)
+    moved: 4 / 24
+
+[2] per-function SR@1e-10 change  MC-ESO -> v2_rsT2s  (only functions that moved)
+    F03-RastriginSep             0 ->    20  (+20pt)
+    F21-Gallagher101            10 ->    90  (+80pt)
+    F22-Gallagher21             35 ->    70  (+35pt)
+    moved: 3 / 24
+
+[2b] SR@1e-10 == 0 for all three arms: 6 -> F04-BucheRastrigin, F15-RastriginRot, F19-GriewankRosenbrock, F20-Schwefel, F23-Katsuura, F24-LunacekRastrigin
+
+[3] named functions: SR@1e-10 %% and evals_succ_mean, order = MC-ESO / v2_ir3_noFrz / v2_rsT2s
+    F03-RastriginSep       SR       0 / 0 / 20 %   evals - / - / 17910
+    F04-BucheRastrigin     SR        0 / 0 / 0 %   evals - / - / -
+    F15-RastriginRot       SR        0 / 0 / 0 %   evals - / - / -
+    F21-Gallagher101       SR     10 / 85 / 90 %   evals 3340 / 12639 / 11957
+    F22-Gallagher21        SR     35 / 70 / 70 %   evals 3514 / 11892 / 9217
+
+[4] WILCOXON (ref=MC-ESO, alpha=0.05 two-sided, A12 direction; p=nan treated as n.s.)
+    v2_ir3_noFrz: ref-better 6 / arm-better 2
+      ref better : F03-RastriginSep A12=0.73 large; F04-BucheRastrigin A12=0.94 large; F15-RastriginRot A12=0.79 large; F17-SchafferF7 A12=0.54 negligible; F19-GriewankRosenbrock A12=0.72 large; F24-LunacekRastrigin A12=0.66 medium
+      arm better : F21-Gallagher101 A12=0.06 large; F22-Gallagher21 A12=0.30 medium
+    v2_rsT2s: ref-better 3 / arm-better 4
+      ref better : F15-RastriginRot A12=0.86 large; F17-SchafferF7 A12=0.54 negligible; F19-GriewankRosenbrock A12=0.77 large
+      arm better : F03-RastriginSep A12=0.05 large; F04-BucheRastrigin A12=0.01 large; F21-Gallagher101 A12=0.07 large; F22-Gallagher21 A12=0.26 large
+
+[5] cell-identity MC-ESO vs v2_ir3_noFrz: 24x45 = 1080 cells, 122 differ
+      F03-RastriginSep         mean_best_f        4.9104e+00 vs 7.9059e+00
+      F03-RastriginSep         median_best_f      4.4891e+00 vs 7.9093e+00
+      F04-BucheRastrigin       mean_best_f        8.9708e+00 vs 1.6813e+01
+      F04-BucheRastrigin       median_best_f      8.9550e+00 vs 1.6625e+01
+      F07-StepEllipsoidal      mean_best_f        0.0000e+00 vs 2.2535e-02
+      F07-StepEllipsoidal      sr_1e-1            100% vs 95%
+      F07-StepEllipsoidal      sr_1e-2            100% vs 95%
+      F07-StepEllipsoidal      sr_1e-3            100% vs 95%
+      F07-StepEllipsoidal      sr_1e-4            100% vs 95%
+      F07-StepEllipsoidal      sr_1e-5            100% vs 95%
+      F07-StepEllipsoidal      sr_1e-7            100% vs 95%
+      F07-StepEllipsoidal      sr_1e-10           100% vs 95%
+      ... 110 more
+[5] cell-identity MC-ESO vs v2_rsT2s: 24x45 = 1080 cells, 121 differ
+      F03-RastriginSep         mean_best_f        4.9104e+00 vs 1.4925e+00
+      F03-RastriginSep         median_best_f      4.4891e+00 vs 9.9496e-01
+      F03-RastriginSep         sr_1e-1            0% vs 20%
+      F03-RastriginSep         sr_1e-2            0% vs 20%
+      F03-RastriginSep         sr_1e-3            0% vs 20%
+      F03-RastriginSep         sr_1e-4            0% vs 20%
+      F03-RastriginSep         sr_1e-5            0% vs 20%
+      F03-RastriginSep         sr_1e-7            0% vs 20%
+      F03-RastriginSep         sr_1e-10           0% vs 20%
+      F03-RastriginSep         evals_succ_mean    inf vs 17910
+      F03-RastriginSep         evals_succ_med     inf vs 17781
+      F03-RastriginSep         ert                inf vs 117910
+      ... 109 more
+

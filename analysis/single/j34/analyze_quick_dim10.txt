@@ -1,0 +1,55 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261012_144948_j34d10_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=8ba1d0c
+functions: 24   methods: MC-ESO, v2_rsT2s, v2_hlC
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            52.7%   54.4%   56.7%   60.0%       10093            
+  v2_rsT2s          58.3%   59.6%   61.7%   64.6%       11058         3/4
+  v2_hlC            59.2%   59.8%   63.3%   65.0%       10948         4/5
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%        v2_rsT2s 100%            4899/4899
+  F02-EllipsoidalSep              100%        v2_rsT2s 100%            8921/8921
+  F03-RastriginSep                  0%         v2_rsT2s 20%                    -  <-- ref behind
+  F04-BucheRastrigin                0%          v2_rsT2s 0%                    -
+  F05-LinearSlope                 100%        v2_rsT2s 100%            7625/7625
+  F06-AttractiveSector            100%        v2_rsT2s 100%          10750/10750
+  F07-StepEllipsoidal             100%        v2_rsT2s 100%            5841/5525
+  F08-Rosenbrock                   95%         v2_rsT2s 95%          13439/13343
+  F09-RosenbrockRot               100%        v2_rsT2s 100%          14248/14189
+  F10-EllipsoidalRot              100%        v2_rsT2s 100%            8549/8549
+  F11-Discus                      100%        v2_rsT2s 100%            7963/7963
+  F12-BentCigar                    55%          v2_hlC 100%          17252/14038  <-- ref behind
+  F13-SharpRidge                  100%        v2_rsT2s 100%          10634/10634
+  F14-DiffPowers                  100%        v2_rsT2s 100%            6024/6024
+  F15-RastriginRot                  0%          v2_rsT2s 0%                    -
+  F16-Weierstrass                   5%          v2_rsT2s 5%          20042/17434
+  F17-SchafferF7                   40%         v2_rsT2s 40%          13312/12999
+  F18-SchafferF7ill                25%         v2_rsT2s 25%          12574/13844
+  F19-GriewankRosenbrock            0%          v2_rsT2s 0%                    -
+  F20-Schwefel                      0%          v2_rsT2s 0%                    -
+  F21-Gallagher101                 10%         v2_rsT2s 90%           3340/11957  <-- ref behind
+  F22-Gallagher21                  35%         v2_rsT2s 70%            3514/9217  <-- ref behind
+  F23-Katsuura                      0%          v2_rsT2s 0%                    -
+  F24-LunacekRastrigin              0%          v2_rsT2s 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F03-RastriginSep       vs v2_hlC         p=0.000322 A12=0.05 (large)
+  F03-RastriginSep       vs v2_rsT2s       p=0.000322 A12=0.05 (large)
+  F04-BucheRastrigin     vs v2_hlC         p=1.91e-06 A12=0.01 (large)
+  F04-BucheRastrigin     vs v2_rsT2s       p=1.91e-06 A12=0.01 (large)
+  F12-BentCigar          vs v2_hlC         p=0.00335 A12=0.25 (large)
+  F21-Gallagher101       vs v2_hlC         p=0.000196 A12=0.07 (large)
+  F21-Gallagher101       vs v2_rsT2s       p=0.000196 A12=0.07 (large)
+  F22-Gallagher21        vs v2_hlC         p=0.00187 A12=0.26 (large)
+  F22-Gallagher21        vs v2_rsT2s       p=0.00187 A12=0.26 (large)
+
