@@ -1032,7 +1032,8 @@ async function buildUnifiedTable(func) {
     or:    ['desc', (r, i) => parseFloat(r.mean_optima_rate)],
   };
   const sortAttr = k => `data-sort="${k}" class="sortable${unifiedSort.key === k ? ' sorted' : ''}" title="クリックで並べ替え"`;
-  const sortMark = k => unifiedSort.key === k ? (unifiedSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+  const markText = k => unifiedSort.key === k ? (unifiedSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+  const sortMark = k => `<span class="sort-mark">${markText(k)}</span>`;
   const SR_SORT_KEYS = ['sr4', 'sr7', 'sr10'];
   const srSubHead = SR_TARGET_LABELS.map((lbl, i) =>
     `<th ${sortAttr(SR_SORT_KEYS[i]).replace('class="', 'class="sr-head ')}>${lbl}${sortMark(SR_SORT_KEYS[i])}</th>`
@@ -1059,7 +1060,8 @@ async function buildUnifiedTable(func) {
     </thead>
     <tbody id="unified-tbody">`;
 
-  let order = summaryRows.map((_, i) => i);
+  const sortedOrder = () => {
+  const order = summaryRows.map((_, i) => i);
   if (unifiedSort.key && SORT_SPEC[unifiedSort.key]) {
     const get = SORT_SPEC[unifiedSort.key][1];
     const sign = unifiedSort.dir === 'asc' ? 1 : -1;
@@ -1076,12 +1078,14 @@ async function buildUnifiedTable(func) {
       return (isNaN(ea) ? Infinity : ea) - (isNaN(eb) ? Infinity : eb) || 0;
     });
   }
-  order.forEach(si => {
+  return order;
+  };
+  sortedOrder().forEach(si => {
     const sr = summaryRows[si];
     const method = sr.method;
     const runs   = byMethod[method] || [];
     html += `
-      <tr class="method-row${method === refMethod() ? ' is-ref' : ''}" data-method="${htmlesc(method)}" data-expanded="false">
+      <tr class="method-row${method === refMethod() ? ' is-ref' : ''}" data-method="${htmlesc(method)}" data-si="${si}" data-expanded="false">
         <td><div class="method-cell">
           <span class="expand-toggle">${runs.length ? '▶' : '·'}</span>
           ${method}
@@ -1097,7 +1101,7 @@ async function buildUnifiedTable(func) {
     runs.forEach(run => {
       const ors = parseFloat(run.optima_rate);
       html += `
-        <tr class="run-row" data-method="${htmlesc(method)}" style="display:none;">
+        <tr class="run-row" data-method="${htmlesc(method)}" data-si="${si}" style="display:none;">
           <td class="run-cell">seed ${run.seed}</td>
           <td>${fmtNum(run.best_f)}</td>
           <td>${(() => { const v = parseFloat(run.best_f); return isNaN(v) ? '—' : fmtNum(v < CEC_ZERO ? 0 : v); })()}</td>
@@ -1118,7 +1122,17 @@ async function buildUnifiedTable(func) {
     unifiedSort = unifiedSort.key === k
       ? { key: k, dir: unifiedSort.dir === 'asc' ? 'desc' : 'asc' }
       : { key: k, dir: SORT_SPEC[k][0] };
-    buildUnifiedTable(func);
+    // Reorder the existing rows in place (like the ranking table) so the page
+    // keeps its scroll position and expanded seed rows stay expanded.
+    const tbody = container.querySelector('#unified-tbody');
+    const groups = {};
+    tbody.querySelectorAll('tr[data-si]').forEach(tr => (groups[tr.dataset.si] = groups[tr.dataset.si] || []).push(tr));
+    sortedOrder().forEach(si => (groups[si] || []).forEach(tr => tbody.appendChild(tr)));
+    container.querySelectorAll('th[data-sort]').forEach(h => {
+      h.classList.toggle('sorted', h.dataset.sort === unifiedSort.key);
+      const mk = h.querySelector('.sort-mark');
+      if (mk) mk.textContent = markText(h.dataset.sort);
+    });
   }));
 
   container.querySelector('#unified-tbody').addEventListener('click', e => {
