@@ -100,7 +100,7 @@
 
 ---
 
-1. **【一般化の検証 2/3】同じく 5D。** `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --instance I --seed-offset 7 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"` を I = 2, 3, 4（label `j38d5i2` ほか）。集計は【一般化の検証 1/3】と同じ。**記録**: `analysis/single/j38/`。
+1. **【一般化の検証 2/3】同じく 5D。** `./run.sh quick --all --dim 5 --max-evals 12500 --n-runs 20 --instance I --seed-offset 7 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"` を I = 2, 3, 4（label `j38d5i2` ほか）。集計は【一般化の検証 1/3】と同じ。**記録**: `analysis/single/j38/`。 (claimed 2026-10-12 21:31 UTC)
 2. **【一般化の検証 3/3】同じく 10D。** `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --instance I --seed-offset 7 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"` を I = 2, 3, 4（label `j39d10i2` ほか）。90 分に収まらなければ規則どおり残りを書き戻す。集計は【一般化の検証 1/3】と同じ。**記録**: `analysis/single/j39/`。
 3. **【公式予算 1/3】CEC2017 の公式予算 10000·D で 5D を測る（instance 1）。**
    `./run.sh quick --all --dim 5 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j40d5`）。
