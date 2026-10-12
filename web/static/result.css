@@ -336,7 +336,7 @@
 
 /* ── Overall: ranking (the centrepiece) ──────────────────────────────────── */
 .ov-ranking, .ov-rank-header {
-  --rank-cols: 44px minmax(132px, 1.1fr) minmax(150px, 1.25fr) minmax(150px, 1.25fr) 86px 74px 100px 70px 76px;
+  --rank-cols: 36px minmax(120px, 1.1fr) minmax(112px, 1fr) minmax(112px, 1fr) minmax(112px, 1fr) 78px 66px 86px 60px 66px;
 }
 .ov-rank-header {
   display: grid; grid-template-columns: var(--rank-cols);
@@ -348,7 +348,7 @@
   border-radius: var(--radius) var(--radius) 0 0;
 }
 .ov-rank-header > div { text-align: right; }
-.ov-rank-header > div:nth-child(-n+4) { text-align: left; }
+.ov-rank-header > div:nth-child(-n+5) { text-align: left; }
 .ov-rank-sort {
   cursor: pointer; user-select: none;
   display: inline-flex; align-items: center; gap: 3px;

@@ -22,6 +22,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import sys
 import csv
 import json
 import math
@@ -317,6 +318,25 @@ def main() -> None:
                   f"({w.get('a12_magnitude','')})")
     if not any_loss:
         print(f"  none — {ref} is never significantly beaten.")
+
+    # ── 5. CEC-style mean-error rank ─────────────────────────────────────────
+    # The CEC competitions' ranking: per function, mean of the per-run errors
+    # (below 1e-8 counted as 0), methods ranked on it, ranks averaged. Needs
+    # the per-run stats files; reported alongside, not instead of, the 3 metrics.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from core.run_data import cec_mean_errors, cec_ranks
+    errs = cec_mean_errors(args.run_dir / f"dim{args.dim}")
+    print("\n[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)")
+    if not errs:
+        print("  no per-run stats files (dim*/stats/) — not computed.")
+    else:
+        rk = cec_ranks(errs, methods)
+        n_f = len(rk)
+        rows = sorted(((sum(rk[f][m] for f in rk) / n_f, m) for m in methods))
+        for i, (mr, m) in enumerate(rows, 1):
+            n_best = sum(1 for f in rk if rk[f][m] == min(rk[f].values()))
+            mark = "  <- ref" if m == ref else ""
+            print(f"  {i:>2}. {m:<22} mean rank {mr:6.2f}   best on {n_best:>2}/{n_f}{mark}")
     print()
 
 

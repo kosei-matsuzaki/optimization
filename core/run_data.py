@@ -105,3 +105,49 @@ def append_mceso_runs(dim_dir: Path, bench, results_per_method: dict) -> None:
         if new:
             w.writeheader()
         w.writerows(rows)
+
+
+# ── CEC-style mean-error rank ────────────────────────────────────────────────
+# The CEC competitions rank by error, not by success rate: per function, each
+# run's final error f − f* is set to 0 when below 1e-8, averaged over the runs,
+# the methods are ranked on that mean (ties share the average rank), and the
+# ranks are averaged over the functions. Computed from the per-run stats files
+# (dim{N}/stats/{func}.csv[.gz], column best_f = f − f*).
+CEC_ZERO = 1e-8
+
+
+def cec_mean_errors(dim_dir: Path) -> dict[str, dict[str, float]]:
+    """{function: {method: mean error with errors < 1e-8 counted as 0}}."""
+    out: dict[str, dict[str, float]] = {}
+    stats = Path(dim_dir) / "stats"
+    if not stats.is_dir():
+        return out
+    for p in sorted(stats.iterdir()):
+        name = p.name
+        if not (name.endswith(".csv") or name.endswith(".csv.gz")):
+            continue
+        func = name[:-len(".csv.gz")] if name.endswith(".gz") else name[:-len(".csv")]
+        opener = gzip.open if name.endswith(".gz") else open
+        errs: dict[str, list[float]] = {}
+        with opener(p, "rt", newline="") as f:
+            for row in csv.DictReader(f):
+                try:
+                    e = float(row["best_f"])
+                except (KeyError, TypeError, ValueError):
+                    continue
+                errs.setdefault(row["method"], []).append(0.0 if e < CEC_ZERO else e)
+        out[func] = {m: float(np.mean(v)) for m, v in errs.items() if v}
+    return out
+
+
+def cec_ranks(errors: dict[str, dict[str, float]],
+              methods: list[str] | None = None) -> dict[str, dict[str, float]]:
+    """{function: {method: rank}} — average ranks for ties; a method missing on
+    a function gets the worst rank there."""
+    from scipy.stats import rankdata
+    methods = methods or sorted({m for d in errors.values() for m in d})
+    out: dict[str, dict[str, float]] = {}
+    for func, d in errors.items():
+        vals = np.array([d.get(m, np.inf) for m in methods], dtype=float)
+        out[func] = {m: float(r) for m, r in zip(methods, rankdata(vals, method="average"))}
+    return out

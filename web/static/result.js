@@ -103,6 +103,7 @@ const SCOPE_LABELS = {
 const OV_SORT_KEYS = {
   bf:      { field: 'mean_rank_bf',    dir: 'asc'  },
   evals:   { field: 'mean_rank_evals', dir: 'asc'  },
+  cec:     { field: 'mean_rank_cec',   dir: 'asc'  },
   sr_deep: { field: 'mean_sr_deep',    dir: 'desc' },
   sr:      { field: 'mean_sr',         dir: 'desc' },
   pr:      { field: 'mean_pr',         dir: 'desc' },
@@ -117,6 +118,7 @@ const OV_DETAIL_INDICATORS = [
   { key: 'pr',      label: 'PR@1e-4（履歴）',  type: 'score', desc: 'PR@1e-4（履歴ベース）: 既知の大域最適 K 点のうち、評価履歴に半径内かつ f≤1e-4 の点がある割合（summary.csv の pr_1e-4）。BBOB は K=1 なので SR@1e-4 とほぼ同じ値になる。CEC2013 報告集合の cec_pr_* とは別物。赤に寄るほど低く、緑に寄るほど高い' },
   { key: 'bf',      label: 'best_f',   type: 'rank',  desc: 'best_f（全 run 平均 mean_best_f）の Friedman ランク。緑=1位、赤=最下位、同着は平均ランク' },
   { key: 'evals',   label: 'Evals',    type: 'rank',  desc: '成功 run のみの平均評価数の Friedman ランク。緑=1位、赤=最下位' },
+  { key: 'cec',     label: 'CEC 順位', type: 'rank',  desc: 'CEC の競技の慣例: run ごとの誤差 f − f*（1e-8 未満は 0）の平均で順位をつける。緑=1位、赤=最下位、同着は平均ランク' },
 ];
 
 function _sortedLeaderboard() {
@@ -830,7 +832,7 @@ function _renderLeaderboard(lb) {
     </div>
     <table class="fr-tbl">
       <thead><tr><th>指標</th><th>χ²_F</th><th>p 値</th><th>判定</th><th>CD₀.₀₅</th></tr></thead>
-      <tbody>${frRow('bf', 'best_f')}${frRow('evals', 'Evals')}</tbody>
+      <tbody>${frRow('bf', 'best_f')}${frRow('evals', 'Evals')}${frRow('cec', 'CEC 順位')}</tbody>
     </table>
     <div class="fr-note">
       χ²_F・p 値 = 手法間の順位差が全体として有意か（<strong>p &lt; 0.05 で有意差あり</strong>）。
@@ -847,6 +849,7 @@ function _renderLeaderboard(lb) {
       <div></div><div>手法</div>
       ${sortHdr('bf', '平均順位 best_f', 'best_f（全 run 平均 mean_best_f）の Friedman 平均ランク（低い＝優）')}
       ${sortHdr('evals', '平均順位 Evals', '成功 run のみの平均評価数の Friedman 平均ランク（低い＝優）')}
+      ${sortHdr('cec', 'CEC 順位', 'CEC の競技の慣例: run ごとの誤差（1e-8 未満は 0）の平均による関数ごとの順位の平均（低い＝優）。精度を問わず誤差の大きさで比べる')}
       ${sortHdr('sr_deep', 'SR@1e-10', 'SR@1e-10（最高精度・主指標）')}
       ${sortHdr('sr', 'SR@1e-4', 'SR@1e-4（補助）')}
       ${sortHdr('pr', 'PR@1e-4（履歴）', 'PR@1e-4（履歴ベース）: 既知の大域最適 K 点のうち、評価履歴に半径内かつ f≤1e-4 の点がある割合（summary.csv の pr_1e-4）。BBOB は K=1 なので SR@1e-4 とほぼ同じ値になる。CEC2013 報告集合の cec_pr_* とは別物')}
@@ -858,6 +861,7 @@ function _renderLeaderboard(lb) {
     const medalCls = row.method === ref ? 'is-ref' : '';
     const fillBf    = (fillFor(row.mean_rank_bf)    * 100).toFixed(1);
     const fillEvals = (fillFor(row.mean_rank_evals) * 100).toFixed(1);
+    const fillCec   = (fillFor(row.mean_rank_cec ?? nMethods) * 100).toFixed(1);
     const srDeep = (row.mean_sr_deep * 100).toFixed(1) + '%';
     const sr     = (row.mean_sr * 100).toFixed(1) + '%';
     const pr     = ((row.mean_pr ?? 0) * 100).toFixed(1) + '%';
@@ -876,6 +880,7 @@ function _renderLeaderboard(lb) {
         <div class="ov-rank-method" title="${htmlesc(row.method)}">${htmlesc(row.method)}</div>
         ${bar(fillBf,    row.mean_rank_bf,    row.rank_std_bf)}
         ${bar(fillEvals, row.mean_rank_evals, row.rank_std_evals)}
+        ${bar(fillCec,   row.mean_rank_cec ?? nMethods, row.rank_std_cec ?? 0)}
         <div class="ov-rank-metric primary" title="SR@1e-10">${srDeep}</div>
         <div class="ov-rank-metric" title="SR@1e-4">${sr}</div>
         <div class="ov-rank-metric ${row.mean_pr ? '' : 'muted'}" title="PR@1e-4（履歴ベース、pr_1e-4）">${pr}</div>

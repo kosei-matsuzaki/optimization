@@ -217,6 +217,9 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
                   successful runs, where the spread is small and outliers are
                   unlikely, so the mean is used rather than the median.
       - "ecdf"  : ECDF AUC over BBOB targets (higher is better)
+      - "cec"   : the CEC competitions' mean error — per-run f − f* with values
+                  below 1e-8 counted as 0, averaged (core.run_data.cec_mean_errors;
+                  needs the per-run stats files, else every method ties)
     For each indicator we also report Friedman χ²_F, p value, and Nemenyi
     critical difference at α=0.05 so the user can judge whether mean-rank
     gaps are statistically meaningful.
@@ -249,6 +252,8 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
         except (ValueError, TypeError):
             return 0.0
 
+    from core.run_data import cec_mean_errors
+    cec_err = cec_mean_errors(run_dir / dim)
     funcs   = sorted(set(r["function"] for r in rows))
     methods = sorted(set(r["method"]   for r in rows))
     func_categories: dict[str, str] = {}
@@ -289,10 +294,11 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
             "evals":   parse_float(evals_raw),
             "bf":      parse_float(bf_raw),
             "ecdf":    ecdf_v,
+            "cec":     cec_err.get(f, {}).get(m, float("inf")),
         }
 
     # bf / evals: lower-is-better. ecdf: higher-is-better — negated when ranking.
-    INDICATORS = ("bf", "evals", "ecdf")
+    INDICATORS = ("bf", "evals", "ecdf", "cec")
     HIGHER_BETTER = {"ecdf"}
     k = len(methods)
 

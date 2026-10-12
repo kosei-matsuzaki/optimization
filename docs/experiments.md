@@ -346,6 +346,10 @@ MC-ESO（V1）を reference とし、各手法を seed-paired で比較。`wilco
 - 有意水準 α=0.05。p < 0.05 で「有意差あり」と判定し、A12 で効果量（negligible/small/medium/large）も併記。
 - 判定は **quick n=20** で行う。n=20 は標本数が限られ signal-to-noise が高くないため、僅差・単一関数の有意差は効果量（A12）と関数別の方向性も併せて慎重に解釈する。
 
+### 4. 参考: CEC 式の平均誤差の順位（2026-10-13 追加）
+
+CEC の競技の慣例に合わせた順位。関数ごとに、run ごとの最終誤差 f − f*（**1e-8 未満は 0**）の平均で手法に順位をつけ（同着は平均順位）、関数をまたいで平均する。精度の閾値を問わず誤差の大きさで比べるので、SR@1e-10 とは別の面を見る（2026-10-12 の 10D・34 手法では SR@1e-10 が 2 位の MC-ESO がこの順位では 9 位）。計算は `core/run_data.py` の `cec_mean_errors` / `cec_ranks`（run ごとの `dim{N}/stats/{関数}.csv` から）。`scripts/analyze_quick.py` の [5] と Results UI のランキングの「CEC 順位」列が同じ関数を使う。**判定は従来どおり 3 指標で行い、これは併記する参考値**。
+
 ### 多解（MMO）報告
 
 大域最適解が複数ある関数（C01 Himmelblau=4 / C02 Six-hump=2 / C03 Shubert=18）では、SR（= 1 つでも到達したか）に加え、MC-ESO の「並行的な多解探索」能力を直接計測する。指標は走行後に `history_x`（全評価点）と `benchmark.optima_pos`（既知の全大域最適解座標）から後付け計算され、**最適化器は一切変更しない**（＝ SR は定義上不変）。`core/runner.py:optima_found_mask` / `peak_metrics` が正準実装。
