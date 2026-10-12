@@ -610,7 +610,9 @@ details[open] > .overall-details-summary::before { transform: rotate(90deg); }
   .viz-curves { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* Per-function table: sortable headers */
-.unified-table th.sortable { cursor: pointer; user-select: none; }
-.unified-table th.sortable:hover { color: var(--text); }
+/* Per-function table: sortable headers (same look as .ov-rank-sort) */
+.unified-table th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+.unified-table th.sortable:hover { color: var(--text); text-decoration: underline dotted var(--muted); text-underline-offset: 3px; }
 .unified-table th.sorted { color: var(--text); font-weight: 600; }
+.unified-table th .sort-mark { font-size: 9px; opacity: .45; margin-left: 3px; }
+.unified-table th.sorted .sort-mark { opacity: 1; color: var(--accent); }
