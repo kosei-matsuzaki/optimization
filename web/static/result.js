@@ -112,9 +112,9 @@ const OV_DETAIL_INDICATORS = [
   { key: 'sr_deep', label: 'SR@1e-10', type: 'score', desc: '各関数の最高精度の成功率（主指標）。赤に寄るほど低く、緑に寄るほど高い' },
   { key: 'sr',      label: 'SR@1e-4',  type: 'score', desc: '各関数の成功率（補助）。赤に寄るほど低く、緑に寄るほど高い' },
   { key: 'pr',      label: 'PR@1e-4（履歴）',  type: 'score', desc: 'PR@1e-4（履歴ベース）: 既知の大域最適 K 点のうち、評価履歴に半径内かつ f≤1e-4 の点がある割合（summary.csv の pr_1e-4）。BBOB は K=1 なので SR@1e-4 とほぼ同じ値になる。CEC2013 報告集合の cec_pr_* とは別物。赤に寄るほど低く、緑に寄るほど高い' },
-  { key: 'bf',      label: 'best_f',   type: 'rank',  desc: 'best_f（全 run 平均 mean_best_f）の Friedman ランク。緑=1位、赤=最下位、同着は平均ランク' },
+  { key: 'bf',      label: 'best_f',   type: 'rank',  desc: 'best_f（全 run 平均 mean_best_f）の順位。緑=1位、赤=最下位、同着は上の順位をそろって取る（1, 1, 3, …）' },
   { key: 'evals',   label: 'Evals',    type: 'rank',  desc: '成功 run のみの平均評価数の Friedman ランク。緑=1位、赤=最下位' },
-  { key: 'cec',     label: 'CEC 順位', type: 'rank',  desc: 'CEC の競技の慣例: run ごとの誤差 f − f*（1e-8 未満は 0）の平均で順位をつける。緑=1位、赤=最下位、同着は平均ランク' },
+  { key: 'cec',     label: 'CEC 順位', type: 'rank',  desc: 'CEC の競技の慣例: run ごとの誤差 f − f*（1e-8 未満は 0）の平均で順位をつける。緑=1位、赤=最下位、同着は上の順位をそろって取る（1, 1, 3, …）' },
 ];
 
 function _sortedLeaderboard() {
@@ -556,7 +556,8 @@ function _renderLeaderboard(lb) {
   const frBlock = ind => {
     const s = fried[ind];
     if (!s) return '';
-    const key = `mean_rank_${ind}`;
+    // Nemenyi's critical difference is defined on average-tie ranks.
+    const key = lb[0] && lb[0][`mean_avgrank_${ind}`] != null ? `mean_avgrank_${ind}` : `mean_rank_${ind}`;
     const refRow = lb.find(r => r.method === ref0);
     const best = [...lb].sort((x, y) => x[key] - y[key])[0];
     const pStr = s.p == null ? '—' : (s.p < 1e-4 ? s.p.toExponential(1) : s.p.toFixed(4));
@@ -740,7 +741,10 @@ function _renderDetail(lb) {
     let chipCls = 'null', txt = '—';
     if (v != null) {
       txt = v % 1 === 0 ? String(v) : v.toFixed(1);
-      chipCls = v === 1 ? 'best' : (v >= nMeth ? 'worst' : '');
+      chipCls = '';
+      // Same scale as the success-rate cells: 1st → green, last → brick.
+      const { bg, fg } = heatColor(nMeth > 1 ? (nMeth - v) / (nMeth - 1) : 1);
+      return `<span class="ov-rank-chip" style="background:${bg};color:${fg};">${txt}</span>`;
     }
     return `<span class="ov-rank-chip ${chipCls}">${txt}</span>`;
   };
@@ -868,24 +872,32 @@ function fmtNum(val) {
 }
 
 function rankColors(values, higherBetter) {
+  // Competition rank: a value's rank is the number of values strictly better
+  // than it, so methods tied for first are all 'cell-best' (the old version
+  // took the first sorted position, which put ties for the top of a
+  // higher-is-better column at the bottom).
+  // Non-finite values (Evals of a method with no successful run) get no
+  // colour, so an all-failed column is not painted 'best'.
   const nums = values.map(v => parseFloat(v));
-  const valid = nums.filter(v => !isNaN(v));
+  const valid = nums.filter(v => isFinite(v));
   if (valid.length < 2) return nums.map(() => '');
-  const sorted = [...valid].sort((a, b) => a - b);
+  const n = valid.length;
   return nums.map(v => {
-    if (isNaN(v)) return '';
-    const pos  = sorted.indexOf(v);
-    const rank = higherBetter ? sorted.length - 1 - pos : pos;
-    const n    = sorted.length;
+    if (!isFinite(v)) return '';
+    const rank = valid.filter(w => higherBetter ? w > v : w < v).length;
+    const worse = valid.filter(w => higherBetter ? w < v : w > v).length;
     if (rank === 0)                      return 'cell-best';
+    if (worse === 0)                     return 'cell-worst';
     if (rank <= Math.floor(n * 0.25))    return 'cell-good';
     if (rank <= Math.floor(n * 0.5))     return 'cell-mid';
-    if (rank < n - 1)                    return 'cell-bad';
-    return 'cell-worst';
+    return 'cell-bad';
   });
 }
 
 // ── Unified table ─────────────────────────────────────────────────────────────
+// Per-function table sort state (kept across functions so a chosen column stays).
+let unifiedSort = { key: null, dir: 'asc' };
+
 async function buildUnifiedTable(func) {
   const container = document.getElementById('unified-table-container');
   container.innerHTML = '<p class="empty-state">Loading…</p>';
@@ -913,10 +925,6 @@ async function buildUnifiedTable(func) {
   const cecErr = summaryRows.map(r => {
     const errs = (byMethod[r.method] || []).map(x => parseFloat(x.best_f)).filter(v => !isNaN(v));
     return errs.length ? errs.reduce((a, v) => a + (v < CEC_ZERO ? 0 : v), 0) / errs.length : Infinity;
-  });
-  const cecRank = cecErr.map(v => {
-    const less = cecErr.filter(w => w < v).length, same = cecErr.filter(w => w === v).length;
-    return less + (same + 1) / 2;
   });
   const cecColors = rankColors(cecErr.map(v => isFinite(v) ? v : 'Infinity'), false);
   const sr2Colors = rankColors(summaryRows.map(r => parseFloat(r['sr_1e-2'])), true);
@@ -995,9 +1003,8 @@ async function buildUnifiedTable(func) {
 
   const COLS = [
     { label: 'Method / Seed', desc: 'Click ▶ to expand per-run details.' },
-    { label: 'best_f',        desc: 'Mean of final best f(x) across all runs. Lower is better. BBOB functions: global minimum = 0.' },
-    { label: '平均誤差（CEC）', desc: 'CEC の競技の慣例: run ごとの誤差 f − f* のうち 1e-8 未満を 0 とみなして平均したもの。低いほど良い。精度の閾値を問わず誤差の大きさで比べる。' },
-    { label: 'CEC 順位',      desc: 'この関数での平均誤差（CEC）による手法の順位（同着は平均順位）。全関数で平均したものがランキング画面の「CEC 順位」。' },
+    { label: '誤差 f − f*（平均）', desc: '全 run の最終誤差 f − f* の平均（BBOB は最小値 0）。低いほど良い。' },
+    { label: '誤差 f − f*（CEC）', desc: 'CEC の競技の慣例: run ごとの誤差のうち 1e-8 未満を 0 とみなして平均したもの。「平均」との違いは 1e-8 未満の端数だけで、全 run が 1e-8 未満なら 0 になり同着になる。全関数での順位の平均がランキング画面の「CEC 順位」。' },
     { label: 'SR@target', desc: '各精度目標（1e⁻⁴ / 1e⁻⁷ / 1e⁻¹⁰）に到達した run の割合。左ほど緩く右ほど厳しい。色は成功率（赤=低、緑=高）、数値は正確な %。1e⁻¹⁰ が主指標。行を展開すると各 seed が目標ごとに ✓（到達）/ ✗（未到達）で出る。' },
     { label: 'Evals (succ mean)', desc: 'Mean number of evaluations to reach the 1e-4 target across successful runs only. Failed runs are excluded (no penalty extrapolation). Taken over successful runs (small spread, outliers unlikely), so the mean is used rather than the median. Read together with SR. — means no successful run.' },
     { label: 'time (s)',      desc: 'Mean wall-clock time per run (seconds).' },
@@ -1011,8 +1018,24 @@ async function buildUnifiedTable(func) {
   ).join('');
 
   // Sub-header row: one column per precision target (1e⁻¹ … 1e⁻¹⁰).
-  const srSubHead = SR_TARGET_LABELS.map(lbl =>
-    `<th class="sr-head">${lbl}</th>`
+  // Sortable columns: key → [direction, value of a summary row]. Rows sort as
+  // method groups (a method row keeps its expanded seed rows under it).
+  const SORT_SPEC = {
+    name:  ['asc',  (r, i) => r.method],
+    bf:    ['asc',  (r, i) => parseFloat(r.mean_best_f)],
+    cec:   ['asc',  (r, i) => cecErr[i]],
+    sr4:   ['desc', (r, i) => parseSRFraction(r['sr_1e-4'])],
+    sr7:   ['desc', (r, i) => parseSRFraction(r['sr_1e-7'])],
+    sr10:  ['desc', (r, i) => parseSRFraction(r['sr_1e-10'])],
+    evals: ['asc',  (r, i) => parseFloat(r.evals_succ_mean ?? r.evals_succ_med ?? r.ert)],
+    time:  ['asc',  (r, i) => parseFloat(r.mean_time_s)],
+    or:    ['desc', (r, i) => parseFloat(r.mean_optima_rate)],
+  };
+  const sortAttr = k => `data-sort="${k}" class="sortable${unifiedSort.key === k ? ' sorted' : ''}" title="クリックで並べ替え"`;
+  const sortMark = k => unifiedSort.key === k ? (unifiedSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+  const SR_SORT_KEYS = ['sr4', 'sr7', 'sr10'];
+  const srSubHead = SR_TARGET_LABELS.map((lbl, i) =>
+    `<th ${sortAttr(SR_SORT_KEYS[i]).replace('class="', 'class="sr-head ')}>${lbl}${sortMark(SR_SORT_KEYS[i])}</th>`
   ).join('');
 
   let html = `
@@ -1024,21 +1047,37 @@ async function buildUnifiedTable(func) {
   <table class="unified-table">
     <thead>
       <tr>
-        <th rowspan="2" style="text-align:left;min-width:150px;">手法 / seed</th>
-        <th rowspan="2">best_f</th>
-        <th rowspan="2" title="run ごとの誤差（1e-8 未満は 0）の平均">平均誤差（CEC）</th>
-        <th rowspan="2" title="平均誤差（CEC）による順位">CEC 順位</th>
+        <th rowspan="2" style="text-align:left;min-width:150px;" ${sortAttr('name')}>手法 / seed${sortMark('name')}</th>
+        <th colspan="2" class="sr-group-head">誤差 f − f*</th>
         <th colspan="${SR_TARGETS.length}" class="sr-group-head">SR@target</th>
-        <th rowspan="2">Evals (succ mean)</th>
-        <th rowspan="2">time (s)</th>
-        <th rowspan="2">optima rate</th>
+        <th rowspan="2" ${sortAttr('evals')}>Evals (succ mean)${sortMark('evals')}</th>
+        <th rowspan="2" ${sortAttr('time')}>time (s)${sortMark('time')}</th>
+        <th rowspan="2" ${sortAttr('or')}>optima rate${sortMark('or')}</th>
         <th rowspan="2">evals</th>
       </tr>
-      <tr>${srSubHead}</tr>
+      <tr><th class="sr-head" ${sortAttr('bf')} title="全 run の平均">平均${sortMark('bf')}</th><th class="sr-head" ${sortAttr('cec')} title="CEC の慣例: 1e-8 未満を 0 として平均">CEC${sortMark('cec')}</th>${srSubHead}</tr>
     </thead>
     <tbody id="unified-tbody">`;
 
-  summaryRows.forEach((sr, si) => {
+  let order = summaryRows.map((_, i) => i);
+  if (unifiedSort.key && SORT_SPEC[unifiedSort.key]) {
+    const get = SORT_SPEC[unifiedSort.key][1];
+    const sign = unifiedSort.dir === 'asc' ? 1 : -1;
+    const norm = v => (v == null || (typeof v === 'number' && isNaN(v))) ? null : v;
+    order.sort((a, b) => {
+      const va = norm(get(summaryRows[a], a)), vb = norm(get(summaryRows[b], b));
+      if (va === null && vb === null) return 0;
+      if (va === null) return 1;          // missing values always last
+      if (vb === null) return -1;
+      if (typeof va === 'string') return sign * va.localeCompare(vb);
+      if (va !== vb) return sign * (va < vb ? -1 : 1);
+      // Ties (e.g. many methods at 0%) fall back to the smaller mean error.
+      const ea = parseFloat(summaryRows[a].mean_best_f), eb = parseFloat(summaryRows[b].mean_best_f);
+      return (isNaN(ea) ? Infinity : ea) - (isNaN(eb) ? Infinity : eb) || 0;
+    });
+  }
+  order.forEach(si => {
+    const sr = summaryRows[si];
     const method = sr.method;
     const runs   = byMethod[method] || [];
     html += `
@@ -1049,7 +1088,6 @@ async function buildUnifiedTable(func) {
         </div></td>
         <td class="${bfColors[si]}">${fmtNum(sr.mean_best_f)}</td>
         <td class="${cecColors[si]}">${isFinite(cecErr[si]) ? fmtNum(cecErr[si]) : '—'}</td>
-        <td class="${cecColors[si]}">${isFinite(cecErr[si]) ? (Number.isInteger(cecRank[si]) ? cecRank[si] : cecRank[si].toFixed(1)) : '—'}</td>
         ${fmtSRHeatCells(sr)}
         <td class="${evalsColors[si]}">${fmtEvals(sr.evals_succ_mean ?? sr.evals_succ_med ?? sr.ert)}</td>
         <td>${fmtNum(sr.mean_time_s)}</td>
@@ -1063,7 +1101,6 @@ async function buildUnifiedTable(func) {
           <td class="run-cell">seed ${run.seed}</td>
           <td>${fmtNum(run.best_f)}</td>
           <td>${(() => { const v = parseFloat(run.best_f); return isNaN(v) ? '—' : fmtNum(v < CEC_ZERO ? 0 : v); })()}</td>
-          <td style="color:var(--muted);">—</td>
           ${fmtRunReachCells(run)}
           <td style="color:var(--muted);">—</td>
           <td>${fmtNum(run.time_s)}</td>
@@ -1075,6 +1112,14 @@ async function buildUnifiedTable(func) {
 
   html += '</tbody></table></div>';
   container.innerHTML = html;
+
+  container.querySelectorAll('th[data-sort]').forEach(th => th.addEventListener('click', () => {
+    const k = th.dataset.sort;
+    unifiedSort = unifiedSort.key === k
+      ? { key: k, dir: unifiedSort.dir === 'asc' ? 'desc' : 'asc' }
+      : { key: k, dir: SORT_SPEC[k][0] };
+    buildUnifiedTable(func);
+  }));
 
   container.querySelector('#unified-tbody').addEventListener('click', e => {
     const row = e.target.closest('.method-row');

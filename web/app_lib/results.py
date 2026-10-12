@@ -309,7 +309,10 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
         never contaminates a suite-scoped view. Ranks are per-function so
         recomputing them on a subset yields identical values."""
         fs = sorted(fs)
-        # Per-function, per-indicator ranks via average-tie ranking.
+        # Per-function, per-indicator ranks. Shown ranks use competition
+        # ("min") ranking — methods tied for first are all 1st, not 17.5th
+        # when 34 methods tie. The Friedman test and the Nemenyi read-out use
+        # the average-tie ranks the test is defined on (r_matrix, avg means).
         f_ranks: dict[str, dict[str, dict[str, float]]] = {ind: {} for ind in INDICATORS}
         r_matrix: dict[str, list[list[float]]] = {ind: [] for ind in INDICATORS}
         for func in fs:
@@ -320,10 +323,10 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
                                 dtype=float)
                 if ind in HIGHER_BETTER:
                     vals = -vals
-                ranks_arr = rankdata(vals, method="average")
-                ranks_dict = {m: float(r) for m, r in zip(methods, ranks_arr)}
-                f_ranks[ind][func] = ranks_dict
-                r_matrix[ind].append([ranks_dict[m] for m in methods])
+                avg_arr = rankdata(vals, method="average")
+                min_arr = rankdata(vals, method="min")
+                f_ranks[ind][func] = {m: float(r) for m, r in zip(methods, min_arr)}
+                r_matrix[ind].append([float(r) for r in avg_arr])
 
         cats = sorted({func_categories.get(f, "unknown") for f in fs})
 
@@ -379,7 +382,10 @@ def compute_overall_ranking(run_dir: Path, dim: str) -> dict:
                 "category_sr":  {c: (round(v, 4) if v is not None else None)
                                  for c, v in cat_sr.items()},
             }
+            j = methods.index(method)
             for ind in INDICATORS:
+                avg = [row[j] for row in r_matrix[ind]]
+                entry[f"mean_avgrank_{ind}"] = round(float(np.mean(avg)), 2) if avg else float(k)
                 rvals = [f_ranks[ind].get(f, {}).get(method, float(k)) for f in fs]
                 arr = np.array(rvals, dtype=float) if rvals else np.array([float(k)])
                 entry[f"mean_rank_{ind}"] = round(float(np.mean(arr)), 2)

@@ -609,3 +609,8 @@ details[open] > .overall-details-summary::before { transform: rotate(90deg); }
   .viz-search-grid { grid-template-columns: minmax(0, 1fr); }
   .viz-curves { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Per-function table: sortable headers */
+.unified-table th.sortable { cursor: pointer; user-select: none; }
+.unified-table th.sortable:hover { color: var(--text); }
+.unified-table th.sorted { color: var(--text); font-weight: 600; }
