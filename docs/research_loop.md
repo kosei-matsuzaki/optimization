@@ -100,7 +100,7 @@
 
 ---
 
-1. **次の既定値の候補 `v2_ir3_noFrz` を測る（2D / 5D / 10D）。**
+1. **次の既定値の候補 `v2_ir3_noFrz` を測る（2D / 5D / 10D）。** (claimed 2026-10-12 10:30 UTC)
    `./run.sh quick --all --n-runs 20 --max-evals 5000 --methods "MC-ESO,v2_ir3_noFrz,v2_noIR"`、同じ `--methods` で `--dim 5 --max-evals 12500` と `--dim 10 --max-evals 25000`。
    **背景**（[history.md](history.md) の 2026-10-12 の掃引）: スピルオーバーの撒き直しの半分を保管庫の系統のそばに置く「再着火」は、高次元では Gallagher を既知の峰に引き戻す（ローカルで外すと 5D F21 40→95・F22 70→100、10D F21 10→80・F22 35→65）。2D では要る（F23 −15）ので、`v2_ir3_noFrz` は 3 次元以上でだけ再着火を止め（`ir_archive_frac_hd=0`）、ほぼ中立だった学習共分散の凍結も外す（`cc_spill_freeze_gens=0`）。`v2_noIR` は全次元で止める対照。ローカルでは 2D 95.2（全関数一致）/ 5D 70.4 / 10D 57.3%（MC-ESO 95.2 / 67.9 / 53.1）。
    **集計**: 標準の集計。**2D で `v2_ir3_noFrz` が MC-ESO と全関数一致したか**を書く。5D / 10D は関数別の変化を全列挙し、F03 / F15 / F21 / F22 / F23 の SR@1e-10 と `evals_succ_mean` を 3 手法並べる。
