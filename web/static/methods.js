@@ -387,10 +387,48 @@ function drawLineage(measured) {
   });
 }
 
+// Parameter list (web/static/methods_params.json, built by scripts/web/methods_params.py).
+async function initParams() {
+  const box = document.getElementById('param-groups');
+  if (!box) return;
+  let data;
+  try { data = await (await fetch('/static/methods_params.json', { cache: 'no-cache' })).json(); }
+  catch (_) { box.textContent = 'パラメータ一覧（methods_params.json）を読み込めませんでした。'; return; }
+  const TAG = { experimental: '実験中', diagnostic: '診断用', rejected: '不採用' };
+  box.innerHTML = data.groups.map(g => `
+    <details class="mt-param-group" open>
+      <summary>${g.label} <span class="mt-small">（${g.rows.reduce((s, r) => s + r.names.length, 0)}）</span></summary>
+      <div class="mt-table-wrap"><table class="mt-plain mt-params">
+        <thead><tr><th>パラメータ</th><th>既定値（コード）</th><th>意味</th></tr></thead>
+        <tbody>${g.rows.map(r => `<tr data-status="${r.status}">
+          <td>${r.names.map(n => `<code>${n}</code>`).join('<br>')}${r.status ? `<span class="mt-ptag mt-ptag-${r.status}">${TAG[r.status]}</span>` : ''}</td>
+          <td class="mt-pdef">${r.code_default.map(v => `<code>${v.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</code>`).join('<br>')}</td>
+          <td>${r.meaning}</td></tr>`).join('')}</tbody></table></div>
+    </details>`).join('');
+  const filter = document.getElementById('param-filter'), active = document.getElementById('param-active-only');
+  const count = document.getElementById('param-count');
+  const apply = () => {
+    const q = filter.value.trim().toLowerCase();
+    let shown = 0;
+    box.querySelectorAll('tr[data-status]').forEach(tr => {
+      const ok = (!q || tr.textContent.toLowerCase().includes(q)) && !(active.checked && tr.dataset.status);
+      tr.style.display = ok ? '' : 'none';
+      if (ok) shown += tr.querySelectorAll('td:first-child code').length;
+    });
+    box.querySelectorAll('.mt-param-group').forEach(d => {
+      d.style.display = [...d.querySelectorAll('tr[data-status]')].some(tr => tr.style.display !== 'none') ? '' : 'none';
+    });
+    count.textContent = `${shown} / ${data.n_params} 個`;
+  };
+  filter.addEventListener('input', apply); active.addEventListener('change', apply);
+  apply();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initToc();
   drawPopFigure();
   initResults();
+  initParams();
   // KaTeX loads with defer; wait for it if needed.
   if (typeof renderMathInElement === 'function') renderMath();
   else window.addEventListener('load', renderMath);

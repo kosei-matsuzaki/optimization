@@ -19,6 +19,7 @@
     <a href="#flow">1 世代の流れ</a>
     <a href="#mechanisms">仕組みの詳細</a>
     <a href="#endgame">高次元の終盤</a>
+    <a href="#params">パラメータ一覧</a>
     <a href="#results">成績</a>
     <a href="#lineage">比較手法の系譜</a>
     <a href="#baselines">比較手法の解説</a>
@@ -243,6 +244,21 @@
         掘って捨てた谷の最良点は解アーカイブ（最大 200 点）に残し、報告する解集合に入れる。
         多解探索の路線は 2026-10 から一時停止中で、現在の評価の主対象は単一解の精度。
       </p>
+    </section>
+
+    <!-- ── Parameters ─────────────────────────────────────────────────── -->
+    <section class="mt-section" id="params">
+      <h2>パラメータ一覧</h2>
+      <p class="mt-p">
+        コンストラクタ <code>MultiChannelEpidemicOptimizer</code> の引数すべて。既定値はコードから、意味は <code>docs/mceso.md</code> のパラメータ表から作っている（<code>scripts/web/methods_params.py</code>。表とコードの引数がずれると作成に失敗する）。
+        「実験中」は既定では使われず、候補の腕でだけ有効にしている引数、「診断用」「不採用」は既定で機構が働かない引数。
+      </p>
+      <div class="mt-param-tools">
+        <input type="search" id="param-filter" placeholder="名前や説明で絞り込む（例: wave、σ、2D）" aria-label="パラメータを絞り込む">
+        <label><input type="checkbox" id="param-active-only"> 既定で働くものだけ</label>
+        <span id="param-count" class="mt-small"></span>
+      </div>
+      <div id="param-groups"></div>
     </section>
 
     <!-- ── Results ────────────────────────────────────────────────────── -->

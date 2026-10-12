@@ -288,10 +288,16 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `solution_archive_max` | 200 | **解アーカイブ**の容量。spillover のたびに放棄する basin の best を貯め、報告解集合に含める。0 で無効（旧挙動）。記録のみで探索は不変 |
 | `hunt_level_tol` | 1e-6 | 最初の掘り切り以降、hunt は basin best が `this × \|f_init\|` に達した時点でも終了（＝すでに banked した深さに並んだ）。0 で旧挙動（毎回 σ フロアまで） |
 | `hunt_no_improve_mult` | 0.5 | 後続 hunt の停滞窓の倍率。最初の掘り切り判定は `exhausted_no_improve_mult`(3.0) のまま |
+| `exhausted_sigma_tol` / `exhausted_no_improve_mult` | 1.5 / 3.0 | 「掘り切った」の判定: σ が `this × span × sigma_floor_ratio` 以下まで縮み、さらに `restart_no_improve_threshold` の後者倍だけ停滞したら掘り切り（逐次 niching の起点）|
 | `ir_archive_frac` | 0.5 | 情報化再播種で生存アーカイブから再着火するスロット割合（残りは basin 忌避 Uniform）|
 | `ir_reignite_sigma_ratio` | 0.05 | アーカイブ系統まわり再着火ガウスの σ（× span）|
 | `ir_repel_radius_ratio` | 0.1 | basin 忌避（集団免疫）の斥力球半径（× span、記憶 basin 内の Uniform を rejection）|
 | `ir_repel_max_tries` | 20 | basin 忌避の rejection 上限回数（超えたら plain Uniform にフォールバック）|
+| `ir_archive_frac_hd` | None | **実験中（2026-10-12、候補 `v2_ir3_noFrz` 以降で 0）**。3 次元以上での再着火の割合（段差）。None で全次元 `ir_archive_frac`。0 で 3 次元以上は再着火なし |
+| `reassort_sweep` / `reassort_budget_frac` | False / 0.1 | **実験中（候補 `v2_rsT2s` / `v2_hlC` で ON）**。再集合の掃引: 失敗したスピルオーバーの後、最良点の 1 座標を提供元の座標と交換し、最良の改善を採って繰り返す（予算の後者まで）|
+| `reassort_additivity` / `reassort_pairs` | None / 1 | 掃引の加法性の検査: 最良の座標と次点の座標の交換を同時に試し、効果の差が前者 ×（単独の効果の和）を超えたら以後の掃引を止める。候補は 0.02 / 1。後者は検査する組の数 |
+| `reassort_donors` / `reassort_top_hosts` | `"all"` / 10 | 掃引の提供元。`all` = 記憶 ＋ 全宿主、`memory` = 記憶だけ、`top` = 記憶 ＋ 上位の宿主、`top2` = 記憶の上位 ＋ 上位の宿主（候補）。後者がその「上位」の数 |
+| `reassort_min_dim` / `reassort_discard` | 2 / False | 掃引する最小次元（候補は 3）／加法性が無いと判定したとき掃引の結果を捨てる（不採用）|
 | `n_elite_max` | 6 | 系統共存の最大数（飛沫感染の引力対象、情報化再播種のアーカイブ容量も兼ねる） |
 | `niche_radius_ratio` | 0.1 | 系統間の最小距離（span に対する比率、スケール不変。BBOB span=10 で実効 1.0、絶対値版と数学的に同一） |
 | `log_slope_threshold` | 1e-4 | 「意味ある改善」の log10(f) 減少スロープ閾値 |
@@ -310,6 +316,7 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `hd_sigma_success` | **0.05**（2026-10-12、旧 None）| 3 次元以上の σ の「改善」判定: 接触感染の子のうち親に勝った割合がこれを超えたら σ を上げる。None で 2D と同じ「最良が更新されたら」|
 | `hd_wave_lambda` / `wave_sigma_ratio` / `wave_budget_frac` / `wave_quality` | **4** / 0.01 / 0.25 / **1e-3**（2026-10-12）| 停滞時の組換え波（3 次元以上）。λ = この値 × D、σ0 = 2 番目 × span、予算の上限、best ≤ 4 番目 × \|f_init\| のときだけ打つ。None で波なし |
 | `wave_use_C` / `wave_ill_handover` / `wave_handover_drill` | **True** / **True** / **False**（2026-10-12）| 学習共分散が悪条件なら波をそれで白色化する／悪条件になった時点で残り予算を波に渡す（封じ込め）／True なら σ が drilling に入るまで待つ |
+| `wave_handover_lambda` / `wave_handover_restart` | None / False | **実験中（候補 `v2_hlC` で −2）**。封じ込めの波の集団サイズ: None = 停滞時の波と同じ `hd_wave_lambda × D`、0 = CMA-ES 既定 4 + ⌊3 ln D⌋、負の −k = その k 倍、正 = その × D。後者は止まったら λ を倍にして再起動（不採用）|
 | `router_learned_cond` | 3.0 | 学習共分散の「悪条件」の閾値（log10 条件数）。これに達するとラッチが立ち（run 中は戻らない）、σ 下限（`sigma_floor_ill_ratio`）と封じ込め（`wave_ill_handover`）がそれを読む |
 
 ---

@@ -88,7 +88,8 @@ web/
 │   ├── result.css / result.js    # 結果詳細画面
 │   ├── benchmarks.css            # ベンチマーク一覧画面
 │   ├── methods.css / methods.js  # 手法解説画面（成績表・ヒートマップ・系譜図は JS が描く）
-│   └── methods_data.json         # 手法解説の成績データ（scripts/web/methods_data.py が生成）
+│   ├── methods_data.json         # 手法解説の成績データ（scripts/web/methods_data.py が生成）
+│   └── methods_params.json       # 手法解説のパラメータ一覧（scripts/web/methods_params.py が生成）
 └── templates/             # Jinja2 テンプレート
     ├── base.html          # 共通レイアウト（<head> / <header> を集約）
     ├── index.html         # トップ画面（Quick Run / GH Actions / 結果一覧）
@@ -176,6 +177,8 @@ web/
 ```bash
 python scripts/web/methods_data.py results/<2D の run> results/<5D の run> results/<10D の run>
 ```
+
+パラメータ一覧は、`docs/mceso.md` のパラメータ表（意味）と `MultiChannelEpidemicOptimizer.__init__`（既定値）から `python scripts/web/methods_params.py` で `web/static/methods_params.json` を作る。表とコードの引数がずれていると作成に失敗するので、引数を足したら表にも行を足す。
 
 本文の「読みどころ」（既存手法との比較、旧既定からの変化）も JSON から JS が組み立てるので、数値と文章がずれない。比較手法を足したら `methods.html` に解説カード（`id="m-<登録名>"`、`data-method="<登録名>"`）を、`methods.js` の `NODES` / `EDGES` に系譜を足す。
 

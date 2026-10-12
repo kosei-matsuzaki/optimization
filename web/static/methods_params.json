@@ -1,0 +1,786 @@
+{
+ "n_params": 82,
+ "groups": [
+  {
+   "label": "集団と選択",
+   "rows": [
+    {
+     "names": [
+      "n_pop",
+      "n_pop_dim_mult"
+     ],
+     "doc_default": "None / 4.0",
+     "code_default": [
+      "None",
+      "4.0"
+     ],
+     "meaning": "集団個体数。<b>既定の <code>pop_schedule=\"linear\"</code> では None のとき縮小の初期値 <code>max(20, pop_init_mult·dim)</code> になり、int を渡すとそれが初期値</b>（次行）。以下は <code>pop_schedule=\"fixed\"</code>（旧既定、〜2026-10-07）のときの意味: None で <code>max(20, n_pop_dim_mult·dim)</code>＝dim≤5 で 20、高次元でスケール（dim=10→40）。固定 20 は高次元で過小（dim=10 で niching restart が CEC2022 G06-Hybrid1 を彷徨 best_f 2140→40 once n_pop=40）。BBOB dim2/3 は 20 で無変更。int 明示で上書き可",
+     "status": ""
+    },
+    {
+     "names": [
+      "pop_schedule",
+      "pop_init_mult",
+      "pop_final_mult",
+      "pop_min",
+      "pop_shrink_power"
+     ],
+     "doc_default": "<code>\"linear\"</code> / 16 / 4 / 10 / 2.0",
+     "code_default": [
+      "'linear'",
+      "16.0",
+      "4.0",
+      "10",
+      "2.0"
+     ],
+     "meaning": "<b>集団サイズの縮小（2026-10-08 から既定）</b>。初期 <code>max(20, 16·dim)</code> 体から、予算の消費割合 t に応じて <code>final + (init − final)·(1 − t)²</code> 体（final = <code>max(10, 4·dim)</code>）まで、世代の最初に悪い宿主から外す。2D は 32 → 10、5D は 80 → 20、10D は 160 → 40。power = 1 は線形（10D で −5.00pt、早く縮める 2 で +5.62pt）。<code>\"fixed\"</code> で旧挙動（<code>n_pop</code> 固定）。<b>予算を事前に知っている前提</b>になる（L-SHADE 系と同じ）",
+     "status": ""
+    },
+    {
+     "names": [
+      "kill_fraction"
+     ],
+     "doc_default": "0.25",
+     "code_default": [
+      "0.25"
+     ],
+     "meaning": "宿主競合で毎世代排除する割合",
+     "status": ""
+    },
+    {
+     "names": [
+      "softmax_beta"
+     ],
+     "doc_default": "5.0",
+     "code_default": [
+      "5.0"
+     ],
+     "meaning": "親（感染源）選択の選択圧。<code>w ∝ exp(−beta × (f_i − f_min)/(f_max − f_min))</code> と集団の f 範囲で正規化するため、f のスケールにも次元にも依存しない。0.0 で旧式 <code>exp(f_max − f_i)</code>（絶対差依存＝収束後は一様選択に退化）に復帰。β=8 は高次元で更に強いが dim2 を −2.29pt 落とすため不採用",
+     "status": ""
+    }
+   ]
+  },
+  {
+   "label": "伝染経路（接触・飛沫・空気）",
+   "rows": [
+    {
+     "names": [
+      "host_sigma_min_scale"
+     ],
+     "doc_default": "0.05",
+     "code_default": [
+      "0.05"
+     ],
+     "meaning": "接触感染チャネルにおける per-host σ_i スケーリング下限（高品質・高齢の宿主は σ_i = σ × 0.05 まで縮小して精密探索）",
+     "status": ""
+    },
+    {
+     "names": [
+      "air_ratio"
+     ],
+     "doc_default": "0.3",
+     "code_default": [
+      "0.3"
+     ],
+     "meaning": "空気感染チャネルの割合",
+     "status": ""
+    },
+    {
+     "names": [
+      "cc_air_ratio",
+      "cc_h2h_ratio"
+     ],
+     "doc_default": "<b>0.0</b>（2026-10-12、旧 0.10）/ 0.25",
+     "code_default": [
+      "0.0",
+      "0.25"
+     ],
+     "meaning": "ゲート全開時のチャネル配分。h2h は 0.20 だと dim20 で F02 が 100→15（二項交叉が座標方向構造を保護するため）",
+     "status": ""
+    },
+    {
+     "names": [
+      "air_sigma_amplifier"
+     ],
+     "doc_default": "3.5",
+     "code_default": [
+      "3.5"
+     ],
+     "meaning": "空気感染 σ 倍率の振幅（factor = 1.5 + amp × (1 - diversity)、集団分散時 1.5、収束時 1.5+amp）",
+     "status": ""
+    },
+    {
+     "names": [
+      "h2h_ratio"
+     ],
+     "doc_default": "0.4",
+     "code_default": [
+      "0.4"
+     ],
+     "meaning": "飛沫感染チャネルの割合",
+     "status": ""
+    },
+    {
+     "names": [
+      "h2h_F"
+     ],
+     "doc_default": "0.5",
+     "code_default": [
+      "0.5"
+     ],
+     "meaning": "飛沫感染の差分ベクトルスケール係数",
+     "status": ""
+    },
+    {
+     "names": [
+      "h2h_CR"
+     ],
+     "doc_default": "0.9",
+     "code_default": [
+      "0.9"
+     ],
+     "meaning": "飛沫感染後の二項交叉率（DE/bin 標準値、座標方向の親情報を確率 1-CR で継承）",
+     "status": ""
+    },
+    {
+     "names": [
+      "droplet_variant"
+     ],
+     "doc_default": "<code>\"best2_droplet\"</code>",
+     "code_default": [
+      "'best2_droplet'"
+     ],
+     "meaning": "飛沫の差分構造。<code>best2_droplet</code>（デフォルト）＝ droplet ルート確定 run のみ第 2 差分ベクトルを追加 (current-to-best/2)、他ルートは current-to-best/1 で base と bit-identical。<code>\"cur2best\"</code> で全ルート単一差分（旧挙動、回帰リファレンス）。route-gate なので悪条件 (F13/F14) を救出しつつ多峰 keep-air を無傷にする（グローバル第 2 差分は多峰を毀損）",
+     "status": ""
+    }
+   ]
+  },
+  {
+   "label": "チャネルルーター",
+   "rows": [
+    {
+     "names": [
+      "channel_schedule"
+     ],
+     "doc_default": "True",
+     "code_default": [
+      "True"
+     ],
+     "meaning": "per-landscape チャネルルーター有効化（デフォルト ON）。False で旧 flat-ratio 挙動に復帰",
+     "status": ""
+    },
+    {
+     "names": [
+      "cond_droplet_early"
+     ],
+     "doc_default": "4.0",
+     "code_default": [
+      "4.0"
+     ],
+     "meaning": "早期 droplet latch の cond EMA 閾値（真の ill-cond は急騰、rugged の一時スパイクは未達）",
+     "status": ""
+    },
+    {
+     "names": [
+      "route_commit_gen"
+     ],
+     "doc_default": "120",
+     "code_default": [
+      "120"
+     ],
+     "meaning": "ルート確定チェックポイント（世代）。それまで base keep-air",
+     "status": ""
+    },
+    {
+     "names": [
+      "cond_droplet_thresh"
+     ],
+     "doc_default": "3.0",
+     "code_default": [
+      "3.0"
+     ],
+     "meaning": "commit 時 cond EMA がこれ超で DROPLET",
+     "status": ""
+    },
+    {
+     "names": [
+      "align_close_thresh"
+     ],
+     "doc_default": "0.965",
+     "code_default": [
+      "0.965"
+     ],
+     "meaning": "commit 時 algA EMA がこれ超（かつ mgap 条件）で CLOSE",
+     "status": ""
+    },
+    {
+     "names": [
+      "close_mgap_thresh"
+     ],
+     "doc_default": "0.36",
+     "code_default": [
+      "0.36"
+     ],
+     "meaning": "CLOSE の追加条件（mgap EMA。regular separable F04≈0.41 と deceptive F17≈0.29 を分離）",
+     "status": ""
+    },
+    {
+     "names": [
+      "router_learned_cond"
+     ],
+     "doc_default": "3.0",
+     "code_default": [
+      "3.0"
+     ],
+     "meaning": "学習共分散の「悪条件」の閾値（log10 条件数）。これに達するとラッチが立ち（run 中は戻らない）、σ 下限（<code>sigma_floor_ill_ratio</code>）と封じ込め（<code>wave_ill_handover</code>）がそれを読む",
+     "status": ""
+    }
+   ]
+  },
+  {
+   "label": "集団共分散の下限",
+   "rows": [
+    {
+     "names": [
+      "empirical_cov_floor"
+     ],
+     "doc_default": "0.01",
+     "code_default": [
+      "0.01"
+     ],
+     "meaning": "接触感染チャネルの異方性 floor の<b>高い側</b>（rugged/多峰で安全。固有値比を約 14:1 にクランプ）",
+     "status": ""
+    },
+    {
+     "names": [
+      "cov_floor_low"
+     ],
+     "doc_default": "1e-3",
+     "code_default": [
+      "0.001"
+     ],
+     "meaning": "異方性 floor の<b>低い側</b>（悪条件の谷で異方性比 ~1000:1 まで許容）。<code>cov_floor_low = empirical_cov_floor</code> で適応を無効化し固定 floor",
+     "status": ""
+    },
+    {
+     "names": [
+      "cov_ratio_lo",
+      "cov_ratio_hi"
+     ],
+     "doc_default": "1e3 / 3e4",
+     "code_default": [
+      "1000.0",
+      "30000.0"
+     ],
+     "meaning": "<b>適応 floor の切替閾値</b>。集団共分散の素の固有値比（平滑化）がこの範囲で <code>empirical_cov_floor</code>⇄<code>cov_floor_low</code> を log 補間。実測中央値が ill-cond ≈1e5–1e7・rugged ≈3–600 と桁違いに分離するのを利用",
+     "status": ""
+    },
+    {
+     "names": [
+      "cov_ratio_beta"
+     ],
+     "doc_default": "0.1",
+     "code_default": [
+      "0.1"
+     ],
+     "meaning": "固有値比 EMA の更新率（rugged の瞬間スパイクを除去）",
+     "status": ""
+    }
+   ]
+  },
+  {
+   "label": "学習共分散（3 次元以上）",
+   "rows": [
+    {
+     "names": [
+      "cc_learning_rate"
+     ],
+     "doc_default": "0.05",
+     "code_default": [
+      "0.05"
+     ],
+     "meaning": "持続共分散の rank-μ 学習率。0 で 2 系統化を無効（従来の C_pop のみ）",
+     "status": ""
+    },
+    {
+     "names": [
+      "cc_persist_frac"
+     ],
+     "doc_default": "0.5",
+     "code_default": [
+      "0.5"
+     ],
+     "meaning": "接触感染の子のうち持続系統から生成する割合",
+     "status": ""
+    },
+    {
+     "names": [
+      "cc_cov_floor"
+     ],
+     "doc_default": "1e-11",
+     "code_default": [
+      "1e-11"
+     ],
+     "meaning": "持続 <code>C</code> の固有値 floor。C_pop 用の <code>cov_floor_low</code>(1e-3) を流用すると異方性が σ で ~100 倍に制限され cond 1e6 の F10/F11/F14 に 2 桁足りない（実測 SR@1e-10 dim10: 25.4 → <b>35.4</b>）",
+     "status": ""
+    },
+    {
+     "names": [
+      "cc_dim_ref"
+     ],
+     "doc_default": "10",
+     "code_default": [
+      "10"
+     ],
+     "meaning": "次元ゲートが 1 に達する次元。dim2 で厳密に 0",
+     "status": ""
+    },
+    {
+     "names": [
+      "cc_mu_frac"
+     ],
+     "doc_default": "0.5",
+     "code_default": [
+      "0.5"
+     ],
+     "meaning": "<b>rank-μ の採用規則（2026-10-08 から既定 0.5、旧 0.0）</b>。0 は旧規則（close 子で配置成功かつ自分の親に勝った子だけを採る、1 世代 0.1〜0.3 本）。&gt; 0 で「その世代の配置済み close 子の f 昇順の上位 ⌈この値×n⌉ 本」（CMA-ES の rank-μ の選択）。dim2 では次元ゲートが 0 なので値に関係なく bit 一致",
+     "status": ""
+    },
+    {
+     "names": [
+      "cc_spill_freeze_gens"
+     ],
+     "doc_default": "50",
+     "code_default": [
+      "50"
+     ],
+     "meaning": "<b>スピルオーバー後の学習 C の凍結（2026-10-08 から既定、旧 0）</b>。通常のスピルオーバーの後この世代数は学習 C を更新しない。一様に撒き直した直後の子の変位は basin の形を持たず、学習 C を丸める（F12 10D で cond が 1e2〜1e4 に留まり、スピルオーバーを止めると 1e6 まで育つ）。スピルオーバーの間隔（10D で約 75 世代）より長いと学習が止まる（150 は逆効果）。dim2 では無関係",
+     "status": ""
+    },
+    {
+     "names": [
+      "cc_keep_on_spillover"
+     ],
+     "doc_default": "True",
+     "code_default": [
+      "True"
+     ],
+     "meaning": "通常の spillover では学習 <code>C</code> を保持し、basin 乗換えのときだけリセット。毎回リセットすると F12-BentCigar のように「C が一方向へ伸びきること」が解の条件の関数を永久に解けない",
+     "status": ""
+    }
+   ]
+  },
+  {
+   "label": "歩幅 σ",
+   "rows": [
+    {
+     "names": [
+      "sigma"
+     ],
+     "doc_default": "0.2",
+     "code_default": [
+      "0.2"
+     ],
+     "meaning": "初期探索半径（探索範囲に対する比率）",
+     "status": ""
+    },
+    {
+     "names": [
+      "log_slope_threshold"
+     ],
+     "doc_default": "1e-4",
+     "code_default": [
+      "0.0001"
+     ],
+     "meaning": "「意味ある改善」の log10(f) 減少スロープ閾値",
+     "status": ""
+    },
+    {
+     "names": [
+      "sigma_up"
+     ],
+     "doc_default": "1.1",
+     "code_default": [
+      "1.1"
+     ],
+     "meaning": "σ adapt 改善時の乗数",
+     "status": ""
+    },
+    {
+     "names": [
+      "sigma_down"
+     ],
+     "doc_default": "0.95",
+     "code_default": [
+      "0.95"
+     ],
+     "meaning": "σ adapt 改善なし時の乗数",
+     "status": ""
+    },
+    {
+     "names": [
+      "sigma_floor_ratio",
+      "sigma_floor_ill_ratio"
+     ],
+     "doc_default": "<b>1e-10</b> / <b>1e-6</b>（2026-10-12、旧 1e-6 / なし）",
+     "code_default": [
+      "1e-10",
+      "1e-06"
+     ],
+     "meaning": "σ_global の絶対下限（× span）。学習共分散が悪条件になったら後者",
+     "status": ""
+    },
+    {
+     "names": [
+      "sigma_ceil_ratio"
+     ],
+     "doc_default": "1.0",
+     "code_default": [
+      "1.0"
+     ],
+     "meaning": "σ_global の絶対上限（× span）",
+     "status": ""
+    },
+    {
+     "names": [
+      "precision_sigma_ratio"
+     ],
+     "doc_default": "1e-3",
+     "code_default": [
+      "0.001"
+     ],
+     "meaning": "drilling mode 発動の σ 閾値（σ &lt; span × 1e-3 で発動。σ ベースなので問題スケール不変）",
+     "status": ""
+    },
+    {
+     "names": [
+      "sigma_drill_down"
+     ],
+     "doc_default": "0.85",
+     "code_default": [
+      "0.85"
+     ],
+     "meaning": "drilling mode 中の σ 縮小乗数（通常の sigma_down より積極的）",
+     "status": ""
+    },
+    {
+     "names": [
+      "hd_sigma_success"
+     ],
+     "doc_default": "<b>0.05</b>（2026-10-12、旧 None）",
+     "code_default": [
+      "0.05"
+     ],
+     "meaning": "3 次元以上の σ の「改善」判定: 接触感染の子のうち親に勝った割合がこれを超えたら σ を上げる。None で 2D と同じ「最良が更新されたら」",
+     "status": ""
+    }
+   ]
+  },
+  {
+   "label": "スピルオーバーと再着火",
+   "rows": [
+    {
+     "names": [
+      "restart_no_improve_threshold"
+     ],
+     "doc_default": "300",
+     "code_default": [
+      "300"
+     ],
+     "meaning": "スピルオーバー発動の no_improve 閾値（dim2 基準。実効値は下記 <code>restart_window_dim_scale</code> でスケール）",
+     "status": ""
+    },
+    {
+     "names": [
+      "restart_window_dim_scale"
+     ],
+     "doc_default": "1.0",
+     "code_default": [
+      "1.0"
+     ],
+     "meaning": "停滞窓の次元スケール指数。実効窓 = <code>restart_no_improve_threshold × (dim/2)^this</code>。<code>no_improve</code> は<b>評価回数</b>カウンタだが 1 世代は <code>kill_fraction × n_pop</code> 評価を消費するため（旧既定の固定集団で dim2 で 5、dim10 で 10、dim20 で 20。既定の縮小では予算の消費とともに減る）、固定窓は<b>世代数で見ると高次元ほど縮む</b>。dim2 では係数が必ず 1.0 になるので低次元は bit-identical、0.0 で旧固定窓に復帰",
+     "status": ""
+    },
+    {
+     "names": [
+      "restart_sigma_ratio"
+     ],
+     "doc_default": "0.3",
+     "code_default": [
+      "0.3"
+     ],
+     "meaning": "スピルオーバー後の σ（σ_init に対する比率）",
+     "status": ""
+    },
+    {
+     "names": [
+      "restart_quality_rel_floor"
+     ],
+     "doc_default": "1e-8",
+     "code_default": [
+      "1e-08"
+     ],
+     "meaning": "スピルオーバー skip 閾値（best_so_far / |f_init| ≤ this で skip）。乗法スケール不変",
+     "status": ""
+    },
+    {
+     "names": [
+      "basin_switch_after_failed_spillovers"
+     ],
+     "doc_default": "2",
+     "code_default": [
+      "2"
+     ],
+     "meaning": "この連続失敗回数で best 破棄＋σ_init リセットの完全ベイスン乗換え",
+     "status": ""
+    },
+    {
+     "names": [
+      "basin_switch_quality_rel_floor"
+     ],
+     "doc_default": "1e-2",
+     "code_default": [
+      "0.01"
+     ],
+     "meaning": "best_so_far / |f_init| ≤ this でベイスン乗換えを抑制（相対 2 桁以上進捗で grinding 中とみなし保護）",
+     "status": ""
+    },
+    {
+     "names": [
+      "ir_archive_frac"
+     ],
+     "doc_default": "0.5",
+     "code_default": [
+      "0.5"
+     ],
+     "meaning": "情報化再播種で生存アーカイブから再着火するスロット割合（残りは basin 忌避 Uniform）",
+     "status": ""
+    },
+    {
+     "names": [
+      "ir_reignite_sigma_ratio"
+     ],
+     "doc_default": "0.05",
+     "code_default": [
+      "0.05"
+     ],
+     "meaning": "アーカイブ系統まわり再着火ガウスの σ（× span）",
+     "status": ""
+    },
+    {
+     "names": [
+      "ir_repel_radius_ratio"
+     ],
+     "doc_default": "0.1",
+     "code_default": [
+      "0.1"
+     ],
+     "meaning": "basin 忌避（集団免疫）の斥力球半径（× span、記憶 basin 内の Uniform を rejection）",
+     "status": ""
+    },
+    {
+     "names": [
+      "ir_repel_max_tries"
+     ],
+     "doc_default": "20",
+     "code_default": [
+      "20"
+     ],
+     "meaning": "basin 忌避の rejection 上限回数（超えたら plain Uniform にフォールバック）",
+     "status": ""
+    },
+    {
+     "names": [
+      "ir_archive_frac_hd"
+     ],
+     "doc_default": "None",
+     "code_default": [
+      "None"
+     ],
+     "meaning": "<b>実験中（2026-10-12、候補 <code>v2_ir3_noFrz</code> 以降で 0）</b>。3 次元以上での再着火の割合（段差）。None で全次元 <code>ir_archive_frac</code>。0 で 3 次元以上は再着火なし",
+     "status": "experimental"
+    }
+   ]
+  },
+  {
+   "label": "組換え波（3 次元以上）",
+   "rows": [
+    {
+     "names": [
+      "hd_wave_lambda",
+      "wave_sigma_ratio",
+      "wave_budget_frac",
+      "wave_quality"
+     ],
+     "doc_default": "<b>4</b> / 0.01 / 0.25 / <b>1e-3</b>（2026-10-12）",
+     "code_default": [
+      "4.0",
+      "0.01",
+      "0.25",
+      "0.001"
+     ],
+     "meaning": "停滞時の組換え波（3 次元以上）。λ = この値 × D、σ0 = 2 番目 × span、予算の上限、best ≤ 4 番目 × |f_init| のときだけ打つ。None で波なし",
+     "status": ""
+    },
+    {
+     "names": [
+      "wave_use_C",
+      "wave_ill_handover",
+      "wave_handover_drill"
+     ],
+     "doc_default": "<b>True</b> / <b>True</b> / <b>False</b>（2026-10-12）",
+     "code_default": [
+      "True",
+      "True",
+      "False"
+     ],
+     "meaning": "学習共分散が悪条件なら波をそれで白色化する／悪条件になった時点で残り予算を波に渡す（封じ込め）／True なら σ が drilling に入るまで待つ",
+     "status": ""
+    },
+    {
+     "names": [
+      "wave_handover_lambda",
+      "wave_handover_restart"
+     ],
+     "doc_default": "None / False",
+     "code_default": [
+      "None",
+      "False"
+     ],
+     "meaning": "<b>実験中（候補 <code>v2_hlC</code> で −2）</b>。封じ込めの波の集団サイズ: None = 停滞時の波と同じ <code>hd_wave_lambda × D</code>、0 = CMA-ES 既定 4 + ⌊3 ln D⌋、負の −k = その k 倍、正 = その × D。後者は止まったら λ を倍にして再起動（不採用）",
+     "status": "experimental"
+    }
+   ]
+  },
+  {
+   "label": "再集合の掃引（実験中）",
+   "rows": [
+    {
+     "names": [
+      "reassort_sweep",
+      "reassort_budget_frac"
+     ],
+     "doc_default": "False / 0.1",
+     "code_default": [
+      "False",
+      "0.1"
+     ],
+     "meaning": "<b>実験中（候補 <code>v2_rsT2s</code> / <code>v2_hlC</code> で ON）</b>。再集合の掃引: 失敗したスピルオーバーの後、最良点の 1 座標を提供元の座標と交換し、最良の改善を採って繰り返す（予算の後者まで）",
+     "status": "experimental"
+    },
+    {
+     "names": [
+      "reassort_additivity",
+      "reassort_pairs"
+     ],
+     "doc_default": "None / 1",
+     "code_default": [
+      "None",
+      "1"
+     ],
+     "meaning": "掃引の加法性の検査: 最良の座標と次点の座標の交換を同時に試し、効果の差が前者 ×（単独の効果の和）を超えたら以後の掃引を止める。候補は 0.02 / 1。後者は検査する組の数",
+     "status": ""
+    },
+    {
+     "names": [
+      "reassort_donors",
+      "reassort_top_hosts"
+     ],
+     "doc_default": "<code>\"all\"</code> / 10",
+     "code_default": [
+      "'all'",
+      "10"
+     ],
+     "meaning": "掃引の提供元。<code>all</code> = 記憶 ＋ 全宿主、<code>memory</code> = 記憶だけ、<code>top</code> = 記憶 ＋ 上位の宿主、<code>top2</code> = 記憶の上位 ＋ 上位の宿主（候補）。後者がその「上位」の数",
+     "status": ""
+    },
+    {
+     "names": [
+      "reassort_min_dim",
+      "reassort_discard"
+     ],
+     "doc_default": "2 / False",
+     "code_default": [
+      "2",
+      "False"
+     ],
+     "meaning": "掃引する最小次元（候補は 3）／加法性が無いと判定したとき掃引の結果を捨てる（不採用）",
+     "status": ""
+    }
+   ]
+  },
+  {
+   "label": "系統と逐次 niching",
+   "rows": [
+    {
+     "names": [
+      "solution_archive_max"
+     ],
+     "doc_default": "200",
+     "code_default": [
+      "200"
+     ],
+     "meaning": "<b>解アーカイブ</b>の容量。spillover のたびに放棄する basin の best を貯め、報告解集合に含める。0 で無効（旧挙動）。記録のみで探索は不変",
+     "status": ""
+    },
+    {
+     "names": [
+      "hunt_level_tol"
+     ],
+     "doc_default": "1e-6",
+     "code_default": [
+      "1e-06"
+     ],
+     "meaning": "最初の掘り切り以降、hunt は basin best が <code>this × |f_init|</code> に達した時点でも終了（＝すでに banked した深さに並んだ）。0 で旧挙動（毎回 σ フロアまで）",
+     "status": ""
+    },
+    {
+     "names": [
+      "hunt_no_improve_mult"
+     ],
+     "doc_default": "0.5",
+     "code_default": [
+      "0.5"
+     ],
+     "meaning": "後続 hunt の停滞窓の倍率。最初の掘り切り判定は <code>exhausted_no_improve_mult</code>(3.0) のまま",
+     "status": ""
+    },
+    {
+     "names": [
+      "exhausted_sigma_tol",
+      "exhausted_no_improve_mult"
+     ],
+     "doc_default": "1.5 / 3.0",
+     "code_default": [
+      "1.5",
+      "3.0"
+     ],
+     "meaning": "「掘り切った」の判定: σ が <code>this × span × sigma_floor_ratio</code> 以下まで縮み、さらに <code>restart_no_improve_threshold</code> の後者倍だけ停滞したら掘り切り（逐次 niching の起点）",
+     "status": ""
+    },
+    {
+     "names": [
+      "n_elite_max"
+     ],
+     "doc_default": "6",
+     "code_default": [
+      "6"
+     ],
+     "meaning": "系統共存の最大数（飛沫感染の引力対象、情報化再播種のアーカイブ容量も兼ねる）",
+     "status": ""
+    },
+    {
+     "names": [
+      "niche_radius_ratio"
+     ],
+     "doc_default": "0.1",
+     "code_default": [
+      "0.1"
+     ],
+     "meaning": "系統間の最小距離（span に対する比率、スケール不変。BBOB span=10 で実効 1.0、絶対値版と数学的に同一）",
+     "status": ""
+    }
+   ]
+  }
+ ]
+}
