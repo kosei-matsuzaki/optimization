@@ -1,0 +1,88 @@
+=== j31 detail  dim=10  ref=MC-ESO  functions=24  methods=6 ===
+
+[A] OVERALL (24-function mean of SR; evals_succ_mean paired = mean over functions where BOTH ref and arm have successes)
+method        SR@1e-2  SR@1e-4  SR@1e-7  SR@1e-10  dSR@1e-10  evals ref  evals arm   nf
+MC-ESO         60.00%   56.67%   54.38%    52.71%                                      
+v2_air         59.58%   56.25%   53.54%    51.46%     -1.25    10092.6    10075.8   18
+v2_fl6         60.00%   56.67%   53.12%    51.04%     -1.67    10092.6    10092.6   18
+v2_noSS        58.96%   56.25%   53.75%    50.83%     -1.88    10092.6    10197.9   18
+v2_noWave      57.29%   50.00%   47.50%    43.96%     -8.75     9315.7    10768.3   16
+v2_noHand      59.17%   57.08%   48.96%    44.17%     -8.54    10092.6    11425.3   18
+
+[B] PER-FUNCTION SR@1e-10 (%) — all 24 functions; (d) = arm minus ref
+function                   MC-ESO                v2_air                v2_fl6               v2_noSS             v2_noWave             v2_noHand
+F01-Sphere                   100%           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)
+F02-EllipsoidalSep           100%           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)
+F03-RastriginSep               0%             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)
+F04-BucheRastrigin             0%             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)
+F05-LinearSlope              100%           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)
+F06-AttractiveSector         100%           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)
+F07-StepEllipsoidal          100%            90% (  -10)           100% (   +0)            80% (  -20)           100% (   +0)           100% (   +0)
+F08-Rosenbrock                95%           100% (   +5)            95% (   +0)           100% (   +5)            95% (   +0)            95% (   +0)
+F09-RosenbrockRot            100%           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)
+F10-EllipsoidalRot           100%           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)
+F11-Discus                   100%           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)
+F12-BentCigar                 55%            50% (   -5)            55% (   +0)            30% (  -25)            15% (  -40)            15% (  -40)
+F13-SharpRidge               100%           100% (   +0)           100% (   +0)           100% (   +0)             0% ( -100)             0% ( -100)
+F14-DiffPowers               100%           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)           100% (   +0)
+F15-RastriginRot               0%             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)
+F16-Weierstrass                5%            25% (  +20)             5% (   +0)            15% (  +10)             0% (   -5)             5% (   +0)
+F17-SchafferF7                40%            25% (  -15)             0% (  -40)            40% (   +0)             0% (  -40)             0% (  -40)
+F18-SchafferF7ill             25%            10% (  -15)            25% (   +0)             5% (  -20)             0% (  -25)             0% (  -25)
+F19-GriewankRosenbrock         0%             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)
+F20-Schwefel                   0%             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)
+F21-Gallagher101              10%             5% (   -5)            10% (   +0)            15% (   +5)            10% (   +0)            10% (   +0)
+F22-Gallagher21               35%            30% (   -5)            35% (   +0)            35% (   +0)            35% (   +0)            35% (   +0)
+F23-Katsuura                   0%             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)
+F24-LunacekRastrigin           0%             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)             0% (   +0)
+
+[C] FUNCTIONS WHOSE SR@1e-10 CHANGED vs ref (per arm)
+  v2_air       changed=8   up=2 down=6  :: F07 100->90; F08 95->100; F12 55->50; F16 5->25; F17 40->25; F18 25->10; F21 10->5; F22 35->30
+  v2_fl6       changed=1   up=0 down=1  :: F17 40->0
+  v2_noSS      changed=6   up=3 down=3  :: F07 100->80; F08 95->100; F12 55->30; F16 5->15; F18 25->5; F21 10->15
+  v2_noWave    changed=5   up=0 down=5  :: F12 55->15; F13 100->0; F16 5->0; F17 40->0; F18 25->0
+  v2_noHand    changed=4   up=0 down=4  :: F12 55->15; F13 100->0; F17 40->0; F18 25->0
+
+[D] evals_succ_mean per function (ref / arm; '-' = no successful run)
+function                    MC-ESO      v2_air      v2_fl6     v2_noSS   v2_noWave   v2_noHand
+F01-Sphere                    4899        4979        4899        6105        4899        4899
+F02-EllipsoidalSep            8921        8247        8921        8135        9441        9441
+F03-RastriginSep                 -           -           -           -           -           -
+F04-BucheRastrigin               -           -           -           -           -           -
+F05-LinearSlope               7625        7802        7625        9390        7625        7625
+F06-AttractiveSector         10750       11294       10750       11619       10750       10750
+F07-StepEllipsoidal           5841        6938        5841        6220        5841        5841
+F08-Rosenbrock               13439       14086       13439       14328       18345       13306
+F09-RosenbrockRot            14248       14774       14248       14334       18115       14143
+F10-EllipsoidalRot            8549        8883        8549        8638       12024       12024
+F11-Discus                    7963        8281        7963        8370        9331        9331
+F12-BentCigar                17252       17845       17252       18901       17137       17580
+F13-SharpRidge               10634       11077       10634       11289       14228       13937
+F14-DiffPowers                6024        6907        6024        7547        6024        6024
+F15-RastriginRot                 -           -           -           -           -           -
+F16-Weierstrass              20042       11047       20042       13084           -       21796
+F17-SchafferF7               13312       12733       13312       13318        9179       13486
+F18-SchafferF7ill            12574       12494       12574       11053           -       16082
+F19-GriewankRosenbrock           -           -           -           -           -           -
+F20-Schwefel                     -           -           -           -           -           -
+F21-Gallagher101              3340        3602        3340        3665        3340        3340
+F22-Gallagher21               3514        3556        3514        3858        3514        3514
+F23-Katsuura                 12740       16820       12740       13708       22500       22537
+F24-LunacekRastrigin             -           -           -           -           -           -
+
+[E] WILCOXON (ref=MC-ESO, alpha=0.05 two-sided, A12 by direction)
+  v2_air       ref-better=1 / arm-better=0
+      ref-better: F15 A12=0.69 medium
+      arm-better: (none)
+  v2_fl6       ref-better=2 / arm-better=0
+      ref-better: F06 A12=1.00 large; F17 A12=0.67 medium
+      arm-better: (none)
+  v2_noSS      ref-better=3 / arm-better=3
+      ref-better: F01 A12=0.60 small; F06 A12=0.73 large; F13 A12=0.91 large
+      arm-better: F21 A12=0.45 negligible; F22 A12=0.41 small; F23 A12=0.23 large
+  v2_noWave    ref-better=11 / arm-better=0
+      ref-better: F08 A12=0.91 large; F09 A12=0.95 large; F10 A12=1.00 large; F11 A12=0.85 large; F12 A12=0.81 large; F13 A12=1.00 large; F14 A12=1.00 large; F16 A12=0.55 negligible; F17 A12=0.78 large; F18 A12=0.64 small; F19 A12=0.54 negligible
+      arm-better: (none)
+  v2_noHand    ref-better=9 / arm-better=0
+      ref-better: F08 A12=0.91 large; F09 A12=0.95 large; F10 A12=1.00 large; F11 A12=0.85 large; F12 A12=0.81 large; F13 A12=1.00 large; F14 A12=1.00 large; F17 A12=0.66 medium; F19 A12=0.54 negligible
+      arm-better: (none)

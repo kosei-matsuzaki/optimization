@@ -1,0 +1,50 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=5   ref=MC-ESO
+run: 20261012_071329_j31_d5_quick
+meta: n_runs=20 max_evals=12500 set=all-d5 commit=97d7f83
+functions: 24   methods: MC-ESO, v2_air, v2_fl6, v2_noSS, v2_noWave, v2_noHand
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            68.3%   69.6%   70.8%   71.5%        4143            
+  v2_air            66.0%   67.5%   69.4%   70.4%        4257         0/0
+  v2_fl6            64.2%   66.5%   70.6%   71.5%        4131         5/0
+  v2_noSS           66.7%   67.7%   70.2%   71.5%        4438         2/0
+  v2_noWave         62.9%   64.8%   70.0%   71.7%        4137         6/0
+  v2_noHand         67.3%   69.6%   71.5%   71.7%        4151         4/0
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%          v2_air 100%            1743/1792
+  F02-EllipsoidalSep              100%          v2_air 100%            3590/3513
+  F03-RastriginSep                 25%           v2_fl6 25%            5542/5542
+  F04-BucheRastrigin                0%           v2_noSS 5%                    -  <-- ref behind
+  F05-LinearSlope                 100%          v2_air 100%            2392/2445
+  F06-AttractiveSector            100%          v2_air 100%            3537/3419
+  F07-StepEllipsoidal             100%          v2_air 100%            1671/1634
+  F08-Rosenbrock                   90%         v2_noSS 100%            3873/4550  <-- ref behind
+  F09-RosenbrockRot                95%       v2_noWave 100%            3717/4018  <-- ref behind
+  F10-EllipsoidalRot              100%          v2_air 100%            3495/3483
+  F11-Discus                      100%          v2_air 100%            3435/3361
+  F12-BentCigar                   100%          v2_air 100%            5996/5805
+  F13-SharpRidge                  100%          v2_air 100%            3745/3781
+  F14-DiffPowers                  100%          v2_air 100%            2095/2032
+  F15-RastriginRot                 35%           v2_fl6 35%            7312/7312
+  F16-Weierstrass                  85%        v2_noHand 90%            3837/3977  <-- ref behind
+  F17-SchafferF7                   85%           v2_air 75%            3967/4041
+  F18-SchafferF7ill                65%           v2_air 65%            5650/4550
+  F19-GriewankRosenbrock            5%            v2_fl6 5%            8080/8080
+  F20-Schwefel                      5%            v2_air 5%            4417/5445
+  F21-Gallagher101                 45%           v2_fl6 45%            4239/4239
+  F22-Gallagher21                  60%           v2_air 65%            2724/3746  <-- ref behind
+  F23-Katsuura                     45%          v2_noSS 65%            6082/5104  <-- ref behind
+  F24-LunacekRastrigin              0%            v2_air 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  none — MC-ESO is never significantly beaten.
+
