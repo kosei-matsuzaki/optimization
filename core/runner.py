@@ -40,6 +40,8 @@ def run_experiment(
     max_evals: int = 5000,
     noise_model: str | None = None,
     post=None,
+    seed_offset: "int | None" = None,
+    seed_stride: int = 100,
     **optimizer_kwargs,
 ) -> tuple[list[OptimizeResult], list[float]]:
     # ``post`` (optional) is applied to each result as soon as its run ends, so
@@ -58,8 +60,8 @@ def run_experiment(
                 benchmark.func, noise_model, np.random.default_rng(noise_seed)))
         # SEED_OFFSET (quick_check --seed-offset) shifts every run's seed, for
         # measuring on seeds that were never used while tuning.
-        opt = optimizer_cls(bench_i, seed=int(os.environ.get("SEED_OFFSET", "0")) + i * 100,
-                            **optimizer_kwargs)
+        base = int(os.environ.get("SEED_OFFSET", "0")) if seed_offset is None else seed_offset
+        opt = optimizer_cls(bench_i, seed=base + i * seed_stride, **optimizer_kwargs)
         t0 = time.perf_counter()
         result = opt.optimize(max_evals=max_evals)
         times.append(time.perf_counter() - t0)

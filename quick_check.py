@@ -13,7 +13,8 @@ import sys
 
 # --instance / --seed-offset must reach core.benchmarks / core.runner before they
 # are imported (and the --jobs workers inherit the environment).
-for _flag, _env in (("--instance", "BBOB_INSTANCE"), ("--seed-offset", "SEED_OFFSET")):
+for _flag, _env in (("--instance", "BBOB_INSTANCE"), ("--seed-offset", "SEED_OFFSET"),
+                    ("--instances", "BBOB_INSTANCES")):
     if _flag in sys.argv[:-1]:
         os.environ[_env] = sys.argv[sys.argv.index(_flag) + 1]
 import argparse
@@ -639,8 +640,41 @@ def _run_one(bench, method: str, n_runs: int, max_evals: int,
     cls, kwargs = _OPTIMIZERS[method]
     sigma0 = 0.2 * (bench.bounds[1] - bench.bounds[0])
     kw = {**kwargs, **({"sigma0": sigma0} if cls in _SIGMA_USERS else {})}
-    return run_experiment(cls, bench, n_runs=n_runs, max_evals=max_evals,
-                          noise_model=noise, post=post, **kw)
+    insts = _instances()
+    if not insts or not bench.name.startswith("F"):
+        return run_experiment(cls, bench, n_runs=n_runs, max_evals=max_evals,
+                              noise_model=noise, post=post, **kw)
+    # --instances: run i uses instance insts[i % k] with the same seed it would
+    # have had (offset + 100·i), as COCO spreads runs over instances. Results
+    # come back in run order.
+    from core.benchmarks import make_benchmark_by_name
+    dim = bench.dim
+    base = int(os.environ.get("SEED_OFFSET", "0"))
+    k = len(insts)
+    results, times = [None] * n_runs, [None] * n_runs
+    for j, inst in enumerate(insts):
+        idx = list(range(j, n_runs, k))
+        if not idx:
+            continue
+        b_j = make_benchmark_by_name(bench.name, dim, inst)
+        post_j = (lambda r, b=b_j: _slim_result(r, b)) if post is not None else None
+        rs, ts = run_experiment(cls, b_j, n_runs=len(idx), max_evals=max_evals,
+                                noise_model=noise, post=post_j,
+                                seed_offset=base + j * 100, seed_stride=k * 100, **kw)
+        for i, r, t in zip(idx, rs, ts):
+            results[i], times[i] = r, t
+    return results, times
+
+
+def _instances() -> list[int]:
+    """BBOB_INSTANCES ("2-6" or "2,3,4") from quick_check --instances; [] = off."""
+    spec = os.environ.get("BBOB_INSTANCES", "").strip()
+    if not spec:
+        return []
+    if "-" in spec:
+        a, b = (int(x) for x in spec.split("-", 1))
+        return list(range(a, b + 1))
+    return [int(x) for x in spec.split(",") if x]
 
 
 def _slim_result(r, bench):
@@ -945,6 +979,11 @@ if __name__ == "__main__":
     parser.add_argument("--instance", type=int, default=1,
                         help="BBOB instance (default 1, the one every tuning run used). "
                              "Other instances re-draw each function's shift and rotation.")
+    parser.add_argument("--instances", type=str, default=None,
+                        help="Spread the runs over several BBOB instances, e.g. '1-5' or "
+                             "'2,4,6': run i uses instance list[i mod k] (seed unchanged), as "
+                             "COCO does. Overrides --instance. Peak-position metrics (pr_*, "
+                             "optima rate) still refer to the registry's instance.")
     parser.add_argument("--seed-offset", type=int, default=0,
                         help="Added to every run's seed (run i uses offset + 100·i). "
                              "Default 0 = the seeds every tuning run used.")
