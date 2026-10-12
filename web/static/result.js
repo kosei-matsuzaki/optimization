@@ -4,18 +4,14 @@ const DIMS   = _pd.dims;
 let   DIMS_DATA = _pd.dims_data;
 const ALL_RESULTS_META = _pd.all_results_meta || {};
 
-let viewMode      = 'function';
 let currentDim    = DIMS[0] || null;
 let currentFunc   = null;
-let currentMethod = null;
 // ?view=viz_search (or any figure type) opens that tab; default: convergence
 let currentType   = new URLSearchParams(location.search).get('view') || 'viz_curves';
 let currentMediaSrc = null;
 let mediaIndex    = null;  // loaded from /api/media-index
 
 // Compare mode selections
-let cmpSelectedFuncs   = new Set();
-let cmpSelectedMethods = new Set();
 
 // ── ALL_TYPE_LABELS ──────────────────────────────────────────────────────────
 // Interactive views drawn by static/viz.js from data (function view only);
@@ -225,9 +221,7 @@ function buildTypeSelector() {
   // runs without --viz have none); the interactive views need no files.
   const imgTypes = TYPE_ORDER.filter(t => (mediaIndex?.types || []).includes(t));
   const methodsHere = _summaryMethods();
-  const vizTypes = viewMode === 'function'
-    ? VIZ_TYPES.filter(t => t !== 'viz_internals' || methodsHere.some(m => m.startsWith('MC-ESO')))
-    : [];
+  const vizTypes = VIZ_TYPES.filter(t => t !== 'viz_internals' || methodsHere.some(m => m.startsWith('MC-ESO')));
   const types = [...vizTypes, ...imgTypes];
   if (!types.length) {
     sel.innerHTML = '<p class="empty-state">この run には画像がありません。収束・探索の様子・MC-ESO の内部は「関数」表示で見られます。</p>';
@@ -251,51 +245,6 @@ function buildTypeSelector() {
   });
 }
 
-// ── Switch view mode ────────────────────────────────────────────────────────
-function switchViewMode(mode) {
-  viewMode = mode;
-  ['function','method','compare'].forEach(m => {
-    document.getElementById(`vm-${m}`).classList.toggle('active', m === mode);
-  });
-
-  // Leaving overall mode? Restore a per-function selection so the panes have something to show.
-  if (currentFunc === '__overall__') {
-    setOverallMode(false);
-    _clearOverallNav();
-    const fns = (DIMS_DATA[currentDim] || {}).functions || [];
-    if (fns.length) {
-      currentFunc = fns[0];
-      document.querySelectorAll('#func-list a')
-        .forEach(a => a.classList.toggle('active', a.dataset.func === currentFunc));
-      document.querySelectorAll('.card-func-badge').forEach(el => el.textContent = currentFunc);
-      _updateHash();
-      buildUnifiedTable(currentFunc);
-    }
-  }
-
-  // Show/hide sidebar panels
-  document.getElementById('func-panel').style.display    = mode === 'function' ? '' : 'none';
-  document.getElementById('method-panel').style.display  = mode === 'method'   ? '' : 'none';
-  document.getElementById('compare-panel').style.display = mode === 'compare'  ? 'flex' : 'none';
-
-  // Show/hide main panels
-  buildTypeSelector();   // interactive views exist in the function view only
-  document.getElementById('viz-root').style.display = 'none';
-  document.getElementById('media-grid-wrap').style.display    = mode === 'function' ? '' : 'none';
-  document.getElementById('method-grid-wrap').style.display   = mode === 'method'   ? '' : 'none';
-  document.getElementById('compare-matrix-wrap').style.display = mode === 'compare'  ? '' : 'none';
-  document.getElementById('results-card').style.display       = mode === 'function'  ? '' : 'none';
-
-  if (mode === 'function') {
-    renderFunctionGrid();
-  } else if (mode === 'method') {
-    buildMethodList();
-    renderMethodGrid();
-  } else if (mode === 'compare') {
-    buildComparePanel();
-    renderCompareMatrix();
-  }
-}
 
 // ── Dimension switch ─────────────────────────────────────────────────────────
 function switchDim(dim) {
@@ -307,13 +256,6 @@ function switchDim(dim) {
   loadMediaIndex().then(() => {
     buildTypeSelector();
     buildFuncList();
-    if (viewMode === 'method') {
-      buildMethodList();
-      renderMethodGrid();
-    } else if (viewMode === 'compare') {
-      buildComparePanel();
-      renderCompareMatrix();
-    }
   });
 }
 
@@ -410,42 +352,7 @@ function selectFunc(func) {
   buildUnifiedTable(func);
 }
 
-// ── Method list (Method mode) ────────────────────────────────────────────────
-function buildMethodList() {
-  const list    = document.getElementById('method-list');
-  const countEl = document.getElementById('method-count');
-  list.innerHTML = '';
-  const methods = (mediaIndex && mediaIndex.methods) ? mediaIndex.methods : [];
-  if (countEl) countEl.textContent = methods.length;
 
-  if (!methods.length) {
-    list.innerHTML = '<li style="padding:10px;color:var(--muted);font-size:11px;">手法データがありません。</li>';
-    return;
-  }
-
-  methods.forEach((m, i) => {
-    const li = document.createElement('li');
-    const a  = document.createElement('a');
-    a.href = '#';
-    a.textContent = m;
-    a.dataset.method = m;
-    if (i === 0 && !currentMethod) { currentMethod = m; a.classList.add('active'); }
-    if (m === currentMethod) a.classList.add('active');
-    a.addEventListener('click', e => { e.preventDefault(); selectMethod(m); });
-    li.appendChild(a);
-    list.appendChild(li);
-  });
-
-  if (!currentMethod && methods.length) currentMethod = methods[0];
-}
-
-function selectMethod(method) {
-  currentMethod = method;
-  document.querySelectorAll('#method-list a')
-    .forEach(a => a.classList.toggle('active', a.dataset.method === method));
-  document.getElementById('media-func-badge').textContent = method;
-  renderMethodGrid();
-}
 
 // ── Render: Function mode grid (all methods for current function) ─────────────
 // Methods of the current dimension, in summary order.
@@ -482,7 +389,7 @@ function renderFunctionGrid() {
     return;
   }
   document.getElementById('viz-root').style.display = 'none';
-  document.getElementById('media-grid-wrap').style.display = viewMode === 'function' ? '' : 'none';
+  document.getElementById('media-grid-wrap').style.display = '';
   if (!currentFunc || !mediaIndex || !(mediaIndex.types || []).length) return;
 
   // Function-level types (landscape/convergence): single full-width cell
@@ -504,123 +411,7 @@ function renderFunctionGrid() {
   });
 }
 
-// ── Render: Method mode grid (all functions for current method) ──────────────
-function renderMethodGrid() {
-  const grid = document.getElementById('method-grid');
-  grid.innerHTML = '';
-  if (!mediaIndex) return;
 
-  if (!(mediaIndex.types || []).length) return;
-  const isFuncLevel = FUNC_LEVEL_TYPES.has(currentType);
-  const funcs = (mediaIndex.funcs || []).filter(f =>
-    hasMedia(f, isFuncLevel ? null : currentMethod, currentType));
-  if (!funcs.length) { grid.innerHTML = NO_FIGURE; return; }
-
-  // Function-level types (landscape/convergence): ignore selected method
-  if (isFuncLevel) {
-    funcs.forEach(func => {
-      const url = mediaUrl(func, null, currentType);
-      grid.appendChild(makeGridCell(func, null, currentType, url, func));
-    });
-    return;
-  }
-
-  if (!currentMethod) return;
-  funcs.forEach(func => {
-    const url = mediaUrl(func, currentMethod, currentType);
-    grid.appendChild(makeGridCell(func, currentMethod, currentType, url, func));
-  });
-}
-
-// ── Render: Compare mode matrix ──────────────────────────────────────────────
-function renderCompareMatrix() {
-  const table = document.getElementById('compare-matrix');
-  table.innerHTML = '';
-  if (!mediaIndex) return;
-
-  const funcs   = [...cmpSelectedFuncs];
-  const methods = [...cmpSelectedMethods];
-
-  // Function-level types: render a simple per-function grid (no method axis)
-  if (FUNC_LEVEL_TYPES.has(currentType)) {
-    if (!funcs.length) {
-      table.innerHTML = '<tr><td style="padding:20px;color:var(--muted);font-size:12px;">関数を選択してください。</td></tr>';
-      return;
-    }
-    const thead = document.createElement('thead');
-    const hrow  = document.createElement('tr');
-    hrow.appendChild(Object.assign(document.createElement('th'), { textContent: '' }));
-    const th = document.createElement('th');
-    th.textContent = TYPE_LABELS[currentType] || currentType;
-    hrow.appendChild(th);
-    thead.appendChild(hrow);
-    table.appendChild(thead);
-    const tbody = document.createElement('tbody');
-    funcs.forEach(func => {
-      const tr = document.createElement('tr');
-      const rowHdr = document.createElement('td');
-      rowHdr.className = 'row-header';
-      rowHdr.textContent = func;
-      tr.appendChild(rowHdr);
-      const td = document.createElement('td');
-      const url = mediaUrl(func, null, currentType);
-      const div = document.createElement('div');
-      div.className = 'compare-cell';
-      const img = document.createElement('img');
-      img.src = url; img.alt = func; img.style.cursor = 'zoom-in';
-      img.onclick = () => openOverlay(url);
-      img.onerror = () => { div.className = 'compare-cell not-available'; div.innerHTML = '<span style="color:var(--muted);font-size:10px;">N/A</span>'; };
-      div.appendChild(img); td.appendChild(div); tr.appendChild(td);
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    return;
-  }
-
-  if (!funcs.length || !methods.length) {
-    table.innerHTML = '<tr><td style="padding:20px;color:var(--muted);font-size:12px;">関数と手法を選択してください。</td></tr>';
-    return;
-  }
-
-  // Header row
-  const thead = document.createElement('thead');
-  const hrow  = document.createElement('tr');
-  hrow.appendChild(Object.assign(document.createElement('th'), { textContent: '' }));
-  methods.forEach(m => {
-    const th = document.createElement('th');
-    th.textContent = m;
-    hrow.appendChild(th);
-  });
-  thead.appendChild(hrow);
-  table.appendChild(thead);
-
-  // Data rows
-  const tbody = document.createElement('tbody');
-  funcs.forEach(func => {
-    const tr = document.createElement('tr');
-    const th = document.createElement('td');
-    th.className = 'row-header';
-    th.textContent = func;
-    tr.appendChild(th);
-    methods.forEach(method => {
-      const td = document.createElement('td');
-      const url = mediaUrl(func, method, currentType);
-      const div = document.createElement('div');
-      div.className = 'compare-cell';
-      const img = document.createElement('img');
-      img.src = url;
-      img.alt = `${func} / ${method}`;
-      img.style.cursor = 'zoom-in';
-      img.onclick = () => openOverlay(url);
-      img.onerror = () => { div.className = 'compare-cell not-available'; div.innerHTML = '<span style="color:var(--muted);font-size:10px;">N/A</span>'; };
-      div.appendChild(img);
-      td.appendChild(div);
-      tr.appendChild(td);
-    });
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-}
 
 // ── Grid cell factory ────────────────────────────────────────────────────────
 function makeGridCell(func, method, type, url, label) {
@@ -646,55 +437,8 @@ function makeGridCell(func, method, type, url, label) {
   return cell;
 }
 
-// ── Compare panel checkboxes ─────────────────────────────────────────────────
-function buildComparePanel() {
-  if (!mediaIndex) return;
-  const funcs   = mediaIndex.funcs   || [];
-  const methods = mediaIndex.methods || [];
 
-  // Init selections if empty
-  if (!cmpSelectedFuncs.size)   funcs.slice(0, 4).forEach(f => cmpSelectedFuncs.add(f));
-  if (!cmpSelectedMethods.size) methods.forEach(m => cmpSelectedMethods.add(m));
 
-  buildCheckList('cmp-func-list', funcs, cmpSelectedFuncs, (f, checked) => {
-    if (checked) cmpSelectedFuncs.add(f); else cmpSelectedFuncs.delete(f);
-    renderCompareMatrix();
-  });
-  buildCheckList('cmp-method-list', methods, cmpSelectedMethods, (m, checked) => {
-    if (checked) cmpSelectedMethods.add(m); else cmpSelectedMethods.delete(m);
-    renderCompareMatrix();
-  });
-}
-
-function buildCheckList(containerId, items, selected, onChange) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
-  items.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'cmp-check-item';
-    const id = `chk-${containerId}-${item}`;
-    const chk = document.createElement('input');
-    chk.type = 'checkbox';
-    chk.id = id;
-    chk.checked = selected.has(item);
-    chk.onchange = () => onChange(item, chk.checked);
-    const lbl = document.createElement('label');
-    lbl.htmlFor = id;
-    lbl.textContent = item;
-    div.append(chk, lbl);
-    container.appendChild(div);
-  });
-}
-
-function cmpSelectAll(type) {
-  if (!mediaIndex) return;
-  const items = type === 'func' ? (mediaIndex.funcs || []) : (mediaIndex.methods || []);
-  const set   = type === 'func' ? cmpSelectedFuncs : cmpSelectedMethods;
-  const containerId = type === 'func' ? 'cmp-func-list' : 'cmp-method-list';
-  items.forEach(i => set.add(i));
-  document.querySelectorAll(`#${containerId} input[type=checkbox]`).forEach(c => { c.checked = true; });
-  renderCompareMatrix();
-}
 
 // ── Overall evaluation ────────────────────────────────────────────────────────
 function setOverallMode(on) {
@@ -804,40 +548,48 @@ function _renderLeaderboard(lb) {
     return Math.max(0, Math.min(1, (nMethods - mr) / (nMethods - 1)));
   };
 
-  // Friedman test stats — rendered as a small table (指標 × χ²_F / p / 判定 / CD)
-  // rather than an inline run, which was ambiguous once it wrapped.
-  const frRow = (ind, label) => {
+  // Friedman / Nemenyi, read out per indicator in plain words: (1) are the
+  // rank differences among all methods more than chance, (2) which methods
+  // differ from the proposed method by at least the critical difference.
+  const ref0 = refMethod();
+  const IND_LABELS = { bf: '平均順位 best_f', evals: '平均順位 Evals', cec: 'CEC 順位' };
+  const frBlock = ind => {
     const s = fried[ind];
     if (!s) return '';
-    const chi2 = s.chi2 == null ? '—' : s.chi2.toFixed(2);
+    const key = `mean_rank_${ind}`;
+    const refRow = lb.find(r => r.method === ref0);
+    const best = [...lb].sort((x, y) => x[key] - y[key])[0];
     const pStr = s.p == null ? '—' : (s.p < 1e-4 ? s.p.toExponential(1) : s.p.toFixed(4));
-    const cd   = s.cd == null ? '—' : s.cd.toFixed(2);
-    const sig  = (s.p != null && s.p < 0.05);
-    const verdict = s.p == null ? ''
-      : `<span class="fr-chip ${sig ? 'sig' : 'nonsig'}">${sig ? '有意' : 'n.s.'}</span>`;
-    return `<tr>
-        <td class="fr-ind">${label}</td>
-        <td>${chi2}</td>
-        <td class="fr-p ${sig ? 'sig' : 'nonsig'}">${pStr}</td>
-        <td class="fr-verdict">${verdict}</td>
-        <td>${cd}</td>
-      </tr>`;
+    const sig = s.p != null && s.p < 0.05;
+    let overall = s.p == null ? '検定できない（関数か手法が少なすぎる）'
+      : sig ? `手法による順位の違いは偶然では説明できない（p = ${pStr}）`
+            : `手法による順位の違いは偶然の範囲（p = ${pStr}）。以下の差も確かではない`;
+    let refLine = '';
+    if (refRow && s.cd != null && sig) {
+      const cd = s.cd;
+      const better = lb.filter(r => r.method !== ref0 && refRow[key] - r[key] >= cd).map(r => r.method);
+      const worse  = lb.filter(r => r.method !== ref0 && r[key] - refRow[key] >= cd).length;
+      const gap = refRow[key] - best[key];
+      const lead = best.method === ref0
+        ? `${htmlesc(ref0)} がこの指標で 1 位（${refRow[key].toFixed(2)}）`
+        : `${htmlesc(ref0)} ${refRow[key].toFixed(2)} と 1 位 ${htmlesc(best.method)} ${best[key].toFixed(2)} の差 ${gap.toFixed(2)} は`
+          + (gap >= cd ? `臨界差 ${cd.toFixed(2)} 以上 ＝ <strong>有意に負けている</strong>` : `臨界差 ${cd.toFixed(2)} 未満 ＝ <strong>有意差なし</strong>`);
+      refLine = `<div class="fr-line">${lead}。${htmlesc(ref0)} より有意に上: ${better.length ? better.map(htmlesc).join('、') : 'なし'}／有意に下: ${worse} 手法</div>`;
+    }
+    return `<div class="fr-item"><div class="fr-ind">${IND_LABELS[ind]}<span class="fr-chip ${sig ? 'sig' : 'nonsig'}">${sig ? '差あり' : '差なし'}</span></div>
+      <div class="fr-line">${overall}</div>${refLine}</div>`;
   };
-  // Friedman section — its own heading (matches 総合ランキング), placed below
-  // the leaderboard in a separate container.
   const statsHtml = `
     <div class="card-header-row ov-subhead">
-      <span class="card-title-label">Friedman 検定</span>
-      <span class="card-subtitle">${nFuncs} 関数 × ${nMethods} 手法で、手法間の順位差が偶然でないかを調べる</span>
+      <span class="card-title-label">順位の差は確かか（Friedman 検定）</span>
+      <span class="card-subtitle">${nFuncs} 関数 × ${nMethods} 手法</span>
     </div>
-    <table class="fr-tbl">
-      <thead><tr><th>指標</th><th>χ²_F</th><th>p 値</th><th>判定</th><th>CD₀.₀₅</th></tr></thead>
-      <tbody>${frRow('bf', 'best_f')}${frRow('evals', 'Evals')}${frRow('cec', 'CEC 順位')}</tbody>
-    </table>
     <div class="fr-note">
-      χ²_F・p 値 = 手法間の順位差が全体として有意か（<strong>p &lt; 0.05 で有意差あり</strong>）。
-      CD₀.₀₅ = Nemenyi 臨界差 — 2 手法の平均ランク差がこの値以上なら、その 2 手法は有意に異なる。
-    </div>`;
+      上の平均順位は関数ごとの順位の平均なので、たまたまの差も含む。Friedman 検定で「手法によって順位が違う」と言えるかを確かめ、
+      言える場合は Nemenyi の<strong>臨界差</strong>（2 手法の平均順位がこれ以上離れていれば、その 2 手法は有意に違う。手法と関数の数だけで決まる）で、
+      ${htmlesc(ref0)} と有意に差がある手法を数える。手法が多いほど臨界差は大きくなり、差は出にくい。
+    </div>
+    ${frBlock('cec')}${frBlock('bf')}${frBlock('evals')}`;
 
   const sortHdr = (key, label, title) => {
     const isActive = overallSortKey === key;
@@ -1103,13 +855,7 @@ document.getElementById('media-selector').addEventListener('click', e => {
   btn.classList.add('active');
   currentType = btn.dataset.type;
 
-  if (viewMode === 'function') {
-    renderFunctionGrid();
-  } else if (viewMode === 'method') {
-    renderMethodGrid();
-  } else if (viewMode === 'compare') {
-    renderCompareMatrix();
-  }
+  renderFunctionGrid();
 });
 
 // ── Number formatting ─────────────────────────────────────────────────────────
@@ -1160,6 +906,19 @@ async function buildUnifiedTable(func) {
   });
 
   const bfColors  = rankColors(summaryRows.map(r => r.mean_best_f), false);
+  // CEC competitions' convention: per-run error f − f* below 1e-8 counts as 0,
+  // averaged over the runs; methods ranked on that mean (ties share the
+  // average rank). Same definition as core.run_data.cec_mean_errors.
+  const CEC_ZERO = 1e-8;
+  const cecErr = summaryRows.map(r => {
+    const errs = (byMethod[r.method] || []).map(x => parseFloat(x.best_f)).filter(v => !isNaN(v));
+    return errs.length ? errs.reduce((a, v) => a + (v < CEC_ZERO ? 0 : v), 0) / errs.length : Infinity;
+  });
+  const cecRank = cecErr.map(v => {
+    const less = cecErr.filter(w => w < v).length, same = cecErr.filter(w => w === v).length;
+    return less + (same + 1) / 2;
+  });
+  const cecColors = rankColors(cecErr.map(v => isFinite(v) ? v : 'Infinity'), false);
   const sr2Colors = rankColors(summaryRows.map(r => parseFloat(r['sr_1e-2'])), true);
   const sr4Colors = rankColors(summaryRows.map(r => parseFloat(r['sr_1e-4'] ?? r.success_rate)), true);
   const evalsRaw  = summaryRows.map(r => r.evals_succ_mean ?? r.evals_succ_med ?? r.ert);
@@ -1237,6 +996,8 @@ async function buildUnifiedTable(func) {
   const COLS = [
     { label: 'Method / Seed', desc: 'Click ▶ to expand per-run details.' },
     { label: 'best_f',        desc: 'Mean of final best f(x) across all runs. Lower is better. BBOB functions: global minimum = 0.' },
+    { label: '平均誤差（CEC）', desc: 'CEC の競技の慣例: run ごとの誤差 f − f* のうち 1e-8 未満を 0 とみなして平均したもの。低いほど良い。精度の閾値を問わず誤差の大きさで比べる。' },
+    { label: 'CEC 順位',      desc: 'この関数での平均誤差（CEC）による手法の順位（同着は平均順位）。全関数で平均したものがランキング画面の「CEC 順位」。' },
     { label: 'SR@target', desc: '各精度目標（1e⁻⁴ / 1e⁻⁷ / 1e⁻¹⁰）に到達した run の割合。左ほど緩く右ほど厳しい。色は成功率（赤=低、緑=高）、数値は正確な %。1e⁻¹⁰ が主指標。行を展開すると各 seed が目標ごとに ✓（到達）/ ✗（未到達）で出る。' },
     { label: 'Evals (succ mean)', desc: 'Mean number of evaluations to reach the 1e-4 target across successful runs only. Failed runs are excluded (no penalty extrapolation). Taken over successful runs (small spread, outliers unlikely), so the mean is used rather than the median. Read together with SR. — means no successful run.' },
     { label: 'time (s)',      desc: 'Mean wall-clock time per run (seconds).' },
@@ -1265,6 +1026,8 @@ async function buildUnifiedTable(func) {
       <tr>
         <th rowspan="2" style="text-align:left;min-width:150px;">手法 / seed</th>
         <th rowspan="2">best_f</th>
+        <th rowspan="2" title="run ごとの誤差（1e-8 未満は 0）の平均">平均誤差（CEC）</th>
+        <th rowspan="2" title="平均誤差（CEC）による順位">CEC 順位</th>
         <th colspan="${SR_TARGETS.length}" class="sr-group-head">SR@target</th>
         <th rowspan="2">Evals (succ mean)</th>
         <th rowspan="2">time (s)</th>
@@ -1285,6 +1048,8 @@ async function buildUnifiedTable(func) {
           ${method}
         </div></td>
         <td class="${bfColors[si]}">${fmtNum(sr.mean_best_f)}</td>
+        <td class="${cecColors[si]}">${isFinite(cecErr[si]) ? fmtNum(cecErr[si]) : '—'}</td>
+        <td class="${cecColors[si]}">${isFinite(cecErr[si]) ? (Number.isInteger(cecRank[si]) ? cecRank[si] : cecRank[si].toFixed(1)) : '—'}</td>
         ${fmtSRHeatCells(sr)}
         <td class="${evalsColors[si]}">${fmtEvals(sr.evals_succ_mean ?? sr.evals_succ_med ?? sr.ert)}</td>
         <td>${fmtNum(sr.mean_time_s)}</td>
@@ -1297,6 +1062,8 @@ async function buildUnifiedTable(func) {
         <tr class="run-row" data-method="${htmlesc(method)}" style="display:none;">
           <td class="run-cell">seed ${run.seed}</td>
           <td>${fmtNum(run.best_f)}</td>
+          <td>${(() => { const v = parseFloat(run.best_f); return isNaN(v) ? '—' : fmtNum(v < CEC_ZERO ? 0 : v); })()}</td>
+          <td style="color:var(--muted);">—</td>
           ${fmtRunReachCells(run)}
           <td style="color:var(--muted);">—</td>
           <td>${fmtNum(run.time_s)}</td>

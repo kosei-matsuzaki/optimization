@@ -61,13 +61,7 @@
       <button class="ov-nav-btn" data-ovview="wilcoxon" onclick="selectOverall('wilcoxon')">統計的優位差</button>
     </div>
 
-    <!-- View mode tabs (per-function analysis) -->
-    <div class="sb-label">関数・手法ごとに見る</div>
-    <div class="view-mode-bar">
-      <button class="vm-btn active" id="vm-function" onclick="switchViewMode('function')">関数</button>
-      <button class="vm-btn" id="vm-method" onclick="switchViewMode('method')">手法</button>
-      <button class="vm-btn" id="vm-compare" onclick="switchViewMode('compare')">比較</button>
-    </div>
+    <div class="sb-label">関数ごとに見る</div>
 
     <!-- Dimension -->
     {% if dims|length > 1 %}
@@ -94,32 +88,6 @@
       <ul class="results-list" id="func-list"></ul>
     </div>
 
-    <!-- Method mode: method list -->
-    <div class="sidebar-section" id="method-panel" style="flex:1; overflow-y:auto; display:none;">
-      <div class="section-header">
-        <span class="section-title">手法</span>
-        <span class="tag" id="method-count"></span>
-      </div>
-      <ul class="results-list" id="method-list"></ul>
-    </div>
-
-    <!-- Compare mode: function + method multi-select -->
-    <div id="compare-panel">
-      <div class="cmp-section">
-        <div class="cmp-section-header">
-          <span>関数</span>
-          <button class="cmp-select-all" onclick="cmpSelectAll('func')">すべて選択</button>
-        </div>
-        <div class="cmp-check-list" id="cmp-func-list"></div>
-      </div>
-      <div class="cmp-section">
-        <div class="cmp-section-header">
-          <span>手法</span>
-          <button class="cmp-select-all" onclick="cmpSelectAll('method')">すべて選択</button>
-        </div>
-        <div class="cmp-check-list" id="cmp-method-list"></div>
-      </div>
-    </div>
 
     {% endif %}
   </aside>
@@ -141,18 +109,6 @@
       <!-- Function mode: multi-method grid -->
       <div id="media-grid-wrap" style="display:none;">
         <div class="media-grid" id="media-grid"></div>
-      </div>
-
-      <!-- Method mode: multi-function grid -->
-      <div id="method-grid-wrap" style="display:none;">
-        <div class="media-grid" id="method-grid"></div>
-      </div>
-
-      <!-- Compare mode: matrix -->
-      <div id="compare-matrix-wrap" style="display:none;">
-        <div class="table-wrap">
-          <table class="compare-matrix" id="compare-matrix"></table>
-        </div>
       </div>
 
 
