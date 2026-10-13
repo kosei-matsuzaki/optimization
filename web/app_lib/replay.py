@@ -66,6 +66,22 @@ def _recorded_best(run_dir: Path, dim: str, func: str, method: str, seed: int):
 # "MC-ESO" names the default of the day. A run recorded before a default
 # change is replayed with the arm that keeps the default it was run with.
 _DEFAULT_CHANGES = (("2026-10-08", "MC-ESO-v0"), ("2026-10-12", "MC-ESO-v1"))
+# From 2026-10-13 runs are recorded by local and cloud clocks in different
+# zones the same day, so the change is decided by the run's commit instead:
+# a run whose commit does not contain this one used the earlier default.
+_COMMIT_CHANGES = (("ba8d455c7bd6044bbfdf0da6d6a29983c29b1514", "MC-ESO-v2"),)
+
+
+@functools.lru_cache(maxsize=256)
+def _contains(commit: str, change: str) -> "bool | None":
+    import subprocess
+    try:
+        r = subprocess.run(["git", "merge-base", "--is-ancestor", change, commit],
+                           cwd=Path(__file__).resolve().parents[2],
+                           capture_output=True, timeout=10)
+    except Exception:
+        return None
+    return {0: True, 1: False}.get(r.returncode)
 
 
 def _method_at(method: str, meta: dict) -> str:
@@ -74,6 +90,11 @@ def _method_at(method: str, meta: dict) -> str:
     created = str(meta.get("created_at") or "")[:10]
     for date, arm in _DEFAULT_CHANGES:
         if created and created < date:
+            return arm
+    commit = str(meta.get("commit") or "")
+    for change, arm in _COMMIT_CHANGES:
+        has = _contains(commit, change) if commit and commit != "nogit" else None
+        if has is False or (has is None and created and created < "2026-10-13"):
             return arm
     return method
 
