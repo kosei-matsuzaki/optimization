@@ -107,7 +107,10 @@ function renderResults(dim) {
   const max10 = Math.max(...order.map(m => run.overall[m]['sr_1e-10'] ?? 0));
   let h = `<thead><tr><th>手法</th><th>SR@1e-10</th><th>SR@1e-7</th><th>SR@1e-4</th>`
     + `<th title="成功した run だけの平均評価回数を、関数について平均したもの">平均評価回数</th>`
+    + `<th title="CEC の競技の慣例: run ごとの誤差（1e-8 未満は 0）の平均で関数ごとに順位をつけ、関数で平均したもの。低いほど良い（括弧は手法の中での順番）">CEC 順位</th>`
     + `<th title="MC-ESO が有意に良い / 悪い関数の数（Wilcoxon, p &lt; 0.05）">勝 / 負</th></tr></thead><tbody>`;
+  const cecOrder = [...run.methods].filter(m => run.overall[m].cec_rank != null)
+    .sort((a, b) => run.overall[a].cec_rank - run.overall[b].cec_rank);
   order.forEach(m => {
     const o = run.overall[m];
     const isRef = m === ref;
@@ -119,7 +122,8 @@ function renderResults(dim) {
     h += `<tr class="${isRef ? 'is-ref' : ''}"><td class="m-name">${name}</td>`
       + `<td><div class="sr-cell"><span class="sr-bar"><i style="width:${w.toFixed(1)}%"></i></span><span class="sr-val">${pct(o['sr_1e-10'])}</span></div></td>`
       + `<td>${pct(o['sr_1e-7'])}</td><td>${pct(o['sr_1e-4'])}</td>`
-      + `<td>${o.evals == null ? '—' : Math.round(o.evals).toLocaleString()}</td><td>${wl}</td></tr>`;
+      + `<td>${o.evals == null ? '—' : Math.round(o.evals).toLocaleString()}</td>`
+      + `<td>${o.cec_rank == null ? '—' : `${o.cec_rank.toFixed(2)} <span class="dim-muted">(${cecOrder.indexOf(m) + 1})</span>`}</td><td>${wl}</td></tr>`;
   });
   document.getElementById('res-table').innerHTML = h + '</tbody>';
 

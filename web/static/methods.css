@@ -169,7 +169,7 @@
 .mt-res-meta { font-size: 12.5px; color: var(--muted); margin-bottom: 12px; }
 .mt-res-meta code { font-size: 11.5px; }
 
-.mt-res-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 28px; align-items: start; }
+.mt-res-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }  /* notes below the table: the table needs the full width (CEC 順位 column, 2026-10-13) */
 .mt-res-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; }
 .mt-res-table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
 .mt-res-table thead { position: static; }
