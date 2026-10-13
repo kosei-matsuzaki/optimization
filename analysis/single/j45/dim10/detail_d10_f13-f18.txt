@@ -1,0 +1,114 @@
+j45d10c  BBOB dim10 F13-F18 (6/24 funcs)  n=20  max_evals=25000  instances 1-5  18 methods
+
+=== [1] full 18-method overall table (6-func mean, %, sorted by SR@1e-10) ===
+  method               1e-2   1e-4   1e-7  1e-10  evals(own)  nf
+  LSHADE-SPACMA       67.50  64.17  46.67  43.33    12602.6   5
+  MC-ESO              65.83  58.33  43.33  40.83    13284.8   5 <- ref
+  MC-ESO-v2           59.17  47.50  44.17  40.83    12503.6   5
+  RCMAES              68.33  60.83  40.00  40.00     3881.4   5
+  BIPOP-aCMA-ES       44.17  33.33  33.33  33.33     3653.5   2
+  AMALGAM-SO          68.33  54.17  43.33  29.17    13601.0   6
+  IPOP-CMA-ES         70.83  61.67  37.50  23.33    11580.8   5
+  BIPOP-CMA-ES        59.17  44.17  37.50  18.33    12223.2   5
+  ELSHADE-SPACMA      67.50  60.00  25.83  18.33    18158.4   5
+  L-SRTDE             70.00  65.00  30.00  17.50    15776.4   5
+  L-SHADE             66.67  48.33  16.67  12.50    20888.2   4
+  jSO                 66.67  57.50  16.67  12.50    19781.0   4
+  ARRDE               67.50  46.67  18.33   3.33    12766.6   5
+  EA4eig              64.17  37.50  15.00   2.50    19406.0   4
+  EBOwithCMAR         68.33  26.67  18.33   1.67    18278.0   3
+  IMODE               33.33  16.67   0.00   0.00    22346.0   1
+  NL-SHADE-RSP        20.83  15.83   0.00   0.00    22425.0   1
+  SPS-L-SHADE-EIG     37.50  33.33  16.67   0.00    21747.5   2
+
+=== [2] paired evals_succ_mean (both-success functions only) ===
+  vs method           nf    MC-ESO      base  faster
+  BIPOP-aCMA-ES        2    7856.5    3653.5  base
+  RCMAES               5   13284.8    3881.4  base
+  LSHADE-SPACMA        4   12463.2   11508.2  base
+  IPOP-CMA-ES          5   13284.8   11580.8  base
+  ARRDE                4   12463.2   11652.8  base
+  BIPOP-CMA-ES         5   13284.8   12223.2  base
+  MC-ESO-v2            5   13284.8   12503.6  base
+  AMALGAM-SO           5   13284.8   12520.6  base
+  L-SRTDE              4   12463.2   14065.0  MC-ESO
+  ELSHADE-SPACMA       4   12463.2   17081.5  MC-ESO
+  EBOwithCMAR          2   10025.5   17849.0  MC-ESO
+  EA4eig               4   12463.2   19406.0  MC-ESO
+  jSO                  4   12463.2   19781.0  MC-ESO
+  L-SHADE              4   12463.2   20888.2  MC-ESO
+  SPS-L-SHADE-EIG      2    7856.5   21747.5  MC-ESO
+  IMODE                1    5956.0   22346.0  MC-ESO
+  NL-SHADE-RSP         1    5956.0   22425.0  MC-ESO
+
+=== [3] per-function SR@1e-10 (%), all 18 methods ===
+  method               F13   F14   F15   F16   F17   F18    mean
+  LSHADE-SPACMA         95   100    10     0    45    10   43.33
+  MC-ESO               100   100     0    25    20     0   40.83 <- ref
+  MC-ESO-v2            100   100     0    20    20     5   40.83
+  RCMAES               100   100     0    20    15     5   40.00
+  BIPOP-aCMA-ES        100   100     0     0     0     0   33.33
+  AMALGAM-SO            70   100     0     5     0     0   29.17
+  IPOP-CMA-ES           20   100     0    10    10     0   23.33
+  BIPOP-CMA-ES           5   100     0     5     0     0   18.33
+  ELSHADE-SPACMA         0   100     5     0     5     0   18.33
+  L-SRTDE                5   100     0     0     0     0   17.50
+  L-SHADE                0    75     0     0     0     0   12.50
+  jSO                    0    75     0     0     0     0   12.50
+  ARRDE                  0    15     5     0     0     0    3.33
+  EA4eig                 0    15     0     0     0     0    2.50
+  EBOwithCMAR            0     0    10     0     0     0    1.67
+  IMODE                  0     0     0     0     0     0    0.00
+  NL-SHADE-RSP           0     0     0     0     0     0    0.00
+  SPS-L-SHADE-EIG        0     0     0     0     0     0    0.00
+
+=== [4] Wilcoxon counts (ref=MC-ESO, p_two<0.05, direction by A12) ===
+  vs IMODE              wins  6 / loses  0
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=1.00,large), F15-RastriginRot(A12=0.85,large), F16-Weierstrass(A12=0.99,large), F17-SchafferF7(A12=1.00,large), F18-SchafferF7ill(A12=1.00,large)
+  vs NL-SHADE-RSP       wins  6 / loses  0
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=1.00,large), F15-RastriginRot(A12=0.74,large), F16-Weierstrass(A12=1.00,large), F17-SchafferF7(A12=0.93,large), F18-SchafferF7ill(A12=0.99,large)
+  vs SPS-L-SHADE-EIG    wins  5 / loses  1
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=1.00,large), F16-Weierstrass(A12=0.98,large), F17-SchafferF7(A12=0.80,large), F18-SchafferF7ill(A12=0.90,large)
+       MC-ESO loses on: F15-RastriginRot(A12=0.15,large)
+  vs BIPOP-aCMA-ES      wins  3 / loses  0
+       MC-ESO wins on : F14-DiffPowers(A12=0.95,large), F16-Weierstrass(A12=0.85,large), F18-SchafferF7ill(A12=0.93,large)
+  vs BIPOP-CMA-ES       wins  3 / loses  1
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=1.00,large), F18-SchafferF7ill(A12=0.77,large)
+       MC-ESO loses on: F15-RastriginRot(A12=0.00,large)
+  vs EA4eig             wins  3 / loses  1
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=1.00,large), F16-Weierstrass(A12=1.00,large)
+       MC-ESO loses on: F15-RastriginRot(A12=0.07,large)
+  vs EBOwithCMAR        wins  3 / loses  1
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=1.00,large), F16-Weierstrass(A12=1.00,large)
+       MC-ESO loses on: F15-RastriginRot(A12=0.00,large)
+  vs AMALGAM-SO         wins  3 / loses  2
+       MC-ESO wins on : F13-SharpRidge(A12=0.98,large), F14-DiffPowers(A12=1.00,large), F16-Weierstrass(A12=0.67,medium)
+       MC-ESO loses on: F15-RastriginRot(A12=0.10,large), F17-SchafferF7(A12=0.35,medium)
+  vs ARRDE              wins  3 / loses  2
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=1.00,large), F16-Weierstrass(A12=0.95,large)
+       MC-ESO loses on: F15-RastriginRot(A12=0.03,large), F17-SchafferF7(A12=0.46,negligible)
+  vs ELSHADE-SPACMA     wins  3 / loses  2
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=1.00,large), F16-Weierstrass(A12=1.00,large)
+       MC-ESO loses on: F15-RastriginRot(A12=0.06,large), F17-SchafferF7(A12=0.40,small)
+  vs L-SHADE            wins  3 / loses  2
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=1.00,large), F16-Weierstrass(A12=1.00,large)
+       MC-ESO loses on: F15-RastriginRot(A12=0.01,large), F17-SchafferF7(A12=0.46,negligible)
+  vs L-SRTDE            wins  3 / loses  2
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=0.85,large), F16-Weierstrass(A12=1.00,large)
+       MC-ESO loses on: F15-RastriginRot(A12=0.07,large), F17-SchafferF7(A12=0.45,negligible)
+  vs jSO                wins  3 / loses  2
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=1.00,large), F16-Weierstrass(A12=1.00,large)
+       MC-ESO loses on: F15-RastriginRot(A12=0.07,large), F17-SchafferF7(A12=0.45,negligible)
+  vs IPOP-CMA-ES        wins  2 / loses  2
+       MC-ESO wins on : F13-SharpRidge(A12=1.00,large), F14-DiffPowers(A12=1.00,large)
+       MC-ESO loses on: F15-RastriginRot(A12=0.01,large), F17-SchafferF7(A12=0.42,small)
+  vs RCMAES             wins  1 / loses  2
+       MC-ESO wins on : F14-DiffPowers(A12=0.71,medium)
+       MC-ESO loses on: F15-RastriginRot(A12=0.07,large), F17-SchafferF7(A12=0.38,small)
+  vs LSHADE-SPACMA      wins  1 / loses  3
+       MC-ESO wins on : F16-Weierstrass(A12=1.00,large)
+       MC-ESO loses on: F14-DiffPowers(A12=0.23,large), F15-RastriginRot(A12=0.00,large), F17-SchafferF7(A12=0.22,large)
+  vs MC-ESO-v2          wins  1 / loses  4
+       MC-ESO wins on : F18-SchafferF7ill(A12=0.74,large)
+       MC-ESO loses on: F13-SharpRidge(A12=0.40,small), F14-DiffPowers(A12=0.23,large), F15-RastriginRot(A12=0.06,large), F17-SchafferF7(A12=0.49,negligible)
+  TOTAL over 17 baselines: wins 52 / loses 27
