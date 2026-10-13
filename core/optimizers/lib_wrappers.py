@@ -232,6 +232,13 @@ def _run_minion(opt: BaseOptimizer, algo_name: str, max_evals: int,
                 out.append(float("inf"))  # never reached: minion honours maxevals
                 continue
             x = np.asarray(x, dtype=float)
+            if not np.all(np.isfinite(x)):
+                # minionpy's RCMAES can break down numerically at 2D / 5D and
+                # propose NaN points (2026-10-13: 2D F03 run 14, 3096 of 5000).
+                # Such a point is not evaluated or recorded; the run keeps the
+                # best it found before the breakdown.
+                out.append(float("inf"))
+                continue
             f = float(opt.func(x))
             history_x.append(x.copy())
             history_f.append(f)

@@ -1,0 +1,19 @@
+{
+  "type": "quick",
+  "created_at": "2026-10-13T14:03:42",
+  "commit": "e36f398",
+  "n_runs": 20,
+  "max_evals": 5000,
+  "set": "all-d2",
+  "dim": 2,
+  "methods": "MC-ESO,MC-ESO-v2,EBOwithCMAR,IMODE,EA4eig,L-SRTDE,L-SHADE,jSO,LSHADE-SPACMA,ELSHADE-SPACMA,SPS-L-SHADE-EIG,AMALGAM-SO,IPOP-CMA-ES,BIPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES",
+  "status": "done",
+  "note": "標準の比較手法 16 ＋ MC-ESO 2 世代（現在の既定・MC-ESO-v2）。allmethods3（34 手法）から 14 手法、新しい 4 手法（minionpy）は同じ条件の別 run から結合（MC-ESO が全 run で一致することを確認）。instance 1、n=20、予算 2500×D、Windows ローカル（正準環境ではない）",
+  "merged_from": [
+    "20261013_140342_allmethods3_d2_quick",
+    "20261013_184435_new4_d2_quick"
+  ],
+  "published_at": "2026-10-13T18:55:36",
+  "published_from": "DESKTOP-R8JJ5RD",
+  "source_dir": "20261013_200000_panel16_bbob_d2_quick"
+}

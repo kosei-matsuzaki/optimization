@@ -90,7 +90,7 @@ def _meta(run_dir: Path) -> dict:
     p = run_dir / "result.json"
     if p.exists():
         try:
-            return json.loads(p.read_text())
+            return json.loads(p.read_text(encoding="utf-8"))
         except Exception:
             pass
     return {}
