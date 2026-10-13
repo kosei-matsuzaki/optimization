@@ -290,11 +290,11 @@
     <section class="mt-section" id="results">
       <h2>成績</h2>
       <p class="mt-p">
-        2026-10-12 に回した quick（BBOB-24 関数、各 20 run、予算 2500 × 次元）の結果。登録済みの単一解の手法 31 個と MC-ESO の 3 世代（当時の既定 ＝ 2026-10-12 の既定、2026-10-11 までの既定 MC-ESO-v1、10-07 までの既定 MC-ESO-v0）を同じ run に並べた
+        2026-10-13 に回した quick（BBOB-24 関数、instance 1、各 20 run、予算 2500 × 次元）の結果。登録済みの単一解の手法 31 個と MC-ESO の 3 世代（いまの既定 ＝ 2026-10-13〜、2026-10-12 の既定 MC-ESO-v2、2026-10-08〜11 の既定 MC-ESO-v1）を同じ run に並べた
         （<code>LSHADE-cnEpSin</code> と <code>NGOpt</code> はこの環境の numpy 2.4.6 で動かないため除外、多解専用の手法は回していない）。
         共有の結果置き場 <code>runs/</code> に入っているので、どの PC の Results UI からも開ける。
         数値は <code>results/</code> の CSV を <code>scripts/web/methods_data.py</code> で集計したもので、<code>scripts/analyze_quick.py</code> の集計と同じ。
-        主指標は f が最適値から 1e-10 以内に届いた run の割合（SR@1e-10）。
+        表は f が最適値から 1e-10 以内に届いた run の割合（SR@1e-10）の高い順。CEC 順位は CEC の競技の慣例（run ごとの誤差の平均による順位）で、精度の閾値を問わず誤差の大きさを比べる。2026-10-13 からの改善（v3）はこちらを主に見る。
       </p>
 
       <div class="mt-tabs" role="tablist" id="res-tabs"></div>
@@ -311,10 +311,10 @@
       <aside class="mt-caveat">
         <h3>読むときの注意</h3>
         <ul>
-          <li>このPC（Windows）で回したもの。このプロジェクトの正準環境はクラウドで、ローカルの結果は同じ run の中での手法どうしの比較にだけ使う。記録済みの正準環境の値（例: 2026-10-12 の既定の 2D 95.00%）とは一致しない。</li>
+          <li>このPC（Windows）で回したもの。このプロジェクトの正準環境はクラウドで、ローカルの結果は同じ run の中での手法どうしの比較にだけ使う。記録済みの正準環境の値（例: いまの既定の 2D 95.21%）とは一致しない。</li>
           <li>20 run なので、1 関数あたり 5pt の差は 1 run の差。Wilcoxon の勝ち・負けは「MC-ESO が有意に良い／悪い関数の数」（p &lt; 0.05、向きは A12）。</li>
-          <li>MC-ESO-v1 は 2026-10-12 より前の既定値、MC-ESO-v0 は 2026-10-08 より前の既定値。MC-ESO との差がそれぞれの変更の分。</li>
-          <li>この run の「MC-ESO」は 2026-10-12 の既定で、2026-10-13 に既定を変えたので<em>いまの既定ではない</em>（いまの登録名では MC-ESO-v2）。表・ヒートマップ・読みどころの「MC-ESO」の行もこの 2026-10-12 の既定で、読みどころの「旧既定（MC-ESO-v1）からの変化」は 2026-10-12 の変更の分。2026-10-13 の既定（掃引と変数分離の分解を含む）の結果はまだこのページに載せていない。</li>
+          <li>MC-ESO-v2 は 2026-10-12 の既定値、MC-ESO-v1 は 2026-10-08〜11 の既定値。MC-ESO との差がそれぞれの変更の分（読みどころの「旧既定からの変化」は MC-ESO-v2 との差 ＝ 2026-10-13 の変更の分）。</li>
+          <li>instance 1 は MC-ESO の調整に使ってきた問題。調整に使っていない instance 2〜4 では、5D の SR@1e-10 の首位が ELSHADE-SPACMA に替わる（クラウドの測定、<a href="https://github.com/kosei-matsuzaki/optimization/blob/main/docs/findings.md">findings.md</a> 7 節）。</li>
           <li>平均評価回数は、成功した run だけの平均を関数について平均したもの。成功した関数が少ない手法ほど易しい関数だけの値になるので、成功率と一緒に読む。</li>
         </ul>
       </aside>

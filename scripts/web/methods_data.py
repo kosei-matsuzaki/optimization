@@ -88,6 +88,16 @@ def one_run(run_dir: Path) -> dict:
         if m != REF:
             overall[m]["wins"], overall[m]["losses"] = better[m], worse[m]
 
+    # CEC-style mean-error rank over the functions (core.run_data; needs the
+    # per-run stats files, absent → no rank).
+    sys.path.insert(0, str(ROOT))
+    from core.run_data import cec_mean_errors, cec_ranks
+    errs = cec_mean_errors(run_dir / f"dim{dim}")
+    if errs:
+        rk = cec_ranks(errs, methods)
+        for m in methods:
+            overall[m]["cec_rank"] = sum(rk[f][m] for f in rk) / len(rk)
+
     per_func = {fn: {r["method"]: _pct(r["sr_1e-10"]) for r in rows if r["function"] == fn}
                 for fn in funcs}
     return {
