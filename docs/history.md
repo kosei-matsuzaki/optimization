@@ -938,3 +938,7 @@ SR@1e-10 は 2D 94.0 / 5D 56.9 / 10D 41.9% で、同じ PC の quick と一致�
 - 正準値（`j32`〜`j36`）: 積み上げの各段は `v2_ir3_noFrz` 95.00 / 70.42 / 56.46 → `v2_rsT2s` 95.00 / 72.50 / 57.92 → `v2_hlC` 95.00 / 73.54 / 58.75 → **`v2_scan2d` 95.21 / 78.33 / 66.04%**（旧既定 95.00 / 68.12 / 52.29）。
 - 調整外の instance 2〜4（`j37`〜`j39`）で 2D・10D の首位は残り、5D は ELSHADE-SPACMA に 0.9pt 届かない。CEC 式の順位ではどの次元も首位でない（[findings.md](findings.md) 7 節）。
 - この採用と同時に、以後（v3）の改善は CEC 式の順位を主に見て、複数 instance・20D 以上で確かめる方針になった（[research_loop.md](research_loop.md) の方針 2026-10-13）。
+
+### 2026-10-13 比較手法を足して絞る（ユーザーの指摘）
+
+最新の手法として ARRDE・RCMAES（どちらも minionpy の著者による実装）・NL-SHADE-RSP（CEC 2021 優勝）・BIPOP-aCMA-ES を minionpy 1.9.1 経由で追加（`MinionOptimizer`）。RCMAES は 2D / 5D の一部の run で座標が NaN になる（ライブラリ側の数値的な破綻）ので、NaN の点は評価しない。全手法（31）を毎回回すのはやめ、標準の比較手法 16 に絞った（選び方と外した手法は [baselines.md](baselines.md)）。結果は [findings.md](findings.md) 8 節。
