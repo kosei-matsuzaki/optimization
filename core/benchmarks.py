@@ -538,6 +538,10 @@ BENCHMARKS_10D_BY_NAME: dict[str, BenchmarkFunction] = {
 BENCHMARKS_20D_BY_NAME: dict[str, BenchmarkFunction] = {
     b.name: b for b in BENCHMARKS_20D
 }
+# 15D / 30D (2026-10-14): dimensions never used to set any MC-ESO switch, for
+# checking that dimension-dependent parts generalise.
+BENCHMARKS_15D_BY_NAME: dict[str, BenchmarkFunction] = {b.name: b for b in _build(15)}
+BENCHMARKS_30D_BY_NAME: dict[str, BenchmarkFunction] = {b.name: b for b in _build(30)}
 
 
 # CEC2022 suite — held-out benchmark independent of BBOB.

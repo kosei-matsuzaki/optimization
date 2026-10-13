@@ -729,6 +729,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # (_cc_dim_gate: 0 at 2D, 0.375 at 5D, 1 from cc_dim_ref = 10D up): the
         # covariance-learning strain gets budget where covariance learning pays.
         strain_dim_gate: bool = False,
+        # Dimension at which the strain gate reaches 1 (None = cc_dim_ref).
+        strain_dim_ref: "int | None" = None,
+        # Smallest dimension that runs the strain / the fail-gated wave (staged
+        # v3: the outbreak alone at low D, + fail-gated wave from 10D, + CMA
+        # strain from 20D; 2026-10-14).
+        strain_min_dim: int = 0,
+        wave_fail_min_dim: int = 0,
         # While neither strain gains (both rates 0): "keep" the last share, or
         # "explore" = give the outbreak (the explorer) the budget back by
         # dropping to the lower bound (2026-10-14: with "keep", the CMA strain
@@ -777,6 +784,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.strain_stop_on_handover = strain_stop_on_handover
         self.strain_credit = strain_credit
         self.strain_dim_gate = strain_dim_gate
+        self.strain_dim_ref = strain_dim_ref
+        self.strain_min_dim = strain_min_dim
+        self.wave_fail_min_dim = wave_fail_min_dim
         self.strain_idle = strain_idle
         self.strain_init = strain_init
         self.strain_ema = strain_ema
@@ -943,7 +953,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
     def optimize(self, max_evals: int = 5000) -> OptimizeResult:
         st = self._init_state(max_evals)
-        compete = self.strain_compete and self._wave_lambda is not None
+        compete = (self.strain_compete and self._wave_lambda is not None
+                   and self.dim >= self.strain_min_dim)
         if compete:
             st.strain_start = len(st.history_f)
         while st.budget_left:
@@ -1280,7 +1291,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 and not self._basin_exhausted(st)
                 and (self.wave_quality is None
                      or st.best_so_far <= self.wave_quality * st.f_init_scale
-                     or (self.wave_fail_gate is not None
+                     or (self.wave_fail_gate is not None and self.dim >= self.wave_fail_min_dim
                          and st.consecutive_failed_spillovers >= self.wave_fail_gate))):
             st.wave_spent = True
             st.trace_events.append((len(st.history_f), "wave"))
@@ -1906,7 +1917,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 share = st.strain_evals / max(len(st.history_f) - st.strain_start, 1)
         else:
             share = rc / (rm + rc)
-        g = self._cc_dim_gate() if self.strain_dim_gate else 1.0
+        if not self.strain_dim_gate:
+            g = 1.0
+        elif self.strain_dim_ref is None:
+            g = self._cc_dim_gate()
+        else:
+            g = float(min(1.0, max(0.0, (self.dim / 2.0 - 1.0) / max(1e-9, self.strain_dim_ref / 2.0 - 1.0))))
         hi = (1 - self.strain_min if self.strain_max is None else self.strain_max) * g
         share = min(hi, max(self.strain_min * g, share))
         used = len(st.history_f) - st.strain_start
