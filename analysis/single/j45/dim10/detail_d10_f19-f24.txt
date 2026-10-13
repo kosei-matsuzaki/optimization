@@ -1,0 +1,56 @@
+== SR@1e-10 per function (all methods) ==
+function                 AMALGAM-S     ARRDE BIPOP-CMA BIPOP-aCM    EA4eig EBOwithCM ELSHADE-S     IMODE IPOP-CMA-   L-SHADE   L-SRTDE LSHADE-SP    MC-ESO MC-ESO-v2 NL-SHADE-    RCMAES SPS-L-SHA       jSO
+F19-GriewankRosenbrock           0         0         0         0         0         0         0         0         0         0         0         0         0         0         0         0         0         0
+F20-Schwefel                     0         0         0         0         0        15         0         0         0         0         0        20         0         0         0         0         0         0
+F21-Gallagher101                60        90        35        15        60        75        50        20        15        60        50        30       100        15        95        40        85        55
+F22-Gallagher21                 30        30        10         0         5        10        10         0         0         5         0         0        40        25         0         5        15         0
+F23-Katsuura                     0         0         0         0         0         0         0         0         0         0         0         0         0         0         0         0         0         0
+F24-LunacekRastrigin             0         0         0         0         0         0         0         0         0         0         0         0         0         0         0         0         0         0
+
+== MC-ESO vs MC-ESO-v2 : SR@1e-10 per function ==
+  F21-Gallagher101         v2 15% -> MC-ESO 100%  (+85)
+  F22-Gallagher21          v2 25% -> MC-ESO 40%  (+15)
+  mean: v2 6.67%  MC-ESO 23.33%
+
+== evals_succ_mean, paired (functions where BOTH have successes) ==
+  BIPOP-aCMA-ES          586.0  [common 1 funcs, MC-ESO 10841.0]  faster than MC-ESO
+  IPOP-CMA-ES            695.0  [common 1 funcs, MC-ESO 10841.0]  faster than MC-ESO
+  RCMAES                1499.0  [common 2 funcs, MC-ESO 9449.5]  faster than MC-ESO
+  MC-ESO-v2             3266.0  [common 2 funcs, MC-ESO 9449.5]  faster than MC-ESO
+  L-SRTDE               5240.0  [common 1 funcs, MC-ESO 10841.0]  faster than MC-ESO
+  LSHADE-SPACMA         5839.0  [common 1 funcs, MC-ESO 10841.0]  faster than MC-ESO
+  AMALGAM-SO            6134.0  [common 2 funcs, MC-ESO 9449.5]  faster than MC-ESO
+  ARRDE                11652.0  [common 2 funcs, MC-ESO 9449.5]  slower
+  jSO                  12832.0  [common 1 funcs, MC-ESO 10841.0]  slower
+  EA4eig               13188.5  [common 2 funcs, MC-ESO 9449.5]  slower
+  ELSHADE-SPACMA       13642.5  [common 2 funcs, MC-ESO 9449.5]  slower
+  BIPOP-CMA-ES         14516.5  [common 2 funcs, MC-ESO 9449.5]  slower
+  L-SHADE              15512.0  [common 2 funcs, MC-ESO 9449.5]  slower
+  EBOwithCMAR          16326.0  [common 2 funcs, MC-ESO 9449.5]  slower
+  NL-SHADE-RSP         20743.0  [common 1 funcs, MC-ESO 10841.0]  slower
+  SPS-L-SHADE-EIG      21565.5  [common 2 funcs, MC-ESO 9449.5]  slower
+  IMODE                22109.0  [common 1 funcs, MC-ESO 10841.0]  slower
+
+== Wilcoxon totals (MC-ESO reference, p_two<0.05) ==
+columns: dict_keys(['function', 'reference', 'method', 'n', 'win_count', 'tie_count', 'p_value_two_sided', 'p_value_ref_better', 'a12', 'a12_magnitude'])
+  MC-ESO: 50 wins / 22 losses over 17 methods
+  losses by function: {'F19-GriewankRosenbrock': 8, 'F20-Schwefel': 8, 'F24-LunacekRastrigin': 6}
+  wins by function: {'F19-GriewankRosenbrock': 3, 'F20-Schwefel': 5, 'F21-Gallagher101': 16, 'F22-Gallagher21': 11, 'F23-Katsuura': 11, 'F24-LunacekRastrigin': 4}
+  per-method (win/loss):
+    AMALGAM-SO         3/0
+    ARRDE              1/0
+    BIPOP-CMA-ES       2/2
+    BIPOP-aCMA-ES      3/1
+    EA4eig             3/1
+    EBOwithCMAR        1/3   <-- net loss
+    ELSHADE-SPACMA     3/1
+    IMODE              2/1
+    IPOP-CMA-ES        4/2
+    L-SHADE            3/1
+    L-SRTDE            5/1
+    LSHADE-SPACMA      3/3
+    MC-ESO-v2          3/2
+    NL-SHADE-RSP       4/1
+    RCMAES             4/2
+    SPS-L-SHADE-EIG    1/1
+    jSO                5/0
