@@ -110,7 +110,7 @@
 
 ---
 
-2. **【公式予算 3/3】10D の後半 12 関数。** 同じコマンドで `--funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`（label `j41b`）。【公式予算 2/3】の結果と連結して 24/24 を確かめ、【公式予算 1/3】と同じ集計をする。**記録**: `analysis/single/j41/`。
+2. **【公式予算 3/3】10D の後半 12 関数。** 同じコマンドで `--funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`（label `j41b`）。【公式予算 2/3】の結果と連結して 24/24 を確かめ、【公式予算 1/3】と同じ集計をする。**記録**: `analysis/single/j41/`。 (claimed 2026-10-13 04:30 UTC)
 3. **【20 次元 1/2】20D を判定と同じ予算 2500·D で測る。** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j42`）。90 分に収まらなければ規則どおり完走した関数までを記録し、残りを書き戻す。
     **背景**: BBOB の標準は 2〜40 次元で、論文は 20D を併記するのが普通。CEC の上位手法は 30〜100D を主戦場にしているので、低次元だけの比較は CMA-ES 系に有利な可能性がある。
     **集計**: 【公式予算 1/3】と同じ。**記録**: `analysis/single/j42/`。
