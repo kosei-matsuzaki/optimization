@@ -390,7 +390,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # a negative −k = k × that default.
         # 10D F12: every failing run spent its ~18800 hand-over evaluations and
         # stopped at 1e-8..1e-9 with λ = 40; a single valley wants a small λ.
-        wave_handover_lambda: "float | None" = None,
+        wave_handover_lambda: "float | None" = -2.0,  # default since 2026-10-13 (v2_scan2d); None until then
         # IPOP-style restarts inside the hand-over: when the wave stops itself
         # with budget left, restart it from its best point with λ doubled.
         # A small λ suits a single valley (10D F12 50→100 at λ = 2·D) and a
@@ -554,7 +554,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # 1e5-1e6 when spillovers are disabled, but with them (33 per run) it
         # oscillates at 1e2-1e4: the steps that succeed right after a uniform
         # reseed come from far-off, high-f hosts and say nothing about the basin.
-        cc_spill_freeze_gens: int = 50,        # default since 2026-10-08 (was 0)
+        cc_spill_freeze_gens: int = 0,         # 0 since 2026-10-13 (v2_scan2d); 50 from 2026-10-08, 0 before
         # Keep the learned covariance across ordinary spillovers (reset only on a
         # full basin switch). See the note at the reset site.
         cc_keep_on_spillover: bool = True,
@@ -621,7 +621,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # without re-ignition 5D F21 40→95 / F22 70→100, 10D F21 10→80 /
         # F22 35→65 (re-seeding around archived strains keeps returning the
         # search to the peaks it already knows), while 2D loses F23 −15.
-        ir_archive_frac_hd: "float | None" = None,
+        ir_archive_frac_hd: "float | None" = 0.0,  # default since 2026-10-13 (v2_scan2d); None until then
         # Reassortment sweep on a stall (off by default). When a spillover is
         # about to fire on a landscape the learned C does not call ill-
         # conditioned, and no sweep has run since the last meaningful
@@ -632,7 +632,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # probe: on 5D F03 / F04 every best single swap removes exactly one
         # coordinate sitting in a neighbouring Rastrigin well (gap 2 → 1 → 0);
         # on the rotated F15 it does nothing.
-        reassort_sweep: bool = False,
+        reassort_sweep: bool = True,           # default since 2026-10-13 (v2_scan2d)
         reassort_budget_frac: float = 0.1,
         # Additivity test (None = off): after the first pass of a sweep, combine
         # the two best improving swaps on different coordinates (one extra
@@ -641,7 +641,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # than two coordinates improve), sweeps stop for the rest of the run.
         # Gallagher's coordinate swaps also improve, so improvement alone does
         # not tell separable landscapes apart (5D F21 90→65 without the test).
-        reassort_additivity: "float | None" = None,
+        reassort_additivity: "float | None" = 0.02,  # default since 2026-10-13 (v2_scan2d)
         # Number of pairs checked: the best coordinate paired with the next
         # reassort_pairs best ones (all must be additive). One pair let 10D
         # F22 (Gallagher 21 peaks) through by chance (75→55).
@@ -650,7 +650,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # strain reservoir); "all" also uses the other hosts. With the hosts a
         # 10D pass costs 1000+ evaluations and every run pays it once
         # (10D Gallagher −10 / −20pt).
-        reassort_donors: str = "all",
+        reassort_donors: str = "top2",         # default since 2026-10-13 (v2_scan2d); "all" until then
         reassort_top_hosts: int = 10,       # donors="top": the best this many hosts
         # Smallest dimension that sweeps (2D lost F18 −15 with sweeps on).
         reassort_min_dim: int = 2,
@@ -667,7 +667,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # best (10 seeds): 5D F04 0→10/10, F03 8→10/10; 10D F03 4→10, F04 0→10,
         # at ~3100 / ~5700 evaluations. F20 (coupled consecutive coordinates) and
         # the rotated F15 do not benefit — the additivity test should refuse them.
-        reassort_scan: "int | None" = None,
+        reassort_scan: "int | None" = 200,     # default since 2026-10-13 (v2_scan2d)
         # Smallest dimension that uses the recombination waves (3 = the
         # 2026-10-12 default; 2 also runs the stall wave at 2D, where the
         # 2026-10-11 test with the 1e-3 quality gate never fired on F24).
