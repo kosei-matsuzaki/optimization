@@ -129,6 +129,14 @@ class _MCESOState:
     trace_events: list = field(default_factory=list)
     gen_counts: tuple = (0, 0, 0, 0, 0)
     follow_done: bool = False     # wave_follow: one extension per run
+    probe_done: bool = False      # probe_at: the early CMA probe has run
+    # strain_compete: a CMA strain co-circulating with the outbreak.
+    strain_es: object = None
+    strain_lam: int = 0
+    strain_evals: int = 0
+    strain_start: int = 0
+    strain_rate: float = 0.0      # EMA of decades per evaluation, CMA strain
+    outbreak_rate: float = 0.0    # EMA of decades per evaluation, outbreak
 
     @property
     def budget_left(self) -> bool:
@@ -686,6 +694,28 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         wave_fail_gate: "int | None" = None,
         # Budget share of a wave released by wave_fail_gate (None = wave_budget_frac).
         wave_fail_budget_frac: "float | None" = None,
+        # Early probe (contact tracing, 2026-10-13): once probe_at × budget is
+        # spent (≥ wave_min_dim), run one short whitening-free CMA wave from the
+        # best host (share probe_frac, λ = wave_handover_lambda rule, σ0 = σ) and,
+        # if it gained more decades per evaluation than the outbreak did over the
+        # same number of evaluations just before it, let it take the rest of the
+        # budget (a hand-over). Otherwise its best rejoins the outbreak. Measured
+        # at 20D: the outbreak is 2-6 decades behind IPOP-CMA-ES at 2000
+        # evaluations on F08 / F12 and hands over only after ~20000.
+        probe_at: "float | None" = None,
+        probe_frac: float = 0.05,
+        # Cap on the initial population (None = pop_init_mult · D uncapped).
+        pop_init_cap: "int | None" = None,
+        # Strain competition (≥ wave_min_dim, 2026-10-13): a CMA strain
+        # (λ = 2 × the CMA-ES default) co-circulates with the outbreak from the
+        # start. Each strain's reproduction rate is an EMA of the decades its own
+        # best gained per evaluation; the CMA strain gets that share of the
+        # evaluations (clipped to [strain_min, 1 − strain_min]). Its best host
+        # immigrates into the outbreak, and a stopped strain re-emerges from
+        # the global best with twice the population.
+        strain_compete: bool = False,
+        strain_min: float = 0.1,
+        strain_ema: float = 0.3,
         # Allow the separable scan again at the next stall after a scan that did
         # not improve the best (True = the 2026-10-13 default behaviour).
         reassort_scan_retry: bool = True,
@@ -705,6 +735,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if pop_schedule == "linear" and n_pop is None:
             # An explicit n_pop is the initial size of the schedule.
             self.n_pop = max(20, int(round(pop_init_mult * self.dim)))
+            if pop_init_cap is not None:
+                self.n_pop = max(20, min(self.n_pop, int(pop_init_cap)))
         self._pop_final = max(pop_min, int(round(pop_final_mult * self.dim)))
         self.sigma_floor_ill_ratio = sigma_floor_ill_ratio
         self.hd_sigma_success = hd_sigma_success
@@ -715,6 +747,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.wave_follow = wave_follow
         self.wave_fail_gate = wave_fail_gate
         self.wave_fail_budget_frac = wave_fail_budget_frac
+        self.probe_at = probe_at
+        self.strain_compete = strain_compete
+        self.strain_min = strain_min
+        self.strain_ema = strain_ema
+        self.probe_frac = probe_frac
         self.reassort_scan_retry = reassort_scan_retry
         self.wave_use_C = wave_use_C
         self.wave_ill_handover = wave_ill_handover
@@ -877,14 +914,23 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
     def optimize(self, max_evals: int = 5000) -> OptimizeResult:
         st = self._init_state(max_evals)
+        compete = self.strain_compete and self._wave_lambda is not None
+        if compete:
+            st.strain_start = len(st.history_f)
         while st.budget_left:
+            if compete and self._strain_step(st):
+                break
             # A spillover may consume the remaining budget; if so, stop before
             # spending a (now-impossible) generation, matching the original
             # mid-loop ``break``.
             if self._maybe_spillover(st):
                 break
+            b0, n0 = float(np.min(st.pop_f)), len(st.history_f)
             self._run_generation(st)
             self._record_generation(st)
+            if compete:
+                st.outbreak_rate = self._ema_rate(st.outbreak_rate, b0, float(np.min(st.pop_f)),
+                                                  len(st.history_f) - n0)
 
         # Reported set: the surviving hosts, the strain reservoir, and the answer
         # archive of every basin drilled and abandoned.
@@ -1172,6 +1218,18 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         Returns ``True`` iff the eval budget was exhausted inside the event, in
         which case the caller breaks the generation loop.
         """
+        if (self.probe_at is not None and self._wave_lambda is not None and not st.probe_done
+                and len(st.history_f) >= self.probe_at * st.max_evals):
+            st.probe_done = True
+            st.trace_events.append((len(st.history_f), "probe"))
+            self._recombination_wave(st, sigma0=st.sigma, budget_frac=self.probe_frac,
+                                     lam_mult=self.wave_handover_lambda,
+                                     follow=self._probe_outpaces)
+            self._pad_eval_channel(st, _CH_LS)
+            if st.follow_done:
+                st.handover_done = True
+            if not st.budget_left:
+                return True
         if (self._wave_lambda is not None and self.wave_ill_handover and not st.handover_done
                 and (not self.wave_handover_drill
                      or st.sigma < st.span * self.precision_sigma_ratio)
@@ -1773,7 +1831,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     break
                 es.tell(X, F)
                 if (follow and len(st.history_f) - start + lam > cap
-                        and best_f < best_before and not st.follow_done):
+                        and best_f < best_before and not st.follow_done
+                        and (not callable(follow) or follow(st, start, best_f))):
                     st.follow_done = True
                     st.trace_events.append((len(st.history_f), "follow"))
                     cap = st.max_evals - start
@@ -1789,6 +1848,71 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 st.pop_x[w] = best_x
                 st.pop_f[w] = best_f
                 st.pop_age[w] = 0
+
+    def _ema_rate(self, old: float, before: float, after: float, n: int) -> float:
+        lg = lambda v: math.log10(max(v, 1e-300))
+        r = max(0.0, lg(before) - lg(after)) / max(n, 1)
+        return (1 - self.strain_ema) * old + self.strain_ema * r
+
+    def _strain_step(self, st: _MCESOState) -> bool:
+        """strain_compete: run CMA-strain generations until its share of the
+        evaluations since the start matches its reproduction-rate share.
+        Returns True if the budget ran out."""
+        import cma
+        rm, rc = st.outbreak_rate, st.strain_rate
+        share = 0.5 if rm + rc <= 0 else rc / (rm + rc)
+        share = min(1 - self.strain_min, max(self.strain_min, share))
+        used = len(st.history_f) - st.strain_start
+        while st.budget_left and st.strain_evals < share * used:
+            if st.strain_es is None or st.strain_es.stop():
+                base = 4 + int(3 * math.log(self.dim))
+                st.strain_lam = 2 * base if st.strain_es is None else 2 * st.strain_lam
+                bi = int(np.argmin(st.pop_f))
+                s0 = 0.2 * st.span if st.strain_es is None else max(st.sigma, 1e-3 * st.span)
+                st.strain_es = cma.CMAEvolutionStrategy(
+                    st.pop_x[bi].copy(), s0,
+                    {"popsize": st.strain_lam, "verbose": -9, "bounds": [float(np.min(st.lo)), float(np.max(st.hi))],
+                     "seed": int(st.rng.integers(1, 2 ** 31 - 1)), "tolfun": 1e-15, "tolx": 1e-16,
+                     "tolfunhist": 0})
+                st.trace_events.append((len(st.history_f), "strain"))
+            es = st.strain_es
+            X = es.ask()
+            F = []
+            n0 = len(st.history_f)
+            best_before = es.best.f if es.best.f is not None else float("inf")
+            for x in X:
+                x = np.clip(np.asarray(x, dtype=float), st.lo, st.hi)
+                f = float(self.func(x))
+                self._record_eval(st, x, f, float(es.sigma))
+                F.append(f)
+                if not st.budget_left:
+                    break
+            self._pad_eval_channel(st, _CH_LS)
+            st.strain_evals += len(st.history_f) - n0
+            used = len(st.history_f) - st.strain_start
+            if len(F) < len(X):
+                return True
+            es.tell(X, F)
+            gb = float(min(F))
+            st.strain_rate = self._ema_rate(st.strain_rate, min(best_before, float(np.max(F))) if best_before != float("inf") else float(np.max(F)),
+                                            min(gb, best_before), len(F))
+            # Immigration: the strain's best replaces the outbreak's worst host.
+            w = int(np.argmax(st.pop_f))
+            j = int(np.argmin(F))
+            if F[j] < st.pop_f[w]:
+                st.pop_x[w] = np.clip(np.asarray(X[j], dtype=float), st.lo, st.hi)
+                st.pop_f[w] = F[j]
+                st.pop_age[w] = 0
+        return not st.budget_left
+
+    def _probe_outpaces(self, st: _MCESOState, start: int, probe_best: float) -> bool:
+        """probe_at: did the probe gain more decades per evaluation than the
+        outbreak over the same number of evaluations just before it?"""
+        n = len(st.history_f) - start
+        lg = lambda v: math.log10(max(v, 1e-300))
+        at_start = float(np.min(st.history_f[:start]))
+        before = float(np.min(st.history_f[:max(1, start - n)]))
+        return (lg(at_start) - lg(probe_best)) / max(n, 1) > (lg(before) - lg(at_start)) / max(n, 1)
 
     def _update_cc_ill(self, st: _MCESOState) -> bool:
         """Latch: has the learned covariance reached 10^router_learned_cond?"""
