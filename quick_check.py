@@ -25,7 +25,7 @@ from pathlib import Path
 from core.benchmarks import (
     BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME,
     BENCHMARKS_5D_BY_NAME, BENCHMARKS_10D_BY_NAME, BENCHMARKS_20D_BY_NAME,
-    BENCHMARKS_CEC2022_10D_BY_NAME, NICHING_BENCHMARKS_BY_NAME, NOISE_MODELS,
+    BENCHMARKS_CEC2022_10D_BY_NAME, BENCHMARKS_CEC2022_20D_BY_NAME, NICHING_BENCHMARKS_BY_NAME, NOISE_MODELS,
 )
 from core.optimizers import (
     CMAESOptimizer, MultiChannelEpidemicOptimizer, PSOOptimizer,
@@ -196,6 +196,8 @@ _ALL_FUNCTIONS: list[str] = _BBOB_NAMES
 # used to test whether MC-ESO mechanisms generalize beyond the BBOB suite
 # they were tuned against. Selected with --suite cec2022 (forces --dim 10).
 _CEC2022_NAMES: list[str] = sorted(BENCHMARKS_CEC2022_10D_BY_NAME)
+# CEC2022 ships shift / rotation data for D = 10 and 20 only.
+_CEC2022_REGISTRIES = {10: BENCHMARKS_CEC2022_10D_BY_NAME, 20: BENCHMARKS_CEC2022_20D_BY_NAME}
 
 # CEC2013 niching suite, 2-D/3-D subset (--suite niching). Mixed dimensions in
 # one suite, so --dim does not apply: each function runs at its own dimension
@@ -466,6 +468,10 @@ _OPTIMIZERS = {
     "v2_wq1_2d":      (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 2, "reassort_scan": 200, "wave_quality": 1e-1, "wave_min_dim": 2}),
     # On top of v2_scan2d: a stall wave still beating the best when its share runs out continues.
     "v2_follow":      (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0, "reassort_sweep": True, "reassort_additivity": 0.02, "reassort_donors": "top2", "wave_handover_lambda": -2.0, "reassort_min_dim": 2, "reassort_scan": 200, "wave_follow": True}),
+    # v3 (2026-10-13 default + one change; judged on the CEC mean-error rank).
+    "v3_wf3":         (MultiChannelEpidemicOptimizer, {"wave_fail_gate": 3}),
+    "v3_wf5":         (MultiChannelEpidemicOptimizer, {"wave_fail_gate": 5}),
+    "v3_wf8":         (MultiChannelEpidemicOptimizer, {"wave_fail_gate": 8}),
     "v2_ir3_noFrz":   (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0}),
     "v2_irT_noFrz_noSS": (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0,
                                                        "hd_sigma_success": None}),
@@ -711,7 +717,7 @@ def _bench_key(bench) -> tuple[str, int, str]:
     """Benchmarks hold closures and do not pickle; workers look them up by name."""
     for kind, regs in (("bbob", _DIM_REGISTRIES.items()),
                        ("niching", [(0, NICHING_BENCHMARKS_BY_NAME)]),
-                       ("cec2022", [(10, BENCHMARKS_CEC2022_10D_BY_NAME)])):
+                       ("cec2022", list(_CEC2022_REGISTRIES.items()))):
         for d, reg in regs:
             if reg.get(bench.name) is bench:
                 return kind, d, bench.name
@@ -723,7 +729,7 @@ def _bench_from_key(key: tuple[str, int, str]):
     if kind == "bbob":
         return _DIM_REGISTRIES[d][name]
     return (NICHING_BENCHMARKS_BY_NAME if kind == "niching"
-            else BENCHMARKS_CEC2022_10D_BY_NAME)[name]
+            else _CEC2022_REGISTRIES[d])[name]
 
 
 def _worker_task(key, method, n_runs, max_evals, noise, slim):
@@ -869,10 +875,10 @@ def main(
         registry = NICHING_BENCHMARKS_BY_NAME
         func_set = _NICHING_NAMES
     elif suite == "cec2022":
-        if dim != 10:
-            print(f"--suite cec2022 forces dim=10 (got {dim})")
+        if dim not in _CEC2022_REGISTRIES:
+            print(f"--suite cec2022 runs at dim 10 or 20 only (got {dim}); using 10")
             dim = 10
-        registry = BENCHMARKS_CEC2022_10D_BY_NAME
+        registry = _CEC2022_REGISTRIES[dim]
         func_set = _CEC2022_NAMES
     else:
         if dim not in _DIM_REGISTRIES:

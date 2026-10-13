@@ -576,6 +576,11 @@ BENCHMARKS_CEC2022_10D = _build_cec2022(10)
 BENCHMARKS_CEC2022_10D_BY_NAME: dict[str, BenchmarkFunction] = {
     b.name: b for b in BENCHMARKS_CEC2022_10D
 }
+# The competition's other dimension (its shift / rotation data exist only for
+# 10 and 20; 5 and 15 are rejected by the suite).
+BENCHMARKS_CEC2022_20D_BY_NAME: dict[str, BenchmarkFunction] = {
+    b.name: b for b in _build_cec2022(20)
+}
 
 
 # ── CEC2013 niching suite (low-dimensional multi-global subset) ──────────

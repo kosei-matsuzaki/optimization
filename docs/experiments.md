@@ -10,7 +10,7 @@
 optimization/
 ├── core/                       # 研究コア（ベンチマーク・最適化手法・実験・可視化）
 │   ├── __init__.py             # 主要クラス/関数の公開API再エクスポート（visualize除く）
-│   ├── benchmarks.py           # BBOB 24関数（ioh 経由、dim 2/3/5/10/20）+ カスタム(2D) + CEC2022(10D)
+│   ├── benchmarks.py           # BBOB 24関数（ioh 経由、dim 2/3/5/10/20）+ カスタム(2D) + CEC2022(10D / 20D)
 │                               #  + CEC2013 niching(N04-N20) + GECCO'2024 MMO suite(M**、external/ を読む)
 │   ├── optimizers/             # 手法ごと1ファイル（__init__.py で全クラス再エクスポート）
 │   │   ├── base.py             # OptimizeResult, BaseOptimizer
@@ -319,7 +319,7 @@ git タグ `archive/multisolution-2026-09-29` の `docs/acceptance_topology.md` 
 
 ### CEC2022（hold-out）
 
-BBOB とは独立した CEC2022 12 関数（`ioh` 経由、dim=10）を hold-out スイートとして用意。BBOB の変換に対して開発された MC-ESO の機構が汎化するかの検証に使い、**CEC2022 用にハイパーパラメータを再調整しない**。
+BBOB とは独立した CEC2022 12 関数（`ioh` 経由、dim=10。`--suite cec2022 --dim 20` で 20 次元も回せる（2026-10-13 追加）。CEC2022 のシフト・回転のデータは 10 と 20 次元にしか無く、5・15 次元は作れない）を hold-out スイートとして用意。BBOB の変換に対して開発された MC-ESO の機構が汎化するかの検証に使い、**CEC2022 用にハイパーパラメータを再調整しない**。
 
 出典: BBOB は Hansen et al. (2009)。Custom 関数は Surjanovic & Bingham のテスト関数集および Tomitomi3 (Qiita) の整理を参照。
 
