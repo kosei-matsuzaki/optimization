@@ -1,0 +1,138 @@
+j45d2  BBOB-24 dim2  n=20  max_evals=5000  instances 1-5  18 methods
+
+=== [1] full 18-method overall table (24-func mean, %, sorted by SR@1e-10) ===
+  method               1e-2   1e-4   1e-7  1e-10  evals(own)  nf
+  MC-ESO              95.83  95.83  95.21  94.38       770.8  24
+  MC-ESO-v2           95.42  95.21  94.79  93.96       853.7  24
+  ELSHADE-SPACMA      94.38  93.75  93.12  92.08      1650.1  24
+  ARRDE               93.33  92.71  91.88  91.88      1160.0  24
+  EBOwithCMAR         96.88  95.62  93.96  91.04      2081.9  24
+  IMODE               96.67  95.62  92.71  91.04      1946.2  24
+  L-SHADE             92.71  92.50  91.67  91.04      2148.1  24
+  jSO                 91.04  90.83  90.21  90.00      1462.0  23
+  LSHADE-SPACMA       92.92  91.67  90.21  89.17      1271.0  24
+  SPS-L-SHADE-EIG     93.12  91.25  88.75  86.67      1993.4  23
+  L-SRTDE             85.62  85.21  84.58  84.58       930.3  23
+  NL-SHADE-RSP        92.08  89.58  86.04  83.54      2979.2  23
+  IPOP-CMA-ES         86.46  85.62  85.21  80.42       866.7  23
+  AMALGAM-SO          91.25  90.62  88.12  80.00       792.9  23
+  EA4eig              91.25  88.96  82.29  78.12      2578.5  22
+  BIPOP-CMA-ES        86.88  85.42  83.96  78.12       984.6  23
+  BIPOP-aCMA-ES       65.83  63.33  61.04  60.83       353.8  23
+  RCMAES              64.17  58.75  53.54  53.54       594.4  21
+
+=== [2] paired evals_succ_mean (both-success functions only) ===
+  vs BIPOP-aCMA-ES      MC-ESO    735.6 /    353.8  (nf=23)  x0.48
+  vs RCMAES             MC-ESO    733.5 /    594.4  (nf=21)  x0.81
+  vs AMALGAM-SO         MC-ESO    735.6 /    792.9  (nf=23)  x1.08
+  vs MC-ESO-v2          MC-ESO    770.8 /    853.7  (nf=24)  x1.11
+  vs IPOP-CMA-ES        MC-ESO    735.6 /    866.7  (nf=23)  x1.18
+  vs L-SRTDE            MC-ESO    733.3 /    930.3  (nf=23)  x1.27
+  vs BIPOP-CMA-ES       MC-ESO    735.6 /    984.6  (nf=23)  x1.34
+  vs ARRDE              MC-ESO    770.8 /   1160.0  (nf=24)  x1.50
+  vs LSHADE-SPACMA      MC-ESO    770.8 /   1271.0  (nf=24)  x1.65
+  vs jSO                MC-ESO    733.3 /   1462.0  (nf=23)  x1.99
+  vs ELSHADE-SPACMA     MC-ESO    770.8 /   1650.1  (nf=24)  x2.14
+  vs IMODE              MC-ESO    770.8 /   1946.2  (nf=24)  x2.52
+  vs SPS-L-SHADE-EIG    MC-ESO    735.6 /   1993.4  (nf=23)  x2.71
+  vs EBOwithCMAR        MC-ESO    770.8 /   2081.9  (nf=24)  x2.70
+  vs L-SHADE            MC-ESO    770.8 /   2148.1  (nf=24)  x2.79
+  vs EA4eig             MC-ESO    694.8 /   2578.5  (nf=22)  x3.71
+  vs NL-SHADE-RSP       MC-ESO    733.3 /   2979.2  (nf=23)  x4.06
+
+=== [4] Wilcoxon counts (ref=MC-ESO, p_two<0.05, direction by A12) ===
+  vs jSO                wins  1 / loses  2
+       MC-ESO loses on: F17-SchafferF7(A12=0.30,medium), F18-SchafferF7ill(A12=0.20,large)
+       MC-ESO wins on : F23-Katsuura(A12=1.00,large)
+  vs ELSHADE-SPACMA     wins  1 / loses  2
+       MC-ESO loses on: F17-SchafferF7(A12=0.30,medium), F18-SchafferF7ill(A12=0.20,large)
+       MC-ESO wins on : F23-Katsuura(A12=1.00,large)
+  vs NL-SHADE-RSP       wins  6 / loses  1
+       MC-ESO loses on: F24-LunacekRastrigin(A12=0.30,medium)
+       MC-ESO wins on : F12-BentCigar(A12=0.79,large), F13-SharpRidge(A12=0.88,large), F14-DiffPowers(A12=0.65,medium), F16-Weierstrass(A12=0.72,large), F18-SchafferF7ill(A12=0.87,large), F23-Katsuura(A12=1.00,large)
+  vs L-SRTDE            wins  5 / loses  1
+       MC-ESO loses on: F17-SchafferF7(A12=0.30,medium)
+       MC-ESO wins on : F04-BucheRastrigin(A12=0.66,medium), F12-BentCigar(A12=0.59,small), F19-GriewankRosenbrock(A12=0.68,medium), F23-Katsuura(A12=1.00,large), F24-LunacekRastrigin(A12=0.87,large)
+  vs LSHADE-SPACMA      wins  3 / loses  1
+       MC-ESO loses on: F17-SchafferF7(A12=0.30,medium)
+       MC-ESO wins on : F04-BucheRastrigin(A12=0.63,small), F16-Weierstrass(A12=0.62,small), F23-Katsuura(A12=0.91,large)
+  vs EBOwithCMAR        wins  2 / loses  1
+       MC-ESO loses on: F24-LunacekRastrigin(A12=0.21,large)
+       MC-ESO wins on : F16-Weierstrass(A12=0.62,small), F23-Katsuura(A12=1.00,large)
+  vs IMODE              wins  1 / loses  1
+       MC-ESO loses on: F17-SchafferF7(A12=0.30,medium)
+       MC-ESO wins on : F23-Katsuura(A12=1.00,large)
+  vs ARRDE              wins  1 / loses  1
+       MC-ESO loses on: F18-SchafferF7ill(A12=0.26,large)
+       MC-ESO wins on : F23-Katsuura(A12=0.96,large)
+  vs RCMAES             wins 14 / loses  0
+       MC-ESO wins on : F03-RastriginSep(A12=0.95,large), F04-BucheRastrigin(A12=0.95,large), F05-LinearSlope(A12=1.00,large), F13-SharpRidge(A12=0.76,large), F14-DiffPowers(A12=0.70,medium), F15-RastriginRot(A12=1.00,large), F16-Weierstrass(A12=0.78,large), F17-SchafferF7(A12=0.95,large), F18-SchafferF7ill(A12=0.83,large), F19-GriewankRosenbrock(A12=0.95,large), F20-Schwefel(A12=0.93,large), F21-Gallagher101(A12=0.88,large), F22-Gallagher21(A12=0.80,large), F23-Katsuura(A12=0.94,large)
+  vs BIPOP-aCMA-ES      wins 14 / loses  0
+       MC-ESO wins on : F03-RastriginSep(A12=0.93,large), F04-BucheRastrigin(A12=0.97,large), F07-StepEllipsoidal(A12=0.72,large), F13-SharpRidge(A12=0.71,large), F14-DiffPowers(A12=0.70,medium), F15-RastriginRot(A12=0.97,large), F16-Weierstrass(A12=0.65,medium), F17-SchafferF7(A12=0.79,large), F18-SchafferF7ill(A12=0.95,large), F19-GriewankRosenbrock(A12=0.80,large), F20-Schwefel(A12=0.95,large), F21-Gallagher101(A12=0.82,large), F22-Gallagher21(A12=0.78,large), F24-LunacekRastrigin(A12=0.89,large)
+  vs EA4eig             wins 12 / loses  0
+       MC-ESO wins on : F05-LinearSlope(A12=0.95,large), F06-AttractiveSector(A12=0.72,large), F08-Rosenbrock(A12=0.62,small), F12-BentCigar(A12=0.78,large), F13-SharpRidge(A12=0.76,large), F14-DiffPowers(A12=0.72,large), F15-RastriginRot(A12=0.65,medium), F16-Weierstrass(A12=1.00,large), F17-SchafferF7(A12=0.89,large), F18-SchafferF7ill(A12=0.86,large), F19-GriewankRosenbrock(A12=0.80,large), F23-Katsuura(A12=1.00,large)
+  vs BIPOP-CMA-ES       wins 10 / loses  0
+       MC-ESO wins on : F04-BucheRastrigin(A12=0.95,large), F13-SharpRidge(A12=0.95,large), F14-DiffPowers(A12=0.90,large), F15-RastriginRot(A12=0.68,medium), F17-SchafferF7(A12=0.96,large), F18-SchafferF7ill(A12=0.88,large), F19-GriewankRosenbrock(A12=0.68,medium), F21-Gallagher101(A12=0.62,small), F22-Gallagher21(A12=0.65,medium), F23-Katsuura(A12=0.98,large)
+  vs IPOP-CMA-ES        wins  9 / loses  0
+       MC-ESO wins on : F03-RastriginSep(A12=0.70,medium), F04-BucheRastrigin(A12=0.95,large), F13-SharpRidge(A12=0.95,large), F14-DiffPowers(A12=0.90,large), F15-RastriginRot(A12=0.65,medium), F17-SchafferF7(A12=0.95,large), F19-GriewankRosenbrock(A12=0.65,medium), F21-Gallagher101(A12=0.68,medium), F23-Katsuura(A12=0.98,large)
+  vs AMALGAM-SO         wins  5 / loses  0
+       MC-ESO wins on : F04-BucheRastrigin(A12=0.82,large), F13-SharpRidge(A12=0.93,large), F14-DiffPowers(A12=0.97,large), F17-SchafferF7(A12=1.00,large), F23-Katsuura(A12=1.00,large)
+  vs SPS-L-SHADE-EIG    wins  3 / loses  0
+       MC-ESO wins on : F16-Weierstrass(A12=0.75,large), F18-SchafferF7ill(A12=0.77,large), F23-Katsuura(A12=1.00,large)
+  vs L-SHADE            wins  2 / loses  0
+       MC-ESO wins on : F19-GriewankRosenbrock(A12=0.65,medium), F23-Katsuura(A12=1.00,large)
+
+=== per-function SR@1e-10 : MC-ESO (current default) vs MC-ESO-v2 (previous default) ===
+  F01-Sphere               v2 100.0 -> MC-ESO 100.0
+  F02-EllipsoidalSep       v2 100.0 -> MC-ESO 100.0
+  F03-RastriginSep         v2 100.0 -> MC-ESO 100.0
+  F04-BucheRastrigin       v2  90.0 -> MC-ESO 100.0   CHANGED +10pt
+  F05-LinearSlope          v2 100.0 -> MC-ESO 100.0
+  F06-AttractiveSector     v2 100.0 -> MC-ESO 100.0
+  F07-StepEllipsoidal      v2 100.0 -> MC-ESO 100.0
+  F08-Rosenbrock           v2 100.0 -> MC-ESO 100.0
+  F09-RosenbrockRot        v2 100.0 -> MC-ESO 100.0
+  F10-EllipsoidalRot       v2 100.0 -> MC-ESO 100.0
+  F11-Discus               v2 100.0 -> MC-ESO 100.0
+  F12-BentCigar            v2  90.0 -> MC-ESO  90.0
+  F13-SharpRidge           v2 100.0 -> MC-ESO  95.0   CHANGED -5pt
+  F14-DiffPowers           v2  95.0 -> MC-ESO 100.0   CHANGED +5pt
+  F15-RastriginRot         v2 100.0 -> MC-ESO 100.0
+  F16-Weierstrass          v2  95.0 -> MC-ESO 100.0   CHANGED +5pt
+  F17-SchafferF7           v2 100.0 -> MC-ESO 100.0
+  F18-SchafferF7ill        v2 100.0 -> MC-ESO  85.0   CHANGED -15pt
+  F19-GriewankRosenbrock   v2 100.0 -> MC-ESO 100.0
+  F20-Schwefel             v2  90.0 -> MC-ESO  90.0
+  F21-Gallagher101         v2 100.0 -> MC-ESO 100.0
+  F22-Gallagher21          v2 100.0 -> MC-ESO 100.0
+  F23-Katsuura             v2  85.0 -> MC-ESO  95.0   CHANGED +10pt
+  F24-LunacekRastrigin     v2  10.0 -> MC-ESO  10.0
+  -> functions whose SR@1e-10 differs: 6  [('F04-BucheRastrigin', 90.0, 100.0), ('F13-SharpRidge', 100.0, 95.0), ('F14-DiffPowers', 95.0, 100.0), ('F16-Weierstrass', 95.0, 100.0), ('F18-SchafferF7ill', 100.0, 85.0), ('F23-Katsuura', 85.0, 95.0)]
+  -> 24-func mean SR@1e-10: MC-ESO 94.38%  MC-ESO-v2 93.96%  (+0.42pt)
+
+=== per-function SR@1e-10, all 18 methods (%) ===
+  function                    MC-ESO MC-ESO-v2 ELSHADE-S     ARRDE EBOwithCM     IMODE   L-SHADE       jSO LSHADE-SP SPS-L-SHA   L-SRTDE NL-SHADE- IPOP-CMA- AMALGAM-S    EA4eig BIPOP-CMA BIPOP-aCM    RCMAES
+  F01-Sphere                     100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100
+  F02-EllipsoidalSep             100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100
+  F03-RastriginSep               100       100       100       100       100       100       100       100       100       100        95       100        60       100       100        85        15        10
+  F04-BucheRastrigin             100        90       100       100       100       100       100        95        70       100        65       100        10        60       100        10         5        10
+  F05-LinearSlope                100       100       100       100       100       100       100       100       100       100       100       100       100       100        95       100       100         0
+  F06-AttractiveSector           100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100
+  F07-StepEllipsoidal            100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100        55       100
+  F08-Rosenbrock                 100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100
+  F09-RosenbrockRot              100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100
+  F10-EllipsoidalRot             100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100
+  F11-Discus                     100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100
+  F12-BentCigar                   90        90       100        90        90        80        90        95        90        85        75        35        95        85        65        95        80       100
+  F13-SharpRidge                  95       100       100       100       100       100       100       100       100       100       100        90       100       100        90        95       100       100
+  F14-DiffPowers                 100        95       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100       100
+  F15-RastriginRot               100       100        95       100       100       100       100       100       100       100        80       100        75       100        95        65         5         0
+  F16-Weierstrass                100        95        95        85        80        85       100        85        75        60       100        55       100        85         5       100        70        45
+  F17-SchafferF7                 100       100       100        95       100       100       100       100       100        95       100        90        95        10        25        85        35        10
+  F18-SchafferF7ill               85       100       100       100        75        85       100       100        90        45        85        40        95         5        25        55         5        20
+  F19-GriewankRosenbrock         100       100       100        90        95       100        75        90       100       100        65        90        70        85        75        70        40        10
+  F20-Schwefel                    90        90        90       100       100       100       100        95        80        95        65       100        85        90       100        70        10         5
+  F21-Gallagher101               100       100       100       100       100       100       100       100       100       100        95       100        65       100       100        75        35        25
+  F22-Gallagher21                100       100        95       100       100       100       100        95       100       100       100       100        80       100       100        70        45        40
+  F23-Katsuura                    95        85         0         5         0         0         0         0        15         0         0         0         0         0         0         0        60        10
+  F24-LunacekRastrigin            10        10        35        40        45        35        20         5        20         0         5         5         0         0         0         0         0         0
