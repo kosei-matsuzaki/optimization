@@ -110,9 +110,6 @@
 
 ---
 
-3. **【20 次元 1/2】20D を判定と同じ予算 2500·D で測る。** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j42`）。90 分に収まらなければ規則どおり完走した関数までを記録し、残りを書き戻す。 (claimed 2026-10-13 05:30 UTC)
-    **背景**: BBOB の標準は 2〜40 次元で、論文は 20D を併記するのが普通。CEC の上位手法は 30〜100D を主戦場にしているので、低次元だけの比較は CMA-ES 系に有利な可能性がある。
-    **集計**: 【公式予算 1/3】と同じ。**記録**: `analysis/single/j42/`。
 4. **【20 次元 2/2】20D を公式予算 10000·D で、手法を 4 つに絞って測る。** `./run.sh quick --all --funcs FUNCS --dim 20 --max-evals 200000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,IPOP-CMA-ES"` を 3 組に分けて回す（label `j43a` / `j43b` / `j43c`）。FUNCS は (a) `F01-Sphere,F02-EllipsoidalSep,F03-RastriginSep,F04-BucheRastrigin,F05-LinearSlope,F06-AttractiveSector,F07-StepEllipsoidal,F08-Rosenbrock`、(b) `F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar,F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass`、(c) `F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`。1 回の起動で終わる分だけ回し、残りの組は書き戻す。
     **集計**: 24 関数がそろったら【公式予算 1/3】と同じ集計。**記録**: `analysis/single/j43/`。
 5. **CEC2022（10D、hold-out）を公式予算 200000 評価で測る**（25000 評価の分は 2026-10-12 に測り終えた。`analysis/single/j35/` と作業ログ）。
@@ -155,6 +152,17 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-13 【20 次元 1/2】20D を判定予算 2500·D（50000 評価）で（j42、6 手法） — **20D では MC-ESO の SR@1e-10 は 35.0% で 6 手法中 3 位（首位 IPOP-CMA-ES 46.5%、2 位 LSHADE-SPACMA 35.2% ＝ 差 0.2pt）。CEC 式の平均誤差の順位は MC-ESO 4.38 の 6 位（最下位、首位 LSHADE-SPACMA 2.73）。浅い水準ほど順位が下がり SR@1e-2 は 43.1% で単独最下位（他は 49.0〜59.2%）＝ 2D・5D・10D と違い「深くは取れるが浅い水準の到達率が届かない」形が 20D で顕著**（採否の判断はしない）
+
+- 実行: ジョブ記載のコマンドを**関数 4 shard に分割**して実行（`--all --funcs <各 6 関数> --dim 20 --max-evals 50000 --n-runs 20 --jobs 1 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`、label `j42a`〜`j42d`）。wall **38.3 分**（05:51:07→06:29:24）。**24/24 そろった**（連結後 `summary.csv` 144 行＝6×24、`wilcoxon.csv` 120 行＝5×24、(関数, 手法) の重複・欠落ゼロ）。numpy 2.4.6 / cma 4.5.0、CPU **Intel Xeon @ 2.10GHz 4 コア（family 6 / model 207 / stepping 2、avx512f あり）**、BLAS は openblas / SkylakeX / num_threads=4（実行時は `OMP_NUM_THREADS=1`）。**j37〜j41 の 2.80GHz / model 85 とは別仕様のコンテナ**（findings.md の「容器によって 1 次元あたり 1 セルずれる」に該当しうる）。
+- 全体（24 関数平均、SR@1e-2 / 1e-4 / 1e-7 / **1e-10** ％、`evals` ＝ 自分の成功関数の平均、nf ＝ 成功のある関数数）: IPOP-CMA-ES 55.8 / 52.5 / 49.8 / **46.5**（16067、14）、LSHADE-SPACMA 56.5 / 45.6 / 37.7 / **35.2**（30569、14）、**MC-ESO 43.1 / 40.4 / 37.5 / 35.0**（24365、14）、EBOwithCMAR 59.2 / 49.2 / 33.8 / **28.3**（37247、13）、ELSHADE-SPACMA 54.4 / 38.3 / 27.1 / **21.0**（37954、11）、L-SHADE 49.0 / 32.9 / 20.6 / **18.5**（37392、12）。
+- `evals_succ_mean`（両方で成功のある関数だけの対応平均。MC-ESO / 相手、nf）: 対 LSHADE-SPACMA 24056 / 29925（12）、対 EBOwithCMAR 23492 / 36390（11）、対 ELSHADE-SPACMA 22162 / 37299（10）、対 L-SHADE 22898 / 36614（11）、対 IPOP-CMA-ES 24821 / **14043**（11）。**IPOP だけが MC-ESO より速い**（2D〜10D の j38〜j41 と同じ向き）。
+- 関数別 SR@1e-10（**20D はこれが初回の測定なので突き合わせる対照が記録に無い。変化ではなく水準を記す**）。MC-ESO が単独または最良: **F03-RastriginSep 100（次点 EBOwithCMAR 5）・F22-Gallagher21 10（他は全 0）**・F10-EllipsoidalRot 100・F14-DiffPowers 100・F12-BentCigar 70（IPOP 100 以外は全 0）。MC-ESO が負ける: **F08-Rosenbrock 0・F09-RosenbrockRot 0（ともに EBOwithCMAR / IPOP が 100）**・F07-StepEllipsoidal 15（他 95〜100）・F06-AttractiveSector 20（IPOP 100・LSHADE-SPACMA 90）・F11-Discus 55（LSHADE-SPACMA / IPOP 100）・F13-SharpRidge 0（IPOP 5）・F02-EllipsoidalSep 90（他 100）・F21-Gallagher101 80（ELSHADE-SPACMA 95）。**6 手法すべてが 0% なのは F04・F15・F16・F17・F18・F19・F20・F23・F24 の 9 関数**（24 関数の 37.5%）。
+- Wilcoxon（ref=MC-ESO、p_two<0.05、A12 の向き。better ＝ MC-ESO が有意に良い関数数 / worse ＝ 有意に悪い関数数）: ELSHADE-SPACMA 8/10、IPOP-CMA-ES 8/11、LSHADE-SPACMA 7/14、L-SHADE 7/11、EBOwithCMAR 6/13。**5 手法すべてに負け越す**（合計 36/59）。負けの集まる関数は F07・F08・F09・F13・F15・F17・F18・F19・F20・F24、勝ちの集まる関数は F03・F04・F10・F14・F16・F22。A12 つきの一覧は `detail_d20_e50k.txt`。
+- 参考 [5] CEC 式の平均誤差の順位（低いほど良い、24 関数、1e-8 未満は 0）: LSHADE-SPACMA 2.73（12/24 で最良）・EBOwithCMAR 3.12（8/24）・IPOP-CMA-ES 3.15（13/24）・ELSHADE-SPACMA 3.65（5/24）・L-SHADE 3.98（5/24）・**MC-ESO 4.38（6/24）＝ 6 位**。**SR@1e-10 で 3 位の MC-ESO がこの指標では最下位**という向きは 5D の j40（3→4 位）・10D の j41（1→6 位）と同じで、20D で差が最大。
+- 書かれたとおりに回せなかった点: (1) ジョブは 1 コマンドだが、90 分の制約のため**関数 4 shard に分けて並列実行した**（`--jobs 1` ×4。findings.md のとおり run の seed は run 番号のみで決まるので shard 分割は数値を変えない）。(2) **shard `j42a` が F09-RosenbrockRot の MC-ESO で OOM kill された**（cgroup 上限 14.3GB に対し 1 プロセスが RSS 3.65GB まで育ち、4 並列で超過）。F01・F05 までは記録済みだったので、残る **F09 / F13 / F17 / F21 を 3 プロセスに分けて再実行**（label `j42a2`〜`j42a4`）し、再実行では OOM は起きなかった。**20D の MC-ESO はメモリを 3.6GB 以上使う**ので、以後の 20D は 3 並列までが安全。(3) 環境の注記は前回と同じ 2 点（`requirements.txt` は `pynmmso` で落ちるので空 stub を `PYTHONPATH`、`pip` が python3.13 を指すので `python3 -m pip` で 3.11 に numpy 2.4.6 / cma 4.5.0 を固定）。
+- 記録: `analysis/single/j42/`（`summary_d20_e50k.csv`・`wilcoxon_d20_e50k.csv`・`analyze_quick_d20_e50k.txt`・`detail_d20_e50k.txt`）。`analysis` のファイル数 303（上限 約 400）。
 
 ### 2026-10-13 【公式予算 3/3】10D の後半 12 関数を公式予算 100000 評価で（j41b、6 手法）＋ 24 関数の連結集計 — **24 関数そろうと MC-ESO の SR@1e-10 は 73.75% で 6 手法中 1 位（EBOwithCMAR と同率、小数以下も同値）。2500·D（25000 評価、j36 の `v2_scan2d`）の 66.04% から +7.71pt で、動いたのは 8 関数（F18 0→60、F17 30→85、F22 70→95、F16 5→25、F21 85→100、F23 0→10、F07 95→100、F09 100→95）。`evals_succ_mean` は対応平均で IPOP 以外のすべてに勝つ。CEC 式の平均誤差の順位は 24 関数で MC-ESO 3.73 の 6 位（首位 EBOwithCMAR 2.98）＝ SR で 1 位でも誤差の順位では最下位**（採否の判断はしない）
 
