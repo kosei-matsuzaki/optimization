@@ -137,6 +137,7 @@ class _MCESOState:
     strain_start: int = 0
     strain_rate: float = 0.0      # EMA of decades per evaluation, CMA strain
     outbreak_rate: float = 0.0    # EMA of decades per evaluation, outbreak
+    record_eval: int = 0          # evaluation count at the last new global best
 
     @property
     def budget_left(self) -> bool:
@@ -718,6 +719,24 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         strain_max: "float | None" = None,   # cap on the CMA strain's share (None = 1 − strain_min)
         strain_immigrate: bool = True,       # the strain's best replaces the outbreak's worst host
         strain_stop_on_handover: bool = False,  # retire the strain once the hand-over has run
+        # "own": a strain's rate is the decades its own best gained; "record":
+        # only gains of the global best (who set the new record) count, so a
+        # strain improving from a worse start gets no credit (2026-10-14: at 5D
+        # the CMA strain took its full share on its own progress and starved
+        # the outbreak on the multimodal functions).
+        strain_credit: str = "own",
+        # Scale the strain's share bounds by the covariance dimension gate
+        # (_cc_dim_gate: 0 at 2D, 0.375 at 5D, 1 from cc_dim_ref = 10D up): the
+        # covariance-learning strain gets budget where covariance learning pays.
+        strain_dim_gate: bool = False,
+        # While neither strain gains (both rates 0): "keep" the last share, or
+        # "explore" = give the outbreak (the explorer) the budget back by
+        # dropping to the lower bound (2026-10-14: with "keep", the CMA strain
+        # held 90% after converging on a Gallagher peak; 10D F21 9/10 → 2/10).
+        strain_idle: str = "keep",
+        # Share before either strain has a rate (None = 0.5). A strain that
+        # starts from a few cases (the lower bound) has to earn its share.
+        strain_init: "float | None" = None,
         strain_ema: float = 0.3,
         # Allow the separable scan again at the next stall after a scan that did
         # not improve the best (True = the 2026-10-13 default behaviour).
@@ -756,6 +775,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.strain_max = strain_max
         self.strain_immigrate = strain_immigrate
         self.strain_stop_on_handover = strain_stop_on_handover
+        self.strain_credit = strain_credit
+        self.strain_dim_gate = strain_dim_gate
+        self.strain_idle = strain_idle
+        self.strain_init = strain_init
         self.strain_ema = strain_ema
         self.probe_frac = probe_frac
         self.reassort_scan_retry = reassort_scan_retry
@@ -931,11 +954,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # mid-loop ``break``.
             if self._maybe_spillover(st):
                 break
-            b0, n0 = float(np.min(st.pop_f)), len(st.history_f)
+            rec = self.strain_credit == "record"
+            b0 = st.best_so_far if rec else float(np.min(st.pop_f))
+            n0 = len(st.history_f)
             self._run_generation(st)
             self._record_generation(st)
             if compete:
-                st.outbreak_rate = self._ema_rate(st.outbreak_rate, b0, float(np.min(st.pop_f)),
+                st.outbreak_rate = self._ema_rate(st.outbreak_rate, b0,
+                                                  st.best_so_far if rec else float(np.min(st.pop_f)),
                                                   len(st.history_f) - n0)
 
         # Reported set: the surviving hosts, the strain reservoir, and the answer
@@ -1868,9 +1894,21 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if self.strain_stop_on_handover and st.handover_done:
             return not st.budget_left
         rm, rc = st.outbreak_rate, st.strain_rate
-        share = 0.5 if rm + rc <= 0 else rc / (rm + rc)
-        share = min(1 - self.strain_min if self.strain_max is None else self.strain_max,
-                    max(self.strain_min, share))
+        if (self.strain_idle == "explore" and st.strain_evals > 0
+                and len(st.history_f) - st.record_eval > self._stagnation_window()):
+            rm = rc = 0.0                       # no new record for a stagnation window
+        if rm + rc <= 0:
+            if st.strain_evals == 0:
+                share = 0.5 if self.strain_init is None else self.strain_init
+            elif self.strain_idle == "explore":
+                share = 0.0                     # clipped up to the lower bound below
+            else:
+                share = st.strain_evals / max(len(st.history_f) - st.strain_start, 1)
+        else:
+            share = rc / (rm + rc)
+        g = self._cc_dim_gate() if self.strain_dim_gate else 1.0
+        hi = (1 - self.strain_min if self.strain_max is None else self.strain_max) * g
+        share = min(hi, max(self.strain_min * g, share))
         used = len(st.history_f) - st.strain_start
         while st.budget_left and st.strain_evals < share * used:
             if st.strain_es is None or st.strain_es.stop():
@@ -1888,6 +1926,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             X = es.ask()
             F = []
             n0 = len(st.history_f)
+            record_before = st.best_so_far
             best_before = es.best.f if es.best.f is not None else float("inf")
             for x in X:
                 x = np.clip(np.asarray(x, dtype=float), st.lo, st.hi)
@@ -1903,8 +1942,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 return True
             es.tell(X, F)
             gb = float(min(F))
-            st.strain_rate = self._ema_rate(st.strain_rate, min(best_before, float(np.max(F))) if best_before != float("inf") else float(np.max(F)),
-                                            min(gb, best_before), len(F))
+            if self.strain_credit == "record":
+                st.strain_rate = self._ema_rate(st.strain_rate, record_before, st.best_so_far, len(F))
+            else:
+                first = float(np.max(F)) if best_before == float("inf") else min(best_before, float(np.max(F)))
+                st.strain_rate = self._ema_rate(st.strain_rate, first, min(gb, best_before), len(F))
             # Immigration: the strain's best replaces the outbreak's worst host.
             w = int(np.argmax(st.pop_f))
             j = int(np.argmin(F))
@@ -2102,6 +2144,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.basin_best = f
         if f < st.best_so_far:
             st.best_so_far = f
+            st.record_eval = len(st.history_f)
             if self._meaningful_improvement(f, st.log_best_ref, st.evals_since_reset):
                 st.no_improve = 0
                 st.wave_spent = False
