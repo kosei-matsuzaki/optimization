@@ -715,6 +715,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # the global best with twice the population.
         strain_compete: bool = False,
         strain_min: float = 0.1,
+        strain_max: "float | None" = None,   # cap on the CMA strain's share (None = 1 − strain_min)
+        strain_immigrate: bool = True,       # the strain's best replaces the outbreak's worst host
+        strain_stop_on_handover: bool = False,  # retire the strain once the hand-over has run
         strain_ema: float = 0.3,
         # Allow the separable scan again at the next stall after a scan that did
         # not improve the best (True = the 2026-10-13 default behaviour).
@@ -750,6 +753,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.probe_at = probe_at
         self.strain_compete = strain_compete
         self.strain_min = strain_min
+        self.strain_max = strain_max
+        self.strain_immigrate = strain_immigrate
+        self.strain_stop_on_handover = strain_stop_on_handover
         self.strain_ema = strain_ema
         self.probe_frac = probe_frac
         self.reassort_scan_retry = reassort_scan_retry
@@ -1859,9 +1865,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         evaluations since the start matches its reproduction-rate share.
         Returns True if the budget ran out."""
         import cma
+        if self.strain_stop_on_handover and st.handover_done:
+            return not st.budget_left
         rm, rc = st.outbreak_rate, st.strain_rate
         share = 0.5 if rm + rc <= 0 else rc / (rm + rc)
-        share = min(1 - self.strain_min, max(self.strain_min, share))
+        share = min(1 - self.strain_min if self.strain_max is None else self.strain_max,
+                    max(self.strain_min, share))
         used = len(st.history_f) - st.strain_start
         while st.budget_left and st.strain_evals < share * used:
             if st.strain_es is None or st.strain_es.stop():
@@ -1899,7 +1908,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # Immigration: the strain's best replaces the outbreak's worst host.
             w = int(np.argmax(st.pop_f))
             j = int(np.argmin(F))
-            if F[j] < st.pop_f[w]:
+            if self.strain_immigrate and F[j] < st.pop_f[w]:
                 st.pop_x[w] = np.clip(np.asarray(X[j], dtype=float), st.lo, st.hi)
                 st.pop_f[w] = F[j]
                 st.pop_age[w] = 0
