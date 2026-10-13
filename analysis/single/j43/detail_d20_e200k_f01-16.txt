@@ -1,0 +1,92 @@
+[0] functions 16  methods 4  rows 64  (expected 64)
+
+[1] OVERALL (mean over the 16 functions, %)
+  method              1e-2    1e-4    1e-7   1e-10     evals  nf
+  ELSHADE-SPACMA     85.31   85.31   85.31   85.00   90439.1  15
+  LSHADE-SPACMA      78.12   78.12   78.12   78.12   57205.6  14
+  MC-ESO             78.75   78.44   78.44   75.94   42463.6  14
+  IPOP-CMA-ES        76.56   75.94   75.94   70.62   31593.9  14
+
+[1b] evals_succ_mean, paired (only functions where BOTH have successes)
+  vs ELSHADE-SPACMA   MC-ESO   42463.6  /  ELSHADE-SPACMA   87994.1   (nf=14)
+  vs IPOP-CMA-ES      MC-ESO   44313.0  /  IPOP-CMA-ES   12869.5   (nf=12)   <-- baseline faster
+  vs LSHADE-SPACMA    MC-ESO   42014.2  /  LSHADE-SPACMA   56956.0   (nf=13)
+
+[2] PER-FUNCTION SR@1e-10 (%)
+  function               ELSHADE-SPACM    IPOP-CMA-ES  LSHADE-SPACMA         MC-ESO
+  F01-Sphere                       100            100            100            100
+  F02-EllipsoidalSep               100            100            100            100
+  F03-RastriginSep                 100              0             55            100
+  F04-BucheRastrigin                55              0              0             50
+  F05-LinearSlope                  100            100            100            100
+  F06-AttractiveSector             100            100            100            100
+  F07-StepEllipsoidal              100            100             90             55
+  F08-Rosenbrock                   100            100            100            100
+  F09-RosenbrockRot                100            100            100             95
+  F10-EllipsoidalRot               100            100            100            100
+  F11-Discus                       100            100            100             65
+  F12-BentCigar                     95            100            100            100
+  F13-SharpRidge                   100             15            100             50
+  F14-DiffPowers                   100            100            100            100
+  F15-RastriginRot                  10              5              5              0
+  F16-Weierstrass                    0             10              0              0
+
+[3] BUDGET DIFF for MC-ESO: j42 @50000 (2500*D) -> j43 @200000 (10000*D)
+  F08-Rosenbrock              0 ->    100   (+100)
+  F09-RosenbrockRot           0 ->     95   (+95)
+  F06-AttractiveSector       20 ->    100   (+80)
+  F04-BucheRastrigin          0 ->     50   (+50)
+  F13-SharpRidge              0 ->     50   (+50)
+  F07-StepEllipsoidal        15 ->     55   (+40)
+  F12-BentCigar              70 ->    100   (+30)
+  F02-EllipsoidalSep         90 ->    100   (+10)
+  F11-Discus                 55 ->     65   (+10)
+  16-function mean: 46.88 -> 75.94 (+29.06 pt);  functions moved: 9
+
+[3b] BUDGET DIFF for the baselines (same two runs), 16-function mean SR@1e-10
+  ELSHADE-SPACMA    25.62 ->  85.00  (+59.38 pt, nf=16)
+  IPOP-CMA-ES       69.06 ->  70.62  (+1.56 pt, nf=16)
+  LSHADE-SPACMA     47.81 ->  78.12  (+30.31 pt, nf=16)
+
+[4] WILCOXON (ref=MC-ESO, p_two<0.05, direction by A12)
+  IPOP-CMA-ES      better 10 / worse  3
+      F01-Sphere             better A12=0.87 (large)  p=0.000804
+      F02-EllipsoidalSep     better A12=1.00 (large)  p=2.97e-05
+      F03-RastriginSep       better A12=1.00 (large)  p=1.91e-06
+      F04-BucheRastrigin     better A12=1.00 (large)  p=1.91e-06
+      F05-LinearSlope        better A12=1.00 (large)  p=8.55e-05
+      F06-AttractiveSector   better A12=0.98 (large)  p=0.000111
+      F07-StepEllipsoidal    WORSE  A12=0.28 (large)  p=0.00769
+      F08-Rosenbrock         better A12=0.84 (large)  p=0.000953
+      F10-EllipsoidalRot     better A12=1.00 (large)  p=8.21e-05
+      F12-BentCigar          better A12=0.99 (large)  p=7.5e-05
+      F14-DiffPowers         better A12=1.00 (large)  p=1.91e-06
+      F15-RastriginRot       WORSE  A12=0.00 (large)  p=1.91e-06
+      F16-Weierstrass        WORSE  A12=0.02 (large)  p=1.91e-06
+  LSHADE-SPACMA    better  3 / worse  9
+      F01-Sphere             WORSE  A12=0.17 (large)  p=0.000311
+      F03-RastriginSep       better A12=0.67 (medium)  p=0.00936
+      F04-BucheRastrigin     better A12=1.00 (large)  p=8.83e-05
+      F06-AttractiveSector   WORSE  A12=0.00 (large)  p=8.16e-05
+      F08-Rosenbrock         WORSE  A12=0.35 (medium)  p=0.0143
+      F09-RosenbrockRot      WORSE  A12=0.28 (large)  p=0.00593
+      F10-EllipsoidalRot     WORSE  A12=0.35 (medium)  p=0.0143
+      F11-Discus             WORSE  A12=0.10 (large)  p=0.000332
+      F13-SharpRidge         WORSE  A12=0.00 (large)  p=1.91e-06
+      F14-DiffPowers         WORSE  A12=0.02 (large)  p=0.000103
+      F15-RastriginRot       WORSE  A12=0.00 (large)  p=1.91e-06
+      F16-Weierstrass        better A12=0.99 (large)  p=1.91e-06
+  ELSHADE-SPACMA   better  1 / worse 12
+      F01-Sphere             WORSE  A12=0.17 (large)  p=0.000311
+      F03-RastriginSep       WORSE  A12=0.40 (small)  p=0.0455
+      F06-AttractiveSector   WORSE  A12=0.00 (large)  p=8.32e-05
+      F07-StepEllipsoidal    WORSE  A12=0.28 (large)  p=0.00769
+      F08-Rosenbrock         WORSE  A12=0.35 (medium)  p=0.0143
+      F09-RosenbrockRot      WORSE  A12=0.28 (large)  p=0.00593
+      F10-EllipsoidalRot     WORSE  A12=0.35 (medium)  p=0.0143
+      F11-Discus             WORSE  A12=0.10 (large)  p=0.000332
+      F12-BentCigar          better A12=0.98 (large)  p=7.83e-05
+      F13-SharpRidge         WORSE  A12=0.00 (large)  p=1.91e-06
+      F14-DiffPowers         WORSE  A12=0.01 (large)  p=0.000103
+      F15-RastriginRot       WORSE  A12=0.00 (large)  p=1.91e-06
+      F16-Weierstrass        WORSE  A12=0.23 (large)  p=0.00102
