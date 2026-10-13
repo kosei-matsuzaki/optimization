@@ -34,6 +34,7 @@ def main() -> None:
                     help="one or more runs; their methods are pooled (the base must agree)")
     ap.add_argument("--arms", type=Path, nargs="+", required=True)
     ap.add_argument("--base", default="MC-ESO")
+    ap.add_argument("--drop", default="", help="comma list of panel methods to leave out")
     args = ap.parse_args()
 
     panel: dict[str, dict[str, float]] = {}
@@ -44,6 +45,9 @@ def main() -> None:
                 if old is not None and old != v:
                     raise SystemExit(f"{m} differs between panel runs on {f}")
                 panel[f][m] = v
+    for f in panel:
+        for m in filter(None, args.drop.split(",")):
+            panel[f].pop(m, None)
     arms: dict[str, dict[str, float]] = {}
     for d in args.arms:
         for f, by_m in cec_mean_errors(d / f"dim{args.dim}").items():
