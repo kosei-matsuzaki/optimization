@@ -1,0 +1,60 @@
+### functions measured at 200000 evals: 8 (G01, G02, G03, G04, G05, G06, G07, G08)
+
+### per-function SR@1e-10 (%), 7 methods, CEC2022 10D n=20 max_evals=200000
+| func | MC-ESO | EA4eig | LSHADE-SPACMA | L-SHADE | L-SRTDE | EBOwithCMAR | jSO |
+| G01-Zakharov | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| G02-Rosenbrock | 35 | 35 | 5 | 0 | 45 | 60 | 0 |
+| G03-SchafferF7 | 95 | 100 | 100 | 100 | 100 | 100 | 100 |
+| G04-Rastrigin | 0 | 30 | 45 | 5 | 75 | 95 | 5 |
+| G05-Levy | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| G06-Hybrid1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| G07-Hybrid2 | 0 | 100 | 70 | 20 | 55 | 20 | 15 |
+| G08-Hybrid3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+### evals_succ_mean, mean over functions where BOTH have successes (ref=MC-ESO)
+| method | common funcs | method evals | MC-ESO evals |
+| EA4eig | 4 | 23800 | 9914 |
+| LSHADE-SPACMA | 4 | 22467 | 9914 |
+| L-SHADE | 3 | 29974 | 9957 |
+| L-SRTDE | 4 | 13316 | 9914 |
+| EBOwithCMAR | 4 | 27256 | 9914 |
+| jSO | 3 | 32593 | 9957 |
+
+### SR@1e-7 / median error: MC-ESO vs best baseline (of the 6)
+| func | MC-ESO | best baseline |
+| G01-Zakharov | 100% / 0.000e+00 | EA4eig 100% / 0.000e+00 |
+| G02-Rosenbrock | 35% / 3.987e+00 | EBOwithCMAR 60% / 0.000e+00 |
+| G03-SchafferF7 | 95% / 1.137e-13 | EA4eig 100% / 0.000e+00 |
+| G04-Rastrigin | 0% / 5.380e+00 | EBOwithCMAR 95% / 3.411e-12 |
+| G05-Levy | 100% / 0.000e+00 | EA4eig 100% / 0.000e+00 |
+| G06-Hybrid1 | 0% / 1.927e+01 | EA4eig 0% / 5.609e-03 |
+| G07-Hybrid2 | 0% / 2.614e+00 | EA4eig 100% / 0.000e+00 |
+| G08-Hybrid3 | 0% / 3.925e-01 | EBOwithCMAR 0% / 4.052e-02 |
+
+### same functions at 25000 evals (analysis/single/j35/summary_e25k.csv), SR@1e-10 (%)
+| func | MC-ESO | EA4eig | LSHADE-SPACMA | L-SHADE | L-SRTDE | EBOwithCMAR | jSO |
+| G01-Zakharov | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| G02-Rosenbrock | 50 | 30 | 10 | 0 | 40 | 40 | 0 |
+| G03-SchafferF7 | 60 | 10 | 45 | 5 | 30 | 30 | 30 |
+| G04-Rastrigin | 0 | 0 | 0 | 0 | 0 | 20 | 0 |
+| G05-Levy | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| G06-Hybrid1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| G07-Hybrid2 | 5 | 0 | 0 | 0 | 0 | 0 | 0 |
+| G08-Hybrid3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+### overall SR@1e-10 (%) over these functions: 200000 vs 25000 evals
+| method | 200000 | 25000 | diff |
+| MC-ESO | 41.2 | 39.4 | +1.9 |
+| EA4eig | 58.1 | 30.0 | +28.1 |
+| LSHADE-SPACMA | 52.5 | 31.9 | +20.6 |
+| L-SHADE | 40.6 | 25.6 | +15.0 |
+| L-SRTDE | 59.4 | 33.8 | +25.6 |
+| EBOwithCMAR | 59.4 | 36.2 | +23.1 |
+| jSO | 40.0 | 28.8 | +11.2 |
+
+### CEC mean-error rank proxy from mean_best_f (<1e-8 -> 0), same 7 methods
+(the authoritative rank over per-run errors is analyze_quick.py [5]; this
+ proxy lets the 25000-eval run, whose per-run stats are not in the repo,
+ be ranked over the same 7 methods)
+  200000 evals (8 functions): EA4eig 2.75, EBOwithCMAR 2.81, L-SRTDE 3.94, jSO 4.06, LSHADE-SPACMA 4.38, L-SHADE 4.56, MC-ESO 5.50
+  25000 evals (8 functions): EA4eig 3.00, LSHADE-SPACMA 3.62, L-SRTDE 3.62, EBOwithCMAR 3.75, L-SHADE 4.00, jSO 4.38, MC-ESO 5.62

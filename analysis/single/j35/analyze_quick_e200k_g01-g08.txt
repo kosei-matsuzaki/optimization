@@ -1,0 +1,70 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261013_merged_j35b_e200k_quick
+meta: n_runs=20 max_evals=200000 set=all-d2 commit=10c6bd1
+functions: 8   methods: EA4eig, LSHADE-SPACMA, EBOwithCMAR, jSO, L-SRTDE, L-SHADE, MC-ESO
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  EA4eig            58.1%   58.1%   58.1%   69.4%       51082         0/5
+  LSHADE-SPACMA     52.5%   56.2%   58.1%   60.0%       58750         0/4
+  EBOwithCMAR       59.4%   61.9%   69.4%   73.1%       64735         0/5
+  jSO               40.0%   42.5%   46.9%   50.6%       91528         0/5
+  L-SRTDE           59.4%   59.4%   59.4%   59.4%       25883         0/4
+  L-SHADE           40.6%   42.5%   49.4%   50.6%       70445         0/4
+  MC-ESO            41.2%   41.2%   41.9%   41.9%        9914            
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  G01-Zakharov                    100%          EA4eig 100%          12276/24979
+  G02-Rosenbrock                   35%      EBOwithCMAR 60%           9784/43739  <-- ref behind
+  G03-SchafferF7                   95%          EA4eig 100%          11190/28665  <-- ref behind
+  G04-Rastrigin                     0%      EBOwithCMAR 95%                    -  <-- ref behind
+  G05-Levy                        100%          EA4eig 100%           6406/13320
+  G06-Hybrid1                       0%            EA4eig 0%                    -
+  G07-Hybrid2                       0%          EA4eig 100%                    -  <-- ref behind
+  G08-Hybrid3                       0%            EA4eig 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  G02-Rosenbrock         vs L-SRTDE        p=0.0313 A12=0.40 (small)
+  G03-SchafferF7         vs EA4eig         p=3.38e-05 A12=0.05 (large)
+  G03-SchafferF7         vs EBOwithCMAR    p=3.38e-05 A12=0.05 (large)
+  G03-SchafferF7         vs L-SHADE        p=0.000275 A12=0.14 (large)
+  G03-SchafferF7         vs LSHADE-SPACMA  p=3.38e-05 A12=0.05 (large)
+  G03-SchafferF7         vs jSO            p=3.38e-05 A12=0.05 (large)
+  G04-Rastrigin          vs EA4eig         p=1.91e-06 A12=0.00 (large)
+  G04-Rastrigin          vs EBOwithCMAR    p=1.91e-06 A12=0.00 (large)
+  G04-Rastrigin          vs L-SHADE        p=0.00021 A12=0.16 (large)
+  G04-Rastrigin          vs L-SRTDE        p=1.91e-06 A12=0.01 (large)
+  G04-Rastrigin          vs LSHADE-SPACMA  p=1.91e-06 A12=0.01 (large)
+  G04-Rastrigin          vs jSO            p=1.91e-05 A12=0.08 (large)
+  G06-Hybrid1            vs EA4eig         p=1.91e-06 A12=0.00 (large)
+  G06-Hybrid1            vs EBOwithCMAR    p=1.91e-06 A12=0.00 (large)
+  G06-Hybrid1            vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  G06-Hybrid1            vs L-SRTDE        p=1.91e-06 A12=0.00 (large)
+  G06-Hybrid1            vs LSHADE-SPACMA  p=1.91e-06 A12=0.00 (large)
+  G06-Hybrid1            vs jSO            p=1.91e-06 A12=0.00 (large)
+  G07-Hybrid2            vs EA4eig         p=1.91e-06 A12=0.00 (large)
+  G07-Hybrid2            vs EBOwithCMAR    p=1.91e-06 A12=0.00 (large)
+  G07-Hybrid2            vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  G07-Hybrid2            vs L-SRTDE        p=1.91e-06 A12=0.00 (large)
+  G07-Hybrid2            vs LSHADE-SPACMA  p=1.91e-06 A12=0.00 (large)
+  G07-Hybrid2            vs jSO            p=1.91e-06 A12=0.00 (large)
+  G08-Hybrid3            vs EA4eig         p=1.33e-05 A12=0.12 (large)
+  G08-Hybrid3            vs EBOwithCMAR    p=0.00486 A12=0.17 (large)
+  G08-Hybrid3            vs jSO            p=0.0215 A12=0.29 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. EA4eig                 mean rank   2.69   best on  6/8
+   2. EBOwithCMAR            mean rank   2.81   best on  4/8
+   3. L-SRTDE                mean rank   3.94   best on  4/8
+   4. jSO                    mean rank   4.06   best on  3/8
+   5. LSHADE-SPACMA          mean rank   4.44   best on  3/8
+   6. L-SHADE                mean rank   4.56   best on  3/8
+   7. MC-ESO                 mean rank   5.50   best on  2/8  <- ref
+
