@@ -678,6 +678,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # v2_scan2d on 10D F17: successful runs spent ~8000 evaluations of
         # close contact between the stall wave and the late hand-over.
         wave_follow: bool = False,
+        # Run the stall wave regardless of `wave_quality` once this many
+        # spillovers in a row have failed (None = off). 2026-10-13 trace of the
+        # default on 10D F17 / F18 (instances 1-5): the runs that end at
+        # f - f* ~ 1e-2 (8-9 of 20, the worst mean error of the panel) re-seed
+        # ~10 times in a row with the wave gated off.
+        wave_fail_gate: "int | None" = None,
         ir_reignite_sigma_ratio: float = 0.05,
         ir_repel_radius_ratio: float = 0.1,
         ir_repel_max_tries: int = 20,
@@ -702,6 +708,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.wave_budget_frac = wave_budget_frac
         self.wave_quality = wave_quality
         self.wave_follow = wave_follow
+        self.wave_fail_gate = wave_fail_gate
         self.wave_use_C = wave_use_C
         self.wave_ill_handover = wave_ill_handover
         self.wave_handover_drill = wave_handover_drill
@@ -1175,7 +1182,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if (self._wave_lambda is not None and not st.wave_spent
                 and not self._basin_exhausted(st)
                 and (self.wave_quality is None
-                     or st.best_so_far <= self.wave_quality * st.f_init_scale)):
+                     or st.best_so_far <= self.wave_quality * st.f_init_scale
+                     or (self.wave_fail_gate is not None
+                         and st.consecutive_failed_spillovers >= self.wave_fail_gate))):
             st.wave_spent = True
             st.trace_events.append((len(st.history_f), "wave"))
             self._recombination_wave(st, follow=self.wave_follow)
