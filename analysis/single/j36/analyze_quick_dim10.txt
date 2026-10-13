@@ -1,0 +1,62 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261012_184542_j36d10_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=3353e44
+functions: 24   methods: MC-ESO, v2_hlC, v2_scan2d
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            52.3%   54.4%   56.7%   60.0%       10073            
+  v2_hlC            58.8%   59.4%   63.5%   65.0%       10926         4/5
+  v2_scan2d         66.0%   66.7%   71.0%   72.3%       10448         5/6
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%          v2_hlC 100%            4899/4899
+  F02-EllipsoidalSep              100%          v2_hlC 100%            8915/7918
+  F03-RastriginSep                  0%       v2_scan2d 100%                    -  <-- ref behind
+  F04-BucheRastrigin                0%       v2_scan2d 100%                    -  <-- ref behind
+  F05-LinearSlope                 100%          v2_hlC 100%            7625/7625
+  F06-AttractiveSector            100%          v2_hlC 100%          10750/10750
+  F07-StepEllipsoidal             100%          v2_hlC 100%            5841/5525
+  F08-Rosenbrock                   95%       v2_scan2d 100%          13671/14024  <-- ref behind
+  F09-RosenbrockRot               100%          v2_hlC 100%          13696/13453
+  F10-EllipsoidalRot              100%          v2_hlC 100%            8526/7056
+  F11-Discus                      100%          v2_hlC 100%            7963/6734
+  F12-BentCigar                    55%          v2_hlC 100%          17230/14072  <-- ref behind
+  F13-SharpRidge                  100%          v2_hlC 100%           10662/9394
+  F14-DiffPowers                  100%          v2_hlC 100%            6024/6024
+  F15-RastriginRot                  0%            v2_hlC 0%                    -
+  F16-Weierstrass                   5%            v2_hlC 5%          20042/17434
+  F17-SchafferF7                   30%           v2_hlC 30%          13325/13461
+  F18-SchafferF7ill                25%            v2_hlC 0%          12549/19749
+  F19-GriewankRosenbrock            0%            v2_hlC 0%                    -
+  F20-Schwefel                      0%            v2_hlC 0%                    -
+  F21-Gallagher101                 10%           v2_hlC 90%           3340/11957  <-- ref behind
+  F22-Gallagher21                  35%           v2_hlC 70%            3514/9217  <-- ref behind
+  F23-Katsuura                      0%            v2_hlC 0%                    -
+  F24-LunacekRastrigin              0%            v2_hlC 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F03-RastriginSep       vs v2_hlC         p=0.000322 A12=0.05 (large)
+  F03-RastriginSep       vs v2_scan2d      p=1.91e-06 A12=0.00 (large)
+  F04-BucheRastrigin     vs v2_hlC         p=1.91e-06 A12=0.01 (large)
+  F04-BucheRastrigin     vs v2_scan2d      p=1.91e-06 A12=0.00 (large)
+  F12-BentCigar          vs v2_hlC         p=0.00222 A12=0.23 (large)
+  F12-BentCigar          vs v2_scan2d      p=0.00222 A12=0.23 (large)
+  F20-Schwefel           vs v2_scan2d      p=0.000351 A12=0.13 (large)
+  F21-Gallagher101       vs v2_hlC         p=0.000196 A12=0.07 (large)
+  F21-Gallagher101       vs v2_scan2d      p=0.000196 A12=0.10 (large)
+  F22-Gallagher21        vs v2_hlC         p=0.00187 A12=0.26 (large)
+  F22-Gallagher21        vs v2_scan2d      p=0.00187 A12=0.26 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v2_scan2d              mean rank   1.94   best on 15/24
+   2. MC-ESO                 mean rank   2.00   best on 16/24  <- ref
+   3. v2_hlC                 mean rank   2.06   best on 13/24
+
