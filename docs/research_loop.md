@@ -110,7 +110,7 @@
 
 ---
 
-1. **【公式予算 1/3】CEC2017 の公式予算 10000·D で 5D を測る（instance 1）。**
+1. **【公式予算 1/3】CEC2017 の公式予算 10000·D で 5D を測る（instance 1）。** (claimed 2026-10-13 00:30 UTC)
    `./run.sh quick --all --dim 5 --max-evals 50000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j40d5`）。
    **背景**: 判定の予算 2500·D は CEC2017 の公式予算の 4 分の 1。L-SHADE 系・EBO は公式予算に合わせて設計されていて、10D の 4 倍予算では L-SHADE が 56 → 69% に伸び、旧 MC-ESO との差が −35pt に開いた（2026-10-08）。現在の版で同じことが起きるかを測る。
    **集計**: [1] 全体表（7 手法）、7 手法の SR@1e-10 の順位、関数ごとの最良手法、Wilcoxon（ref=MC-ESO）。同じ手法の 12500 評価・instance 1 の値（`runs/20261012_020743_allmethods2_d5_quick`）と並べる。
