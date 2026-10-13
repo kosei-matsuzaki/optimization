@@ -263,6 +263,31 @@ class LSRTDEOptimizer(BaseOptimizer):
         return _run_minion(self, "LSRTDE", max_evals, self.options)
 
 
+class MinionOptimizer(BaseOptimizer):
+    """Any minionpy 1.9.1 algorithm with its defaults (added 2026-10-13):
+
+    * ``ARRDE`` — Adaptive Restart-Refine DE (L-SHADE + jSO mechanisms,
+      nonlinear population reduction, adaptive restart; arXiv 2511.18429).
+      minionpy's authors' own implementation.
+    * ``RCMAES`` — Robust CMA-ES (nonlinear population reduction + adaptive
+      restart in pure CMA-ES; arXiv 2604.27138, CEC 2026). Same authors.
+    * ``NLSHADE_RSP`` — NL-SHADE-RSP (Stanovov+, CEC 2021 winner),
+      ``BIPOP_aCMAES`` — BIPOP with active covariance update (Loshchilov 2013).
+      minionpy re-implementations.
+
+    The coordinate / fitness tolerance stops are disabled so every run spends
+    the whole budget, as for the other library methods here."""
+
+    def __init__(self, benchmark: BenchmarkFunction, seed: int = 42,
+                 algo: str = "ARRDE", **options):
+        super().__init__(benchmark, seed)
+        self.algo = algo
+        self.options = {"x_tol": -1.0, "f_tol": -1.0, **options}
+
+    def optimize(self, max_evals: int = 5000) -> OptimizeResult:
+        return _run_minion(self, self.algo, max_evals, self.options)
+
+
 # ---------------------------------------------------------------------------
 # jSO (pyade or minionpy) ---------------------------------------------------
 # ---------------------------------------------------------------------------

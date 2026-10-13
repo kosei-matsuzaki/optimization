@@ -193,7 +193,7 @@ niching 手法が「協調している」ことの値打ちを測るための、
 **ダンプの有無・列の増減は探索経路を変えない**（`_dump` は run 終了時に 1 回書き出すだけ）。
 座標列を足す前後で `best_f` 列が 32/32 run 完全一致することを その115 が確認している。
 
-## ハイブリッド・最新手法の比較候補（2026-10-06 実装。まだ比較手法のリストには入れていない）
+## ハイブリッド・最新手法の比較候補（2026-10-06 実装。2026-10-13 から一部を標準の比較手法の組に入れた）
 
 `quick_check.py` の `_OPTIMIZERS` に名前で登録してあり、`--methods` で指定すれば回せる。既定の比較リストには入っていない。どれも評価回数を上限ちょうどで止め、同じシードで同じ結果になることを確認した（BBOB 2D F02、1000 評価）。調査の経緯は [related_work.md](related_work.md) の「比較手法の候補の洗い出し」。
 
@@ -213,6 +213,8 @@ niching 手法が「協調している」ことの値打ちを測るための、
 | `jSO` | `jso.py` | Brest ら CEC 2017（2 位） | 論文どおりの numpy 移植 | pyade の jSO は論文から外れる（記憶サイズ、初期値ほか）ので使わない |
 | `L-SRTDE` | `lsrtde.py` | Stanovov & Semenkin CEC 2024 優勝 | 作者の C++ を行単位で移植。公式 CEC2022 10D の全 12 関数で C++ 実行と平均誤差が一致 | — |
 | `jSO-minionpy` / `L-SRTDE-minionpy` | `lib_wrappers.py` | minionpy 1.9.1 | — | 参照用。比較には移植版を使う |
+| `ARRDE` / `RCMAES` | `lib_wrappers.py`（`MinionOptimizer`） | ARRDE: arXiv 2511.18429（L-SHADE ＋ jSO の機構、非線形の集団縮小、適応的な再起動。CEC2011/2017/2019/2020/2022 の 5 スイートで首位と報告）。RCMAES: arXiv 2604.27138（純粋な CMA-ES に非線形の集団縮小と適応的な再起動。CEC 2026 向け） | minionpy 1.9.1 は両論文の著者による実装 | 2026-10-13 追加。x_tol / f_tol の停止を切って予算を使い切る。同じ seed で再現する |
+| `NL-SHADE-RSP` / `BIPOP-aCMA-ES` | `lib_wrappers.py`（`MinionOptimizer`） | Stanovov ら CEC 2021 優勝 / Loshchilov 2013（能動的な共分散更新つき BIPOP） | minionpy 1.9.1 の再実装（原典との突き合わせはまだ） | 2026-10-13 追加。同上 |
 | `IMODE` | `imode.py` | Sallam ら CEC 2020 優勝 | 作者の競技提出コード（`P-N-Suganthan/2020-Bound-Constrained-Opt-Benchmark`）を行番号つきで移植。各子の成績は実際に作った演算子に付く（mealpy 版の不具合を解消）。公表値との比較はできていない（CEC2020 10D の予算は 1e6、CEC2022 の IMODE の表は入手できず） | 配分は元コードどおり改善率のみ（`allocation="paper"` で論文の「質と多様性」を推測で再現、未検証）。SQP は SciPy SLSQP で勾配評価も予算に数える。元コードの終了規則（残り < 4·N で停止）を再現するので、予算を少し残して止まる。初期集団 6·D² が大きく、10D / 25k の F15 は mealpy 版より悪い |
 | `ELSHADE-SPACMA` | `elshade_spacma.py` | Hadi ら CEC 2018（3 位） | 主催者が公開する作者の MATLAB（`P-N-Suganthan/CEC2018`）を行単位で移植 | LSHADE-SPACMA の 1 世代と EADE の 1 世代を交互に回す。公表値との比較なし |
 | `APGSK-IMODE` | `apgsk_imode.py` | Mohamed ら CEC 2021（3 位） | 主催者が公開する作者の MATLAB（`P-N-Suganthan/2021-SO-BCO`）を行単位で移植。作者同梱の CEC2022 結果と定性的に同じ範囲（予算が違う可能性） | 元コードの不具合（IMODE のアーカイブが常に空、など）を意図的に再現（docstring に列挙）。集団 30·D が大きく、10D / 25k の F10 / F15 は弱い |
@@ -221,6 +223,13 @@ niching 手法が「協調している」ことの値打ちを測るための、
 | `IMODE-mealpy` | `lib_wrappers.py` | mealpy 3.0.3 | — | mealpy の実装に不具合（評価後に演算子の割当を引き直し、成績が別の演算子に付く）と SQP 欠落。10D F10 で 10〜67。比較に使うなら移植が要る |
 | `LSHADE-cnEpSin` | `lib_wrappers.py` | mealpy 3.0.3 | — | 集団を論文の 18·D → 4 に直した。**mealpy 3.0.3 は numpy ≤ 1.26 を要求し、numpy 2.4.6 の環境には入らない**（入る 3.0.2 には `mealpy.sota_based` が無い。2026-10-09 確認） |
 | `NGOpt` / `NG-Portfolio` | `lib_wrappers.py` | nevergrad 1.0.12 | — | NGOpt は遅い（10D で 1 run 40〜240 秒）。Portfolio は Sphere でも弱い（ライブラリ側の性質）。**numpy 2.4.6 の環境では NGOpt が内部の代理モデルで落ちる**（`metamodel.py` の `float(model.predict(...))`、2026-10-09 確認）。NG-Portfolio は動く |
+
+### 標準の比較手法の組（2026-10-13〜、ユーザーの指摘による絞り込み）
+
+全手法（31 手法）を毎回回すのはやめ、次の **16 手法**を標準の比較手法とする。選び方: 2026-10-13 の全手法比較（`runs/20261013_*_allmethods3_*`、2D/5D/10D）で、6 つの枠（3 次元 × SR@1e-10 と CEC 式の順位）のうち **2 つ以上で 34 手法中の上位 10 位**に入った手法（10 手法）、それに当たらない CEC の競技の優勝手法（EA4eig・L-SRTDE）、2026-10-13 に足した最新手法 4 つ。
+- DE 系: `EBOwithCMAR`（CEC 2017 優勝）、`IMODE`（2020 優勝）、`NL-SHADE-RSP`（2021 優勝）、`EA4eig`（2022 優勝）、`L-SRTDE`（2024 優勝）、`ARRDE`、`L-SHADE`（2014 優勝、DE 系の基準）、`jSO`、`LSHADE-SPACMA`、`ELSHADE-SPACMA`、`SPS-L-SHADE-EIG`、`AMALGAM-SO`
+- CMA-ES 系: `IPOP-CMA-ES`、`BIPOP-CMA-ES`、`BIPOP-aCMA-ES`、`RCMAES`
+- 外したもの（登録は残す）: CMA-ES（素）、PSO、DE、SaVOA、NM-Restart、EA4eig の 2 変種、AMALGAM-SO-DE、UMOEA-II、HSES、ICMAES-ILS、MOS、HMHH の 2 種、PS-CMA-ES、DEPSO、APGSK-IMODE、CoBiDE、NG-Portfolio。上位 10 位に入ったのは 6 枠のうち 1 つ以下（CMA-ES 10D SR 9 位、MOS 5D SR 9 位、ICMAES-ILS 10D SR 8 位、AMALGAM-SO-DE 10D SR 4 位、UMOEA-II 2D CEC 4 位、APGSK-IMODE 2D CEC 5 位、DE 2D SR 10 位）。
 
 **この作業で見つかった既存の比較手法の問題（2026-10-06 に修正。修正前の記録値は測り直し待ち）**
 - `cmaes.py` / `restart_cmaes.py`（CMA-ES / IPOP / BIPOP）→ **修正済み**（`pycma_seed` で 0 だけを固定の非ゼロ値に置き換え、最後の世代は残りの予算分だけ評価して止める。seed 100・200 の run は予算内の best が修正前と完全一致することを 3 手法 × 3 関数で確認）。修正前の内容: (1) run 0 のシードが 0 になり、pycma が 0 を「時刻から乱数」と解釈するので run 0 だけ再現しない（[findings.md](findings.md) の「cma ライブラリは run 間で決定的でない」の少なくとも一部はこれ）。(2) 最後の世代を丸ごと評価するので、評価回数の上限を最大で集団サイズ − 1 回超える。

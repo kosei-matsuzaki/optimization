@@ -65,6 +65,7 @@ from core.optimizers.lsrtde import LSRTDEOptimizer as LSRTDEPortOptimizer
 from core.optimizers.lib_wrappers import (IMODEOptimizer, LSHADEcnEpSinOptimizer,
                                           JSOOptimizer as JSOLibOptimizer,
                                           LSRTDEOptimizer as LSRTDELibOptimizer,
+                                          MinionOptimizer,
                                           NGOptOptimizer, NGPortfolioOptimizer)
 from core.env_info import write_env
 from core.run_data import save_curves, append_mceso_runs
@@ -272,6 +273,11 @@ _OPTIMIZERS = {
     "jSO-minionpy":     (JSOLibOptimizer,           {"backend": "minionpy"}),
     "L-SRTDE":          (LSRTDEPortOptimizer,       {}),
     "L-SRTDE-minionpy": (LSRTDELibOptimizer,        {}),
+    # 2026-10-13: recent methods via minionpy (core/optimizers/lib_wrappers.py MinionOptimizer).
+    "ARRDE":            (MinionOptimizer,           {"algo": "ARRDE"}),
+    "NL-SHADE-RSP":     (MinionOptimizer,           {"algo": "NLSHADE_RSP"}),
+    "RCMAES":           (MinionOptimizer,           {"algo": "RCMAES"}),
+    "BIPOP-aCMA-ES":    (MinionOptimizer,           {"algo": "BIPOP_aCMAES"}),
     "IMODE":            (IMODEPortOptimizer,        {}),
     "ELSHADE-SPACMA":   (ELSHADESPACMAOptimizer,    {}),
     "APGSK-IMODE":      (APGSKIMODEOptimizer,       {}),
