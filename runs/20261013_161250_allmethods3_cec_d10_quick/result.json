@@ -1,0 +1,15 @@
+{
+  "type": "quick",
+  "created_at": "2026-10-13T16:12:50",
+  "commit": "443c011",
+  "n_runs": 20,
+  "max_evals": 25000,
+  "set": "all-d10",
+  "dim": 10,
+  "methods": "MC-ESO,MC-ESO-v2,MC-ESO-v1,CMA-ES,IPOP-CMA-ES,BIPOP-CMA-ES,PSO,DE,L-SHADE,SaVOA,NM-Restart,EA4eig,EA4eig-jSO-IDEbd,EA4eig-Simpl,LSHADE-SPACMA,AMALGAM-SO,AMALGAM-SO-DE,HSES,ICMAES-ILS,MOS,UMOEA-II,EBOwithCMAR,HMHH,HMHH-random,PS-CMA-ES,DEPSO,jSO,L-SRTDE,IMODE,ELSHADE-SPACMA,APGSK-IMODE,SPS-L-SHADE-EIG,CoBiDE,NG-Portfolio",
+  "status": "done",
+  "published_at": "2026-10-13T18:11:36",
+  "published_from": "DESKTOP-R8JJ5RD",
+  "source_dir": "20261013_161250_allmethods3_cec_d10_quick",
+  "note": "CEC2022（hold-out、調整なし）の全手法比較: 単一解の比較手法 31 ＋ MC-ESO の 3 世代（現在の既定 = 2026-10-13〜・MC-ESO-v2・MC-ESO-v1）、n=20、予算 2500×D（10D 25000 / 20D 50000）、--jobs 18、Windows ローカル（正準環境ではない）"
+}
