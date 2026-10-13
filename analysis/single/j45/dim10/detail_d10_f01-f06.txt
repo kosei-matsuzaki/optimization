@@ -1,0 +1,108 @@
+j45d10a  BBOB dim10 F01-F06 (6/24 funcs)  n=20  max_evals=25000  instances 1-5  18 methods
+
+=== [1] full 18-method overall table (6-func mean, %, sorted by SR@1e-10) ===
+  method               1e-2   1e-4   1e-7  1e-10  evals(own)  nf
+  MC-ESO              94.17  94.17  94.17  94.17      8421.5   6 <- ref
+  ELSHADE-SPACMA      97.50  97.50  95.83  85.83     16964.3   6
+  LSHADE-SPACMA       84.17  84.17  84.17  83.33     13829.7   6
+  EBOwithCMAR         95.83  95.83  91.67  82.50     16893.0   6
+  AMALGAM-SO          73.33  73.33  73.33  72.50      5608.7   6
+  ARRDE               69.17  69.17  69.17  69.17      9387.2   5
+  BIPOP-CMA-ES        66.67  66.67  66.67  66.67      2095.2   4
+  IPOP-CMA-ES         66.67  66.67  66.67  66.67      2095.2   4
+  MC-ESO-v2           66.67  66.67  66.67  66.67      8162.5   4
+  jSO                 82.50  77.50  66.67  66.67     17679.3   6
+  L-SHADE             98.33  98.33  92.50  65.00     17434.0   6
+  NL-SHADE-RSP        99.17  93.33  67.50  60.83     21266.2   6
+  SPS-L-SHADE-EIG    100.00 100.00  71.67  53.33     21383.0   6
+  BIPOP-aCMA-ES       50.83  50.00  50.00  50.00      2401.3   3
+  IMODE               66.67  64.17  55.00  50.00     22546.0   4
+  L-SRTDE             67.50  67.50  58.33  50.00     13962.4   5
+  RCMAES              50.00  50.00  50.00  50.00      3338.3   3
+  EA4eig              85.00  80.00  65.83  39.17     16872.4   5
+
+=== [2] paired evals_succ_mean (both-success functions only) ===
+  vs method           nf    MC-ESO      base  faster
+  BIPOP-CMA-ES         4    7809.0    2095.2  base
+  IPOP-CMA-ES          4    7809.0    2095.2  base
+  BIPOP-aCMA-ES        3    7835.7    2401.3  base
+  RCMAES               3    7835.7    3338.3  base
+  AMALGAM-SO           6    8421.5    5608.7  base
+  MC-ESO-v2            4    7809.0    8162.5  MC-ESO
+  ARRDE                5    8111.4    9387.2  MC-ESO
+  LSHADE-SPACMA        6    8421.5   13829.7  MC-ESO
+  L-SRTDE              5    8111.4   13962.4  MC-ESO
+  EA4eig               5    8111.4   16872.4  MC-ESO
+  EBOwithCMAR          6    8421.5   16893.0  MC-ESO
+  ELSHADE-SPACMA       6    8421.5   16964.3  MC-ESO
+  L-SHADE              6    8421.5   17434.0  MC-ESO
+  jSO                  6    8421.5   17679.3  MC-ESO
+  NL-SHADE-RSP         6    8421.5   21266.2  MC-ESO
+  SPS-L-SHADE-EIG      6    8421.5   21383.0  MC-ESO
+  IMODE                4    7809.0   22546.0  MC-ESO
+
+=== [3] per-function SR@1e-10 (%), all 18 methods ===
+  method               F01   F02   F03   F04   F05   F06    mean
+  MC-ESO               100   100   100    65   100   100   94.17 <- ref
+  ELSHADE-SPACMA       100   100   100    15   100   100   85.83
+  LSHADE-SPACMA        100   100   100     0   100   100   83.33
+  EBOwithCMAR          100   100    95    45   100    55   82.50
+  AMALGAM-SO           100   100    25    15   100    95   72.50
+  ARRDE                100   100    15     0   100   100   69.17
+  BIPOP-CMA-ES         100   100     0     0   100   100   66.67
+  IPOP-CMA-ES          100   100     0     0   100   100   66.67
+  MC-ESO-v2            100   100     0     0   100   100   66.67
+  jSO                  100   100     0     0   100   100   66.67
+  L-SHADE              100   100     5     0   100    85   65.00
+  NL-SHADE-RSP         100   100   100    65     0     0   60.83
+  SPS-L-SHADE-EIG      100   100    20     0   100     0   53.33
+  BIPOP-aCMA-ES        100   100     0     0     0   100   50.00
+  IMODE                100   100     0     0   100     0   50.00
+  L-SRTDE              100   100     0     0     0   100   50.00
+  RCMAES               100   100     0     0     0   100   50.00
+  EA4eig               100   100     0     0    30     5   39.17
+
+=== [4] Wilcoxon counts (ref=MC-ESO, p_two<0.05, direction by A12) ===
+  vs LSHADE-SPACMA      wins  1 / loses  2
+       MC-ESO loses on: F02-EllipsoidalSep(A12=0.38,small), F06-AttractiveSector(A12=0.35,medium)
+       MC-ESO wins on : F04-BucheRastrigin(A12=0.98,large)
+  vs AMALGAM-SO         wins  2 / loses  1
+       MC-ESO loses on: F02-EllipsoidalSep(A12=0.38,small)
+       MC-ESO wins on : F03-RastriginSep(A12=0.92,large), F04-BucheRastrigin(A12=0.89,large)
+  vs RCMAES             wins  3 / loses  2
+       MC-ESO loses on: F02-EllipsoidalSep(A12=0.38,small), F06-AttractiveSector(A12=0.19,large)
+       MC-ESO wins on : F03-RastriginSep(A12=1.00,large), F04-BucheRastrigin(A12=1.00,large), F05-LinearSlope(A12=1.00,large)
+  vs BIPOP-aCMA-ES      wins  3 / loses  2
+       MC-ESO loses on: F02-EllipsoidalSep(A12=0.38,small), F06-AttractiveSector(A12=0.35,medium)
+       MC-ESO wins on : F03-RastriginSep(A12=1.00,large), F04-BucheRastrigin(A12=1.00,large), F05-LinearSlope(A12=1.00,large)
+  vs ELSHADE-SPACMA     wins  2 / loses  1
+       MC-ESO loses on: F02-EllipsoidalSep(A12=0.38,small)
+       MC-ESO wins on : F03-RastriginSep(A12=0.98,large), F06-AttractiveSector(A12=0.96,large)
+  vs EBOwithCMAR        wins  2 / loses  0
+       MC-ESO wins on : F03-RastriginSep(A12=0.99,large), F06-AttractiveSector(A12=0.99,large)
+  vs jSO                wins  3 / loses  1
+       MC-ESO loses on: F02-EllipsoidalSep(A12=0.38,small)
+       MC-ESO wins on : F03-RastriginSep(A12=1.00,large), F04-BucheRastrigin(A12=0.90,large), F06-AttractiveSector(A12=0.98,large)
+  vs ARRDE              wins  3 / loses  1
+       MC-ESO loses on: F02-EllipsoidalSep(A12=0.38,small)
+       MC-ESO wins on : F03-RastriginSep(A12=0.97,large), F04-BucheRastrigin(A12=1.00,large), F05-LinearSlope(A12=0.62,small)
+  vs MC-ESO-v2          wins  2 / loses  0
+       MC-ESO wins on : F03-RastriginSep(A12=1.00,large), F04-BucheRastrigin(A12=1.00,large)
+  vs EA4eig             wins  4 / loses  1
+       MC-ESO loses on: F02-EllipsoidalSep(A12=0.38,small)
+       MC-ESO wins on : F03-RastriginSep(A12=1.00,large), F04-BucheRastrigin(A12=0.84,large), F05-LinearSlope(A12=1.00,large), F06-AttractiveSector(A12=1.00,large)
+  vs NL-SHADE-RSP       wins  3 / loses  0
+       MC-ESO wins on : F03-RastriginSep(A12=0.85,large), F05-LinearSlope(A12=1.00,large), F06-AttractiveSector(A12=1.00,large)
+  vs L-SHADE            wins  3 / loses  0
+       MC-ESO wins on : F02-EllipsoidalSep(A12=0.69,medium), F03-RastriginSep(A12=1.00,large), F06-AttractiveSector(A12=0.97,large)
+  vs SPS-L-SHADE-EIG    wins  4 / loses  0
+       MC-ESO wins on : F02-EllipsoidalSep(A12=0.86,large), F03-RastriginSep(A12=1.00,large), F05-LinearSlope(A12=0.65,medium), F06-AttractiveSector(A12=1.00,large)
+  vs L-SRTDE            wins  5 / loses  0
+       MC-ESO wins on : F01-Sphere(A12=0.70,medium), F03-RastriginSep(A12=1.00,large), F04-BucheRastrigin(A12=1.00,large), F05-LinearSlope(A12=1.00,large), F06-AttractiveSector(A12=0.74,large)
+  vs IMODE              wins  5 / loses  0
+       MC-ESO wins on : F01-Sphere(A12=0.97,large), F02-EllipsoidalSep(A12=1.00,large), F03-RastriginSep(A12=1.00,large), F04-BucheRastrigin(A12=1.00,large), F06-AttractiveSector(A12=1.00,large)
+  vs IPOP-CMA-ES        wins  5 / loses  0
+       MC-ESO wins on : F01-Sphere(A12=0.90,large), F02-EllipsoidalSep(A12=0.79,large), F03-RastriginSep(A12=1.00,large), F04-BucheRastrigin(A12=1.00,large), F05-LinearSlope(A12=0.75,large)
+  vs BIPOP-CMA-ES       wins  5 / loses  0
+       MC-ESO wins on : F01-Sphere(A12=0.82,large), F02-EllipsoidalSep(A12=0.72,large), F03-RastriginSep(A12=1.00,large), F04-BucheRastrigin(A12=1.00,large), F05-LinearSlope(A12=0.70,medium)
+  TOTAL over 17 baselines: wins 55 / loses 11
