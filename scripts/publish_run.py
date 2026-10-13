@@ -41,7 +41,7 @@ def publish(src: Path, name: str | None, note: str | None, force: bool) -> Path:
     if not src.is_dir():
         raise SystemExit(f"not a directory: {src}")
     meta_path = src / "result.json"
-    meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
+    meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
     if meta.get("status") not in (None, "done"):
         raise SystemExit(f"{src.name}: status is {meta.get('status')!r}, not 'done' — "
                          "publish finished runs only")

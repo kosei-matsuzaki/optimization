@@ -456,7 +456,7 @@ def current_commit() -> str:
 
 def write_result_meta(run_dir: Path, meta: dict) -> None:
     try:
-        with open(run_dir / "result.json", "w") as f:
+        with open(run_dir / "result.json", "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2)
     except Exception:
         pass

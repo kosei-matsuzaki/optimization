@@ -30,7 +30,7 @@ def slug(heading: str) -> str:
 
 def headings(path: str) -> set[str]:
     out = set()
-    for line in Path(path).read_text().splitlines():
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
         m = re.match(r"^(#{1,6})\s+(.*)$", line)
         if m:
             out.add(slug(m.group(2)))
@@ -41,7 +41,7 @@ def main() -> int:
     tables = {p: headings(p) for p in DOCS if Path(p).exists()}
     broken, checked = [], 0
     for src in tables:
-        text = Path(src).read_text()
+        text = Path(src).read_text(encoding="utf-8")
         for m in re.finditer(r"\]\((?:([A-Za-z0-9_./-]+\.md))?#([^)\s]+)\)", text):
             target = m.group(1)
             if target:  # docs/ 相対と同ディレクトリ相対の両方を試す
