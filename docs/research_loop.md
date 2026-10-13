@@ -110,7 +110,7 @@
 
 ---
 
-8. **【手法解説ページの全手法比較 6/7】10D の第 3 四半分（6 関数）。** `./run.sh quick --all --funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill --dim 10 --max-evals 25000 --n-runs 20 --instances 1-5 --methods "MC-ESO,MC-ESO-v2,EBOwithCMAR,IMODE,NL-SHADE-RSP,EA4eig,L-SRTDE,ARRDE,L-SHADE,jSO,LSHADE-SPACMA,ELSHADE-SPACMA,SPS-L-SHADE-EIG,AMALGAM-SO,IPOP-CMA-ES,BIPOP-CMA-ES,BIPOP-aCMA-ES,RCMAES"`（label `j45d10c`）。集計と記録は【手法解説ページの全手法比較 1/7】と同じ（`dim10`。4 つ済んでから 24 関数で集計）。
+8. **【手法解説ページの全手法比較 6/7】10D の第 3 四半分（6 関数）。** `./run.sh quick --all --funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill --dim 10 --max-evals 25000 --n-runs 20 --instances 1-5 --methods "MC-ESO,MC-ESO-v2,EBOwithCMAR,IMODE,NL-SHADE-RSP,EA4eig,L-SRTDE,ARRDE,L-SHADE,jSO,LSHADE-SPACMA,ELSHADE-SPACMA,SPS-L-SHADE-EIG,AMALGAM-SO,IPOP-CMA-ES,BIPOP-CMA-ES,BIPOP-aCMA-ES,RCMAES"`（label `j45d10c`）。集計と記録は【手法解説ページの全手法比較 1/7】と同じ（`dim10`。4 つ済んでから 24 関数で集計）。 (claimed 2026-10-13 18:30 UTC)
 9. **【手法解説ページの全手法比較 7/7】10D の第 4 四半分（6 関数）。** `./run.sh quick --all --funcs F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin --dim 10 --max-evals 25000 --n-runs 20 --instances 1-5 --methods "MC-ESO,MC-ESO-v2,EBOwithCMAR,IMODE,NL-SHADE-RSP,EA4eig,L-SRTDE,ARRDE,L-SHADE,jSO,LSHADE-SPACMA,ELSHADE-SPACMA,SPS-L-SHADE-EIG,AMALGAM-SO,IPOP-CMA-ES,BIPOP-CMA-ES,BIPOP-aCMA-ES,RCMAES"`（label `j45d10d`）。集計と記録は【手法解説ページの全手法比較 1/7】と同じ（`dim10`。4 つ済んでから 24 関数で集計）。
 
 ## 規則
