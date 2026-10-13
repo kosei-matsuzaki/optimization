@@ -111,7 +111,7 @@
 ---
 
     **集計**: 組 (a)(b) の `results/20261013_074751_j43a_quick` / `results/20261013_081848_j43b_quick` と連結して 24/24 を確かめ、【公式予算 1/3】と同じ集計（連結は `analysis/single/j43/merge_j43.py`、集計は `analysis/single/j43/agg_j43.py` をそのまま使える）。**記録**: `analysis/single/j43/`。
-5. **CEC2022（10D、hold-out）を公式予算 200000 評価で測る**（25000 評価の分は 2026-10-12 に測り終えた。`analysis/single/j35/` と作業ログ）。
+5. **CEC2022（10D、hold-out）を公式予算 200000 評価で測る**（25000 評価の分は 2026-10-12 に測り終えた。`analysis/single/j35/` と作業ログ）。 (claimed 2026-10-13 10:31 UTC)
    `./run.sh quick --suite cec2022 --all --n-runs 20 --max-evals 200000 --funcs <完全名> --methods "MC-ESO,EA4eig,LSHADE-SPACMA,L-SHADE,L-SRTDE,EBOwithCMAR,jSO"` を **1 関数ずつ 12 回**（G01-Zakharov / G02-Rosenbrock / G03-SchafferF7 / G04-Rastrigin / G05-Levy / G06-Hybrid1 / G07-Hybrid2 / G08-Hybrid3 / G09-Composition1 / G10-Composition2 / G11-Composition3 / G12-Composition4。label `j35b<関数番号>`）。1 回の起動で終わる分だけ回し、残りの関数を書き戻す。
    **目安**: 25000 評価では 12 関数 × 15 手法 × 20 run が `--jobs 4` で 57 分だった（2026-10-12）。手法を 8 つ（MC-ESO・最新の候補・25000 評価の CEC 順位の上位 6 手法）に絞ったので、1 関数あたりおよそ 20 分、**1 回の起動で 4 関数前後**。2026-10-13 に一般化の検証より後ろへ回した（対話セッション）。
    **背景**: 正準環境の 25000 評価では SR@1e-10 が MC-ESO 31.2%（15 手法中 1 位）、`v2_hlC` 30.8%（2 位）、L-SRTDE 30.4%。一方 CEC 流の平均誤差の順位では MC-ESO 9 位 / `v2_hlC` 11 位（ハイブリッド G06〜G08 と合成 G09・G10・G12 で DE 系に負ける）。公式予算で順位が入れ替わるかを確かめる。CEC2022 用にハイパーパラメータは調整しない（[experiments.md](experiments.md)）。
