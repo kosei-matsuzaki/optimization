@@ -104,27 +104,29 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）、参考として [5] CEC 式の平均誤差の順位（2026-10-13 追加）。
 
+**2026-10-13 に `v2_scan2d` が既定になった**ので、以下のジョブの `MC-ESO` は旧 `v2_scan2d` と同じもの（`v2_scan2d` は手法の並びから外した）。比べる旧既定が要るときは `MC-ESO-v2`。
+
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
 
 1. **【公式予算 1/3】CEC2017 の公式予算 10000·D で 5D を測る（instance 1）。**
-   `./run.sh quick --all --dim 5 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j40d5`）。
+   `./run.sh quick --all --dim 5 --max-evals 50000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j40d5`）。
    **背景**: 判定の予算 2500·D は CEC2017 の公式予算の 4 分の 1。L-SHADE 系・EBO は公式予算に合わせて設計されていて、10D の 4 倍予算では L-SHADE が 56 → 69% に伸び、旧 MC-ESO との差が −35pt に開いた（2026-10-08）。現在の版で同じことが起きるかを測る。
-   **集計**: [1] 全体表（7 手法）、7 手法の SR@1e-10 の順位、関数ごとの最良手法、Wilcoxon（ref=MC-ESO）。同じ 7 手法の 12500 評価・instance 1 の値（`runs/20261012_020743_allmethods2_d5_quick`）と並べる。
+   **集計**: [1] 全体表（7 手法）、7 手法の SR@1e-10 の順位、関数ごとの最良手法、Wilcoxon（ref=MC-ESO）。同じ手法の 12500 評価・instance 1 の値（`runs/20261012_020743_allmethods2_d5_quick`）と並べる。
    **記録**: `analysis/single/j40/`。
-2. **【公式予算 2/3】10D の前半 12 関数。** `./run.sh quick --all --funcs F01-Sphere,F02-EllipsoidalSep,F03-RastriginSep,F04-BucheRastrigin,F05-LinearSlope,F06-AttractiveSector,F07-StepEllipsoidal,F08-Rosenbrock,F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar --dim 10 --max-evals 100000 --n-runs 20 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j41a`）。**記録**: `analysis/single/j41/`（【公式予算 3/3】と合わせて 24 関数にしてから集計）。
+2. **【公式予算 2/3】10D の前半 12 関数。** `./run.sh quick --all --funcs F01-Sphere,F02-EllipsoidalSep,F03-RastriginSep,F04-BucheRastrigin,F05-LinearSlope,F06-AttractiveSector,F07-StepEllipsoidal,F08-Rosenbrock,F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar --dim 10 --max-evals 100000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j41a`）。**記録**: `analysis/single/j41/`（【公式予算 3/3】と合わせて 24 関数にしてから集計）。
 3. **【公式予算 3/3】10D の後半 12 関数。** 同じコマンドで `--funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`（label `j41b`）。【公式予算 2/3】の結果と連結して 24/24 を確かめ、【公式予算 1/3】と同じ集計をする。**記録**: `analysis/single/j41/`。
-4. **【20 次元 1/2】20D を判定と同じ予算 2500·D で測る。** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j42`）。90 分に収まらなければ規則どおり完走した関数までを記録し、残りを書き戻す。
+4. **【20 次元 1/2】20D を判定と同じ予算 2500·D で測る。** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j42`）。90 分に収まらなければ規則どおり完走した関数までを記録し、残りを書き戻す。
     **背景**: BBOB の標準は 2〜40 次元で、論文は 20D を併記するのが普通。CEC の上位手法は 30〜100D を主戦場にしているので、低次元だけの比較は CMA-ES 系に有利な可能性がある。
     **集計**: 【公式予算 1/3】と同じ。**記録**: `analysis/single/j42/`。
-5. **【20 次元 2/2】20D を公式予算 10000·D で、手法を 5 つに絞って測る。** `./run.sh quick --all --funcs FUNCS --dim 20 --max-evals 200000 --n-runs 20 --methods "MC-ESO,v2_scan2d,ELSHADE-SPACMA,LSHADE-SPACMA,IPOP-CMA-ES"` を 3 組に分けて回す（label `j43a` / `j43b` / `j43c`）。FUNCS は (a) `F01-Sphere,F02-EllipsoidalSep,F03-RastriginSep,F04-BucheRastrigin,F05-LinearSlope,F06-AttractiveSector,F07-StepEllipsoidal,F08-Rosenbrock`、(b) `F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar,F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass`、(c) `F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`。1 回の起動で終わる分だけ回し、残りの組は書き戻す。
+5. **【20 次元 2/2】20D を公式予算 10000·D で、手法を 4 つに絞って測る。** `./run.sh quick --all --funcs FUNCS --dim 20 --max-evals 200000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,IPOP-CMA-ES"` を 3 組に分けて回す（label `j43a` / `j43b` / `j43c`）。FUNCS は (a) `F01-Sphere,F02-EllipsoidalSep,F03-RastriginSep,F04-BucheRastrigin,F05-LinearSlope,F06-AttractiveSector,F07-StepEllipsoidal,F08-Rosenbrock`、(b) `F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar,F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass`、(c) `F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`。1 回の起動で終わる分だけ回し、残りの組は書き戻す。
     **集計**: 24 関数がそろったら【公式予算 1/3】と同じ集計。**記録**: `analysis/single/j43/`。
 6. **CEC2022（10D、hold-out）を公式予算 200000 評価で測る**（25000 評価の分は 2026-10-12 に測り終えた。`analysis/single/j35/` と作業ログ）。
-   `./run.sh quick --suite cec2022 --all --n-runs 20 --max-evals 200000 --funcs <完全名> --methods "MC-ESO,v2_scan2d,EA4eig,LSHADE-SPACMA,L-SHADE,L-SRTDE,EBOwithCMAR,jSO"` を **1 関数ずつ 12 回**（G01-Zakharov / G02-Rosenbrock / G03-SchafferF7 / G04-Rastrigin / G05-Levy / G06-Hybrid1 / G07-Hybrid2 / G08-Hybrid3 / G09-Composition1 / G10-Composition2 / G11-Composition3 / G12-Composition4。label `j35b<関数番号>`）。1 回の起動で終わる分だけ回し、残りの関数を書き戻す。
+   `./run.sh quick --suite cec2022 --all --n-runs 20 --max-evals 200000 --funcs <完全名> --methods "MC-ESO,EA4eig,LSHADE-SPACMA,L-SHADE,L-SRTDE,EBOwithCMAR,jSO"` を **1 関数ずつ 12 回**（G01-Zakharov / G02-Rosenbrock / G03-SchafferF7 / G04-Rastrigin / G05-Levy / G06-Hybrid1 / G07-Hybrid2 / G08-Hybrid3 / G09-Composition1 / G10-Composition2 / G11-Composition3 / G12-Composition4。label `j35b<関数番号>`）。1 回の起動で終わる分だけ回し、残りの関数を書き戻す。
    **目安**: 25000 評価では 12 関数 × 15 手法 × 20 run が `--jobs 4` で 57 分だった（2026-10-12）。手法を 8 つ（MC-ESO・最新の候補・25000 評価の CEC 順位の上位 6 手法）に絞ったので、1 関数あたりおよそ 20 分、**1 回の起動で 4 関数前後**。2026-10-13 に一般化の検証より後ろへ回した（対話セッション）。
    **背景**: 正準環境の 25000 評価では SR@1e-10 が MC-ESO 31.2%（15 手法中 1 位）、`v2_hlC` 30.8%（2 位）、L-SRTDE 30.4%。一方 CEC 流の平均誤差の順位では MC-ESO 9 位 / `v2_hlC` 11 位（ハイブリッド G06〜G08 と合成 G09・G10・G12 で DE 系に負ける）。公式予算で順位が入れ替わるかを確かめる。CEC2022 用にハイパーパラメータは調整しない（[experiments.md](experiments.md)）。
-   **集計**: 標準の集計に加え、CEC の慣例どおり **平均誤差による関数ごとの順位の平均**（誤差 1e-8 未満は 0 とみなす）を 8 手法について書く。関数別に `v2_scan2d` / MC-ESO / 最良の比較手法の SR@1e-7 と中央値誤差を並べる。25000 評価の値（`analysis/single/j35/`）と並べる。
+   **集計**: 標準の集計に加え、CEC の慣例どおり **平均誤差による関数ごとの順位の平均**（誤差 1e-8 未満は 0 とみなす）を 7 手法について書く。関数別に MC-ESO / 最良の比較手法の SR@1e-7 と中央値誤差を並べる。25000 評価の値（`analysis/single/j35/`）と並べる。
    **記録**: `analysis/single/j35/`（予算ごとに別ファイル。25000 評価は `*_e25k.*`）。
 
 ## 規則
