@@ -30,7 +30,7 @@ GROUPS = [
     ("歩幅 σ", lambda n: n.startswith(("sigma", "precision_", "hd_sigma")) or n == "log_slope_threshold"),
     ("スピルオーバーと再着火", lambda n: n.startswith(("restart_", "basin_", "ir_"))),
     ("組換え波（3 次元以上）", lambda n: n.startswith(("wave_", "hd_wave"))),
-    ("再集合の掃引（実験中）", lambda n: n.startswith("reassort_")),
+    ("再集合の掃引", lambda n: n.startswith("reassort_")),
     ("系統と逐次 niching", lambda n: n.startswith(("n_elite", "niche_", "exhausted_", "hunt_", "solution_"))),
 ]
 STATUS = [("不採用", "rejected"), ("診断用", "diagnostic"), ("実験中", "experimental")]

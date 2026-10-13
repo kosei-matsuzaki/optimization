@@ -159,7 +159,7 @@ web/
 | GET | `/api/stats/<run_id>/<dim>/<func>` | per-run 詳細統計 CSV |
 | GET | `/api/curves/<run_id>/<dim>/<func>` | 収束の中央値・四分位（`curves/{Func}.json.gz`） |
 | GET | `/api/mceso-runs/<run_id>/<dim>` | MC-ESO の全 run の要約（`mceso_runs.csv`） |
-| GET | `/api/replay/<run_id>/<dim>/<func>/<method>/<seed>` | その run を再実行して全評価点（float32 base64）、f − f*、最適解までの距離、経路、集団（最大 240 コマ）、MC-ESO の内部状態、記録との一致を返す（`app_lib/replay.py`）。手法名 `MC-ESO` は、run の作成日が既定値の変更（2026-10-08 / 10-12）より前なら当時の既定（`MC-ESO-v0` / `MC-ESO-v1`）で再実行する |
+| GET | `/api/replay/<run_id>/<dim>/<func>/<method>/<seed>` | その run を再実行して全評価点（float32 base64）、f − f*、最適解までの距離、経路、集団（最大 240 コマ）、MC-ESO の内部状態、記録との一致を返す（`app_lib/replay.py`）。手法名 `MC-ESO` は、既定値の変更より前の run なら当時の既定で再実行する: 作成日が 2026-10-08 より前は `MC-ESO-v0`、10-12 より前は `MC-ESO-v1`。2026-10-13 の変更はローカルとクラウドの時計がずれて同じ日に混ざるので、作成日でなく **run の commit が `ba8d455` を含むか**（`git merge-base --is-ancestor`）で決め、含まなければ `MC-ESO-v2`。commit が判定できない（記録が無い・`nogit`・この clone に無い commit）ときは作成日が 2026-10-13 より前なら `MC-ESO-v2`（`_DEFAULT_CHANGES` / `_COMMIT_CHANGES`）|
 | GET | `/api/landscape/<dim>/<func>?a=&b=` | 最適解を通る x_a–x_b 平面の f の格子（log10、120×120） |
 | GET | `/api/media-index/<run_id>/<dim>` | 可視化ファイルの索引 |
 | GET | `/api/result-data/<run_id>` | 次元・関数・summary・wilcoxon |
@@ -177,7 +177,7 @@ python scripts/web/methods_data.py results/<2D の run> results/<5D の run> res
 
 パラメータ一覧は、`docs/mceso.md` のパラメータ表（意味）と `MultiChannelEpidemicOptimizer.__init__`（既定値）から `python scripts/web/methods_params.py` で `web/static/methods_params.json` を作る。表とコードの引数がずれていると作成に失敗するので、引数を足したら表にも行を足す。
 
-本文の「読みどころ」（既存手法との比較、旧既定からの変化）も JSON から JS が組み立てるので、数値と文章がずれない。比較手法を足したら `methods.html` に解説カード（`id="m-<登録名>"`、`data-method="<登録名>"`）を、`methods.js` の `NODES` / `EDGES` に系譜を足す。
+本文の「読みどころ」（既存手法との比較、旧既定からの変化）も JSON から JS が組み立てるので、数値と文章がずれない。いま載っているのは 2026-10-12 の run で、その `MC-ESO` は 2026-10-12 の既定（現在の `MC-ESO-v2`）。「旧既定からの変化」が比べる相手は run にある `MC-ESO-v1` か `MC-ESO-v0`（`methods.js` の `notesFor()`。`MC-ESO-v2` は見ない）。比較手法を足したら `methods.html` に解説カード（`id="m-<登録名>"`、`data-method="<登録名>"`）を、`methods.js` の `NODES` / `EDGES` に系譜を足す。
 
 ## 開発メモ
 

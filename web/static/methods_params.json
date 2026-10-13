@@ -350,11 +350,11 @@
      "names": [
       "cc_spill_freeze_gens"
      ],
-     "doc_default": "50",
+     "doc_default": "<b>0</b>（2026-10-13、2026-10-08〜12 は 50、それ以前は 0）",
      "code_default": [
-      "50"
+      "0"
      ],
-     "meaning": "<b>スピルオーバー後の学習 C の凍結（2026-10-08 から既定、旧 0）</b>。通常のスピルオーバーの後この世代数は学習 C を更新しない。一様に撒き直した直後の子の変位は basin の形を持たず、学習 C を丸める（F12 10D で cond が 1e2〜1e4 に留まり、スピルオーバーを止めると 1e6 まで育つ）。スピルオーバーの間隔（10D で約 75 世代）より長いと学習が止まる（150 は逆効果）。dim2 では無関係",
+     "meaning": "<b>スピルオーバー後の学習 C の凍結</b>。既定では凍結しない（2026-10-12 の既定の ablation でほぼ中立だったため外した）。&gt; 0 なら通常のスピルオーバーの後この世代数は学習 C を更新しない。一様に撒き直した直後の子の変位は basin の形を持たず、学習 C を丸める（F12 10D で cond が 1e2〜1e4 に留まり、スピルオーバーを止めると 1e6 まで育つ）。スピルオーバーの間隔（10D で約 75 世代）より長いと学習が止まる（150 は逆効果）。dim2 では無関係",
      "status": ""
     },
     {
@@ -593,12 +593,12 @@
      "names": [
       "ir_archive_frac_hd"
      ],
-     "doc_default": "None",
+     "doc_default": "<b>0.0</b>（2026-10-13、旧 None）",
      "code_default": [
-      "None"
+      "0.0"
      ],
-     "meaning": "<b>実験中（2026-10-12、候補 <code>v2_ir3_noFrz</code> 以降で 0）</b>。3 次元以上での再着火の割合（段差）。None で全次元 <code>ir_archive_frac</code>。0 で 3 次元以上は再着火なし",
-     "status": "experimental"
+     "meaning": "3 次元以上での再着火の割合（段差）。既定の 0 で 3 次元以上は再着火なし（高次元では Gallagher を既知の峰に引き戻していた）。None で全次元 <code>ir_archive_frac</code>",
+     "status": ""
     }
    ]
   },
@@ -642,13 +642,13 @@
       "wave_handover_lambda",
       "wave_handover_restart"
      ],
-     "doc_default": "None / False",
+     "doc_default": "<b>−2.0</b>（2026-10-13、旧 None）/ False",
      "code_default": [
-      "None",
+      "-2.0",
       "False"
      ],
-     "meaning": "<b>実験中（候補 <code>v2_hlC</code> で −2）</b>。封じ込めの波の集団サイズ: None = 停滞時の波と同じ <code>hd_wave_lambda × D</code>、0 = CMA-ES 既定 4 + ⌊3 ln D⌋、負の −k = その k 倍、正 = その × D。後者は止まったら λ を倍にして再起動（不採用）",
-     "status": "experimental"
+     "meaning": "封じ込めの波の集団サイズ。既定の −2 で CMA-ES 既定の 2 倍（5D 16、10D 20）。None = 停滞時の波と同じ <code>hd_wave_lambda × D</code>、0 = CMA-ES 既定 4 + ⌊3 ln D⌋、負の −k = その k 倍、正 = その × D。後者は止まったら λ を倍にして再起動（不採用）",
+     "status": ""
     },
     {
      "names": [
@@ -666,32 +666,32 @@
    ]
   },
   {
-   "label": "再集合の掃引（実験中）",
+   "label": "再集合の掃引",
    "rows": [
     {
      "names": [
       "reassort_sweep",
       "reassort_budget_frac"
      ],
-     "doc_default": "False / 0.1",
+     "doc_default": "<b>True</b>（2026-10-13、旧 False）/ 0.1",
      "code_default": [
-      "False",
+      "True",
       "0.1"
      ],
-     "meaning": "<b>実験中（候補 <code>v2_rsT2s</code> / <code>v2_hlC</code> で ON）</b>。再集合の掃引: 失敗したスピルオーバーの後、最良点の 1 座標を提供元の座標と交換し、最良の改善を採って繰り返す（予算の後者まで）",
-     "status": "experimental"
+     "meaning": "再集合の掃引: 失敗したスピルオーバーの後（悪条件でも掘り切り後でもないとき）、撒き直しの代わりに最良点の 1 座標を提供元の座標と交換し、最良の改善を採って繰り返す（予算の後者まで）。改善が無ければその run では以後掃引しない",
+     "status": ""
     },
     {
      "names": [
       "reassort_additivity",
       "reassort_pairs"
      ],
-     "doc_default": "None / 1",
+     "doc_default": "<b>0.02</b>（2026-10-13、旧 None）/ 1",
      "code_default": [
-      "None",
+      "0.02",
       "1"
      ],
-     "meaning": "掃引の加法性の検査: 最良の座標と次点の座標の交換を同時に試し、効果の差が前者 ×（単独の効果の和）を超えたら以後の掃引を止める。候補は 0.02 / 1。後者は検査する組の数",
+     "meaning": "掃引の加法性の検査: 最初の 1 周のあと、最良の座標と次点の座標の交換を同時に試し、効果の差が前者 ×（単独の効果の絶対値の和）を超えたら変数分離でないと判定して以後の掃引を止める。None で検査なし。後者は検査する組の数",
      "status": ""
     },
     {
@@ -699,12 +699,12 @@
       "reassort_donors",
       "reassort_top_hosts"
      ],
-     "doc_default": "<code>\"all\"</code> / 10",
+     "doc_default": "<b><code>\"top2\"</code></b>（2026-10-13、旧 <code>\"all\"</code>）/ 10",
      "code_default": [
-      "'all'",
+      "'top2'",
       "10"
      ],
-     "meaning": "掃引の提供元。<code>all</code> = 記憶 ＋ 全宿主、<code>memory</code> = 記憶だけ、<code>top</code> = 記憶 ＋ 上位の宿主、<code>top2</code> = 記憶の上位 ＋ 上位の宿主（候補）。後者がその「上位」の数",
+     "meaning": "掃引の提供元。<code>top2</code> = 解アーカイブの上位 ＋ 系統リザーバ ＋ 上位の宿主、<code>all</code> = 記憶 ＋ 全宿主、<code>memory</code> = 記憶だけ、<code>top</code> = 記憶 ＋ 上位の宿主。後者がその「上位」の数。<code>all</code> は 10D で掃引 1 回に約 850 評価かかった",
      "status": ""
     },
     {
@@ -717,19 +717,19 @@
       "2",
       "False"
      ],
-     "meaning": "掃引する最小次元（候補は 3）／加法性が無いと判定したとき掃引の結果を捨てる（不採用）",
+     "meaning": "掃引する最小次元（既定の 2 で全次元。3 は候補 <code>v2_rsT2s</code> / <code>v2_hlC</code> の値）／加法性が無いと判定したとき掃引の結果を捨てる（不採用）",
      "status": ""
     },
     {
      "names": [
       "reassort_scan"
      ],
-     "doc_default": "None",
+     "doc_default": "<b>200</b>（2026-10-13、旧 None）",
      "code_default": [
-      "None"
+      "200"
      ],
-     "meaning": "<b>実験中（候補 <code>v2_scan2d</code> で 200）</b>。加法性の検査が変数分離と判定したとき、座標ごとの 1 次元走査（この数の格子点 ＋ 最良の格子のまわりの 3 分探索、最大 2 周、掃引とは別予算）で各座標の大域最適を求める",
-     "status": "experimental"
+     "meaning": "変数分離の分解。加法性の検査が変数分離と判定したとき、座標ごとの 1 次元走査（この数の格子点 ＋ 最良の格子のまわりの 3 分探索、最大 2 周、掃引とは別予算）で各座標の大域最適を求める",
+     "status": ""
     }
    ]
   },
