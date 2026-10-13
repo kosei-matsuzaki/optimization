@@ -1,0 +1,194 @@
+==============================================================================
+j40 / j40d5  BBOB-24 dim=5  n_runs=20  max_evals=50000 (CEC official 10000*D)  instance 1
+run: 20261013_003317_j40d5_quick   functions: 24   methods: 6
+reference (12500 evals): 20261012_020743_allmethods2_d5_quick
+==============================================================================
+
+[A] SR@1e-10 RANK, 6 methods, 50000 evals vs the 12500-eval reference run
+    (the reference run was measured on Windows local -- NOT the canonical env --
+     and its "MC-ESO" is the pre-2026-10-13 default (v1_w4q3E), not this run's default.)
+
+  method           SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2   evals_own   nf   | ref SR@1e-10  delta
+  ------------------------------------------------------------------------------------------------
+  ELSHADE-SPACMA     83.75    83.96    83.96    84.38    12305.8   23   |    74.58     +9.17
+  EBOwithCMAR        82.71    83.75    85.00    86.46    16329.8   22   |    63.75    +18.96
+  MC-ESO             81.67    82.92    83.54    83.54     8619.3   23   |    67.92    +13.75
+  L-SHADE            81.46    81.67    82.71    83.54    16263.5   22   |    60.00    +21.46
+  LSHADE-SPACMA      74.38    74.38    74.38    75.42     9071.7   22   |    72.50     +1.88
+  IPOP-CMA-ES        68.96    75.00    75.42    75.83     8577.8   22   |    56.88    +12.08
+
+[A2] CROSS-REFERENCE: canonical-environment 12500-eval values for the SAME config
+   The job-named reference run above is Windows-local and its "MC-ESO" row is the
+   pre-2026-10-13 default, so its delta mixes budget + default change + environment.
+   analysis/single/j36/summary_dim5.csv (canonical env, 12500 evals, instance 1) holds
+   the current default under its arm name v2_scan2d:
+     v2_scan2d (= this run's MC-ESO)  SR@1e-10 78.33  evals_own 3926.5  nf 22   @12500 evals
+     MC-ESO (pre-10-13 default)       SR@1e-10 68.12  evals_own 4143.7  nf 22   @12500 evals
+     v2_hlC                           SR@1e-10 73.54  evals_own 4047.8  nf 21   @12500 evals
+   => same config, same environment, budget 12500 -> 50000: 78.33 -> 81.67 (+3.34pt),
+      evals_own 3926.5 -> 8619.3.
+
+[B] evals_succ_mean, paired: averaged ONLY over functions where BOTH have successes
+  baseline          nf   MC-ESO   baseline   (own-set means in [A])
+  ------------------------------------------------------------
+  ELSHADE-SPACMA     23    8619.3    12305.8
+  LSHADE-SPACMA      22    8485.3     9071.7
+  EBOwithCMAR        22    7418.7    16329.8
+  IPOP-CMA-ES        22    8785.7     8577.8
+  L-SHADE            22    7418.7    16263.5
+
+[C] PER-FUNCTION BEST METHOD on SR@1e-10 (ties listed; tie-break shown by evals)
+  function                 best SR@1e-10  method(s)
+  ----------------------------------------------------------------------
+  F01-Sphere                 100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F02-EllipsoidalSep         100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F03-RastriginSep           100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, L-SHADE
+  F04-BucheRastrigin         100.0%     MC-ESO, L-SHADE
+  F05-LinearSlope            100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F06-AttractiveSector       100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F07-StepEllipsoidal        100.0%     MC-ESO, ELSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F08-Rosenbrock             100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F09-RosenbrockRot          100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F10-EllipsoidalRot         100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F11-Discus                 100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F12-BentCigar              100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F13-SharpRidge             100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, L-SHADE
+  F14-DiffPowers             100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F15-RastriginRot            95.0%     EBOwithCMAR
+  F16-Weierstrass             90.0%     IPOP-CMA-ES
+  F17-SchafferF7             100.0%     ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F18-SchafferF7ill          100.0%     ELSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+  F19-GriewankRosenbrock       5.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, IPOP-CMA-ES
+  F20-Schwefel               100.0%     EBOwithCMAR, L-SHADE
+  F21-Gallagher101           100.0%     MC-ESO
+  F22-Gallagher21            100.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR
+  F23-Katsuura                60.0%     MC-ESO
+  F24-LunacekRastrigin         0.0%     MC-ESO, ELSHADE-SPACMA, LSHADE-SPACMA, EBOwithCMAR, IPOP-CMA-ES, L-SHADE
+
+[D] PER-FUNCTION SR@1e-10: this run (50000 evals) vs reference (12500 evals), all 24 functions
+  function                        MC-ESO  ELSHADE-SPACM  LSHADE-SPACMA    EBOwithCMAR    IPOP-CMA-ES        L-SHADE
+  ------------------------------------------------------------------------------------------------------------
+  F01-Sphere                     100>100        100>100        100>100        100>100        100>100        100>100
+  F02-EllipsoidalSep             100>100        100>100        100>100        100>100        100>100        100>100
+  F03-RastriginSep                20>100        100>100         95>100        100>100          5> 15        100>100
+  F04-BucheRastrigin               0>100         90> 95         30>  5        100> 95          0>  0        100>100
+  F05-LinearSlope                100>100        100>100        100>100        100>100        100>100        100>100
+  F06-AttractiveSector           100>100        100>100        100>100        100>100        100>100        100>100
+  F07-StepEllipsoidal            100>100        100>100        100> 90        100>100        100>100        100>100
+  F08-Rosenbrock                  90>100        100>100        100>100        100>100        100>100        100>100
+  F09-RosenbrockRot              100>100        100>100        100>100        100>100        100>100        100>100
+  F10-EllipsoidalRot             100>100        100>100        100>100        100>100        100>100        100>100
+  F11-Discus                     100>100        100>100        100>100        100>100        100>100        100>100
+  F12-BentCigar                  100>100         70>100        100>100          0>100        100>100          5>100
+  F13-SharpRidge                 100>100        100>100        100>100          0>100         10> 10         35>100
+  F14-DiffPowers                 100>100        100>100        100>100        100>100        100>100        100>100
+  F15-RastriginRot                30>  5         50> 65         35> 75         60> 95          5> 50          0> 30
+  F16-Weierstrass                 75> 80          0> 65          0>  0          0>  0         55> 90          0>  5
+  F17-SchafferF7                  90> 95         95>100        100>100          0>100         75>100          0>100
+  F18-SchafferF7ill               75> 95         85>100         80> 95          0>100         50>100          0>100
+  F19-GriewankRosenbrock           5>  5          0>  5          5>  5          0>  0          0>  5          0>  0
+  F20-Schwefel                     5> 20         80> 95         70> 65         90>100          5> 70         30>100
+  F21-Gallagher101                40>100         25> 60         30>  5         80> 70         10> 45         85> 95
+  F22-Gallagher21                 70>100         95>100         95>100        100>100         50> 70         85> 85
+  F23-Katsuura                    30> 60          0> 25          0> 45          0> 25          0>  0          0> 40
+  F24-LunacekRastrigin             0>  0          0>  0          0>  0          0>  0          0>  0          0>  0
+  (format: 12500-eval value > 50000-eval value, in SR@1e-10 %)
+
+[E] functions whose SR@1e-10 CHANGED from the 12500-eval reference, per method
+  MC-ESO (ref row = pre-10-13 default): 11 changed
+      F03-RastriginSep 20->100 (+80)
+      F04-BucheRastrigin 0->100 (+100)
+      F08-Rosenbrock 90->100 (+10)
+      F15-RastriginRot 30->5 (-25)
+      F16-Weierstrass 75->80 (+5)
+      F17-SchafferF7 90->95 (+5)
+      F18-SchafferF7ill 75->95 (+20)
+      F20-Schwefel 5->20 (+15)
+      F21-Gallagher101 40->100 (+60)
+      F22-Gallagher21 70->100 (+30)
+      F23-Katsuura 30->60 (+30)
+  ELSHADE-SPACMA: 11 changed
+      F04-BucheRastrigin 90->95 (+5)
+      F12-BentCigar 70->100 (+30)
+      F15-RastriginRot 50->65 (+15)
+      F16-Weierstrass 0->65 (+65)
+      F17-SchafferF7 95->100 (+5)
+      F18-SchafferF7ill 85->100 (+15)
+      F19-GriewankRosenbrock 0->5 (+5)
+      F20-Schwefel 80->95 (+15)
+      F21-Gallagher101 25->60 (+35)
+      F22-Gallagher21 95->100 (+5)
+      F23-Katsuura 0->25 (+25)
+  LSHADE-SPACMA: 9 changed
+      F03-RastriginSep 95->100 (+5)
+      F04-BucheRastrigin 30->5 (-25)
+      F07-StepEllipsoidal 100->90 (-10)
+      F15-RastriginRot 35->75 (+40)
+      F18-SchafferF7ill 80->95 (+15)
+      F20-Schwefel 70->65 (-5)
+      F21-Gallagher101 30->5 (-25)
+      F22-Gallagher21 95->100 (+5)
+      F23-Katsuura 0->45 (+45)
+  EBOwithCMAR: 9 changed
+      F04-BucheRastrigin 100->95 (-5)
+      F12-BentCigar 0->100 (+100)
+      F13-SharpRidge 0->100 (+100)
+      F15-RastriginRot 60->95 (+35)
+      F17-SchafferF7 0->100 (+100)
+      F18-SchafferF7ill 0->100 (+100)
+      F20-Schwefel 90->100 (+10)
+      F21-Gallagher101 80->70 (-10)
+      F23-Katsuura 0->25 (+25)
+  IPOP-CMA-ES: 9 changed
+      F03-RastriginSep 5->15 (+10)
+      F15-RastriginRot 5->50 (+45)
+      F16-Weierstrass 55->90 (+35)
+      F17-SchafferF7 75->100 (+25)
+      F18-SchafferF7ill 50->100 (+50)
+      F19-GriewankRosenbrock 0->5 (+5)
+      F20-Schwefel 5->70 (+65)
+      F21-Gallagher101 10->45 (+35)
+      F22-Gallagher21 50->70 (+20)
+  L-SHADE: 9 changed
+      F12-BentCigar 5->100 (+95)
+      F13-SharpRidge 35->100 (+65)
+      F15-RastriginRot 0->30 (+30)
+      F16-Weierstrass 0->5 (+5)
+      F17-SchafferF7 0->100 (+100)
+      F18-SchafferF7ill 0->100 (+100)
+      F20-Schwefel 30->100 (+70)
+      F21-Gallagher101 85->95 (+10)
+      F23-Katsuura 0->40 (+40)
+
+[E2] PER-FUNCTION SR@1e-10, canonical same-config 12500 -> 50000 evals
+     (analysis/single/j36/summary_dim5.csv arm v2_scan2d  ->  this run's MC-ESO)
+  10 of 24 functions changed
+      F08-Rosenbrock 95->100 (+5)
+      F09-RosenbrockRot 95->100 (+5)
+      F15-RastriginRot 10->5 (-5)
+      F16-Weierstrass 90->80 (-10)
+      F17-SchafferF7 100->95 (-5)
+      F18-SchafferF7ill 65->95 (+30)
+      F19-GriewankRosenbrock 0->5 (+5)
+      F20-Schwefel 5->20 (+15)
+      F21-Gallagher101 75->100 (+25)
+      F23-Katsuura 45->60 (+15)
+
+[F] WILCOXON (ref=MC-ESO, p_two<0.05, direction by A12)
+  baseline          better(MC-ESO wins) / worse(baseline wins)
+  ------------------------------------------------------------
+  ELSHADE-SPACMA   3 / 6
+      better: F21-Gallagher101 A12=0.70, F23-Katsuura A12=0.74, F24-LunacekRastrigin A12=0.69
+      worse : F13-SharpRidge A12=0.00, F15-RastriginRot A12=0.08, F17-SchafferF7 A12=0.25, F18-SchafferF7ill A12=0.00, F19-GriewankRosenbrock A12=0.25, F20-Schwefel A12=0.11
+  LSHADE-SPACMA    5 / 6
+      better: F04-BucheRastrigin A12=0.97, F16-Weierstrass A12=0.91, F21-Gallagher101 A12=0.97, F23-Katsuura A12=0.56, F24-LunacekRastrigin A12=0.62
+      worse : F13-SharpRidge A12=0.03, F15-RastriginRot A12=0.11, F17-SchafferF7 A12=0.25, F18-SchafferF7ill A12=0.05, F19-GriewankRosenbrock A12=0.19, F20-Schwefel A12=0.22
+  EBOwithCMAR      2 / 5
+      better: F16-Weierstrass A12=0.88, F21-Gallagher101 A12=0.65
+      worse : F13-SharpRidge A12=0.10, F15-RastriginRot A12=0.05, F17-SchafferF7 A12=0.25, F18-SchafferF7ill A12=0.00, F20-Schwefel A12=0.10
+  IPOP-CMA-ES      10 / 2
+      better: F03-RastriginSep A12=0.93, F04-BucheRastrigin A12=1.00, F06-AttractiveSector A12=0.99, F13-SharpRidge A12=1.00, F14-DiffPowers A12=1.00, F17-SchafferF7 A12=0.95, F18-SchafferF7ill A12=0.95, F21-Gallagher101 A12=0.78, F22-Gallagher21 A12=0.65, F23-Katsuura A12=0.86
+      worse : F15-RastriginRot A12=0.21, F20-Schwefel A12=0.20
+  L-SHADE          3 / 5
+      better: F16-Weierstrass A12=0.87, F23-Katsuura A12=0.59, F24-LunacekRastrigin A12=0.81
+      worse : F13-SharpRidge A12=0.14, F15-RastriginRot A12=0.20, F17-SchafferF7 A12=0.25, F18-SchafferF7ill A12=0.00, F20-Schwefel A12=0.10
