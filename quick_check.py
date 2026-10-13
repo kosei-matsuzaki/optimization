@@ -25,6 +25,7 @@ from pathlib import Path
 from core.benchmarks import (
     BENCHMARKS_BY_NAME, BENCHMARKS_3D_BY_NAME,
     BENCHMARKS_5D_BY_NAME, BENCHMARKS_10D_BY_NAME, BENCHMARKS_20D_BY_NAME,
+    BENCHMARKS_15D_BY_NAME, BENCHMARKS_30D_BY_NAME,
     BENCHMARKS_CEC2022_10D_BY_NAME, BENCHMARKS_CEC2022_20D_BY_NAME, NICHING_BENCHMARKS_BY_NAME, NOISE_MODELS,
 )
 from core.optimizers import (
@@ -236,7 +237,9 @@ _DIM_REGISTRIES: dict[int, dict[str, object]] = {
     3:  BENCHMARKS_3D_BY_NAME,
     5:  BENCHMARKS_5D_BY_NAME,
     10: BENCHMARKS_10D_BY_NAME,
+    15: BENCHMARKS_15D_BY_NAME,
     20: BENCHMARKS_20D_BY_NAME,
+    30: BENCHMARKS_30D_BY_NAME,
 }
 
 # MC-ESO (Multi-Channel Epidemic Spread Optimizer): all core mechanisms
@@ -495,6 +498,15 @@ _OPTIMIZERS = {
     "v3_strBnh":      (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_max": 0.5, "strain_immigrate": False, "strain_stop_on_handover": True}),
     "v3_strN":        (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_immigrate": False}),
     "v3_strBnSW":     (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_max": 0.5, "strain_immigrate": False, "reassort_scan_retry": False, "wave_fail_gate": 5}),
+    "v3_strRec":      (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_max": 0.5, "strain_immigrate": False, "reassort_scan_retry": False, "wave_fail_gate": 5, "strain_credit": "record"}),
+    "v3_strG":        (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_max": 0.5, "strain_immigrate": False, "reassort_scan_retry": False, "wave_fail_gate": 5, "strain_dim_gate": True}),
+    "v3_strGR":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_max": 0.5, "strain_immigrate": False, "reassort_scan_retry": False, "wave_fail_gate": 5, "strain_dim_gate": True, "strain_credit": "record"}),
+    "v3_strGR9":      (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_max": 0.9, "strain_immigrate": False, "reassort_scan_retry": False, "wave_fail_gate": 5, "strain_dim_gate": True, "strain_credit": "record"}),
+    "v3_strGR9x":     (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_max": 0.9, "strain_immigrate": False, "reassort_scan_retry": False, "wave_fail_gate": 5, "strain_dim_gate": True, "strain_credit": "record", "strain_idle": "explore"}),
+    "v3_sx":          (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_max": 0.9, "strain_immigrate": False, "reassort_scan_retry": False, "strain_dim_gate": True, "strain_credit": "record", "strain_idle": "explore"}),
+    "v3_sx2":         (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.9, "strain_init": 0.0, "strain_immigrate": False, "reassort_scan_retry": False, "strain_dim_gate": True, "strain_credit": "record", "strain_idle": "explore"}),
+    "v3_sg20":        (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_max": 0.5, "strain_immigrate": False, "reassort_scan_retry": False, "wave_fail_gate": 5, "strain_dim_gate": True, "strain_dim_ref": 20}),
+    "v3_stage":       (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 5, "wave_fail_min_dim": 10, "strain_compete": True, "strain_max": 0.5, "strain_immigrate": False, "strain_min_dim": 20}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
     "v3_scan1wf8":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 8}),
@@ -1006,7 +1018,7 @@ if __name__ == "__main__":
                         help="Also run the 2D-only custom benchmarks (C01-C11) — opt-in for "
                              "multimodal / multi-optima focus. Ignored for dim != 2.")
     parser.add_argument("--dim",        type=int, default=2, choices=sorted(_DIM_REGISTRIES),
-                        help="BBOB problem dimension (default 2; one of 2/3/5/10/20). "
+                        help="BBOB problem dimension (default 2; one of 2/3/5/10/15/20/30). "
                              "Custom C01-C11 are 2D-only and skipped for higher dims. "
                              "For the CEC2022 hold-out use --suite cec2022 (forces dim=10).")
     parser.add_argument("--suite",      type=str, default="bbob",
