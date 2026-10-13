@@ -1,0 +1,99 @@
+j45d10b  BBOB dim10 F07-F12 (6/24 funcs)  n=20  max_evals=25000  instances 1-5  18 methods
+
+=== [1] full 18-method overall table (6-func mean, %, sorted by SR@1e-10) ===
+  method               1e-2   1e-4   1e-7  1e-10  evals(own)  nf
+  BIPOP-CMA-ES       100.00 100.00 100.00 100.00      6293.2   6
+  IPOP-CMA-ES        100.00 100.00 100.00 100.00      5847.0   6
+  AMALGAM-SO         100.00  99.17  99.17  98.33      8547.7   6
+  MC-ESO              98.33  98.33  98.33  98.33     10213.5   6  <- ref
+  MC-ESO-v2           98.33  98.33  97.50  97.50     10987.3   6
+  RCMAES              95.83  95.83  95.83  95.83      5015.7   6
+  LSHADE-SPACMA       97.50  95.83  86.67  85.83     13656.5   6
+  BIPOP-aCMA-ES       80.83  80.83  80.83  80.83      4547.6   5
+  L-SRTDE             91.67  80.83  77.50  72.50     13124.0   6
+  ELSHADE-SPACMA      99.17  88.33  79.17  57.50     17885.3   6
+  ARRDE               97.50  85.83  81.67  56.67     11170.8   6
+  jSO                 94.17  83.33  82.50  53.33     18538.0   6
+  EBOwithCMAR        100.00 100.00  93.33  52.50     18220.2   6
+  SPS-L-SHADE-EIG     51.67  50.00  50.00  48.33     21193.3   3
+  L-SHADE             98.33  86.67  80.83  45.00     19647.3   6
+  IMODE               80.83  80.83  40.83  30.00     22806.4   5
+  EA4eig              81.67  65.00  42.50  24.17     19178.0   6
+  NL-SHADE-RSP        19.17  13.33   9.17   5.83     22662.0   2
+
+=== [2] paired evals_succ_mean (both-success functions only) ===
+  vs method           nf    MC-ESO      base  faster
+  BIPOP-aCMA-ES        5   10832.6    4547.6  base
+  RCMAES               6   10213.5    5015.7  base
+  IPOP-CMA-ES          6   10213.5    5847.0  base
+  BIPOP-CMA-ES         6   10213.5    6293.2  base
+  AMALGAM-SO           6   10213.5    8547.7  base
+  MC-ESO-v2            6   10213.5   10987.3  MC-ESO
+  ARRDE                6   10213.5   11170.8  MC-ESO
+  L-SRTDE              6   10213.5   13124.0  MC-ESO
+  LSHADE-SPACMA        6   10213.5   13656.5  MC-ESO
+  ELSHADE-SPACMA       6   10213.5   17885.3  MC-ESO
+  EBOwithCMAR          6   10213.5   18220.2  MC-ESO
+  jSO                  6   10213.5   18538.0  MC-ESO
+  EA4eig               6   10213.5   19178.0  MC-ESO
+  L-SHADE              6   10213.5   19647.3  MC-ESO
+  SPS-L-SHADE-EIG      3    6977.0   21193.3  MC-ESO
+  NL-SHADE-RSP         2   10725.5   22662.0  MC-ESO
+  IMODE                5   10832.6   22806.4  MC-ESO
+
+=== [3] per-function SR@1e-10 (%), all 18 methods ===
+  method               F07   F08   F09   F10   F11   F12    mean
+  BIPOP-CMA-ES         100   100   100   100   100   100  100.00
+  IPOP-CMA-ES          100   100   100   100   100   100  100.00
+  AMALGAM-SO           100    95   100   100   100    95   98.33
+  MC-ESO                90   100   100   100   100   100   98.33 <- ref
+  MC-ESO-v2             95    95   100   100   100    95   97.50
+  RCMAES                75   100   100   100   100   100   95.83
+  LSHADE-SPACMA         90   100   100   100   100    25   85.83
+  BIPOP-aCMA-ES          0    95    90   100   100   100   80.83
+  L-SRTDE              100    65    60   100   100    10   72.50
+  ELSHADE-SPACMA       100    30    15   100   100     0   57.50
+  ARRDE                100   100    70    15    55     0   56.67
+  jSO                  100    65    20    40    95     0   53.33
+  EBOwithCMAR          100   100   100     0     0    15   52.50
+  SPS-L-SHADE-EIG      100     0     0    90   100     0   48.33
+  L-SHADE              100    45    10    30    85     0   45.00
+  IMODE                  0    90    90     0     0     0   30.00
+  EA4eig               100     0     0    20    25     0   24.17
+  NL-SHADE-RSP          30     5     0     0     0     0    5.83
+
+=== [4] Wilcoxon counts (ref=MC-ESO, p_two<0.05, direction by A12) ===
+  vs IMODE              wins  6 / loses  0
+       MC-ESO wins on : F07-StepEllipsoidal(A12=0.99,large), F08-Rosenbrock(A12=1.00,large), F09-RosenbrockRot(A12=1.00,large), F10-EllipsoidalRot(A12=1.00,large), F11-Discus(A12=1.00,large), F12-BentCigar(A12=1.00,large)
+  vs NL-SHADE-RSP       wins  6 / loses  0
+       MC-ESO wins on : F07-StepEllipsoidal(A12=0.78,large), F08-Rosenbrock(A12=1.00,large), F09-RosenbrockRot(A12=1.00,large), F10-EllipsoidalRot(A12=1.00,large), F11-Discus(A12=1.00,large), F12-BentCigar(A12=1.00,large)
+  vs ARRDE              wins  5 / loses  0
+       MC-ESO wins on : F08-Rosenbrock(A12=0.88,large), F09-RosenbrockRot(A12=1.00,large), F10-EllipsoidalRot(A12=1.00,large), F11-Discus(A12=1.00,large), F12-BentCigar(A12=1.00,large)
+  vs BIPOP-CMA-ES       wins  5 / loses  0
+       MC-ESO wins on : F08-Rosenbrock(A12=0.85,large), F09-RosenbrockRot(A12=0.97,large), F10-EllipsoidalRot(A12=0.82,large), F11-Discus(A12=0.82,large), F12-BentCigar(A12=0.95,large)
+  vs EA4eig             wins  5 / loses  0
+       MC-ESO wins on : F08-Rosenbrock(A12=1.00,large), F09-RosenbrockRot(A12=1.00,large), F10-EllipsoidalRot(A12=0.93,large), F11-Discus(A12=0.97,large), F12-BentCigar(A12=1.00,large)
+  vs EBOwithCMAR        wins  5 / loses  0
+       MC-ESO wins on : F08-Rosenbrock(A12=1.00,large), F09-RosenbrockRot(A12=1.00,large), F10-EllipsoidalRot(A12=1.00,large), F11-Discus(A12=1.00,large), F12-BentCigar(A12=1.00,large)
+  vs ELSHADE-SPACMA     wins  5 / loses  0
+       MC-ESO wins on : F08-Rosenbrock(A12=1.00,large), F09-RosenbrockRot(A12=1.00,large), F10-EllipsoidalRot(A12=0.88,large), F11-Discus(A12=0.62,small), F12-BentCigar(A12=1.00,large)
+  vs IPOP-CMA-ES        wins  5 / loses  0
+       MC-ESO wins on : F08-Rosenbrock(A12=0.85,large), F09-RosenbrockRot(A12=1.00,large), F10-EllipsoidalRot(A12=0.95,large), F11-Discus(A12=0.85,large), F12-BentCigar(A12=0.96,large)
+  vs L-SHADE            wins  5 / loses  0
+       MC-ESO wins on : F08-Rosenbrock(A12=1.00,large), F09-RosenbrockRot(A12=1.00,large), F10-EllipsoidalRot(A12=1.00,large), F11-Discus(A12=1.00,large), F12-BentCigar(A12=1.00,large)
+  vs L-SRTDE            wins  5 / loses  0
+       MC-ESO wins on : F08-Rosenbrock(A12=1.00,large), F09-RosenbrockRot(A12=1.00,large), F10-EllipsoidalRot(A12=0.93,large), F11-Discus(A12=0.90,large), F12-BentCigar(A12=0.97,large)
+  vs SPS-L-SHADE-EIG    wins  5 / loses  0
+       MC-ESO wins on : F08-Rosenbrock(A12=1.00,large), F09-RosenbrockRot(A12=1.00,large), F10-EllipsoidalRot(A12=1.00,large), F11-Discus(A12=0.95,large), F12-BentCigar(A12=1.00,large)
+  vs jSO                wins  5 / loses  0
+       MC-ESO wins on : F08-Rosenbrock(A12=1.00,large), F09-RosenbrockRot(A12=1.00,large), F10-EllipsoidalRot(A12=1.00,large), F11-Discus(A12=1.00,large), F12-BentCigar(A12=1.00,large)
+  vs AMALGAM-SO         wins  2 / loses  0
+       MC-ESO wins on : F11-Discus(A12=0.62,small), F12-BentCigar(A12=0.85,large)
+  vs LSHADE-SPACMA      wins  2 / loses  0
+       MC-ESO wins on : F09-RosenbrockRot(A12=0.68,medium), F12-BentCigar(A12=0.94,large)
+  vs BIPOP-aCMA-ES      wins  1 / loses  0
+       MC-ESO wins on : F07-StepEllipsoidal(A12=0.98,large)
+  vs MC-ESO-v2          wins  1 / loses  0
+       MC-ESO wins on : F12-BentCigar(A12=0.71,medium)
+  vs RCMAES             wins  0 / loses  0
+  TOTAL over 17 baselines: wins 68 / loses 0
