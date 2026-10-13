@@ -340,7 +340,7 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `hd_wave_lambda` / `wave_sigma_ratio` / `wave_budget_frac` / `wave_quality` | **4** / 0.01 / 0.25 / **1e-3**（2026-10-12）| 停滞時の組換え波（3 次元以上）。λ = この値 × D、σ0 = 2 番目 × span、予算の上限、best ≤ 4 番目 × \|f_init\| のときだけ打つ。None で波なし |
 | `wave_use_C` / `wave_ill_handover` / `wave_handover_drill` | **True** / **True** / **False**（2026-10-12）| 学習共分散が悪条件なら波をそれで白色化する／悪条件になった時点で残り予算を波に渡す（封じ込め）／True なら σ が drilling に入るまで待つ |
 | `wave_handover_lambda` / `wave_handover_restart` | **−2.0**（2026-10-13、旧 None）/ False | 封じ込めの波の集団サイズ。既定の −2 で CMA-ES 既定の 2 倍（5D 16、10D 20）。None = 停滞時の波と同じ `hd_wave_lambda × D`、0 = CMA-ES 既定 4 + ⌊3 ln D⌋、負の −k = その k 倍、正 = その × D。後者は止まったら λ を倍にして再起動（不採用）|
-| `wave_min_dim` / `wave_follow` | 3 / False | 組換え波（停滞時・封じ込め）を使う最小次元（2 で 2D でも停滞時の波）／**実験中（候補 `v2_follow`）**: 停滞時の波が予算の割り当てを使い切った時点で流行の最良をまだ上回っていれば、残り予算でそのまま続ける（run に 1 回、封じ込めは別に残る）|
+| `wave_min_dim` / `wave_follow` | 3 / False | **実験中（`wave_follow`、候補 `v2_follow`）**。組換え波（停滞時・封じ込め）を使う最小次元（2 で 2D でも停滞時の波）／停滞時の波が予算の割り当てを使い切った時点で流行の最良をまだ上回っていれば、残り予算でそのまま続ける（run に 1 回、封じ込めは別に残る）|
 | `router_learned_cond` | 3.0 | 学習共分散の「悪条件」の閾値（log10 条件数）。これに達するとラッチが立ち（run 中は戻らない）、σ 下限（`sigma_floor_ill_ratio`）と封じ込め（`wave_ill_handover`）がそれを読む |
 
 ---

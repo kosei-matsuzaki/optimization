@@ -147,7 +147,7 @@ function notesFor(run, order, ref) {
   s += '</p>';
 
   // Compare with the most recent earlier default present in the run.
-  const v0 = [`${ref}-v1`, `${ref}-v0`].find(m => o[m]);
+  const v0 = [`${ref}-v2`, `${ref}-v1`, `${ref}-v0`].find(m => o[m]);
   if (v0) {
     const diff = (refSr - o[v0]['sr_1e-10']) * 100;
     const up = [], down = [];
