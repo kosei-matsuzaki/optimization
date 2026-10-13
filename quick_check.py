@@ -481,6 +481,8 @@ _OPTIMIZERS = {
     "v3_scan1":       (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False}),
     "v3_scan1wf5":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 5}),
     "v3_wf5b10":      (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 5, "wave_fail_budget_frac": 0.10}),
+    "v3_wl2":         (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": -2.0}),
+    "v3_wl2wf":       (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": -2.0, "reassort_scan_retry": False, "wave_fail_gate": 5, "wave_fail_budget_frac": 0.10}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
     "v3_scan1wf8":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 8}),
     "v2_ir3_noFrz":   (MultiChannelEpidemicOptimizer, {"ir_archive_frac_hd": 0.0, "cc_spill_freeze_gens": 0}),

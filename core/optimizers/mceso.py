@@ -1720,7 +1720,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         frac = self.wave_budget_frac if budget_frac is None else budget_frac
         cap = min(int(frac * st.max_evals), st.max_evals - len(st.history_f))
         if lam_mult is None:
-            lam = max(4, int(round(self._wave_lambda * self.dim)))
+            # hd_wave_lambda > 0: λ = that × D; < 0: −k × the CMA-ES default
+            # 4 + ⌊3 ln D⌋ (as wave_handover_lambda). 2026-10-13: λ = 4·D = 80 at
+            # 20D leaves ~150 generations in the stall wave's 25% share and
+            # does not get through Rosenbrock's curved valley (F08 error 5-12).
+            lam = (max(4, int(round(self._wave_lambda * self.dim))) if self._wave_lambda > 0
+                   else int(round(-self._wave_lambda * (4 + int(3 * math.log(self.dim))))))
         elif lam_mult == 0:
             lam = 4 + int(3 * math.log(self.dim))
         elif lam_mult < 0:
