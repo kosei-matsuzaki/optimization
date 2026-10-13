@@ -684,6 +684,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # f - f* ~ 1e-2 (8-9 of 20, the worst mean error of the panel) re-seed
         # ~10 times in a row with the wave gated off.
         wave_fail_gate: "int | None" = None,
+        # Budget share of a wave released by wave_fail_gate (None = wave_budget_frac).
+        wave_fail_budget_frac: "float | None" = None,
+        # Allow the separable scan again at the next stall after a scan that did
+        # not improve the best (True = the 2026-10-13 default behaviour).
+        reassort_scan_retry: bool = True,
         ir_reignite_sigma_ratio: float = 0.05,
         ir_repel_radius_ratio: float = 0.1,
         ir_repel_max_tries: int = 20,
@@ -709,6 +714,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.wave_quality = wave_quality
         self.wave_follow = wave_follow
         self.wave_fail_gate = wave_fail_gate
+        self.wave_fail_budget_frac = wave_fail_budget_frac
+        self.reassort_scan_retry = reassort_scan_retry
         self.wave_use_C = wave_use_C
         self.wave_ill_handover = wave_ill_handover
         self.wave_handover_drill = wave_handover_drill
@@ -1187,7 +1194,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                          and st.consecutive_failed_spillovers >= self.wave_fail_gate))):
             st.wave_spent = True
             st.trace_events.append((len(st.history_f), "wave"))
-            self._recombination_wave(st, follow=self.wave_follow)
+            gated = not (self.wave_quality is None
+                         or st.best_so_far <= self.wave_quality * st.f_init_scale)
+            self._recombination_wave(
+                st, follow=self.wave_follow,
+                budget_frac=(self.wave_fail_budget_frac if gated else None))
             self._pad_eval_channel(st, _CH_LS)
             return not st.budget_left
         if (self.reassort_sweep and self.dim >= self.reassort_min_dim
@@ -1619,7 +1630,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     # cap cut it off after ~4 of 5 coordinates at 5D.
                     scan_start = len(st.history_f)
                     scan_cap = 2 * self.dim * (int(self.reassort_scan) + 61)
+                    f_before_scan = best_f
                     best_x, best_f = self._separable_scan(st, best_x, best_f, scan_start, scan_cap)
+                    if not self.reassort_scan_retry and not (
+                            best_f < f_before_scan and self._meaningful_improvement(
+                                best_f, math.log10(max(f_before_scan, 1e-300)),
+                                len(st.history_f) - scan_start)):
+                        # A scan that gained less than the stagnation slope: the
+                        # one-pair additivity test was a false positive (rotated
+                        # CEC2022 hybrids pass it at 2% and re-scan ~5200
+                        # evaluations at every stall for a 1e-3 gain).
+                        st.sweep_dead = True
                     if best_f < float(st.pop_f[bi]):
                         st.pop_x[bi], st.pop_f[bi], st.pop_age[bi] = best_x, best_f, 0
                     return

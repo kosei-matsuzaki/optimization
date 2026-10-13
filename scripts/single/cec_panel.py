@@ -30,12 +30,20 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dim", type=int, required=True)
-    ap.add_argument("--panel", type=Path, required=True)
+    ap.add_argument("--panel", type=Path, nargs="+", required=True,
+                    help="one or more runs; their methods are pooled (the base must agree)")
     ap.add_argument("--arms", type=Path, nargs="+", required=True)
     ap.add_argument("--base", default="MC-ESO")
     args = ap.parse_args()
 
-    panel = cec_mean_errors(args.panel / f"dim{args.dim}")
+    panel: dict[str, dict[str, float]] = {}
+    for d in args.panel:
+        for f, by_m in cec_mean_errors(d / f"dim{args.dim}").items():
+            for m, v in by_m.items():
+                old = panel.setdefault(f, {}).get(m)
+                if old is not None and old != v:
+                    raise SystemExit(f"{m} differs between panel runs on {f}")
+                panel[f][m] = v
     arms: dict[str, dict[str, float]] = {}
     for d in args.arms:
         for f, by_m in cec_mean_errors(d / f"dim{args.dim}").items():
