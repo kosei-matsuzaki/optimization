@@ -110,7 +110,7 @@
 
 ---
 
-6. **【手法解説ページの全手法比較 1/7】2D。** `./run.sh quick --all --n-runs 20 --max-evals 5000 --instances 1-5 --methods "MC-ESO,MC-ESO-v2,EBOwithCMAR,IMODE,NL-SHADE-RSP,EA4eig,L-SRTDE,ARRDE,L-SHADE,jSO,LSHADE-SPACMA,ELSHADE-SPACMA,SPS-L-SHADE-EIG,AMALGAM-SO,IPOP-CMA-ES,BIPOP-CMA-ES,BIPOP-aCMA-ES,RCMAES"`（label `j45d2`）。
+6. **【手法解説ページの全手法比較 1/7】2D。** `./run.sh quick --all --n-runs 20 --max-evals 5000 --instances 1-5 --methods "MC-ESO,MC-ESO-v2,EBOwithCMAR,IMODE,NL-SHADE-RSP,EA4eig,L-SRTDE,ARRDE,L-SHADE,jSO,LSHADE-SPACMA,ELSHADE-SPACMA,SPS-L-SHADE-EIG,AMALGAM-SO,IPOP-CMA-ES,BIPOP-CMA-ES,BIPOP-aCMA-ES,RCMAES"`（label `j45d2`）。(claimed 2026-10-13 13:31 UTC)
    **背景**: 手法解説ページ（`/methods`）の成績表とヒートマップは 2026-10-12 の既定（現 `MC-ESO-v2`）で測った run のまま。現在の既定（2026-10-13〜）・旧既定 `MC-ESO-v2` と標準の比較手法 16 個（[baselines.md](baselines.md) の「標準の比較手法の組」、2026-10-13 に絞った）を同じ run に並べて作り直す（ユーザー指示 2026-10-13）。2026-10-13 の方針に従い、run を instance 1〜5 に散らす（`--instances 1-5`、各 instance 4 run）。
    **集計**: 関数の組ごとの結果を連結して 24/24 を確かめ、標準の集計（[1] 全体表、[4] Wilcoxon、[5] CEC 式の順位）を 18 手法について書く。作業ログには全体表の上位 10 手法と MC-ESO 3 世代の行、CEC 式の順位の上位 10 と MC-ESO 3 世代だけを書けばよい（全表は記録先に）。
    **記録**: `analysis/single/j45/dim2/` に連結した `summary.csv`・`wilcoxon.csv` を置き、run ごとの `stats/` は **`dim2/stats.tar.gz` の 1 ファイルにまとめる**（ファイル数の上限のため）。`scripts/web/methods_data.py` がこの形をそのまま読む。
