@@ -110,7 +110,6 @@
 
 ---
 
-2. **【公式予算 3/3】10D の後半 12 関数。** 同じコマンドで `--funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`（label `j41b`）。【公式予算 2/3】の結果と連結して 24/24 を確かめ、【公式予算 1/3】と同じ集計をする。**記録**: `analysis/single/j41/`。 (claimed 2026-10-13 04:30 UTC)
 3. **【20 次元 1/2】20D を判定と同じ予算 2500·D で測る。** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j42`）。90 分に収まらなければ規則どおり完走した関数までを記録し、残りを書き戻す。
     **背景**: BBOB の標準は 2〜40 次元で、論文は 20D を併記するのが普通。CEC の上位手法は 30〜100D を主戦場にしているので、低次元だけの比較は CMA-ES 系に有利な可能性がある。
     **集計**: 【公式予算 1/3】と同じ。**記録**: `analysis/single/j42/`。
@@ -156,6 +155,16 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-13 【公式予算 3/3】10D の後半 12 関数を公式予算 100000 評価で（j41b、6 手法）＋ 24 関数の連結集計 — **24 関数そろうと MC-ESO の SR@1e-10 は 73.75% で 6 手法中 1 位（EBOwithCMAR と同率、小数以下も同値）。2500·D（25000 評価、j36 の `v2_scan2d`）の 66.04% から +7.71pt で、動いたのは 8 関数（F18 0→60、F17 30→85、F22 70→95、F16 5→25、F21 85→100、F23 0→10、F07 95→100、F09 100→95）。`evals_succ_mean` は対応平均で IPOP 以外のすべてに勝つ。CEC 式の平均誤差の順位は 24 関数で MC-ESO 3.73 の 6 位（首位 EBOwithCMAR 2.98）＝ SR で 1 位でも誤差の順位では最下位**（採否の判断はしない）
+
+- 実行: ジョブ記載のコマンドをそのまま 1 回（`--all --funcs F13〜F24 --dim 10 --max-evals 100000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`、label `j41b`、`--jobs 4`、shard 分割なし）。wall **38.4 分**（04:37:23→05:15:44）。j41a と連結して **24/24 そろった**（`summary.csv` 144 行＝6×24、`wilcoxon.csv` 120 行＝5×24、(関数, 手法) の重複・欠落ゼロ、`result.json` は `status=done`）。numpy 2.4.6 / cma 4.5.0、CPU **Intel Xeon @ 2.80GHz 4 コア（family 6 / model 85 / stepping 7、avx512f あり）**、BLAS は openblas / SkylakeX / num_threads=4（実行時は `OMP_NUM_THREADS=1`）。j41a と同じコンテナ仕様。
+- 全体（24 関数平均、SR@1e-2 / 1e-4 / 1e-7 / **1e-10** ％、`evals` ＝ 自分の成功関数の平均、nf ＝ 成功のある関数数）: **MC-ESO 75.00 / 74.58 / 74.17 / 73.75**（14438.9、20）、EBOwithCMAR 74.17 / 73.96 / 73.96 / **73.75**（41831.1、20）、ELSHADE-SPACMA 72.08 / 71.88 / 70.83 / **70.21**（33020.6、20）、L-SHADE 70.83 / 70.42 / 69.38 / **68.75**（36723.3、18）、LSHADE-SPACMA 65.21 / 65.00 / 64.79 / **64.79**（19271.9、18）、IPOP-CMA-ES 64.58 / 64.38 / 63.75 / **60.62**（12688.4、17）。
+- `evals_succ_mean`（両方で成功のある関数だけの対応平均。MC-ESO / 相手、nf）: 対 EBOwithCMAR 11712.3 / 37378.6（18）、対 ELSHADE-SPACMA 12352.5 / 29393.3（18）、対 L-SHADE 11377.7 / 33759.1（17）、対 LSHADE-SPACMA 11474.8 / 16765.6（16）、対 IPOP-CMA-ES 12683.9 / **9666.9**（16）。**IPOP だけが MC-ESO より速い**（j41a・j38〜j40 と同じ向き）。
+- 25000 評価（j36 `v2_scan2d`）→ 100000 評価で SR@1e-10 が動いた関数（24 関数すべてを突き合わせ、上記以外は不動）: F18-SchafferF7ill 0→60、F17-SchafferF7 30→85、F22-Gallagher21 70→95、F16-Weierstrass 5→25、F21-Gallagher101 85→100、F23-Katsuura 0→10、F07-StepEllipsoidal 95→100、F09-RosenbrockRot 100→95。24 関数平均 66.04→73.75（+7.71pt）。**4 倍の予算でも 0% のままなのは F15-RastriginRot・F19-GriewankRosenbrock・F20-Schwefel・F24-LunacekRastrigin の 4 関数**（うち F15 は EBOwithCMAR 65%、F20 は EBOwithCMAR 65% が取れている）。逆に MC-ESO だけが取れるのは F21 100%（次点 IPOP 45%）・F22 95%（次点 EBOwithCMAR 20%）・F23 10%（他は全 0%）。
+- Wilcoxon（ref = MC-ESO、p<0.05 両側、向きは A12。better / worse の関数数）: IPOP-CMA-ES 16 / 6、LSHADE-SPACMA 5 / 9、L-SHADE 4 / 9、EBOwithCMAR 4 / 9、ELSHADE-SPACMA 3 / 8。**MC-ESO が負け越すのは IPOP 以外の 4 手法すべて**。負けの集まる関数は F15・F17・F18・F19・F20（多峰・弱構造）、勝ちの集まる関数は F21・F22（Gallagher）。
+- CEC 式の平均誤差の順位（24 関数）: EBOwithCMAR 2.98（17/24 で最良）、ELSHADE-SPACMA 3.48（16/24）、IPOP-CMA-ES 3.54（15/24）、LSHADE-SPACMA 3.59（14/24）、L-SHADE 3.69（14/24）、**MC-ESO 3.73（16/24）＝ 6 位**。j41a の per-run stats はコンテナ消失で残っていないため、24 関数の平均順位は **前半 12 関数の平均順位（j41a の記録値、2 桁丸め）と後半 12 関数（今回算出: EBOwithCMAR 2.62 / IPOP 3.21 / LSHADE-SPACMA 3.46 / ELSHADE-SPACMA 3.54 / MC-ESO 4.00 / L-SHADE 4.17）の平均**として合成した（同じ 6 手法なので算術的に等価。丸めにより ±0.005 の誤差）。
+- 記録: `analysis/single/j41/`（`summary_d10_e100k_f01-24.csv`・`wilcoxon_d10_e100k_f01-24.csv`・`analyze_quick_d10_e100k_f01-24.txt`・`analyze_quick_d10_e100k_f13-24.txt`・`agg_j41_24f.py`）。`analysis` のファイル数 299。
 
 ### 2026-10-13 【公式予算 2/3】10D の前半 12 関数を公式予算 100000 評価で（j41a、6 手法） — **予算を 2500·D から 10000·D（4 倍）にすると、F01〜F12 では MC-ESO の SR@1e-10 は 99.58% で 6 手法中 2 位。首位は L-SHADE 100%、次が MC-ESO、ELSHADE-SPACMA と EBOwithCMAR が 99.17%。同じ構成・同じ正準環境の 25000 評価（j36 の `v2_scan2d`、12 関数平均 99.58）からは ±0.00pt で、動いたのは F07 95→100 と F09 100→95 の 2 関数だけ（前半 12 関数は 4 手法が天井に張りつくため、判定は 24 関数がそろう【公式予算 3/3】の後）。CEC 式の平均誤差の順位は MC-ESO 4 位（3.46、首位は L-SHADE 3.21）。`evals_succ_mean` は対応平均で IPOP 以外のすべてに勝つ**（採否の判断はしない）
 
