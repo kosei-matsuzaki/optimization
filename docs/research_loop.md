@@ -110,7 +110,7 @@
 
 ---
 
-3. **【20 次元 1/2】20D を判定と同じ予算 2500·D で測る。** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j42`）。90 分に収まらなければ規則どおり完走した関数までを記録し、残りを書き戻す。
+3. **【20 次元 1/2】20D を判定と同じ予算 2500·D で測る。** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,IPOP-CMA-ES,L-SHADE"`（label `j42`）。90 分に収まらなければ規則どおり完走した関数までを記録し、残りを書き戻す。 (claimed 2026-10-13 05:30 UTC)
     **背景**: BBOB の標準は 2〜40 次元で、論文は 20D を併記するのが普通。CEC の上位手法は 30〜100D を主戦場にしているので、低次元だけの比較は CMA-ES 系に有利な可能性がある。
     **集計**: 【公式予算 1/3】と同じ。**記録**: `analysis/single/j42/`。
 4. **【20 次元 2/2】20D を公式予算 10000·D で、手法を 4 つに絞って測る。** `./run.sh quick --all --funcs FUNCS --dim 20 --max-evals 200000 --n-runs 20 --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,IPOP-CMA-ES"` を 3 組に分けて回す（label `j43a` / `j43b` / `j43c`）。FUNCS は (a) `F01-Sphere,F02-EllipsoidalSep,F03-RastriginSep,F04-BucheRastrigin,F05-LinearSlope,F06-AttractiveSector,F07-StepEllipsoidal,F08-Rosenbrock`、(b) `F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar,F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass`、(c) `F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`。1 回の起動で終わる分だけ回し、残りの組は書き戻す。
