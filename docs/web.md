@@ -177,7 +177,7 @@ python scripts/web/methods_data.py results/<2D の run> results/<5D の run> res
 
 パラメータ一覧は、`docs/mceso.md` のパラメータ表（意味）と `MultiChannelEpidemicOptimizer.__init__`（既定値）から `python scripts/web/methods_params.py` で `web/static/methods_params.json` を作る。表とコードの引数がずれていると作成に失敗するので、引数を足したら表にも行を足す。
 
-本文の「読みどころ」（既存手法との比較、旧既定からの変化）も JSON から JS が組み立てるので、数値と文章がずれない。いま載っているのは 2026-10-12 の run で、その `MC-ESO` は 2026-10-12 の既定（現在の `MC-ESO-v2`）。「旧既定からの変化」が比べる相手は run にある `MC-ESO-v1` か `MC-ESO-v0`（`methods.js` の `notesFor()`。`MC-ESO-v2` は見ない）。比較手法を足したら `methods.html` に解説カード（`id="m-<登録名>"`、`data-method="<登録名>"`）を、`methods.js` の `NODES` / `EDGES` に系譜を足す。
+本文の「読みどころ」（既存手法との比較、旧既定からの変化）も JSON から JS が組み立てるので、数値と文章がずれない。いま載っているのは 2026-10-13 の標準の比較手法 16 ＋ MC-ESO 2 世代の run（`runs/20261013_200000_panel16_bbob_d{2,5,10}_quick`、34 手法の run と新しい 4 手法の run を `scripts/single/merge_runs.py` で結合）。成績表には CEC 式の順位の列がある（`methods_data.py` が run ごとの stats から `core.run_data` で計算）。「旧既定からの変化」が比べる相手は run にある `MC-ESO-v2` / `-v1` / `-v0` の最新（`methods.js` の `notesFor()`）。解説カードの役割は「標準比較」（標準の比較手法 16）と「参考」（登録のみ）。比較手法を足したら `methods.html` に解説カード（`id="m-<登録名>"`、`data-method="<登録名>"`）を、`methods.js` の `NODES` / `EDGES` に系譜を足す。
 
 ## 開発メモ
 

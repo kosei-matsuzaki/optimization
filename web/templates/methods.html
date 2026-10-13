@@ -337,8 +337,8 @@
     <section class="mt-section" id="baselines">
       <h2>比較手法の解説</h2>
       <p class="mt-p">
-        役割は 4 種類。<span class="role role-main">主比較</span>は従来から比較に並べてきた手法、
-        <span class="role role-cand">比較候補</span>は 2026-10-06 に実装したがまだ既定の比較には入れていない競技上位手法、
+        役割は 4 種類。<span class="role role-main">標準比較</span>は 2026-10-13 に決めた標準の比較手法 16 個（2026-10-13 の全手法比較で上位に入った手法、CEC の競技の優勝手法、最新の ARRDE・RCMAES・NL-SHADE-RSP・BIPOP-aCMA-ES。選び方は <code>docs/baselines.md</code>）、
+        <span class="role role-cand">参考</span>は実装・登録してあるが標準の比較からは外した手法（古い、または全手法比較で上位に入らなかった）、
         <span class="role role-mmo">多解比較</span>は一時停止中の多解探索で使う手法、
         <span class="role role-floor">基準線</span>は「これに勝てなければ凝った手法の意味が無い」という下限。
       </p>
@@ -349,22 +349,32 @@
         <p class="mt-fam-lead">ガウス分布から候補を引き、良かった候補の方向へ分布の平均・形・大きさを学習していく系統。悪条件や回転した関数に強く、高次元の単峰では今も基準になる。</p>
         <div class="mt-cards">
           <article class="mt-card" id="m-CMA-ES" data-method="CMA-ES">
-            <header><h4>CMA-ES</h4><span class="role role-main">主比較</span></header>
+            <header><h4>CMA-ES</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Hansen &amp; Ostermeier 2001</p>
             <p>探索分布の共分散行列を、成功した方向から少しずつ学習する（rank-1 / rank-μ 更新と歩幅の累積適応）。関数の形が回転・伸長していても、そのうち楕円の向きが合ってくる。このプロジェクトでは収束を検出したら最良点から細い σ で再開する。</p>
             <p class="mt-rel">MC-ESO の持続的な共分散は、この rank-μ 更新をそのまま移したもの。</p>
           </article>
           <article class="mt-card" id="m-IPOP-CMA-ES" data-method="IPOP-CMA-ES">
-            <header><h4>IPOP-CMA-ES</h4><span class="role role-main">主比較</span></header>
+            <header><h4>IPOP-CMA-ES</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Auger &amp; Hansen 2005</p>
             <p>CMA-ES が止まるたびに、集団サイズを 2 倍にして箱の中から再起動する。大きな集団は大域的な構造をならして見るので、多峰関数で効く。</p>
             <p class="mt-rel">スピルオーバーの比較相手。こちらは再起動のたびに過去を忘れる。</p>
           </article>
           <article class="mt-card" id="m-BIPOP-CMA-ES" data-method="BIPOP-CMA-ES">
-            <header><h4>BIPOP-CMA-ES</h4><span class="role role-main">主比較</span></header>
+            <header><h4>BIPOP-CMA-ES</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Hansen 2009</p>
             <p>大きな集団での再起動（IPOP と同じ）と、小さな集団・小さな歩幅での再起動を、使った予算が釣り合うように交互に行う。大域構造のある関数と、細かい谷が散らばった関数の両方を拾う。</p>
             <p class="mt-rel">「1 つの谷を掘る → 次へ」という逐次 niching の発想の元。</p>
+          </article>
+          <article class="mt-card" id="m-BIPOP-aCMA-ES" data-method="BIPOP-aCMA-ES">
+            <header><h4>BIPOP-aCMA-ES</h4><span class="role role-main">標準比較</span></header>
+            <p class="mt-origin">Loshchilov, Schoenauer &amp; Sebag 2012 / Loshchilov 2013</p>
+            <p>BIPOP-CMA-ES に「能動的な」共分散更新（悪かった候補の方向を共分散から差し引く）を足したもの。悪条件の谷で形を早く学ぶ。minionpy 1.9.1 の実装を使う（原典との突き合わせはまだ）。</p>
+          </article>
+          <article class="mt-card" id="m-RCMAES" data-method="RCMAES">
+            <header><h4>RCMAES</h4><span class="role role-main">標準比較</span></header>
+            <p class="mt-origin">2026（CEC 2026 向け、arXiv 2604.27138）</p>
+            <p>純粋な CMA-ES に、次元に応じた非線形の集団縮小と適応的な再起動を組み込んだ「頑健な」CMA-ES。CEC2017 / 2020 / 2022 で DE 系の上位手法と並ぶと報告。minionpy 1.9.1 の実装（論文の著者による）を使う。2D / 5D の一部の run で数値的に破綻する（座標が NaN になる）ので、破綻する前の最良値をその run の成績にしている。</p>
           </article>
           <article class="mt-card" id="m-Repel-CMA-ES" data-method="Repel-CMA-ES">
             <header><h4>Repel-CMA-ES</h4><span class="role role-mmo">多解比較</span></header>
@@ -373,18 +383,18 @@
             <p class="mt-rel">MC-ESO の「掘った谷を避けて撒き直す」に最も近い先行例。</p>
           </article>
           <article class="mt-card" id="m-PS-CMA-ES" data-method="PS-CMA-ES">
-            <header><h4>PS-CMA-ES</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>PS-CMA-ES</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Müller, Baumgartner &amp; Sbalzarini 2009</p>
             <p>複数の CMA-ES を同時に走らせ、一定世代ごとに PSO のように全体の最良点へ向けて各インスタンスの分布を回転・移動させる。多漏斗の地形向け。</p>
             <p class="mt-rel">情報交換は 200 世代ごとなので、10D・25,000 評価では一度も起きない。</p>
           </article>
           <article class="mt-card" id="m-ICMAES-ILS" data-method="ICMAES-ILS">
-            <header><h4>iCMAES-ILS</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>iCMAES-ILS</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Liao &amp; Stützle 2013（CEC 2013 優勝）</p>
             <p>IPOP-CMA-ES と反復局所探索（Mtsls1）を最初に少しずつ走らせて競わせ、良かった方に残りの予算を全部渡す。</p>
           </article>
           <article class="mt-card" id="m-HSES" data-method="HSES">
-            <header><h4>HSES</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>HSES</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Zhang &amp; Shi 2018（CEC 2018 優勝）</p>
             <p>3 段構え。座標ごとの正規分布で粗く探し（単変量の EDA）、その最良点から CMA-ES で回転を捉え、最後にまた単変量の標本で詰める。</p>
             <p class="mt-rel">第 1 段だけで 20,200 評価を使うので、2D・5,000 評価では第 1 段しか動かない。</p>
@@ -398,59 +408,69 @@
         <p class="mt-fam-lead">集団内の 2 点の差をそのまま歩幅に使う系統。歩幅が集団の広がりに自動で比例する。L-SHADE 以降は、F（差の倍率）と CR（交叉率）を成功例から学習し、集団を予算に合わせて縮めるのが標準で、CEC の競技の上位はほぼこの系統。</p>
         <div class="mt-cards">
           <article class="mt-card" id="m-DE" data-method="DE">
-            <header><h4>DE</h4><span class="role role-main">主比較</span></header>
+            <header><h4>DE</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Storn &amp; Price 1997（DE/rand/1/bin）</p>
             <p>集団から 3 点 a, b, c を選び \(x_a + F(x_b - x_c)\) を作り、元の点と座標ごとに混ぜて（二項交叉）、良ければ置き換える。F = 0.5、CR = 0.9、集団 30。</p>
             <p class="mt-rel">MC-ESO の飛沫感染は同じ差分ベクトルを使う。「差分変異だけでどこまで行けるか」を測るための直接の対照。</p>
           </article>
           <article class="mt-card" id="m-L-SHADE" data-method="L-SHADE">
-            <header><h4>L-SHADE</h4><span class="role role-main">主比較</span></header>
+            <header><h4>L-SHADE</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Tanabe &amp; Fukunaga 2014（CEC 2014 優勝）</p>
             <p>SHADE（成功した F・CR の履歴から次の値を引く適応 DE）に、集団サイズを予算に対して線形に縮める仕組み（LPSR）を加えたもの。論文どおりの numpy 移植で、初期集団 18D。</p>
             <p class="mt-rel">MC-ESO の集団縮小はこの LPSR を宿主の集団に当てはめたもの。</p>
           </article>
           <article class="mt-card" id="m-jSO" data-method="jSO">
-            <header><h4>jSO</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>jSO</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Brest, Maučec &amp; Bošković 2017（CEC 2017 2 位）</p>
             <p>iL-SHADE の後継。変異を current-to-pBest-w/1（重み付き）にし、F・CR の上限を世代の進みに応じて変える。pyade の版は論文から外れるので、論文どおりに移植した。</p>
           </article>
           <article class="mt-card" id="m-LSHADE-cnEpSin" data-method="LSHADE-cnEpSin">
-            <header><h4>LSHADE-cnEpSin</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>LSHADE-cnEpSin</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Awad ら 2017（mealpy 経由）</p>
             <p>F を正弦波のアンサンブルで揺らし、交叉を共分散行列の固有座標系で行う L-SHADE の変種。集団は論文の 18D → 4 に合わせ直した。</p>
           </article>
           <article class="mt-card" id="m-SPS-L-SHADE-EIG" data-method="SPS-L-SHADE-EIG">
-            <header><h4>SPS-L-SHADE-EIG</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>SPS-L-SHADE-EIG</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Guo ら 2015（CEC 2015 優勝）</p>
             <p>L-SHADE に、固有ベクトル座標での交叉（回転に強くなる）と、停滞したら「最近成功した親」から子を作る枠組み（SPS）を足したもの。名前の自己最適化は競技の関数ごとの事前調整なので再現せず、作者の未調整の既定値を使う。</p>
           </article>
+          <article class="mt-card" id="m-NL-SHADE-RSP" data-method="NL-SHADE-RSP">
+            <header><h4>NL-SHADE-RSP</h4><span class="role role-main">標準比較</span></header>
+            <p class="mt-origin">Stanovov, Akhmedova &amp; Semenkin 2021（CEC 2021 優勝）</p>
+            <p>集団を非線形に縮め、変異の相手を順位に比例した確率で選ぶ（rank-based selective pressure）SHADE。交叉の種類（二項・指数）も成績で切り替える。minionpy 1.9.1 の実装を使う（原典との突き合わせはまだ）。</p>
+          </article>
+          <article class="mt-card" id="m-ARRDE" data-method="ARRDE">
+            <header><h4>ARRDE</h4><span class="role role-main">標準比較</span></header>
+            <p class="mt-origin">2025（arXiv 2511.18429）</p>
+            <p>L-SHADE に jSO の機構を入れ、集団の非線形な縮小と「適応的な再起動と仕上げ」（停滞したら集団を撒き直し、終盤は良い領域を絞り込む）を足した DE。特定のベンチマークに合わせ込まず、CEC2011 / 2017 / 2019 / 2020 / 2022 の 5 スイートすべてで首位と報告。minionpy 1.9.1 の実装（論文の著者による）を使う。</p>
+          </article>
           <article class="mt-card" id="m-L-SRTDE" data-method="L-SRTDE">
-            <header><h4>L-SRTDE</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>L-SRTDE</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Stanovov &amp; Semenkin 2024（CEC 2024 優勝）</p>
             <p>直前の世代で置き換えに成功した個体の割合（成功率）でパラメータを適応させる DE に、集団の線形縮小を組み合わせたもの。作者の C++ を行単位で移植し、CEC2022 10D の全 12 関数で C++ 版と平均誤差が一致することを確かめてある。</p>
           </article>
           <article class="mt-card" id="m-CoBiDE" data-method="CoBiDE">
-            <header><h4>CoBiDE</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>CoBiDE</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Wang, Li, Huang &amp; Li 2014</p>
             <p>交叉を集団の共分散行列の固有座標で行い、F・CR を二峰の分布（大きめと小さめ）から引く DE。EA4eig の構成要素の 1 つでもある（中身は 5 点違う）。</p>
           </article>
           <article class="mt-card" id="m-IMODE" data-method="IMODE">
-            <header><h4>IMODE</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>IMODE</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Sallam ら 2020（CEC 2020 優勝）</p>
             <p>3 種類の DE 変異を、各個体に改善率で配分して使い分ける多演算子 DE。予算の終盤に SQP の局所探索を入れる。初期集団は 6D² と大きい。作者の競技提出コードを行番号つきで移植した。</p>
           </article>
           <article class="mt-card" id="m-APGSK-IMODE" data-method="APGSK-IMODE">
-            <header><h4>APGSK-IMODE</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>APGSK-IMODE</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Mohamed ら 2021（CEC 2021 3 位）</p>
             <p>「知識の獲得と共有」（GSK: 若手は身近な人から、熟練者は集団全体の上位・下位から学ぶ）を適応パラメータにした手法と、IMODE を並走させる。元コードの不具合も意図的に再現している。</p>
           </article>
           <article class="mt-card" id="m-LSHADE-SPACMA" data-method="LSHADE-SPACMA">
-            <header><h4>LSHADE-SPACMA</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>LSHADE-SPACMA</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Mohamed ら 2017（CEC 2017 3 位）</p>
             <p>L-SHADE の F を半分だけ適応させ（semi-parameter adaptation）、個体の一部を CMA-ES で生成する混成。両者への配分は成績で動く。</p>
           </article>
           <article class="mt-card" id="m-ELSHADE-SPACMA" data-method="ELSHADE-SPACMA">
-            <header><h4>ELSHADE-SPACMA</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>ELSHADE-SPACMA</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Hadi, Mohamed &amp; Jambi 2018（CEC 2018 3 位）</p>
             <p>LSHADE-SPACMA の 1 世代と、EADE（別の適応 DE）の 1 世代を交互に回す。</p>
           </article>
@@ -463,23 +483,23 @@
         <p class="mt-fam-lead">鳥の群れ、ウイルス、蝶などのふるまいを探索の規則に写した系統。MC-ESO もここに属する。</p>
         <div class="mt-cards">
           <article class="mt-card" id="m-PSO" data-method="PSO">
-            <header><h4>PSO</h4><span class="role role-main">主比較</span></header>
+            <header><h4>PSO</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Kennedy &amp; Eberhart 1995</p>
             <p>各粒子が速度を持ち、自分が見た最良点と群れ全体の最良点に引き寄せられながら動く。慣性 0.729、加速係数 1.494、粒子 30。</p>
           </article>
           <article class="mt-card" id="m-SaVOA" data-method="SaVOA">
-            <header><h4>SaVOA</h4><span class="role role-main">主比較</span></header>
+            <header><h4>SaVOA</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Liang &amp; Juarez 2020（近似実装）</p>
             <p>ウイルスの増殖を模した VOA の自己適応版。改善すれば σ × 1.2、停滞すれば σ × 0.9 と、歩幅を乗法的に自動調整する。</p>
             <p class="mt-rel">同じ感染症の着想で再生の仕組みが 1 つだけの手法として、MC-ESO の直接の対照。MC-ESO の σ 適応はこの乗法則を借りている。</p>
           </article>
           <article class="mt-card" id="m-DEPSO" data-method="DEPSO">
-            <header><h4>DEPSO</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>DEPSO</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Zhang &amp; Xie 2003</p>
             <p>PSO の更新と DE の差分変異を世代ごとに交互に使う混成。全文が入手できず、要旨と二次資料から実装したので推測が多い。</p>
           </article>
           <article class="mt-card" id="m-EBOwithCMAR" data-method="EBOwithCMAR">
-            <header><h4>EBOwithCMAR</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>EBOwithCMAR</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Kumar, Misra &amp; Singh 2017（CEC 2017 優勝）</p>
             <p>蝶のなわばり行動（とまる・巡回する）を DE 風の演算子にした手法に、CMA-ES による「退避」段と SQP の局所探索を組み合わせる。作者の MATLAB を行単位で移植。</p>
           </article>
@@ -492,33 +512,33 @@
         <p class="mt-fam-lead">既存の手法を部品として並べ、成績に応じて予算や個体を配り直す系統。「1 つの再生機構に頼らない」という点で MC-ESO に最も近い考え方を持つので、新規性を主張するうえで一番の比較相手になる。</p>
         <div class="mt-cards">
           <article class="mt-card" id="m-AMALGAM-SO" data-method="AMALGAM-SO">
-            <header><h4>AMALGAM-SO</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>AMALGAM-SO</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Vrugt, Robinson &amp; Hyman 2009</p>
             <p>CMA、GA、PSO（<code>AMALGAM-SO-DE</code> は CMA、GA、DE）が同じ親集団からそれぞれ子を作り、各手法の子の数を前回の繁殖成功に応じて配り直す。再起動ごとに集団を 2 倍にする。</p>
             <p class="mt-rel">「複数の作り方を混ぜ、成績で配分する」点で MC-ESO と最も構造が近い。MC-ESO は配分を成績ではなく地形の測定で決める。</p>
           </article>
           <article class="mt-card" id="m-MOS" data-method="MOS">
-            <header><h4>MOS</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>MOS</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">LaTorre, Muelas &amp; Peña 2010（BBOB-2010）</p>
             <p>DE と IPOP-CMA-ES が 1 つの集団を順番に進化させ、各手法の参加割合を平均改善量に応じて動かす（Multiple Offspring Sampling）。</p>
           </article>
           <article class="mt-card" id="m-HMHH" data-method="HMHH">
-            <header><h4>HMHH</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>HMHH</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Grobler ら 2010 / 2015</p>
             <p>共通の集団の各個体を GA、GCPSO、SaNSDE、CMA-ES のどれかに割り当て、数世代ごとの改善量からタブー探索で割り当て直すハイパーヒューリスティクス。<code>HMHH-random</code> は割り当てをランダムにした対照。</p>
           </article>
           <article class="mt-card" id="m-UMOEA-II" data-method="UMOEA-II">
-            <header><h4>UMOEA-II</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>UMOEA-II</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">Elsayed, Hamza &amp; Sarker 2016（CEC 2016 上位）</p>
             <p>多演算子 DE と CMA-ES の 2 つの部分集団を走らせ、一定周期ごとに改善と多様性から両者の実行確率を決め、情報を共有する。予算の最後の 25% で局所探索。</p>
           </article>
           <article class="mt-card" id="m-EA4eig" data-method="EA4eig">
-            <header><h4>EA4eig</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>EA4eig</h4><span class="role role-main">標準比較</span></header>
             <p class="mt-origin">Bujok &amp; Kolenovsky 2022（CEC 2022 優勝）</p>
             <p>CoBiDE、IDEbd、CMA-ES、jSO の 4 手法が 1 つの集団を共有し、成功率に応じて使われる頻度が変わる。交叉は固有座標系で行う。<code>EA4eig-jSO-IDEbd</code> は Biedrzycki の解析で最も良かった 2 手法版、<code>EA4eig-Simpl</code> はその最終的な簡略版（IDEbd のみ）。</p>
           </article>
           <article class="mt-card" id="m-NGOpt" data-method="NGOpt">
-            <header><h4>NGOpt / NG-Portfolio</h4><span class="role role-cand">比較候補</span></header>
+            <header><h4>NGOpt / NG-Portfolio</h4><span class="role role-cand">参考</span></header>
             <p class="mt-origin">nevergrad（Meta）</p>
             <p>問題の次元や予算から、どの手法を使うかを規則で選ぶアルゴリズム選択器（NGOpt）と、複数手法に予算を分けるポートフォリオ。手法そのものというより「既製品の自動選択に勝てるか」の目安。</p>
           </article>

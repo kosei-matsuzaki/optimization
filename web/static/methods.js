@@ -254,8 +254,10 @@ const NODES = [
   ['jSO', 2017, 'de'], ['LSHADE-cnEpSin', 2017, 'de'], ['LSHADE-SPACMA', 2017, 'de'],
   ['EBOwithCMAR', 2017, 'swarm'], ['HSES', 2018, 'es'], ['ELSHADE-SPACMA', 2018, 'de'],
   ['IMODE', 2020, 'de'], ['SaVOA', 2020, 'swarm'], ['NGOpt', 2020, 'hybrid', 'NGOpt / Portfolio'],
-  ['APGSK-IMODE', 2021, 'de'], ['EA4eig', 2022, 'hybrid'], ['Repel-CMA-ES', 2024, 'es'],
-  ['L-SRTDE', 2024, 'de'], ['MC-ESO', 2026, 'swarm', 'MC-ESO（本研究）'],
+  ['APGSK-IMODE', 2021, 'de'], ['NL-SHADE-RSP', 2021, 'de'], ['EA4eig', 2022, 'hybrid'],
+  ['BIPOP-aCMA-ES', 2013, 'es'], ['Repel-CMA-ES', 2024, 'es'],
+  ['L-SRTDE', 2024, 'de'], ['ARRDE', 2025, 'de'], ['RCMAES', 2026, 'es'],
+  ['MC-ESO', 2026, 'swarm', 'MC-ESO（本研究）'],
 ].map(([id, year, lane, label]) => ({ id, year, lane, label: label || id }));
 const EDGES = [
   ['CMA-ES', 'IPOP-CMA-ES'], ['IPOP-CMA-ES', 'BIPOP-CMA-ES'], ['IPOP-CMA-ES', 'ICMAES-ILS'],
@@ -268,6 +270,8 @@ const EDGES = [
   ['CMA-ES', 'AMALGAM-SO'], ['PSO', 'AMALGAM-SO'], ['DE', 'MOS'], ['IPOP-CMA-ES', 'MOS'],
   ['PSO', 'HMHH'], ['CMA-ES', 'HMHH'], ['DE', 'UMOEA-II'], ['CMA-ES', 'UMOEA-II'],
   ['CoBiDE', 'EA4eig'], ['jSO', 'EA4eig'], ['CMA-ES', 'EA4eig'],
+  ['BIPOP-CMA-ES', 'BIPOP-aCMA-ES'], ['IPOP-CMA-ES', 'RCMAES'], ['L-SHADE', 'NL-SHADE-RSP'],
+  ['L-SHADE', 'ARRDE'], ['jSO', 'ARRDE'],
 ].map(([a, b]) => ({ a, b }));
 const BORROWS = ['CMA-ES', 'DE', 'SaVOA', 'IPOP-CMA-ES', 'BIPOP-CMA-ES', 'L-SHADE']
   .map(a => ({ a, b: 'MC-ESO', borrow: true }));
