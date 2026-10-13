@@ -1,0 +1,120 @@
+=== [1] OVERALL: SR ladder (1e-2/1e-4/1e-7/1e-10) + own-mean evals + nf ===
+ 1. MC-ESO              81.25 /  80.62 /  78.54 /  77.08   evals   3929.6  nf 23
+ 2. ELSHADE-SPACMA      79.17 /  78.33 /  76.25 /  74.58   evals   6610.6  nf 21
+ 3. LSHADE-SPACMA       74.38 /  73.54 /  72.92 /  71.46   evals   4941.2  nf 21
+ 4. MC-ESO-v2           72.08 /  71.46 /  69.17 /  67.08   evals   4019.8  nf 22
+ 5. jSO                 75.62 /  75.21 /  71.04 /  66.25   evals   7393.2  nf 20
+ 6. EBOwithCMAR         80.62 /  77.50 /  69.58 /  64.79   evals   7934.8  nf 21
+ 7. L-SHADE             78.96 /  77.50 /  68.96 /  62.08   evals   8288.7  nf 20
+ 8. L-SRTDE             67.29 /  65.83 /  62.29 /  61.67   evals   4534.8  nf 20
+ 9. AMALGAM-SO          72.71 /  69.58 /  68.54 /  60.83   evals   3608.3  nf 21
+10. ARRDE               72.50 /  70.62 /  63.96 /  60.62   evals   4270.1  nf 21
+11. IPOP-CMA-ES         66.25 /  64.79 /  62.50 /  56.88   evals   2935.4  nf 20
+12. BIPOP-CMA-ES        67.29 /  65.62 /  62.08 /  55.83   evals   3568.2  nf 20
+13. SPS-L-SHADE-EIG     78.75 /  71.25 /  62.71 /  53.75   evals   9295.0  nf 20
+14. RCMAES              55.21 /  54.17 /  48.75 /  48.75   evals   1771.1  nf 17
+15. BIPOP-aCMA-ES       53.12 /  50.21 /  48.96 /  48.12   evals   1355.9  nf 18
+16. EA4eig              79.17 /  75.62 /  61.67 /  47.50   evals   8572.4  nf 21
+17. NL-SHADE-RSP        67.50 /  55.21 /  49.17 /  45.21   evals  10244.8  nf 18
+18. IMODE               71.88 /  64.79 /  50.00 /  41.88   evals  10700.1  nf 18
+
+=== [2] evals_succ_mean PAIRED (only functions where BOTH have successes) ===
+vs BIPOP-aCMA-ES      MC-ESO   3603.7 / BIPOP-aCMA-ES   1355.9  (nf 18)  <-- faster than MC-ESO
+vs RCMAES             MC-ESO   3729.8 / RCMAES   1771.1  (nf 17)  <-- faster than MC-ESO
+vs IPOP-CMA-ES        MC-ESO   3800.6 / IPOP-CMA-ES   2935.4  (nf 20)  <-- faster than MC-ESO
+vs BIPOP-CMA-ES       MC-ESO   3800.6 / BIPOP-CMA-ES   3568.2  (nf 20)  <-- faster than MC-ESO
+vs AMALGAM-SO         MC-ESO   3750.5 / AMALGAM-SO   3608.3  (nf 21)  <-- faster than MC-ESO
+vs MC-ESO-v2          MC-ESO   3889.9 / MC-ESO-v2   4019.8  (nf 22)
+vs ARRDE              MC-ESO   3750.5 / ARRDE   4270.1  (nf 21)
+vs L-SRTDE            MC-ESO   3697.8 / L-SRTDE   4534.8  (nf 20)
+vs LSHADE-SPACMA      MC-ESO   3798.7 / LSHADE-SPACMA   4941.2  (nf 21)
+vs ELSHADE-SPACMA     MC-ESO   3750.5 / ELSHADE-SPACMA   6610.6  (nf 21)
+vs jSO                MC-ESO   3670.8 / jSO   7393.2  (nf 20)
+vs EBOwithCMAR        MC-ESO   3746.7 / EBOwithCMAR   7934.8  (nf 21)
+vs L-SHADE            MC-ESO   3670.8 / L-SHADE   8288.7  (nf 20)
+vs EA4eig             MC-ESO   3750.5 / EA4eig   8572.4  (nf 21)
+vs SPS-L-SHADE-EIG    MC-ESO   3670.8 / SPS-L-SHADE-EIG   9295.0  (nf 20)
+vs NL-SHADE-RSP       MC-ESO   3616.2 / NL-SHADE-RSP  10244.8  (nf 18)
+vs IMODE              MC-ESO   3570.3 / IMODE  10700.1  (nf 18)
+
+=== [3] PER-FUNCTION SR@1e-10, all 24 functions x 18 methods ===
+function                   MC-ESO ELSHADE-S LSHADE-SP MC-ESO-v2       jSO EBOwithCM   L-SHADE   L-SRTDE AMALGAM-S     ARRDE IPOP-CMA- BIPOP-CMA SPS-L-SHA    RCMAES BIPOP-aCM    EA4eig NL-SHADE-     IMODE
+F01-Sphere                   100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%
+F02-EllipsoidalSep           100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%
+F03-RastriginSep             100%      100%      100%       30%       90%      100%      100%       25%       30%       70%        5%       15%      100%        0%        0%       50%      100%      100%
+F04-BucheRastrigin            85%       85%       30%        0%       10%       95%      100%        0%       10%        5%        0%        0%      100%        0%        0%        0%      100%       95%
+F05-LinearSlope              100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%        0%       90%       50%      100%      100%
+F06-AttractiveSector         100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%       95%      100%      100%       25%       85%       50%
+F07-StepEllipsoidal          100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%       80%       30%      100%       95%      100%
+F08-Rosenbrock               100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%       35%      100%       85%       75%       85%      100%
+F09-RosenbrockRot            100%      100%      100%      100%      100%      100%      100%       90%      100%      100%      100%      100%       25%       95%       95%       75%       25%      100%
+F10-EllipsoidalRot           100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%       70%        0%        0%
+F11-Discus                   100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%        0%        0%
+F12-BentCigar                100%       60%       80%      100%       60%       60%       45%       35%       90%       55%      100%      100%        0%      100%      100%       25%        0%        5%
+F13-SharpRidge               100%      100%      100%      100%       85%        0%        5%      100%      100%       55%        0%        5%        0%      100%      100%       10%        0%        0%
+F14-DiffPowers               100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%      100%        0%        0%
+F15-RastriginRot               5%       40%       25%       10%       10%       20%       10%       45%       20%       35%       10%       30%        0%        0%        0%       40%        5%        0%
+F16-Weierstrass               60%        0%        0%       75%        0%        0%        0%       10%       40%        0%       85%       65%        0%       20%       20%        0%        0%        0%
+F17-SchafferF7                80%       90%       95%       75%       75%        0%        5%       75%        0%       20%       70%       25%        0%       15%        0%       15%        0%        0%
+F18-SchafferF7ill             65%       80%       80%       65%       10%        0%        0%       65%        0%        0%       25%       20%        0%       10%        0%       10%        0%        0%
+F19-GriewankRosenbrock        10%        0%       10%        5%        0%        0%        0%        0%        0%        0%        0%        0%        0%        5%        0%        0%        0%       10%
+F20-Schwefel                   5%       85%       55%        5%       75%       95%       50%       25%        5%       25%        0%        0%       50%        0%        0%       10%       90%       35%
+F21-Gallagher101              95%       85%       65%       70%       90%       95%       95%       65%       75%       90%       40%       45%      100%       20%       10%       95%      100%       90%
+F22-Gallagher21              100%       65%       75%       50%       85%       90%       80%       45%       90%      100%       30%       35%       85%       25%       10%       90%      100%       20%
+F23-Katsuura                  45%        0%        0%       25%        0%        0%        0%        0%        0%        0%        0%        0%        0%        0%       15%        0%        0%        0%
+F24-LunacekRastrigin           0%        0%        0%        0%        0%        0%        0%        0%        0%        0%        0%        0%        0%        0%        0%        0%        0%        0%
+
+=== [4] MC-ESO vs MC-ESO-v2 per-function SR@1e-10 (all 24) ===
+F01-Sphere              v2   100% -> cur   100%  (+0)
+F02-EllipsoidalSep      v2   100% -> cur   100%  (+0)
+F03-RastriginSep        v2    30% -> cur   100%  (+70)  +
+F04-BucheRastrigin      v2     0% -> cur    85%  (+85)  +
+F05-LinearSlope         v2   100% -> cur   100%  (+0)
+F06-AttractiveSector    v2   100% -> cur   100%  (+0)
+F07-StepEllipsoidal     v2   100% -> cur   100%  (+0)
+F08-Rosenbrock          v2   100% -> cur   100%  (+0)
+F09-RosenbrockRot       v2   100% -> cur   100%  (+0)
+F10-EllipsoidalRot      v2   100% -> cur   100%  (+0)
+F11-Discus              v2   100% -> cur   100%  (+0)
+F12-BentCigar           v2   100% -> cur   100%  (+0)
+F13-SharpRidge          v2   100% -> cur   100%  (+0)
+F14-DiffPowers          v2   100% -> cur   100%  (+0)
+F15-RastriginRot        v2    10% -> cur     5%  (-5)  -
+F16-Weierstrass         v2    75% -> cur    60%  (-15)  -
+F17-SchafferF7          v2    75% -> cur    80%  (+5)  +
+F18-SchafferF7ill       v2    65% -> cur    65%  (+0)
+F19-GriewankRosenbrock  v2     5% -> cur    10%  (+5)  +
+F20-Schwefel            v2     5% -> cur     5%  (+0)
+F21-Gallagher101        v2    70% -> cur    95%  (+25)  +
+F22-Gallagher21         v2    50% -> cur   100%  (+50)  +
+F23-Katsuura            v2    25% -> cur    45%  (+20)  +
+F24-LunacekRastrigin    v2     0% -> cur     0%  (+0)
+
+=== [5] WILCOXON win/loss counts per method (p_two<0.05, direction by A12) ===
+IMODE              win 17 / loss  1   losses: [('F20-Schwefel', '0.08', 'large')]
+IPOP-CMA-ES        win 16 / loss  0
+BIPOP-CMA-ES       win 16 / loss  0
+BIPOP-aCMA-ES      win 15 / loss  1   losses: [('F06-AttractiveSector', '0.27', 'large')]
+EA4eig             win 15 / loss  2   losses: [('F15-RastriginRot', '0.23', 'large'), ('F20-Schwefel', '0.07', 'large')]
+RCMAES             win 14 / loss  1   losses: [('F06-AttractiveSector', '0.16', 'large')]
+NL-SHADE-RSP       win 14 / loss  1   losses: [('F20-Schwefel', '0.04', 'large')]
+ARRDE              win 11 / loss  2   losses: [('F15-RastriginRot', '0.21', 'large'), ('F20-Schwefel', '0.14', 'large')]
+SPS-L-SHADE-EIG    win 11 / loss  2   losses: [('F04-BucheRastrigin', '0.35', 'medium'), ('F20-Schwefel', '0.05', 'large')]
+EBOwithCMAR        win 11 / loss  2   losses: [('F15-RastriginRot', '0.11', 'large'), ('F20-Schwefel', '0.05', 'large')]
+L-SRTDE            win 10 / loss  2   losses: [('F15-RastriginRot', '0.20', 'large'), ('F20-Schwefel', '0.16', 'large')]
+L-SHADE            win  9 / loss  3   losses: [('F06-AttractiveSector', '0.29', 'medium'), ('F15-RastriginRot', '0.24', 'large'), ('F20-Schwefel', '0.04', 'large')]
+AMALGAM-SO         win  8 / loss  2   losses: [('F06-AttractiveSector', '0.20', 'large'), ('F20-Schwefel', '0.32', 'medium')]
+jSO                win  8 / loss  3   losses: [('F06-AttractiveSector', '0.13', 'large'), ('F15-RastriginRot', '0.28', 'large'), ('F20-Schwefel', '0.05', 'large')]
+LSHADE-SPACMA      win  5 / loss  4   losses: [('F06-AttractiveSector', '0.12', 'large'), ('F15-RastriginRot', '0.21', 'large'), ('F17-SchafferF7', '0.04', 'large'), ('F20-Schwefel', '0.11', 'large')]
+ELSHADE-SPACMA     win  5 / loss  5   losses: [('F06-AttractiveSector', '0.17', 'large'), ('F15-RastriginRot', '0.17', 'large'), ('F17-SchafferF7', '0.13', 'large'), ('F18-SchafferF7ill', '0.21', 'large'), ('F20-Schwefel', '0.04', 'large')]
+MC-ESO-v2          win  4 / loss  3   losses: [('F15-RastriginRot', '0.28', 'large'), ('F16-Weierstrass', '0.43', 'small'), ('F19-GriewankRosenbrock', '0.34', 'medium')]
+
+=== [6] loss frequency per function (how many methods beat MC-ESO there) ===
+F20-Schwefel            beaten by 12 methods
+F15-RastriginRot        beaten by 9 methods
+F06-AttractiveSector    beaten by 7 methods
+F17-SchafferF7          beaten by 2 methods
+F16-Weierstrass         beaten by 1 methods
+F19-GriewankRosenbrock  beaten by 1 methods
+F04-BucheRastrigin      beaten by 1 methods
+F18-SchafferF7ill       beaten by 1 methods

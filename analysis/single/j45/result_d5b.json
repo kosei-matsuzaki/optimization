@@ -1,0 +1,11 @@
+{
+  "type": "quick",
+  "created_at": "2026-10-13T15:36:53",
+  "commit": "93a04dd",
+  "n_runs": 20,
+  "max_evals": 12500,
+  "set": "all-d5",
+  "dim": 5,
+  "methods": "MC-ESO,MC-ESO-v2,EBOwithCMAR,IMODE,NL-SHADE-RSP,EA4eig,L-SRTDE,ARRDE,L-SHADE,jSO,LSHADE-SPACMA,ELSHADE-SPACMA,SPS-L-SHADE-EIG,AMALGAM-SO,IPOP-CMA-ES,BIPOP-CMA-ES,BIPOP-aCMA-ES,RCMAES",
+  "status": "done"
+}
