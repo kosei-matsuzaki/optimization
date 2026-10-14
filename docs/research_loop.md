@@ -109,7 +109,7 @@
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
-1. **【v3 の 30 次元 2/2】後半 12 関数。** 同じコマンドで `--funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`（label `j46b`）。前半と連結して 24/24 を確かめ、【v3 の 30 次元 1/2】と同じ集計を 24 関数で。**記録**: `analysis/single/j46/`。 (claimed 2026-10-14 07:32 UTC)
+1. **【v3 の 30 次元 2/2 の残り】後半 12 関数のうち F18-F24 の 7 関数。** `./run.sh quick --all --funcs F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v3_stage,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 1`（label `j46c`）。**shard は 1 関数ずつ逐次にする**: 30D は 1 プロセスが 11 手法ぶんで約 10GB まで育つので、2 本以上の並列は cgroup OOM で落ちる（2026-10-14 の j46b で確認）。1 関数あたり 11〜14 分なので 7 関数で約 90 分。F01-F17 の既存集計（`analysis/single/j46/summary_j46_dim30_f01-f17.csv` / `wilcoxon_j46_dim30_f01-f17.csv`）と連結して 24/24 を確かめ、【v3 の 30 次元 1/2】と同じ集計を 24 関数で。**記録**: `analysis/single/j46/`。
 
 ## 規則
 
@@ -134,6 +134,19 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-14 j46b（v3 の 30 次元 2/2）— F13-F17 の 5 関数のみ完走（17/24）。F01-F17 平均で v3_stage は SR@1e-10 26.5→30.9%、CEC 順位 8.67→5.72
+
+- **ランした分**: `./run.sh quick --all --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5` 11 手法、F13・F14・F15・F16・F17 を 1 関数 1 shard で逐次（`--jobs 1`、label `j46b_F15` と `j46b2_F13`・`_F14`・`_F16`・`_F17`）。wall 78 分（07:34-08:52 UTC）。F01-F12 の既存集計と連結して **17/24 関数 × 11 手法 = 187 行**（wilcoxon 170 行、(関数, 手法) の重複・欠落なし）。**F18-F24 の 7 関数は未測定**でジョブに書き戻した。
+- **環境**: numpy 2.4.6 / cma 4.5.0。CPU Intel Xeon @2.10GHz、family 6 / model 207 / stepping 2、4 CPUs、avx512f あり。BLAS = openblas（SkylakeX、num_threads 4）、`OMP_NUM_THREADS=1` で実行。`pip install -r requirements.txt` は pynmmso のビルドで落ちるので findings.md の空 stub を PYTHONPATH に置いた。
+- **全体（17 関数平均、SR@1e-10 / 1e-7 / 1e-4 / 1e-2 / `evals_mean`）**: IPOP-CMA-ES 63.2/65.0/71.5/75.3/27355、RCMAES 59.4、BIPOP-aCMA-ES 52.6、**v3_stage 30.9/39.7/48.8/55.0/40718**、EBOwithCMAR 29.1、LSHADE-SPACMA 27.6、**MC-ESO 26.5/28.8/36.5/40.9/45269**、L-SHADE 22.4、ELSHADE-SPACMA 22.1、ARRDE 17.9、NL-SHADE-RSP 6.2。
+- **`evals_succ_mean`（MC-ESO と v3_stage の両方に成功のある 9 関数 F01/F02/F03/F05/F06/F10/F11/F12/F14 の平均）**: MC-ESO 45269 → v3_stage 38815（-6454）。
+- **関数別 SR@1e-10（MC-ESO → v3_stage、17 関数すべて）**: 変化あり F06 0→100、F11 0→70、F07 0→15、F02 40→30、F12 30→20、F10 55→10、**F14 45→0**。変化なし F01 100、F03 80、F05 100、F04・F08・F09・F13・F15・F16・F17 は両者 0（今回の新規 5 関数のうち SR が動いたのは F14 のみで、それは悪化）。
+- **Wilcoxon（MC-ESO を reference、両側 p<0.05、A12）**: v3_stage が有意に勝つ 10 関数（F06・F08・F09・F15・F16・F17 A12=0.00-0.01 large、F13 0.02 large、F07 0.09 large、F01 0.39 small、F14 0.45 negligible）、MC-ESO が有意に勝つ 2 関数（F03 p=8.8e-05 A12=0.83 large、F10 p=2.5e-03 A12=0.80 large）。比較 9 手法に対する MC-ESO の勝/負（関数数）: NL-SHADE-RSP 12/1、ARRDE 6/9、ELSHADE-SPACMA 6/7、BIPOP-aCMA-ES 4/12、L-SHADE 4/8、EBOwithCMAR 3/9、LSHADE-SPACMA 3/11、IPOP-CMA-ES 3/13、RCMAES 3/14。
+- **CEC 式の平均誤差の順位 ([5])**: **9 関数のみ（F09-F17）**。F01-F08 の per-run stats はリポジトリに無い（集計 CSV だけ）。RCMAES 1.83 < IPOP 2.89 < BIPOP-aCMA-ES 4.44 < LSHADE-SPACMA 4.61 < EBOwithCMAR 4.83 < **v3_stage 5.72** < ELSHADE-SPACMA 7.00 < ARRDE 7.67 < L-SHADE 7.89 < **MC-ESO 8.67** < NL-SHADE-RSP 10.44。
+- **書かれたとおりに回せなかった点**: (1) 最初に 4 関数を並列（各 `--jobs 1`）で起動したが、**30D は 1 プロセスが 11 手法ぶんで約 10GB まで育つ**ため cgroup OOM で F13・F14 が落ち、F16 は手で止めて F15 を生かした（F13・F14・F16 は逐次で測り直した）。以後 1 関数ずつ逐次。(2) 完了待ちに使った `pgrep -f` のパターンが監視側自身のコマンド行に一致して 19 分空転した。(3) この 2 つで時間を失い F18-F24 が 90 分の枠に入らなかった。(4) CEC 順位は上記のとおり 9 関数のみ。
+- **記録**: `analysis/single/j46/summary_j46_dim30_f01-f17.csv` / `wilcoxon_j46_dim30_f01-f17.csv` / `analyze_quick_j46_d30_f01-f17.txt`、F13-F17 の per-run stats は `stats_j46b/`。`find analysis -type f` は 388（上限 約 400）。
+- 17/24 関数の部分結果である。採否の判断はしない。
 
 ### 2026-10-14 j46a3（v3 の 30 次元 1/2 の残り F09-F12）— 12/12 完走。F01-F12 平均で v3_stage は SR@1e-10 33.8→43.8%、evals_succ_mean 45658→39781
 

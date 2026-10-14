@@ -1,0 +1,153 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=30   ref=MC-ESO
+run: j46merge
+functions: 17   methods: ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, MC-ESO, NL-SHADE-RSP, RCMAES, v3_stage
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  ARRDE             17.9%   19.7%   30.9%   42.6%       45505         6/9
+  BIPOP-aCMA-ES     52.6%   54.1%   54.7%   58.5%       21273        4/12
+  EBOwithCMAR       29.1%   33.8%   60.0%   71.2%       61776         3/9
+  ELSHADE-SPACMA    22.1%   22.1%   33.5%   47.4%       62019         6/7
+  IPOP-CMA-ES       63.2%   65.0%   71.5%   75.3%       27355        3/13
+  L-SHADE           22.4%   22.4%   31.5%   46.5%       57263         4/8
+  LSHADE-SPACMA     27.6%   37.4%   48.8%   59.1%       51296        3/11
+  MC-ESO            26.5%   28.8%   36.5%   40.9%       45269            
+  NL-SHADE-RSP       6.2%   11.2%   11.8%   17.6%       65305        12/1
+  RCMAES            59.4%   62.1%   68.2%   72.4%       30893        3/14
+  v3_stage          30.9%   39.7%   48.8%   55.0%       40718        2/10
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%           ARRDE 100%          22158/25461
+  F02-EllipsoidalSep               40%           ARRDE 100%          30970/38648  <-- ref behind
+  F03-RastriginSep                 80%         v3_stage 80%          24527/20863
+  F04-BucheRastrigin                0%             ARRDE 0%                    -
+  F05-LinearSlope                 100%           ARRDE 100%          26293/40257
+  F06-AttractiveSector              0%   BIPOP-aCMA-ES 100%          71048/10627  <-- ref behind
+  F07-StepEllipsoidal               0%      IPOP-CMA-ES 90%                    -  <-- ref behind
+  F08-Rosenbrock                    0%     IPOP-CMA-ES 100%                    -  <-- ref behind
+  F09-RosenbrockRot                 0%          RCMAES 100%                    -  <-- ref behind
+  F10-EllipsoidalRot               55%   BIPOP-aCMA-ES 100%          53789/25463  <-- ref behind
+  F11-Discus                        0%   BIPOP-aCMA-ES 100%          73303/10452  <-- ref behind
+  F12-BentCigar                    30%   BIPOP-aCMA-ES 100%          63174/20352  <-- ref behind
+  F13-SharpRidge                    0%           RCMAES 25%                    -  <-- ref behind
+  F14-DiffPowers                   45%   BIPOP-aCMA-ES 100%           42162/7769  <-- ref behind
+  F15-RastriginRot                  0%             ARRDE 0%                    -
+  F16-Weierstrass                   0%           RCMAES 20%                    -  <-- ref behind
+  F17-SchafferF7                    0%           RCMAES 20%                    -  <-- ref behind
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F01-Sphere             vs ARRDE          p=0.00354 A12=0.21 (large)
+  F01-Sphere             vs LSHADE-SPACMA  p=0.00012 A12=0.03 (large)
+  F01-Sphere             vs RCMAES         p=0.00012 A12=0.03 (large)
+  F01-Sphere             vs v3_stage       p=0.026 A12=0.39 (small)
+  F02-EllipsoidalSep     vs ARRDE          p=0.00178 A12=0.23 (large)
+  F02-EllipsoidalSep     vs BIPOP-aCMA-ES  p=0.00188 A12=0.25 (large)
+  F02-EllipsoidalSep     vs EBOwithCMAR    p=0.0027 A12=0.31 (medium)
+  F02-EllipsoidalSep     vs ELSHADE-SPACMA p=0.00831 A12=0.40 (small)
+  F02-EllipsoidalSep     vs IPOP-CMA-ES    p=0.00695 A12=0.32 (medium)
+  F02-EllipsoidalSep     vs L-SHADE        p=0.00996 A12=0.39 (small)
+  F02-EllipsoidalSep     vs LSHADE-SPACMA  p=0.000291 A12=0.06 (large)
+  F02-EllipsoidalSep     vs NL-SHADE-RSP   p=0.00831 A12=0.40 (small)
+  F02-EllipsoidalSep     vs RCMAES         p=0.000193 A12=0.06 (large)
+  F06-AttractiveSector   vs ARRDE          p=9.54e-06 A12=0.05 (large)
+  F06-AttractiveSector   vs BIPOP-aCMA-ES  p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs EBOwithCMAR    p=0.000261 A12=0.21 (large)
+  F06-AttractiveSector   vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs LSHADE-SPACMA  p=9.54e-06 A12=0.01 (large)
+  F06-AttractiveSector   vs RCMAES         p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs v3_stage       p=1.91e-06 A12=0.00 (large)
+  F07-StepEllipsoidal    vs ARRDE          p=1.91e-06 A12=0.04 (large)
+  F07-StepEllipsoidal    vs EBOwithCMAR    p=1.91e-06 A12=0.01 (large)
+  F07-StepEllipsoidal    vs ELSHADE-SPACMA p=1.91e-06 A12=0.00 (large)
+  F07-StepEllipsoidal    vs IPOP-CMA-ES    p=1.91e-06 A12=0.01 (large)
+  F07-StepEllipsoidal    vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F07-StepEllipsoidal    vs LSHADE-SPACMA  p=1.91e-06 A12=0.00 (large)
+  F07-StepEllipsoidal    vs RCMAES         p=3.81e-06 A12=0.02 (large)
+  F07-StepEllipsoidal    vs v3_stage       p=0.000261 A12=0.09 (large)
+  F08-Rosenbrock         vs ARRDE          p=1.91e-06 A12=0.00 (large)
+  F08-Rosenbrock         vs BIPOP-aCMA-ES  p=1.91e-06 A12=0.00 (large)
+  F08-Rosenbrock         vs EBOwithCMAR    p=1.91e-06 A12=0.00 (large)
+  F08-Rosenbrock         vs ELSHADE-SPACMA p=1.91e-05 A12=0.11 (large)
+  F08-Rosenbrock         vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F08-Rosenbrock         vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F08-Rosenbrock         vs LSHADE-SPACMA  p=1.91e-06 A12=0.00 (large)
+  F08-Rosenbrock         vs RCMAES         p=1.91e-06 A12=0.00 (large)
+  F08-Rosenbrock         vs v3_stage       p=1.91e-06 A12=0.00 (large)
+  F09-RosenbrockRot      vs ARRDE          p=1.91e-06 A12=0.00 (large)
+  F09-RosenbrockRot      vs BIPOP-aCMA-ES  p=1.91e-06 A12=0.00 (large)
+  F09-RosenbrockRot      vs EBOwithCMAR    p=1.91e-06 A12=0.00 (large)
+  F09-RosenbrockRot      vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F09-RosenbrockRot      vs L-SHADE        p=0.00143 A12=0.17 (large)
+  F09-RosenbrockRot      vs LSHADE-SPACMA  p=1.91e-06 A12=0.00 (large)
+  F09-RosenbrockRot      vs RCMAES         p=1.91e-06 A12=0.00 (large)
+  F09-RosenbrockRot      vs v3_stage       p=1.91e-06 A12=0.00 (large)
+  F10-EllipsoidalRot     vs BIPOP-aCMA-ES  p=0.00152 A12=0.26 (large)
+  F10-EllipsoidalRot     vs IPOP-CMA-ES    p=0.00496 A12=0.34 (medium)
+  F10-EllipsoidalRot     vs RCMAES         p=0.00013 A12=0.03 (large)
+  F11-Discus             vs BIPOP-aCMA-ES  p=1.91e-06 A12=0.00 (large)
+  F11-Discus             vs EBOwithCMAR    p=0.00121 A12=0.21 (large)
+  F11-Discus             vs ELSHADE-SPACMA p=0.0121 A12=0.36 (medium)
+  F11-Discus             vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F11-Discus             vs L-SHADE        p=0.0239 A12=0.45 (negligible)
+  F11-Discus             vs LSHADE-SPACMA  p=1.91e-06 A12=0.00 (large)
+  F11-Discus             vs RCMAES         p=1.91e-06 A12=0.00 (large)
+  F12-BentCigar          vs BIPOP-aCMA-ES  p=9.54e-06 A12=0.11 (large)
+  F12-BentCigar          vs IPOP-CMA-ES    p=0.000219 A12=0.15 (large)
+  F12-BentCigar          vs RCMAES         p=0.000155 A12=0.09 (large)
+  F13-SharpRidge         vs ARRDE          p=1.91e-06 A12=0.05 (large)
+  F13-SharpRidge         vs BIPOP-aCMA-ES  p=4.77e-05 A12=0.04 (large)
+  F13-SharpRidge         vs EBOwithCMAR    p=1.91e-06 A12=0.00 (large)
+  F13-SharpRidge         vs ELSHADE-SPACMA p=4.77e-05 A12=0.10 (large)
+  F13-SharpRidge         vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F13-SharpRidge         vs L-SHADE        p=0.000395 A12=0.20 (large)
+  F13-SharpRidge         vs LSHADE-SPACMA  p=1.91e-06 A12=0.00 (large)
+  F13-SharpRidge         vs RCMAES         p=1.91e-06 A12=0.00 (large)
+  F13-SharpRidge         vs v3_stage       p=1.91e-06 A12=0.02 (large)
+  F14-DiffPowers         vs BIPOP-aCMA-ES  p=0.00516 A12=0.27 (large)
+  F14-DiffPowers         vs IPOP-CMA-ES    p=0.0239 A12=0.45 (negligible)
+  F14-DiffPowers         vs LSHADE-SPACMA  p=0.0239 A12=0.45 (negligible)
+  F14-DiffPowers         vs RCMAES         p=0.000292 A12=0.12 (large)
+  F14-DiffPowers         vs v3_stage       p=0.0239 A12=0.45 (negligible)
+  F15-RastriginRot       vs ARRDE          p=1.91e-06 A12=0.00 (large)
+  F15-RastriginRot       vs BIPOP-aCMA-ES  p=3.81e-06 A12=0.01 (large)
+  F15-RastriginRot       vs EBOwithCMAR    p=1.91e-06 A12=0.00 (large)
+  F15-RastriginRot       vs ELSHADE-SPACMA p=1.91e-06 A12=0.00 (large)
+  F15-RastriginRot       vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F15-RastriginRot       vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F15-RastriginRot       vs LSHADE-SPACMA  p=1.91e-06 A12=0.00 (large)
+  F15-RastriginRot       vs RCMAES         p=1.91e-06 A12=0.00 (large)
+  F15-RastriginRot       vs v3_stage       p=3.81e-06 A12=0.01 (large)
+  F16-Weierstrass        vs BIPOP-aCMA-ES  p=3.81e-06 A12=0.02 (large)
+  F16-Weierstrass        vs IPOP-CMA-ES    p=1.33e-05 A12=0.04 (large)
+  F16-Weierstrass        vs RCMAES         p=1.91e-06 A12=0.00 (large)
+  F16-Weierstrass        vs v3_stage       p=1.91e-06 A12=0.01 (large)
+  F17-SchafferF7         vs ARRDE          p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs BIPOP-aCMA-ES  p=5.72e-06 A12=0.03 (large)
+  F17-SchafferF7         vs EBOwithCMAR    p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs ELSHADE-SPACMA p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs IPOP-CMA-ES    p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs L-SHADE        p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs LSHADE-SPACMA  p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs RCMAES         p=1.91e-06 A12=0.00 (large)
+  F17-SchafferF7         vs v3_stage       p=1.91e-06 A12=0.00 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. RCMAES                 mean rank   1.83   best on  7/9
+   2. IPOP-CMA-ES            mean rank   2.89   best on  4/9
+   3. BIPOP-aCMA-ES          mean rank   4.44   best on  4/9
+   4. LSHADE-SPACMA          mean rank   4.61   best on  3/9
+   5. EBOwithCMAR            mean rank   4.83   best on  1/9
+   6. v3_stage               mean rank   5.72   best on  1/9
+   7. ELSHADE-SPACMA         mean rank   7.00   best on  0/9
+   8. ARRDE                  mean rank   7.67   best on  0/9
+   9. L-SHADE                mean rank   7.89   best on  0/9
+  10. MC-ESO                 mean rank   8.67   best on  0/9  <- ref
+  11. NL-SHADE-RSP           mean rank  10.44   best on  0/9
+
