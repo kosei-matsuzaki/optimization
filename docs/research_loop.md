@@ -109,7 +109,7 @@
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
-1. **【v3 の 30 次元 2/2 の残り】後半 12 関数のうち F18-F24 の 7 関数。** `./run.sh quick --all --funcs F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v3_stage,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 1`（label `j46c`）。**shard は 1 関数ずつ逐次にする**: 30D は 1 プロセスが 11 手法ぶんで約 10GB まで育つので、2 本以上の並列は cgroup OOM で落ちる（2026-10-14 の j46b で確認）。1 関数あたり 11〜14 分なので 7 関数で約 90 分。F01-F17 の既存集計（`analysis/single/j46/summary_j46_dim30_f01-f17.csv` / `wilcoxon_j46_dim30_f01-f17.csv`）と連結して 24/24 を確かめ、【v3 の 30 次元 1/2】と同じ集計を 24 関数で。**記録**: `analysis/single/j46/`。
+1. **【v3 の 30 次元 2/2 の残り】後半 12 関数のうち F18-F24 の 7 関数。** `./run.sh quick --all --funcs F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v3_stage,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 1`（label `j46c`）。**shard は 1 関数ずつ逐次にする**: 30D は 1 プロセスが 11 手法ぶんで約 10GB まで育つので、2 本以上の並列は cgroup OOM で落ちる（2026-10-14 の j46b で確認）。1 関数あたり 11〜14 分なので 7 関数で約 90 分。F01-F17 の既存集計（`analysis/single/j46/summary_j46_dim30_f01-f17.csv` / `wilcoxon_j46_dim30_f01-f17.csv`）と連結して 24/24 を確かめ、【v3 の 30 次元 1/2】と同じ集計を 24 関数で。**記録**: `analysis/single/j46/`。 (claimed 2026-10-14 09:30 UTC)
 
 ## 規則
 
