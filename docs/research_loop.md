@@ -109,12 +109,7 @@
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
-1. **【v3 の 30 次元 1/2 の残り】BBOB 30D の F09-F12 で、v3 の候補 `v3_stage` と既定・比較手法 9 を並べる。** `./run.sh quick --all --funcs F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v3_stage,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 1`（label `j46a3`）。 (claimed 2026-10-14 06:30 UTC)
-   **`--jobs` は 1 にする**（2026-10-14 の測定で判明: 30D のワーカーは 1 本で 9.9GB まで育ち、クラウドのコンテナの memory cgroup 上限は 13.7GiB。`--jobs 3` は F05 の途中で、`--jobs 2` は F09 の途中で OOM kill された。キューにあった「1 ワーカー 2GB 前後」は 30D では過小）。
-   **背景**: 2026-10-14 に F01-F08 は測り終えて `analysis/single/j46/` に入っている（下の作業ログ）。この項はその残り 4 関数。
-   **集計**: F01-F08 の `analysis/single/j46/summary_j46a_dim30.csv` / `wilcoxon_j46a_dim30.csv` と連結して 12/12 を確かめ、標準の集計（[1]・[4]・[5]）を 11 手法で。加えて `v3_stage` と MC-ESO の関数別 SR@1e-10 の変化を全列挙。
-   **記録**: `analysis/single/j46/`（ジョブ 2 と合わせて 24 関数）。
-2. **【v3 の 30 次元 2/2】後半 12 関数。** 同じコマンドで `--funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`（label `j46b`）。前半と連結して 24/24 を確かめ、【v3 の 30 次元 1/2】と同じ集計を 24 関数で。**記録**: `analysis/single/j46/`。
+1. **【v3 の 30 次元 2/2】後半 12 関数。** 同じコマンドで `--funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`（label `j46b`）。前半と連結して 24/24 を確かめ、【v3 の 30 次元 1/2】と同じ集計を 24 関数で。**記録**: `analysis/single/j46/`。
 
 ## 規則
 
@@ -139,6 +134,17 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-14 j46a3（v3 の 30 次元 1/2 の残り F09-F12）— 12/12 完走。F01-F12 平均で v3_stage は SR@1e-10 33.8→43.8%、evals_succ_mean 45658→39781
+
+- **ランした分**: `./run.sh quick --all --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5` 11 手法、F09-F12 を 1 関数ずつ 4 shard 逐次（`--jobs 1`、label `j46a3_F09`〜`_F12`）。wall 42.5 分（06:32:58-07:15:28 UTC）。**OOM は起きなかった**（`--jobs 1` のピーク RSS は 1.2GB 程度）。F01-F08 の既存集計と連結して **12/12 関数 × 11 手法 = 132 行**、(関数, 手法) の重複なし。wilcoxon は 120 行。
+- **環境**: numpy 2.4.6 / cma 4.5.0。CPU Intel Xeon @2.10GHz、family 6 / model 207 / stepping 2、4 CPUs、avx512f あり。BLAS = openblas（SkylakeX、num_threads 4）、`OMP_NUM_THREADS=1` で実行。`pip install -r requirements.txt` は pynmmso のビルドで落ちるので findings.md の空 stub を PYTHONPATH に置き、残りは `python3 -m pip`（3.11）で入れた。
+- **全体（12 関数平均、SR@1e-10 / 1e-7 / 1e-4 / 1e-2 / `evals_succ_mean`）**: IPOP-CMA-ES 81.7/81.7/81.7/81.7/24790、RCMAES 70.4/70.4/70.4/70.4/33227、BIPOP-aCMA-ES 65.4/65.4/65.4/65.4/20222、**v3_stage 43.8/47.9/55.0/56.2/40675**、EBOwithCMAR 41.2/47.9/75.8/75.8/62024、LSHADE-SPACMA 39.2/45.0/50.4/59.2/49736、**MC-ESO 33.8/37.1/43.3/49.6/45658**、L-SHADE 31.7、ELSHADE-SPACMA 31.2、ARRDE 25.4、NL-SHADE-RSP 8.8。
+- **`evals_succ_mean`（MC-ESO と v3_stage の両方に成功のある 8 関数 F01/F02/F03/F05/F06/F10/F11/F12 の平均）**: MC-ESO 45658 → v3_stage 39781。F07 は v3_stage のみ成功（MC-ESO 側に成功が無く平均から外れる）。
+- **関数別 SR@1e-10（MC-ESO → v3_stage、12 関数すべて）**: 変化あり F06 0→100、F11 0→70、F07 0→15、F02 40→30、F10 55→10、F12 30→20。変化なし F01 100→100、F03 80→80、F05 100→100、F04 0→0、F08 0→0、F09 0→0。
+- **Wilcoxon（MC-ESO を reference、両側 p<0.05、A12）**: v3_stage が有意に勝つ 5 関数（F06 p=1.9e-06 A12=0.00 large、F08 1.9e-06 0.00 large、F09 1.9e-06 0.00 large、F07 2.6e-04 0.09 large、F01 0.026 0.39 small）、MC-ESO が有意に勝つ 2 関数（F03 8.8e-05 0.83 large、F10 2.5e-03 0.80 large）。比較 9 手法に対する MC-ESO の勝/負（関数数）: NL-SHADE-RSP 9/1、ELSHADE-SPACMA 5/4、ARRDE 4/6、BIPOP 4/7、L-SHADE 3/5、RCMAES 3/9、IPOP 3/8、LSHADE-SPACMA 2/7、EBOwithCMAR 2/6。
+- **CEC 式の平均誤差の順位 ([5])**: **12 関数では出せず、F09-F12 の 4 関数のみ**（F01-F08 の per-run stats は前回のコンテナの `results/` にしか無く、リポジトリには集計 CSV だけが入っている）。4 関数での順位: RCMAES 2.00 < IPOP 2.38 < BIPOP 2.62 < EBOwithCMAR 3.62 < LSHADE-SPACMA 5.12 < **v3_stage 7.00** < ELSHADE-SPACMA 7.50 < L-SHADE 7.75 < ARRDE 8.50 < **MC-ESO 9.00** < NL-SHADE-RSP 10.50。F01-F08 の 6.44→5.38 は前回の記録（下の j46a の項）。
+- **書かれたとおりに回せなかった点**: 上の CEC 順位を 12 関数で再計算できなかった点のみ。今回の 4 関数の per-run stats は `analysis/single/j46/stats_j46a3/*.csv.gz` に残した（24 関数での順位計算に使える）。`find analysis -type f` は 380 ファイル（上限 約 400）。
 
 ### 2026-10-14 j46a（v3 の 30 次元 1/2）— 8/12 関数のみ完走（OOM で 2 回中断）。F01-F08 では v3_stage が SR@1e-10 40.0→53.1%、CEC 順位 6.44→5.38
 
