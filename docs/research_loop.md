@@ -109,9 +109,10 @@
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
-1. **【v3 の 30 次元 1/2】BBOB 30D の前半 12 関数で、v3 の候補 `v3_stage` と既定・比較手法 9 を並べる。** `./run.sh quick --all --funcs F01-Sphere,F02-EllipsoidalSep,F03-RastriginSep,F04-BucheRastrigin,F05-LinearSlope,F06-AttractiveSector,F07-StepEllipsoidal,F08-Rosenbrock,F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v3_stage,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 3`（label `j46a`）。**`--jobs` は 3 まで**（30D は 1 ワーカーが 2GB 前後まで育つ。ローカルの PC は 2026-10-14 にこれで空きメモリが尽きた）。 (claimed 2026-10-14 04:30 UTC)
-   **背景**: v3（CEC 式の順位を主に見る改良）の候補 `v3_stage` は、空振りの座標走査を繰り返さない（全次元）・スピルオーバー 5 連敗で波（10D 以上）・CMA 株を流行と並走させて記録の更新で評価を配分（20D 以上、`strain_compete`）。部品が働く次元の境目は 5D / 10D / 20D の結果で決めたので、30D は境目の決定に使っていない検証。ローカルの前半 12 関数では CEC 式の順位 6.71 → 5.50 だが、F10 70 → 10%・F02 70 → 35% が落ちた。
-   **集計**: 標準の集計（[1]・[4]・[5]）を 11 手法で。加えて `v3_stage` と MC-ESO の関数別 SR@1e-10 の変化を全列挙。
+1. **【v3 の 30 次元 1/2 の残り】BBOB 30D の F09-F12 で、v3 の候補 `v3_stage` と既定・比較手法 9 を並べる。** `./run.sh quick --all --funcs F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v3_stage,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 1`（label `j46a3`）。
+   **`--jobs` は 1 にする**（2026-10-14 の測定で判明: 30D のワーカーは 1 本で 9.9GB まで育ち、クラウドのコンテナの memory cgroup 上限は 13.7GiB。`--jobs 3` は F05 の途中で、`--jobs 2` は F09 の途中で OOM kill された。キューにあった「1 ワーカー 2GB 前後」は 30D では過小）。
+   **背景**: 2026-10-14 に F01-F08 は測り終えて `analysis/single/j46/` に入っている（下の作業ログ）。この項はその残り 4 関数。
+   **集計**: F01-F08 の `analysis/single/j46/summary_j46a_dim30.csv` / `wilcoxon_j46a_dim30.csv` と連結して 12/12 を確かめ、標準の集計（[1]・[4]・[5]）を 11 手法で。加えて `v3_stage` と MC-ESO の関数別 SR@1e-10 の変化を全列挙。
    **記録**: `analysis/single/j46/`（ジョブ 2 と合わせて 24 関数）。
 2. **【v3 の 30 次元 2/2】後半 12 関数。** 同じコマンドで `--funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`（label `j46b`）。前半と連結して 24/24 を確かめ、【v3 の 30 次元 1/2】と同じ集計を 24 関数で。**記録**: `analysis/single/j46/`。
 
@@ -138,6 +139,19 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-14 j46a（v3 の 30 次元 1/2）— 8/12 関数のみ完走（OOM で 2 回中断）。F01-F08 では v3_stage が SR@1e-10 40.0→53.1%、CEC 順位 6.44→5.38
+
+- **ランした分**: `./run.sh quick --all --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5` 11 手法。**F01-F08 の 8/12 関数のみ**（88 行 = 8×11、重複なし）。F09-F12 は未測定でジョブに書き戻した。wall 76 分（04:54-06:10 UTC）。2 shard（`--jobs 3` で F01-F04、`--jobs 2` で F05-F08）を連結。
+- **書かれたとおりに回せなかった点**: `--jobs 3` が 05:06 に `BrokenProcessPool` で落ちた。`dmesg` で memory cgroup の OOM kill を確認（ワーカー 1 本が anon-rss 5.3GB）。`--jobs 2` で F05-F08 は通ったが F09 の途中で再度 OOM（ワーカー 1 本が RSS 9.9GB、cgroup 上限 13.7GiB、cache は 127MB のみ）。**キューの「30D は 1 ワーカーが 2GB 前後」は 30D では過小**。残りは `--jobs 1` 指定で書き戻した。F05 は 1 回目の中断時に未完だったので捨てて 2 回目で測り直した。
+- **環境**: numpy 2.4.6 / cma 4.5.0。CPU Intel Xeon @2.10GHz、family 6 / model 207 / stepping 2、4 CPUs、avx512f あり。BLAS = openblas（SkylakeX、num_threads 4、`libscipy_openblas64_`）。`pip install -r requirements.txt` は pynmmso のビルドで落ちるので findings.md の空 stub を PYTHONPATH に置いた。`pip` が 3.13 を指すので `python3 -m pip`（3.11）で入れ直した。
+- **全体（8 関数平均、SR@1e-2/1e-4/1e-7/1e-10）**: MC-ESO 50.6/45.0/41.2/**40.0** ／ v3_stage 58.1/58.1/55.0/**53.1**。他: IPOP-CMA-ES 73.8、RCMAES 55.6、EBOwithCMAR 50.6、BIPOP-aCMA-ES 49.4、L-SHADE 47.5、ELSHADE-SPACMA 46.9、LSHADE-SPACMA 46.2、ARRDE 38.1、NL-SHADE-RSP 13.1（いずれも SR@1e-10）。
+- **evals_succ_mean**（両方に成功のある関数だけ、F01/F02/F03/F05/F06 の 5 関数）: MC-ESO 34999 ／ v3_stage 27174（-7825）。
+- **関数別 SR@1e-10 の変化（v3_stage − MC-ESO、変化のあった関数のみ）**: F02-EllipsoidalSep 40→30%（-10）、F06-AttractiveSector 0→100%（+100）、F07-StepEllipsoidal 0→15%（+15）。F01 100→100、F03 80→80、F04 0→0、F05 100→100、F08 0→0 は変化なし。
+- **Wilcoxon（MC-ESO を reference、α=0.05、8 関数）**: v3_stage が有意に良い 4（F06 A12=0.00 large、F08 A12=0.00 large、F07 A12=0.09 large、F01 A12=0.39 small）／MC-ESO が有意に良い 1（F03-RastriginSep A12=0.84 large）／有意差なし 3。
+- **[5] CEC 式の平均誤差の順位（8 関数）**: ELSHADE-SPACMA 5.00、L-SHADE 5.00、LSHADE-SPACMA 5.25、IPOP-CMA-ES 5.31、**v3_stage 5.38**、EBOwithCMAR 5.62、ARRDE 6.00、RCMAES 6.12、**MC-ESO 6.44**、BIPOP-aCMA-ES 7.50、NL-SHADE-RSP 8.38。
+- **記録**: `analysis/single/j46/summary_j46a_dim30.csv` / `wilcoxon_j46a_dim30.csv`（8 関数分）。`analysis/` のファイル数 376。
+- 8/12 関数の部分結果である。採否の判断はしない。
 
 ### 2026-10-13 【手法解説ページの全手法比較 7/7】10D の第 4 四半分（F19-F24）を 18 手法で測り、4 shard を合わせて 10D を 24/24 関数で集計した（j45d10d） — **10D 全 24 関数で MC-ESO は SR@1e-10 64.17% で 18 手法中 1 位（2 位 LSHADE-SPACMA 55.21%、3 位 AMALGAM-SO 53.75%、旧既定 `MC-ESO-v2` 52.92% は 4 位）。一方 CEC 式の平均誤差の順位は 7.42 で 2 位（1 位 LSHADE-SPACMA 7.35、3 位 EBOwithCMAR 7.62、`MC-ESO-v2` 9.54 の 11 位）で、2D・F13-F18 と同じく SR と CEC 順位の向きが食い違う。Wilcoxon は 17 手法に対し 225 勝 60 敗、負け越しは LSHADE-SPACMA（7 勝 8 敗）の 1 手法だけ。負けは F15-RastriginRot（14 手法）・F17-SchafferF7（10 手法）・F02-EllipsoidalSep（8、A12 0.38 small）・F19-GriewankRosenbrock（8）・F20-Schwefel（8）・F24-LunacekRastrigin（6）に集まる。** 新しく測った 6 関数では MC-ESO が SR@1e-10 23.33% で 1 位（2 位 ARRDE 20.00%、`MC-ESO-v2` 6.67%）、CEC 順位は 7.50 で 5 位（1 位 EBOwithCMAR 4.00）。採否の判断はしない
 
