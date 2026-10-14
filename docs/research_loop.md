@@ -109,7 +109,7 @@
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
-1. **【v3 の 30 次元 1/2 の残り】BBOB 30D の F09-F12 で、v3 の候補 `v3_stage` と既定・比較手法 9 を並べる。** `./run.sh quick --all --funcs F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v3_stage,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 1`（label `j46a3`）。
+1. **【v3 の 30 次元 1/2 の残り】BBOB 30D の F09-F12 で、v3 の候補 `v3_stage` と既定・比較手法 9 を並べる。** `./run.sh quick --all --funcs F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v3_stage,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 1`（label `j46a3`）。 (claimed 2026-10-14 06:30 UTC)
    **`--jobs` は 1 にする**（2026-10-14 の測定で判明: 30D のワーカーは 1 本で 9.9GB まで育ち、クラウドのコンテナの memory cgroup 上限は 13.7GiB。`--jobs 3` は F05 の途中で、`--jobs 2` は F09 の途中で OOM kill された。キューにあった「1 ワーカー 2GB 前後」は 30D では過小）。
    **背景**: 2026-10-14 に F01-F08 は測り終えて `analysis/single/j46/` に入っている（下の作業ログ）。この項はその残り 4 関数。
    **集計**: F01-F08 の `analysis/single/j46/summary_j46a_dim30.csv` / `wilcoxon_j46a_dim30.csv` と連結して 12/12 を確かめ、標準の集計（[1]・[4]・[5]）を 11 手法で。加えて `v3_stage` と MC-ESO の関数別 SR@1e-10 の変化を全列挙。
