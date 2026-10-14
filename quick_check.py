@@ -518,6 +518,12 @@ _OPTIMIZERS = {
     "v3_stageL1":     (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 5, "wave_fail_min_dim": 10, "strain_compete": True, "strain_max": 0.5, "strain_immigrate": False, "strain_min_dim": 20, "strain_lam_mult": 1.0}),
     "v3_ho25":        (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "handover_frac": 0.25}),
     "v3_ho50":        (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "handover_frac": 0.5}),
+    # Native MC-ESO: the current default without the pycma waves (stall wave and
+    # containment hand-over). Reference for replacing them with MC-ESO's own machinery.
+    "v4_native":      (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": None}),
+    "v4_chain":       (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": None, "cc_chain": True}),
+    "v4_veto":        (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": None, "spill_adapt_veto": 0.1}),
+    "v4_chainveto":   (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": None, "cc_chain": True, "spill_adapt_veto": 0.1}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
     "v3_scan1wf8":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 8}),

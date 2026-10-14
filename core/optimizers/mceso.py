@@ -71,6 +71,11 @@ class _MCESOState:
     # by construction — unlike C_pop, which is re-estimated every generation from
     # a population drawn from it and collapses to rank ≈ 2 of 10 in high dim.
     cc_C: "np.ndarray | None" = None
+    # cc_chain: the transmission chain — the cumulated, σ-normalised drift of the
+    # outbreak's centre (mean of its best hosts) — and the previous centre.
+    cc_chain: "np.ndarray | None" = None
+    cc_center: "np.ndarray | None" = None
+    cc_cond_hist: list = field(default_factory=list)   # (evals, log10 cond of learned C)
     # The learned C has reached 10^router_learned_cond (latched; σ floor and
     # the containment hand-over read it).
     cc_ill: bool = False
@@ -769,6 +774,19 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # CEC2022 hybrids (G06) the learned C latches ill at ~4700 evaluations
         # and the whole budget goes to a CMA run that stalls.
         handover_frac: float = 1.0,
+        # Transmission chain (2026-10-14, CMA-ES's evolution-path idea inside the
+        # outbreak): the learned C also gets a rank-one term along the cumulated
+        # drift of the outbreak's centre (mean of its best quarter of hosts),
+        # normalised by σ. A single steep direction (BentCigar) shows up in that
+        # drift long before the rank-μ term resolves it: without the pycma
+        # waves 10D F12 stalls at f ≈ 10 with the learned C at cond 10^3.7.
+        cc_chain: bool = False,
+        # Still adapting (2026-10-14): no spillover while the learned C's
+        # log10 condition rose by more than this over the last stagnation
+        # window — the outbreak is still adapting to the host's shape (None =
+        # off). Without the pycma waves 10D F12 re-seeds every ~1500
+        # evaluations while its C is still growing.
+        spill_adapt_veto: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
         air_cauchy: bool = False,
@@ -830,6 +848,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.strain_share_shape = strain_share_shape
         self.strain_lam_mult = strain_lam_mult
         self.handover_frac = handover_frac
+        self.cc_chain = cc_chain
+        self.spill_adapt_veto = spill_adapt_veto
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -1284,6 +1304,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
           drilling), which protects SR@1e-10 on hard single-optimum functions.
         """
         window = self._stagnation_window()
+        if self.spill_adapt_veto is not None and len(st.cc_cond_hist) >= 2:
+            now_e, now_c = st.cc_cond_hist[-1]
+            past = [c for e, c in st.cc_cond_hist if e <= now_e - window]
+            if past and now_c - past[-1] > self.spill_adapt_veto:
+                return False                    # still adapting to the host
         if self._basin_exhausted(st):
             # Once an optimum is drilled out, no later basin can improve the
             # global best, so `no_improve` never resets and this branch chops
@@ -2350,9 +2375,26 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         rank_mu = (Y.T @ Y) / len(Y)
         c = min(1.0, self.cc_learning_rate)
         C = (1.0 - c) * st.cc_C + c * rank_mu
+        if self.cc_chain:
+            n = self.dim
+            mu = max(1, len(st.pop_f) // 4)
+            center = np.mean(st.pop_x[np.argsort(st.pop_f)[:mu]], axis=0)
+            if st.cc_center is not None and st.sigma > 0:
+                cc = 4.0 / (n + 4.0)                       # CMA-ES's c_c (μ_eff ≈ μ)
+                c1 = 2.0 / ((n + 1.3) ** 2 + mu)           # CMA-ES's c_1
+                drift = (center - st.cc_center) / st.sigma
+                if st.cc_chain is None:
+                    st.cc_chain = np.zeros(n)
+                st.cc_chain = (1 - cc) * st.cc_chain + math.sqrt(cc * (2 - cc) * mu) * drift / math.sqrt(mu)
+                C = (1.0 - c1) * C + c1 * np.outer(st.cc_chain, st.cc_chain)
+            st.cc_center = center
         tr = float(np.trace(C))
         if tr > 1e-300 and np.all(np.isfinite(C)):
             st.cc_C = C * (self.dim / tr)      # mean eigenvalue 1
+            if self.spill_adapt_veto is not None:
+                ev = np.linalg.eigvalsh(st.cc_C)
+                if ev[0] > 0:
+                    st.cc_cond_hist.append((len(st.history_f), math.log10(ev[-1] / ev[0])))
 
     # ── per-generation dynamics recording ───────────────────────────────────
     def _record_generation(self, st: _MCESOState) -> None:
