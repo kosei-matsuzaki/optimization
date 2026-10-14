@@ -109,7 +109,6 @@
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
-1. **【v3 の 30 次元 2/2 の残り】後半 12 関数のうち F18-F24 の 7 関数。** `./run.sh quick --all --funcs F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v3_stage,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 1`（label `j46c`）。**shard は 1 関数ずつ逐次にする**: 30D は 1 プロセスが 11 手法ぶんで約 10GB まで育つので、2 本以上の並列は cgroup OOM で落ちる（2026-10-14 の j46b で確認）。1 関数あたり 11〜14 分なので 7 関数で約 90 分。F01-F17 の既存集計（`analysis/single/j46/summary_j46_dim30_f01-f17.csv` / `wilcoxon_j46_dim30_f01-f17.csv`）と連結して 24/24 を確かめ、【v3 の 30 次元 1/2】と同じ集計を 24 関数で。**記録**: `analysis/single/j46/`。 (claimed 2026-10-14 09:30 UTC)
 
 ## 規則
 
@@ -134,6 +133,19 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-14 j46c（v3 の 30 次元 2/2 の残り F18-F24）— 7/7 完走。24/24 関数で v3_stage は SR@1e-10 21.25→23.12%、evals_succ_mean 43741→37074、CEC 順位 7.25→5.78
+
+- **ランした分**: `./run.sh quick --all --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5` 11 手法、F18-F24 を 1 関数 1 shard で逐次（`--jobs 1`、label `j46c_F18`〜`_F24`）。wall 67.8 分（09:47:56-10:55:43 UTC、1 関数 8.8〜10.6 分）、`result.json` は 7 本すべて `status=done`、`set=all-d30`。**OOM は起きなかった**。F01-F17 の既存集計と連結して **24/24 関数 × 11 手法 = 264 行**（wilcoxon 240 行 = 24×10、(関数, 手法) の重複・欠落ゼロ）。
+- **環境**: numpy 2.4.6 / cma 4.5.0 / minionpy 1.9.1。CPU Intel Xeon @2.10GHz、family 6 / model 207 / stepping 2、4 CPUs、avx512f あり。BLAS = openblas（SkylakeX、num_threads 4）、`OMP_NUM_THREADS=1` で実行。`pip install -r requirements.txt` は pynmmso のビルドで落ちるので findings.md の空 stub を `PYTHONPATH` に置き、`PATH=/usr/bin:$PATH`（3.13）に `numpy==2.4.6` を固定して j46a/j46b と揃えた。
+- **全体（24 関数平均、SR@1e-10 / 1e-7 / 1e-4 / 1e-2、`evals(own)`＝自分の成功関数の平均 / nf）**: IPOP-CMA-ES 45.6/46.9/51.5/56.0（26195、14）、RCMAES 42.9/44.8/50.4/56.0（28954、15）、BIPOP-aCMA-ES 37.5/38.5/39.0/41.7（19527、11）、**v3_stage 23.1/29.6/36.5/41.9（40062、15）**、EBOwithCMAR 21.5/24.8/43.3/51.7、**MC-ESO 21.2/22.9/28.8/31.9（43741、11）**、LSHADE-SPACMA 20.4/27.3/35.4/46.7、L-SHADE 16.2、ELSHADE-SPACMA 16.2、ARRDE 14.6、NL-SHADE-RSP 4.8。
+- **`evals_succ_mean`（MC-ESO と v3_stage の両方に成功のある 11 関数 F01/F02/F03/F05/F06/F10/F11/F12/F14/F21/F22 の平均）**: MC-ESO 43741 → v3_stage 37074（-6668）。F07・F13・F17・F18 は v3_stage のみ成功（平均から外れる）、MC-ESO のみ成功の関数は無し。MC-ESO より速い比較手法は BIPOP-aCMA-ES 13088［共通 8、MC-ESO 50023］・IPOP-CMA-ES 16163［共通 9、47387］・RCMAES 23612［共通 8、50023］・ARRDE 43403［共通 7、44217］の 4 手法。
+- **関数別 SR@1e-10（MC-ESO → v3_stage、変化のあった 8 関数）**: F06 0→100、F11 0→70、F07 0→15 が改善、**F10 55→10、F14 45→0、F21 55→25、F02 40→30、F12 30→20 が悪化**。残る 16 関数は不変（F01 100、F03 80、F05 100、F22 5、F04・F08・F09・F13・F15・F16・F17・F18・F19・F20・F23・F24 は両者 0）。新規 7 関数（F18-F24）で SR が動いたのは **F21 の -30 のみで、それは悪化**。24 関数平均は 21.25 → 23.12（+1.87pt）。
+- **Wilcoxon（MC-ESO を reference、両側 p<0.05、A12）**: v3_stage が有意に勝つ 11 関数（F06・F08・F09・F17・F18 A12=0.00、F16 0.01、F15 0.01、F13 0.02、F07 0.09 いずれも large、F01 0.39 small、F14 0.45 negligible）、MC-ESO が有意に勝つ 3 関数（F03 p=8.8e-05 A12=0.83、F10 p=2.5e-03 0.80、**F23 p=5.6e-03 0.79** いずれも large）。比較 9 手法に対する MC-ESO の勝/負（関数数）: NL-SHADE-RSP 15/1、ELSHADE-SPACMA 10/10、ARRDE 8/12、L-SHADE 8/11、LSHADE-SPACMA 7/14、BIPOP-aCMA-ES 7/16、RCMAES 7/17、EBOwithCMAR 6/13、IPOP-CMA-ES 6/16。
+- **CEC 式の平均誤差の順位 ([5])**: **16 関数のみ（F09-F24）**。F01-F08 の per-run stats はリポジトリに無い（集計 CSV だけ）。RCMAES 4.03 < IPOP 4.19 < EBOwithCMAR 4.66 < LSHADE-SPACMA 5.16 < BIPOP-aCMA-ES 5.56 < **v3_stage 5.78** < ARRDE 6.38 < ELSHADE-SPACMA 7.12 < L-SHADE 7.25 = **MC-ESO 7.25** < NL-SHADE-RSP 8.62。
+- **書かれたとおりに回せなかった点**: CEC 順位を 24 関数で出せず F09-F24 の 16 関数のみ（F01-F08 の per-run stats が無い、j46a3・j46b と同じ事情）。他はジョブ記載どおり。
+- **記録**: `analysis/single/j46/summary_j46_dim30_all24.csv` / `wilcoxon_j46_dim30_all24.csv` / `analyze_quick_j46_d30_all24.txt`、F18-F24 の per-run stats は `stats_j46c/`。`find analysis -type f` は **398**（上限 約 400。次のジョブの出力は上限に当たる）。`scripts/check_doc_size.py` の結果は下に記す。
+- 24/24 関数の結果である。採否の判断はしない。
 
 ### 2026-10-14 j46b（v3 の 30 次元 2/2）— F13-F17 の 5 関数のみ完走（17/24）。F01-F17 平均で v3_stage は SR@1e-10 26.5→30.9%、CEC 順位 8.67→5.72
 
