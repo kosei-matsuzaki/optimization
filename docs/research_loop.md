@@ -109,7 +109,7 @@
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
-1. **【v3 の 30 次元 2/2】後半 12 関数。** 同じコマンドで `--funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`（label `j46b`）。前半と連結して 24/24 を確かめ、【v3 の 30 次元 1/2】と同じ集計を 24 関数で。**記録**: `analysis/single/j46/`。
+1. **【v3 の 30 次元 2/2】後半 12 関数。** 同じコマンドで `--funcs F13-SharpRidge,F14-DiffPowers,F15-RastriginRot,F16-Weierstrass,F17-SchafferF7,F18-SchafferF7ill,F19-GriewankRosenbrock,F20-Schwefel,F21-Gallagher101,F22-Gallagher21,F23-Katsuura,F24-LunacekRastrigin`（label `j46b`）。前半と連結して 24/24 を確かめ、【v3 の 30 次元 1/2】と同じ集計を 24 関数で。**記録**: `analysis/single/j46/`。 (claimed 2026-10-14 07:32 UTC)
 
 ## 規則
 
