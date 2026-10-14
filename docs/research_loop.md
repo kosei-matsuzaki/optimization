@@ -109,7 +109,7 @@
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
-1. **【v3 の 30 次元 1/2】BBOB 30D の前半 12 関数で、v3 の候補 `v3_stage` と既定・比較手法 9 を並べる。** `./run.sh quick --all --funcs F01-Sphere,F02-EllipsoidalSep,F03-RastriginSep,F04-BucheRastrigin,F05-LinearSlope,F06-AttractiveSector,F07-StepEllipsoidal,F08-Rosenbrock,F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v3_stage,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 3`（label `j46a`）。**`--jobs` は 3 まで**（30D は 1 ワーカーが 2GB 前後まで育つ。ローカルの PC は 2026-10-14 にこれで空きメモリが尽きた）。
+1. **【v3 の 30 次元 1/2】BBOB 30D の前半 12 関数で、v3 の候補 `v3_stage` と既定・比較手法 9 を並べる。** `./run.sh quick --all --funcs F01-Sphere,F02-EllipsoidalSep,F03-RastriginSep,F04-BucheRastrigin,F05-LinearSlope,F06-AttractiveSector,F07-StepEllipsoidal,F08-Rosenbrock,F09-RosenbrockRot,F10-EllipsoidalRot,F11-Discus,F12-BentCigar --dim 30 --max-evals 75000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v3_stage,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 3`（label `j46a`）。**`--jobs` は 3 まで**（30D は 1 ワーカーが 2GB 前後まで育つ。ローカルの PC は 2026-10-14 にこれで空きメモリが尽きた）。 (claimed 2026-10-14 04:30 UTC)
    **背景**: v3（CEC 式の順位を主に見る改良）の候補 `v3_stage` は、空振りの座標走査を繰り返さない（全次元）・スピルオーバー 5 連敗で波（10D 以上）・CMA 株を流行と並走させて記録の更新で評価を配分（20D 以上、`strain_compete`）。部品が働く次元の境目は 5D / 10D / 20D の結果で決めたので、30D は境目の決定に使っていない検証。ローカルの前半 12 関数では CEC 式の順位 6.71 → 5.50 だが、F10 70 → 10%・F02 70 → 35% が落ちた。
    **集計**: 標準の集計（[1]・[4]・[5]）を 11 手法で。加えて `v3_stage` と MC-ESO の関数別 SR@1e-10 の変化を全列挙。
    **記録**: `analysis/single/j46/`（ジョブ 2 と合わせて 24 関数）。
