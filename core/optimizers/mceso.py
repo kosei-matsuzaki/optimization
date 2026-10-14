@@ -129,6 +129,7 @@ class _MCESOState:
     trace_events: list = field(default_factory=list)
     gen_counts: tuple = (0, 0, 0, 0, 0)
     follow_done: bool = False     # wave_follow: one extension per run
+    strain_owns: bool = False     # strain_handover: the strain has the whole budget
     probe_done: bool = False      # probe_at: the early CMA probe has run
     # strain_compete: a CMA strain co-circulating with the outbreak.
     strain_es: object = None
@@ -138,6 +139,8 @@ class _MCESOState:
     strain_rate: float = 0.0      # EMA of decades per evaluation, CMA strain
     outbreak_rate: float = 0.0    # EMA of decades per evaluation, outbreak
     record_eval: int = 0          # evaluation count at the last new global best
+    strain_record_eval: int = -1  # ... set by the CMA strain
+    outbreak_record_eval: int = 0 # ... set by anything else (the outbreak)
 
     @property
     def budget_left(self) -> bool:
@@ -736,6 +739,39 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # strain from 20D; 2026-10-14).
         strain_min_dim: int = 0,
         wave_fail_min_dim: int = 0,
+        # Takeover: when the CMA strain set the latest record and the outbreak
+        # has set none for a stagnation window, the strain gets the whole
+        # budget (a variant replacing the circulating one). 2026-10-14: at 20D
+        # F10 the 50% share delayed the outbreak's hand-over from ~9k to ~17k.
+        strain_takeover: bool = False,
+        # Initial hosts by Latin hypercube (each coordinate's range cut into
+        # n_pop strata, one host per stratum) instead of i.i.d. uniform.
+        init_lhs: bool = False,
+        # When the outbreak latches ill-conditioning (the containment hand-over)
+        # while a CMA strain is circulating, give the strain the rest of the
+        # budget instead of starting a fresh hand-over wave: it has already
+        # learned the shape (2026-10-14: at 20D F10 the shared budget delayed
+        # the hand-over from ~9k to ~17k evaluations).
+        strain_handover: bool = False,
+        # Retire the strain (lower bound share) once the outbreak's learned C
+        # latches ill-conditioning: the containment hand-over then runs on the
+        # outbreak's own learned shape with the budget the strain would take.
+        strain_retire_ill: bool = False,
+        # Cross-immunity: when the CMA strain's covariance reaches the
+        # ill-conditioning threshold first, the outbreak adopts that shape and
+        # latches (the hand-over then whitens by it). Only the shape crosses,
+        # not hosts.
+        strain_share_shape: bool = False,
+        strain_lam_mult: float = 2.0,        # CMA strain λ = this × the CMA-ES default
+        # Budget share of the containment hand-over wave (1.0 = all that is
+        # left). With < 1 the wave is followed (wave_follow-style) only while it
+        # still beats the outbreak, else the outbreak resumes. 2026-10-14: on
+        # CEC2022 hybrids (G06) the learned C latches ill at ~4700 evaluations
+        # and the whole budget goes to a CMA run that stalls.
+        handover_frac: float = 1.0,
+        # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
+        # spread between distant basins, e.g. CEC2022 compositions).
+        air_cauchy: bool = False,
         # While neither strain gains (both rates 0): "keep" the last share, or
         # "explore" = give the outbreak (the explorer) the budget back by
         # dropping to the lower bound (2026-10-14: with "keep", the CMA strain
@@ -787,6 +823,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.strain_dim_ref = strain_dim_ref
         self.strain_min_dim = strain_min_dim
         self.wave_fail_min_dim = wave_fail_min_dim
+        self.strain_takeover = strain_takeover
+        self.init_lhs = init_lhs
+        self.strain_handover = strain_handover
+        self.strain_retire_ill = strain_retire_ill
+        self.strain_share_shape = strain_share_shape
+        self.strain_lam_mult = strain_lam_mult
+        self.handover_frac = handover_frac
+        self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
         self.strain_ema = strain_ema
@@ -965,11 +1009,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             # mid-loop ``break``.
             if self._maybe_spillover(st):
                 break
+            b0_rec = st.best_so_far
             rec = self.strain_credit == "record"
             b0 = st.best_so_far if rec else float(np.min(st.pop_f))
             n0 = len(st.history_f)
             self._run_generation(st)
             self._record_generation(st)
+            if compete and st.best_so_far < b0_rec:
+                st.outbreak_record_eval = len(st.history_f)
             if compete:
                 st.outbreak_rate = self._ema_rate(st.outbreak_rate, b0,
                                                   st.best_so_far if rec else float(np.min(st.pop_f)),
@@ -1019,7 +1066,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         sigma = self.sigma * span        # σ_init (scalar; per-dim bounds not supported)
 
         # Pre-allocate numpy arrays — avoids repeated list→array conversions per iteration
-        pop_x = rng.uniform(lo, hi, (self.n_pop, self.dim))          # (n_pop, dim)
+        if self.init_lhs:
+            n = self.n_pop
+            strata = np.stack([rng.permutation(n) for _ in range(self.dim)], axis=1)
+            pop_x = lo + (hi - lo) * (strata + rng.uniform(0, 1, (n, self.dim))) / n
+        else:
+            pop_x = rng.uniform(lo, hi, (self.n_pop, self.dim))      # (n_pop, dim)
         pop_f = np.array([self.func(x) for x in pop_x])              # (n_pop,)
         # pop_age is the σ_i age-ratio normalizer (divided by 5, the canonical lifespan).
         # Death is f-based (μ+λ greedy), so age has no effect on survival.
@@ -1279,7 +1331,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 and self._update_cc_ill(st)):
             st.handover_done = True
             st.trace_events.append((len(st.history_f), "handover"))
-            self._recombination_wave(st, sigma0=st.sigma, budget_frac=1.0,
+            if self.strain_handover and st.strain_es is not None:
+                st.strain_owns = True
+                return self._strain_step(st)
+            self._recombination_wave(st, sigma0=st.sigma, budget_frac=self.handover_frac,
+                                     follow=(self.handover_frac < 1.0),
                                      lam_mult=self.wave_handover_lambda,
                                      restart=self.wave_handover_restart)
             self._pad_eval_channel(st, _CH_LS)
@@ -1552,7 +1608,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             return np.empty((0, self.dim))
         rng = st.rng
         air_parents_gi = rng.integers(0, self.n_pop, size=n_air)
-        noise_air = rng.standard_normal((n_air, self.dim))
+        noise_air = (np.clip(rng.standard_cauchy((n_air, self.dim)), -20, 20) if self.air_cauchy
+                     else rng.standard_normal((n_air, self.dim)))
         if self._cc_dim_gate() > 0.0:
             st.gen_parent_x.append(st.pop_x[air_parents_gi].copy())
             st.gen_sigma_used.append(np.full(n_air, float(np.max(air_sigma_vec))))
@@ -1925,11 +1982,19 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             g = float(min(1.0, max(0.0, (self.dim / 2.0 - 1.0) / max(1e-9, self.strain_dim_ref / 2.0 - 1.0))))
         hi = (1 - self.strain_min if self.strain_max is None else self.strain_max) * g
         share = min(hi, max(self.strain_min * g, share))
+        if st.strain_owns:
+            share = 1.0
+        elif self.strain_retire_ill and st.cc_ill:
+            share = 0.0
+        if (self.strain_takeover and st.strain_record_eval > st.outbreak_record_eval
+                and len(st.history_f) - st.outbreak_record_eval > self._stagnation_window()):
+            share = 1.0                         # the strain has taken over
         used = len(st.history_f) - st.strain_start
         while st.budget_left and st.strain_evals < share * used:
             if st.strain_es is None or st.strain_es.stop():
                 base = 4 + int(3 * math.log(self.dim))
-                st.strain_lam = 2 * base if st.strain_es is None else 2 * st.strain_lam
+                st.strain_lam = (max(4, int(round(self.strain_lam_mult * base))) if st.strain_es is None
+                                 else 2 * st.strain_lam)
                 bi = int(np.argmin(st.pop_f))
                 s0 = 0.2 * st.span if st.strain_es is None else max(st.sigma, 1e-3 * st.span)
                 st.strain_es = cma.CMAEvolutionStrategy(
@@ -1953,6 +2018,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     break
             self._pad_eval_channel(st, _CH_LS)
             st.strain_evals += len(st.history_f) - n0
+            if st.best_so_far < record_before:
+                st.strain_record_eval = len(st.history_f)
             used = len(st.history_f) - st.strain_start
             if len(F) < len(X):
                 return True
@@ -1986,6 +2053,14 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if not st.cc_ill and st.cc_C is not None:
             ev = np.linalg.eigvalsh(st.cc_C)
             st.cc_ill = bool(ev[0] > 0 and math.log10(ev[-1] / ev[0]) >= self.router_learned_cond)
+        if (not st.cc_ill and self.strain_share_shape and st.strain_es is not None
+                and st.cc_C is not None):
+            C = np.asarray(st.strain_es.C, dtype=float)
+            ev = np.linalg.eigvalsh(C)
+            if ev[0] > 0 and math.log10(ev[-1] / ev[0]) >= self.router_learned_cond:
+                st.cc_C = C / float(np.mean(ev))
+                st.cc_ill = True
+                st.trace_events.append((len(st.history_f), "shape"))
         return st.cc_ill
 
     def _shrink_population(self, st: _MCESOState) -> None:
