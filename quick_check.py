@@ -524,6 +524,10 @@ _OPTIMIZERS = {
     "v4_chain":       (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": None, "cc_chain": True}),
     "v4_veto":        (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": None, "spill_adapt_veto": 0.1}),
     "v4_chainveto":   (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": None, "cc_chain": True, "spill_adapt_veto": 0.1}),
+    # v4 on the default (waves kept): MC-ESO's own learned covariance gains a drift (chain) term
+    "v4_dchain":      (MultiChannelEpidemicOptimizer, {"cc_chain": True}),
+    "v4_dveto":       (MultiChannelEpidemicOptimizer, {"spill_adapt_veto": 0.1}),
+    "v4_dchainveto":  (MultiChannelEpidemicOptimizer, {"cc_chain": True, "spill_adapt_veto": 0.1}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
     "v3_scan1wf8":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 8}),
