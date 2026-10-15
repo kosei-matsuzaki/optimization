@@ -528,6 +528,17 @@ _OPTIMIZERS = {
     "v4_dchain":      (MultiChannelEpidemicOptimizer, {"cc_chain": True}),
     "v4_dveto":       (MultiChannelEpidemicOptimizer, {"spill_adapt_veto": 0.1}),
     "v4_dchainveto":  (MultiChannelEpidemicOptimizer, {"cc_chain": True, "spill_adapt_veto": 0.1}),
+    # Contact tracing: part of the spillover re-seed aims at the centre of past basin bests
+    "v4_trace3":      (MultiChannelEpidemicOptimizer, {"spill_trace": 0.3}),
+    "v4_trace7":      (MultiChannelEpidemicOptimizer, {"spill_trace": 0.7}),
+    # New host population: a basin switch regrows the population and restarts its size schedule
+    "v4_regrow5":     (MultiChannelEpidemicOptimizer, {"switch_regrow": 0.5}),
+    "v4_regrow10":    (MultiChannelEpidemicOptimizer, {"switch_regrow": 1.0}),
+    "v4_regrow5tr":   (MultiChannelEpidemicOptimizer, {"switch_regrow": 0.5, "spill_trace": 0.7}),
+    # Own-outbreak pacing: after a basin switch, stagnation is measured on the new outbreak's best
+    "v4_pace":        (MultiChannelEpidemicOptimizer, {"switch_pace": True}),
+    "v4_paceregrow":  (MultiChannelEpidemicOptimizer, {"switch_pace": True, "switch_regrow": 0.5}),
+    "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
     "v3_scan1wf8":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 8}),

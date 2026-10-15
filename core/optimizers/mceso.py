@@ -76,6 +76,13 @@ class _MCESOState:
     cc_chain: "np.ndarray | None" = None
     cc_center: "np.ndarray | None" = None
     cc_cond_hist: list = field(default_factory=list)   # (evals, log10 cond of learned C)
+    # switch_regrow: the population-size schedule restarts at a basin switch.
+    sched_start: int = 0            # evaluations spent when the schedule started
+    sched_n0: int = 0               # its initial size (0 = the run's initial size)
+    # switch_pace: after a basin switch the new outbreak is paced on its own best.
+    paced: bool = False
+    pace_ref: float = 0.0           # log10 of the outbreak's best at its last meaningful step
+    pace_since: int = 0
     # The learned C has reached 10^router_learned_cond (latched; σ floor and
     # the containment hand-over read it).
     cc_ill: bool = False
@@ -787,6 +794,26 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # off). Without the pycma waves 10D F12 re-seeds every ~1500
         # evaluations while its C is still growing.
         spill_adapt_veto: "float | None" = None,
+        # Contact tracing (2026-10-15): this fraction of the spillover's re-seed
+        # is drawn around the source the past outbreaks point at — the
+        # rank-weighted mean of the best abandoned-basin bests, spread by their
+        # per-coordinate s.d. — instead of a repelled uniform draw (None = off).
+        # On big-valley landscapes (rotated Rastrigin, Schaffers, Lunacek) the
+        # local optima cluster around the global one, which a uniform re-seed
+        # ignores.
+        spill_trace: "float | None" = None,
+        # New host population (2026-10-15): at a basin switch the population is
+        # regrown to this fraction of its initial size and the size schedule
+        # restarts over the remaining budget (None = off). A full restart late
+        # in the run otherwise re-seeds only the shrunk population (10D F15:
+        # ~10 basin switches, the later ones with 40 hosts against 160 at start).
+        switch_regrow: "float | None" = None,
+        # Own-outbreak pacing (2026-10-15): after a basin switch, stagnation is
+        # measured on the new outbreak's own best (meaningful improvement as for
+        # the global best) until it overtakes the global best. Otherwise a fresh
+        # outbreak cannot "improve" until it beats the old best and is cut after
+        # one window (10D F15: a basin switch every ~1660 evaluations).
+        switch_pace: bool = False,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
         air_cauchy: bool = False,
@@ -850,6 +877,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.handover_frac = handover_frac
         self.cc_chain = cc_chain
         self.spill_adapt_veto = spill_adapt_veto
+        self.spill_trace = spill_trace
+        self.switch_regrow = switch_regrow
+        self.switch_pace = switch_pace
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -1206,6 +1236,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             sigma = self.ir_reignite_sigma_ratio * st.span
             return self._reflect(
                 st.ir_archive_x[k] + sigma * rng.standard_normal(dim), lo, hi)
+        if self.spill_trace is not None and rng.random() < self.spill_trace:
+            traced = self._traced_source(st)
+            if traced is not None:
+                return traced
         # Herd-immunity repulsion — uniform draw avoiding remembered basins.
         repel_r = self.ir_repel_radius_ratio * st.span
         cand = rng.uniform(lo, hi, dim)
@@ -1216,6 +1250,27 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                     break
                 cand = rng.uniform(lo, hi, dim)
         return cand
+
+    def _traced_source(self, st: _MCESOState) -> "np.ndarray | None":
+        """spill_trace: one draw around the source the past outbreaks point at.
+        The best half (at least 3) of the abandoned-basin bests and the current
+        best are averaged with log-rank weights; the draw is that centre plus a
+        Gaussian with their per-coordinate s.d. (floored at 1% of the span)."""
+        xs = list(st.sol_archive_x)
+        fs = list(st.sol_archive_f)
+        if len(st.pop_f):
+            i = int(np.argmin(st.pop_f))
+            xs.append(st.pop_x[i])
+            fs.append(float(st.pop_f[i]))
+        if len(xs) < 3:
+            return None
+        order = np.argsort(fs)[:max(3, len(xs) // 2)]
+        P = np.array([xs[j] for j in order])
+        w = np.log(len(order) + 0.5) - np.log(np.arange(1, len(order) + 1))
+        w /= w.sum()
+        centre = w @ P
+        sd = np.maximum(P.std(axis=0), 0.01 * st.span)
+        return self._reflect(centre + sd * st.rng.standard_normal(self.dim), st.lo, st.hi)
 
     def _droplet_strain_positions(self, st: _MCESOState, elite_arr: np.ndarray,
                                   n_h2h: int) -> np.ndarray:
@@ -1406,6 +1461,18 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         div_ratio = 1.0
 
         best_pre_spillover = st.best_so_far
+        if basin_switch and self.switch_regrow is not None and self.pop_schedule == "linear":
+            n_new = max(self.n_pop, int(round(self._n_pop0 * self.switch_regrow)))
+            left = st.max_evals - len(st.history_f)
+            n_new = min(n_new, max(self.n_pop, left // 4))
+            if n_new > self.n_pop:
+                extra = n_new - self.n_pop
+                st.pop_x = np.vstack([st.pop_x, np.repeat(st.pop_x[:1], extra, axis=0)])
+                st.pop_f = np.concatenate([st.pop_f, np.full(extra, np.inf)])
+                st.pop_age = np.concatenate([st.pop_age, np.zeros(extra, dtype=st.pop_age.dtype)])
+                self.n_pop = n_new
+            st.sched_start = len(st.history_f)
+            st.sched_n0 = self.n_pop
         if basin_switch:
             # Wipe everything — including the current best — and re-seed all slots
             # uniformly. best_so_far is preserved as a tracker of the historical
@@ -1450,6 +1517,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         st.sigma = sigma_restart
         st.no_improve = 0
         st.basin_best = float(np.min(st.pop_f))
+        if self.switch_pace and basin_switch and not self._basin_exhausted(st):
+            st.paced = st.basin_best > st.best_so_far
+            st.pace_ref = math.log10(max(st.basin_best, 1e-300))
+            st.pace_since = 0
         st.log_best_ref = math.log10(max(st.best_so_far, 1e-300))
         st.evals_since_reset = 0
         if not basin_switch:
@@ -2092,6 +2163,18 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         """Linear population-size reduction: drop the worst hosts down to the
         size scheduled for the evaluations spent so far."""
         frac = len(st.history_f) / max(st.max_evals, 1)
+        if st.sched_n0:
+            frac = ((len(st.history_f) - st.sched_start)
+                    / max(st.max_evals - st.sched_start, 1))
+            n0 = st.sched_n0
+            target = int(round(self._pop_final
+                               + (n0 - self._pop_final) * (1.0 - frac) ** self.pop_shrink_power))
+            target = max(self._pop_final, min(self.n_pop, target))
+            if target < self.n_pop:
+                keep = np.sort(np.argsort(st.pop_f)[:target])
+                st.pop_x, st.pop_f, st.pop_age = st.pop_x[keep], st.pop_f[keep], st.pop_age[keep]
+                self.n_pop = target
+            return
         if self.pop_shrink_power == 1.0:
             # Exactly the formula the canonical pop_lin* runs used.
             target = int(round(self._n_pop0 + (self._pop_final - self._n_pop0) * frac))
@@ -2256,9 +2339,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         st.history_f.append(f)
         st.history_sigma_eval.append(sigma_used)
         st.evals_since_reset += 1
+        paced_step = False
+        if st.paced:
+            st.pace_since += 1
+            if f < st.basin_best and self._meaningful_improvement(f, st.pace_ref, st.pace_since):
+                paced_step = True
+                st.pace_ref = math.log10(max(f, 1e-300))
+                st.pace_since = 0
         if f < st.basin_best:
             st.basin_best = f
         if f < st.best_so_far:
+            st.paced = False
             st.best_so_far = f
             st.record_eval = len(st.history_f)
             if self._meaningful_improvement(f, st.log_best_ref, st.evals_since_reset):
@@ -2270,7 +2361,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             else:
                 st.no_improve += 1
         else:
-            st.no_improve += 1
+            st.no_improve = 0 if paced_step else st.no_improve + 1
 
     def _place_and_compete(
         self, st: _MCESOState, new_xs: np.ndarray, sigma_children: np.ndarray,
