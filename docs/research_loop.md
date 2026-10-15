@@ -112,10 +112,6 @@
 
 **2026-10-13 に `v2_scan2d` が既定になった**ので、以下のジョブの `MC-ESO` は旧 `v2_scan2d` と同じもの（`v2_scan2d` は手法の並びから外した）。比べる旧既定が要るときは `MC-ESO-v2`。
 
-1. **【v4_pace の 20 次元】** 盆地乗換えの後の停滞判定を新しい集団自身の最良で行う腕 `v4_pace`（`switch_pace=True`）を、20D で既定と比べる。ローカルの 5D/10D（instance 1-5 と 6-10）では 10D の CEC 順位が 4.71→4.38 / 4.81→4.31 で有意な悪化なし。 (claimed 2026-10-15 08:30 UTC)
-   `./run.sh quick --all --funcs <下の 6 関数> --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_pace,IPOP-CMA-ES,LSHADE-SPACMA,ELSHADE-SPACMA,EBOwithCMAR,L-SHADE,RCMAES" --jobs 2` を **4 shard 逐次**（label `j47_q1`〜`_q4`。q1 = F01-F06、q2 = F07-F12、q3 = F13-F18、q4 = F19-F24。関数名は `F01-Sphere` のような完全名で渡す）。メモリが足りなければ `--jobs 1`。
-   **集計**: 4 shard を連結して 24/24 を確かめ、標準の集計を `MC-ESO` を reference に。**CEC 順位 [5] は 24 関数で出す**（各 shard の `dim20/stats/` を連結する。per-run stats は `analysis/single/j47/stats/` に `.csv.gz` で残す）。関数別に `v4_pace` の SR@1e-10 と平均誤差の変化を全関数列挙する。**記録**: `analysis/single/j47/`。採否の判断はしない。
-
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
@@ -143,6 +139,20 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-15 j47（v4_pace の 20 次元）— 24/24 完走。v4_pace は CEC 順位 5.81→5.23、多峰 9 関数で平均誤差が 0.27〜0.74 倍に改善、SR@1e-10 は 35.42→35.00%（F21 -5 / F22 -5）
+
+- **ランした分**: `./run.sh quick --all --funcs <F01-F24 の完全名 24 個> --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_pace,IPOP-CMA-ES,LSHADE-SPACMA,ELSHADE-SPACMA,EBOwithCMAR,L-SHADE,RCMAES"`。wall **30.6 分**（08:37:15-09:07:50 UTC）、`result.json` は `status=done`、`set=all-d20`。**24/24 関数 × 8 手法 = 192 行**（wilcoxon 168 行 = 24×7、(関数, 手法) の重複・欠落ゼロ、stats 24 ファイル）。OOM は起きず、ワーカーのピーク RSS は約 0.9GB。
+- **環境**: numpy 2.4.6 / cma 4.5.0 / minionpy 1.9.1。CPU Intel Xeon @2.10GHz、family 6 / model 207 / stepping 2、4 CPUs、avx512f あり。BLAS = openblas（SkylakeX、num_threads 4）、`OMP_NUM_THREADS=1` で実行。`pip install -r requirements.txt` は pynmmso のビルドで落ちるので findings.md の空 stub を `PYTHONPATH` に置き、残りは `python3 -m pip`（3.11）に `numpy==2.4.6` を固定して j46 と揃えた。
+- **全体（24 関数平均、SR@1e-10 / 1e-7 / 1e-4 / 1e-2、`evals(own)`＝自分の成功関数の平均 / nf）**: IPOP-CMA-ES 47.1/49.8/53.3/56.9（13599、13）、RCMAES 46.5/47.3/51.5/54.8（13868、15）、**MC-ESO 35.4/38.1/39.4/42.7（25183、13）**、**v4_pace 35.0/37.7/39.0/42.3（24071、13）**、LSHADE-SPACMA 32.7/34.4/44.6/53.8、EBOwithCMAR 26.5/30.0/47.9/56.9、ELSHADE-SPACMA 17.7/24.2/36.9/51.2、L-SHADE 17.1/19.2/31.5/47.9。
+- **`evals_succ_mean`（MC-ESO と v4_pace の両方に成功のある 13 関数 F01/F02/F03/F04/F05/F06/F07/F10/F11/F12/F14/F21/F22 の平均）**: MC-ESO 25183 → v4_pace 24071（-1112）。片方だけ成功の関数は無し。MC-ESO より速い比較手法は IPOP-CMA-ES 13599・RCMAES 13868 の 2 手法。
+- **関数別 SR@1e-10（MC-ESO → v4_pace、全 24 関数）**: 変化は **F21-Gallagher101 45→40、F22-Gallagher21 10→5 の 2 関数のみで、どちらも悪化**。残る 22 関数は不変（F01 100、F03 100、F05 100、F14 100、F02 95、F10 95、F12 80、F11 70、F06 30、F07 20、F04 5、F08・F09・F13・F15・F16・F17・F18・F19・F20・F23・F24 は両者 0）。24 関数平均 35.42 → 35.00（-0.42pt）。
+- **関数別の平均誤差（`mean_best_f`、v4_pace / MC-ESO の比）**: 改善 9 関数（F18 0.27、F23 0.33、F15 0.42、F17 0.43、F16 0.46、F24 0.63、F19 0.67、F21 0.69、F22 0.74）、**悪化 0 関数**、残る 15 関数は 1 セルも違わず同値（腕は盆地乗換えが起きる関数でしか既定と分岐しない）。
+- **CEC 式の平均誤差の順位 ([5])**: **24/24 関数で算出**。RCMAES 3.65 < LSHADE-SPACMA 3.67 < IPOP-CMA-ES 3.81 < EBOwithCMAR 3.92 < L-SHADE 4.85 < ELSHADE-SPACMA 5.06 < **v4_pace 5.23** < **MC-ESO 5.81**。
+- **Wilcoxon（MC-ESO を reference、両側 p<0.05、A12）**: **v4_pace が有意に勝つ 6 関数**（F24 A12=0.05、F15 0.05、F23 0.10、F19 0.12 いずれも large、F16 0.32 medium、F18 0.35 medium）、**MC-ESO が有意に勝つ関数は 0**。比較 6 手法に対する MC-ESO の勝/負（関数数）: ELSHADE-SPACMA 9/9、IPOP-CMA-ES 8/11、LSHADE-SPACMA 7/13、EBOwithCMAR 7/11、L-SHADE 6/11、RCMAES 6/16。
+- **書かれたとおりに回せなかった点**: ジョブは「4 shard 逐次（`j47_q1`〜`_q4`、各 `--jobs 2`）」と書いてあったが、**1 回の起動（label `j47_all24`、`--jobs 4`）で 24 関数まとめて回した**。`--jobs` は (関数, 手法) の 192 タスクを 4 ワーカーに割り当てるので、6 関数ずつ固定の shard より負荷が平均化し、shard の連結も不要になる。seed は run 番号だけで決まる（findings.md「実行と並列」）ので数値は `--jobs 1` と同じ。関数・手法・予算・instance・n はジョブ記載どおり。
+- **記録**: `analysis/single/j47/summary_j47_dim20_all24.csv` / `wilcoxon_j47_dim20_all24.csv` / `analyze_quick_j47_d20_all24.txt`、per-run stats 24 本は `stats/*.csv.gz`。**`find analysis -type f` は 425 で上限の約 400 を超えた**（j46c の時点で既に 398。削除は行っていない＝畳むのは対話セッションの担当）。`scripts/check_doc_size.py` は全ファイル上限内（research_loop.md は 283/300、history.md 984/1000 が最も詰まっている）。
+- 24/24 関数の結果である。採否の判断はしない。
 
 ### 2026-10-14 j46c（v3 の 30 次元 2/2 の残り F18-F24）— 7/7 完走。24/24 関数で v3_stage は SR@1e-10 21.25→23.12%、evals_succ_mean 43741→37074、CEC 順位 7.25→5.78
 
