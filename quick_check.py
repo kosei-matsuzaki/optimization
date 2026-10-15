@@ -683,13 +683,13 @@ _V1_DEFAULTS = {"cc_air_ratio": 0.10, "sigma_floor_ratio": 1e-6, "sigma_floor_il
                 "wave_use_C": False, "wave_ill_handover": False, "wave_handover_drill": True}
 # The 2026-10-13 default change (v2_scan2d adopted). MC-ESO-v2 and the v2_* arms
 # (and everything older) are filled with the pre-change values; "MC-ESO" and the
-# v3_* arms run on the new default.
+# v3_* and v4_* arms run on the new default.
 _V2_DEFAULTS = {"ir_archive_frac_hd": None, "cc_spill_freeze_gens": 50, "reassort_sweep": False,
                 "reassort_additivity": None, "reassort_donors": "all",
                 "wave_handover_lambda": None, "reassort_scan": None}
 for _name, (_cls, _kw) in list(_OPTIMIZERS.items()):
     if (isinstance(_cls, type) and issubclass(_cls, MultiChannelEpidemicOptimizer)
-            and _name != "MC-ESO" and not _name.startswith("v3_")):
+            and _name != "MC-ESO" and not _name.startswith(("v3_", "v4_"))):
         if _name.startswith("v2_") or _name == "MC-ESO-v2":
             _OPTIMIZERS[_name] = (_cls, {**_V2_DEFAULTS, **_kw})
         elif _name.startswith("v1_") or _name == "MC-ESO-v1":
