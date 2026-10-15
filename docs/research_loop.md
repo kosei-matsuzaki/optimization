@@ -112,6 +112,10 @@
 
 **2026-10-13 に `v2_scan2d` が既定になった**ので、以下のジョブの `MC-ESO` は旧 `v2_scan2d` と同じもの（`v2_scan2d` は手法の並びから外した）。比べる旧既定が要るときは `MC-ESO-v2`。
 
+1. **【v4_pace の 20 次元】** 盆地乗換えの後の停滞判定を新しい集団自身の最良で行う腕 `v4_pace`（`switch_pace=True`）を、20D で既定と比べる。ローカルの 5D/10D（instance 1-5 と 6-10）では 10D の CEC 順位が 4.71→4.38 / 4.81→4.31 で有意な悪化なし。
+   `./run.sh quick --all --funcs <下の 6 関数> --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_pace,IPOP-CMA-ES,LSHADE-SPACMA,ELSHADE-SPACMA,EBOwithCMAR,L-SHADE,RCMAES" --jobs 2` を **4 shard 逐次**（label `j47_q1`〜`_q4`。q1 = F01-F06、q2 = F07-F12、q3 = F13-F18、q4 = F19-F24。関数名は `F01-Sphere` のような完全名で渡す）。メモリが足りなければ `--jobs 1`。
+   **集計**: 4 shard を連結して 24/24 を確かめ、標準の集計を `MC-ESO` を reference に。**CEC 順位 [5] は 24 関数で出す**（各 shard の `dim20/stats/` を連結する。per-run stats は `analysis/single/j47/stats/` に `.csv.gz` で残す）。関数別に `v4_pace` の SR@1e-10 と平均誤差の変化を全関数列挙する。**記録**: `analysis/single/j47/`。採否の判断はしない。
+
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
