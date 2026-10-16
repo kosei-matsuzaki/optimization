@@ -538,6 +538,8 @@ _OPTIMIZERS = {
     # Own-outbreak pacing: after a basin switch, stagnation is measured on the new outbreak's best
     "v4_pace":        (MultiChannelEpidemicOptimizer, {"switch_pace": True}),
     "v4_paceregrow":  (MultiChannelEpidemicOptimizer, {"switch_pace": True, "switch_regrow": 0.5}),
+    "v4_paceh1":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "pace_horizon": 1.0}),
+    "v4_paceh03":     (MultiChannelEpidemicOptimizer, {"switch_pace": True, "pace_horizon": 0.3}),
     "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),

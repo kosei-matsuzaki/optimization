@@ -814,6 +814,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # outbreak cannot "improve" until it beats the old best and is cut after
         # one window (10D F15: a basin switch every ~1660 evaluations).
         switch_pace: bool = False,
+        # Pacing only while the outbreak can still overtake (2026-10-16): a
+        # paced step resets the stall count only if, at the log-rate of that
+        # step, the outbreak would reach the global best within this fraction
+        # of the remaining budget (None = always). Gallagher's peaks otherwise
+        # let a restart keep "improving" toward a local peak that can never win.
+        pace_horizon: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
         air_cauchy: bool = False,
@@ -880,6 +886,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.spill_trace = spill_trace
         self.switch_regrow = switch_regrow
         self.switch_pace = switch_pace
+        self.pace_horizon = pace_horizon
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -2344,6 +2351,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.pace_since += 1
             if f < st.basin_best and self._meaningful_improvement(f, st.pace_ref, st.pace_since):
                 paced_step = True
+                if self.pace_horizon is not None:
+                    lf = math.log10(max(f, 1e-300))
+                    rate = (st.pace_ref - lf) / max(st.pace_since, 1)
+                    gap = lf - math.log10(max(st.best_so_far, 1e-300))
+                    left = st.max_evals - len(st.history_f)
+                    paced_step = rate > 0 and gap <= rate * self.pace_horizon * left
                 st.pace_ref = math.log10(max(f, 1e-300))
                 st.pace_since = 0
         if f < st.basin_best:
