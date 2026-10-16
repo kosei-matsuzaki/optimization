@@ -1,0 +1,62 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261016_083711_j48_d10_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=8c4d240
+functions: 24   methods: MC-ESO, v4_pace, v4_paceh1, v4_paceh03
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            64.2%   64.8%   68.5%   70.4%       10376            
+  v4_pace           62.9%   63.8%   67.9%   69.8%       11019         1/3
+  v4_paceh1         62.9%   63.8%   67.7%   69.8%       10967         1/3
+  v4_paceh03        63.1%   64.0%   67.7%   69.8%       10902         1/3
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%         v4_pace 100%            4985/4985
+  F02-EllipsoidalSep              100%         v4_pace 100%            7986/7986
+  F03-RastriginSep                100%         v4_pace 100%            9321/9321
+  F04-BucheRastrigin               65%          v4_pace 65%            9972/9972
+  F05-LinearSlope                 100%         v4_pace 100%            7729/7729
+  F06-AttractiveSector            100%         v4_pace 100%          10540/10540
+  F07-StepEllipsoidal              90%          v4_pace 90%            7118/7118
+  F08-Rosenbrock                  100%         v4_pace 100%          14333/14333
+  F09-RosenbrockRot               100%         v4_pace 100%          13953/13953
+  F10-EllipsoidalRot              100%         v4_pace 100%            7000/7000
+  F11-Discus                      100%         v4_pace 100%            6813/6813
+  F12-BentCigar                   100%         v4_pace 100%          12064/12064
+  F13-SharpRidge                  100%         v4_pace 100%            9757/9757
+  F14-DiffPowers                  100%         v4_pace 100%            5956/5956
+  F15-RastriginRot                  0%           v4_pace 0%                    -
+  F16-Weierstrass                  25%          v4_pace 25%          16571/16571
+  F17-SchafferF7                   20%          v4_pace 20%          14095/14095
+  F18-SchafferF7ill                 0%           v4_pace 0%          20045/20045
+  F19-GriewankRosenbrock            0%           v4_pace 0%                    -
+  F20-Schwefel                      0%           v4_pace 0%                    -
+  F21-Gallagher101                100%       v4_paceh03 80%          10841/10590
+  F22-Gallagher21                  40%          v4_pace 35%            8058/8854
+  F23-Katsuura                      0%           v4_pace 0%                    -
+  F24-LunacekRastrigin              0%           v4_pace 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F15-RastriginRot       vs v4_pace        p=0.000293 A12=0.13 (large)
+  F15-RastriginRot       vs v4_paceh03     p=0.000846 A12=0.10 (large)
+  F15-RastriginRot       vs v4_paceh1      p=0.000293 A12=0.13 (large)
+  F19-GriewankRosenbrock vs v4_pace        p=3.62e-05 A12=0.17 (large)
+  F19-GriewankRosenbrock vs v4_paceh03     p=0.000629 A12=0.20 (large)
+  F19-GriewankRosenbrock vs v4_paceh1      p=3.62e-05 A12=0.17 (large)
+  F24-LunacekRastrigin   vs v4_pace        p=0.00271 A12=0.26 (large)
+  F24-LunacekRastrigin   vs v4_paceh03     p=0.00271 A12=0.24 (large)
+  F24-LunacekRastrigin   vs v4_paceh1      p=0.00271 A12=0.26 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v4_paceh03             mean rank   2.35   best on 18/24
+   2. v4_pace                mean rank   2.38   best on 19/24
+   3. v4_paceh1              mean rank   2.46   best on 18/24
+   4. MC-ESO                 mean rank   2.81   best on 17/24  <- ref
+
