@@ -112,7 +112,7 @@
 
 **2026-10-13 に `v2_scan2d` が既定になった**ので、以下のジョブの `MC-ESO` は旧 `v2_scan2d` と同じもの（`v2_scan2d` は手法の並びから外した）。比べる旧既定が要るときは `MC-ESO-v2`。
 
-1. **【pace_horizon の 10 次元】** `switch_pace` の延命を「いまの改善の速さで残り予算内に全体の最良へ届く間だけ」に絞る腕 `v4_paceh1` / `v4_paceh03` を、既定・`v4_pace` と同じ run で比べる。ねらいは Gallagher（F21/F22）の悪化を消し、F15/F19/F24 の改善を残すこと。
+1. **【pace_horizon の 10 次元】** `switch_pace` の延命を「いまの改善の速さで残り予算内に全体の最良へ届く間だけ」に絞る腕 `v4_paceh1` / `v4_paceh03` を、既定・`v4_pace` と同じ run で比べる。ねらいは Gallagher（F21/F22）の悪化を消し、F15/F19/F24 の改善を残すこと。 (claimed 2026-10-16 08:29 UTC)
    `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_pace,v4_paceh1,v4_paceh03" --jobs 4`（label `j48_d10`）。続けて同じ手法で `--instances 6-10 --seed-offset 7`（label `j48_ho_d10`）。
    **集計**: 各 run で標準の集計を `MC-ESO` を reference に。関数別の SR@1e-10 と平均誤差の変化を全関数列挙し、F15・F19・F21・F22・F24 は 3 腕を並べた表にする。per-run stats は `analysis/single/j48/stats_<label>/` に `.csv.gz`。**記録**: `analysis/single/j48/`。採否の判断はしない。
 
