@@ -11,7 +11,7 @@ Custom（C01-C11）と CI（`./run.sh trigger`）はどの回も使っていな�
 
 ## 0. 比較手法の修正後の値（2026-10-06〜07、正準環境。1〜3 節の比較手法の値は修正前）
 
-CMA-ES / IPOP / BIPOP は包みの不具合（run 0 のシード、上限超過）を直し、L-SHADE は論文どおりの移植に差し替えた（[baselines.md](baselines.md)）。全手法比較（`analysis/single/j11/`・`j12/`・`j14/`）の値、SR@1e-10（%）:
+CMA-ES / IPOP / BIPOP は包みの不具合（run 0 のシード、上限超過）を直し、L-SHADE は論文どおりの移植に差し替えた（[baselines.md](baselines.md)）。全手法比較（`analysis/single/j11/`・`j12/`・`j14/`。削除済み、`git checkout f308d59 -- analysis/single/j11 analysis/single/j12 analysis/single/j14` で復元可）の値、SR@1e-10（%）:
 
 | 次元 | MC-ESO | CMA-ES | IPOP-CMA-ES | BIPOP-CMA-ES | DE | L-SHADE |
 |---|---|---|---|---|---|---|
@@ -22,7 +22,7 @@ CMA-ES / IPOP / BIPOP は包みの不具合（run 0 のシード、上限超過�
 MC-ESO と DE は修正の対象外で、値は 1〜3 節と同じ。CMA 系の変化は 1pt 未満、L-SHADE は 5D 15.62 → 58.54、10D 4.17 → 32.08。
 
 
-## 1〜3. 旧既定 `MC-ESO-v0` と比較 5 手法の基準（その177〜179, `analysis/single/e177/`〜`e179/`）
+## 1〜3. 旧既定 `MC-ESO-v0` と比較 5 手法の基準（その177〜179, `analysis/single/e177/`〜`e179/`。削除済み、commit `71f71a8` から復元可）
 
 条件: 2D / 5D / 10D × 6 手法（MC-ESO / CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE）× 20 run × 2500·D 評価、24/24 関数。比較手法の値は 0 節の修正前。関数別の表・Wilcoxon・BBOB 5 群ごとの表は 2026-10-13 に畳んだ（全文は git の `5c959c3` の findings.md）。
 
@@ -43,7 +43,7 @@ MC-ESO と DE は修正の対象外で、値は 1〜3 節と同じ。CMA 系の�
 - 旧環境の D=10 の値（34.4%、10 手法中 4 位）はこの環境で 36.46%・4 位として再現した（差 +2.06）。比較手法側は CMA-ES 42.7 → 41.88（−0.82）、IPOP 47.1 → 50.00（+2.90）。5D で見えた「MC-ESO だけが動く」非対称は 10D では再現しない。MC-ESO の旧記録との乖離は −1.46（2D）／ +4.12（5D）／ +2.06（10D）で、符号も大きさも揃わない。
 - 2D の F06 の large な負けは 1e-10 より下の差（SR はどちらも 100%）。
 
-## 4. pin 93.54 / 798 対 base 92.08 / 677.7 の決着（その181, `analysis/single/e181/`）
+## 4. pin 93.54 / 798 対 base 92.08 / 677.7 の決着（その181, `analysis/single/e181/`。削除済み、commit `72fd2bd` から復元可）
 
 条件: すべて BBOB-24 dim2 / n=20 / 5000 評価 / 同一コンテナ / `OMP_NUM_THREADS=1`。MC-ESO の既定と `core/` は不変。
 
@@ -59,10 +59,10 @@ MC-ESO と DE は修正の対象外で、値は 1〜3 節と同じ。CMA 系の�
 - コード drift は否定された。pin を記録した commit `25418d9` をこの環境で回すと 92.08 / 677.7 が出る。OLD と HEAD の差は 576 セル中 6 セルで、全部 F16 の多解側の列。単一解側の列は 24 関数すべて一致。`mceso.py` は 2026-09-01 の `e2f262a` 以降変わっていない。MC-ESO の dim2 の挙動は 2026-08-24 から動いていない。
 - `evals_succ_mean` の 798 → 677.7（−15%）は速さの差ではなく、平均する関数集合の差。`evals_succ_mean` は 1e-10 に届いた run の平均なので、F24 が 1 run も届かないとその関数が平均から落ちる。LIBS の 24 関数平均 798.1 は、F24 を除く 23 関数で平均すると 677.7 で HEAD と一致する。
 - 運用規則: **`evals_succ_mean` の 24 関数平均は、SR 0% の関数が 1 つ増減するだけで 100 以上動く。手法間・回どうしで並べるときは必ず同じ関数集合で平均する。**
-- ライブラリ版差は実在するが小さい。HEAD 対 LIBS で SR@1e-10 が動くのは F23（75 → 80）と F24（0 → 5）の 2 関数だけ、合計 +0.42pt。BBOB の目的関数値そのものは両版で完全一致（`analysis/single/e181/ioh_probe.py`、ハッシュ `223f348fda2622371c2c7cb3`）で、動くのは MC-ESO 内部の算術。
+- ライブラリ版差は実在するが小さい。HEAD 対 LIBS で SR@1e-10 が動くのは F23（75 → 80）と F24（0 → 5）の 2 関数だけ、合計 +0.42pt。BBOB の目的関数値そのものは両版で完全一致（`analysis/single/e181/ioh_probe.py`、削除済みで commit `72fd2bd` から復元可、ハッシュ `223f348fda2622371c2c7cb3`）で、動くのは MC-ESO 内部の算術。
 - 1.46pt の内訳 = 0.42pt（ライブラリ版差）＋ 1.04pt（β=5 固有で未解明）。base 行（β=0）は 93.33 / 805.6 として再現するので、再現しないのは「`softmax_beta=5` が dim2 で +0.21pt」という 1 行だけ。pin を取った run は commit の 6 時間前で、作業ツリーが `25418d9` と同一である保証がない。この 1.04pt は「到達可能などの状態も 93.54 を出さない」として扱う。
 
-### 既定 `softmax_beta=5.0` は dim2 で β=0 に負けている（追加評価ゼロ、`analysis/single/e181/wilcoxon_b0_vs_b5.py`）
+### 既定 `softmax_beta=5.0` は dim2 で β=0 に負けている（追加評価ゼロ、`analysis/single/e181/wilcoxon_b0_vs_b5.py`。削除済み、commit `72fd2bd` から復元可）
 
 - SR@1e-10: 既定（β=5）92.08 対 β=0 93.33 ＝ −1.25pt。補助 1e-2 −1.04 / 1e-4 −0.41 / 1e-7 −1.46（どの段でも既定が負け）。
 - `evals_succ_mean`（同じ 23 関数）: 既定 677.7 対 β=0 805.6。既定のほうが 16% 速い。
@@ -72,7 +72,7 @@ MC-ESO と DE は修正の対象外で、値は 1〜3 節と同じ。CMA 系の�
 
 ---
 
-## 5. 学習 C の採用規則 `cc_mu_frac`（その182, `analysis/single/e182/`）
+## 5. 学習 C の採用規則 `cc_mu_frac`（その182, `analysis/single/e182/`。削除済み、commit `38c82e6` から復元可）
 
 条件: 10 次元 BBOB-24 × 4 手法（MC-ESO base / 腕 `ccmu50` / CMA-ES / IPOP-CMA-ES）× 20 run × 25000 評価。6 shard 並列。既定は不変（腕は `cc_mu_frac=0.50` のみ）。
 
@@ -119,7 +119,7 @@ bit 一致の検査: (i) 改修は既定を bit 変えない（改修前 commit 
 
 ---
 
-## 6. `cc_mu_frac` の 5D と μ 割（その183, `analysis/single/e183/`）
+## 6. `cc_mu_frac` の 5D と μ 割（その183, `analysis/single/e183/`。削除済み、commit `dedf9d9` から復元可）
 
 条件: (i) 5D × 4 手法（MC-ESO / `ccmu50` / CMA-ES / IPOP-CMA-ES）× 20 run × 12500 評価、(ii) 10D × 2 手法（MC-ESO / `ccmu100`）× 20 run × 25000 評価。base は 5D・10D とも 168/168 セルで再現。
 
