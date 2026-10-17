@@ -1,0 +1,74 @@
+== SR@1e-10 per function (base MC-ESO -> arm), only functions where any arm differs ==
+func                      base       pace      rank5      rank3     mirror     dither     nativec:plainwave  c:sepipop
+F03-RastriginSep           100        100        100        100        100        100        100          5        100
+F04-BucheRastrigin          85         85         85         85         85         80         85          0         80
+F07-StepEllipsoidal        100        100        100        100        100        100        100         65        100
+F08-Rosenbrock             100        100        100         95        100        100        100         85        100
+F09-RosenbrockRot          100        100         95        100        100        100        100         90        100
+F12-BentCigar              100        100        100        100        100        100        100         30        100
+F13-SharpRidge             100        100        100        100        100        100        100         15         10
+F14-DiffPowers             100        100        100        100        100        100        100         15        100
+F15-RastriginRot             5         15          5         10          5          0          5          0         15
+F16-Weierstrass             60         55         75         90         65         70         45          0         75
+F17-SchafferF7              80         80         85         85         90         90         15          0         80
+F18-SchafferF7ill           55         55         50         75         75         60         10          0         25
+F19-GriewankRosenbrock      10          5          0          0          0          0         10          0          0
+F20-Schwefel                 5         10          5          5         10          0          5          5          0
+F21-Gallagher101            95        100         95        100        100        100         95         35         45
+F22-Gallagher21            100         95         95         85         95         95        100         55         45
+F23-Katsuura                45         45         55          5         35         15         35          0          0
+(functions with any change: 17/24)
+
+== functions identical across all 9 methods on SR@1e-10 ==
+7: F01=100, F02=100, F05=100, F06=100, F10=100, F11=100, F24=0
+
+== mean_best_f ratio arm/base (only where differs; '=' means identical cell) ==
+func                      base       pace      rank5      rank3     mirror     dither     nativec:plainwave  c:sepipop
+F01-Sphere               0.000e+00          =          =          =          =          =          =          +          =
+F02-EllipsoidalSep       0.000e+00          =          =          =          =          =          =          +          +
+F03-RastriginSep         1.421e-15          =      2.000      0.000      0.500      0.500          =1382450214622475.500      8.250
+F04-BucheRastrigin       1.492e-01          =          =          =          =      1.062          =     25.195      1.333
+F06-AttractiveSector     4.672e-14      0.939      0.783      0.605      0.696      1.266          =     13.757      1.243
+F07-StepEllipsoidal      0.000e+00          =          =          =          =          =          =          +          =
+F08-Rosenbrock           0.000e+00          =          =          +          =          =          =          +          +
+F09-RosenbrockRot        0.000e+00          =          +          =          =          =          =          +          +
+F10-EllipsoidalRot       0.000e+00          =          =          =          =          =          =          +          +
+F11-Discus               0.000e+00          =          =          =          =          =          =          +          +
+F12-BentCigar            0.000e+00          =          =          =          =          =          +          +          +
+F13-SharpRidge           7.638e-15          =      1.047      1.070      1.116      0.674     10.7914232486286215.519  74650.118
+F14-DiffPowers           0.000e+00          =          =          =          =          +          +          +          +
+F15-RastriginRot         1.606e+00      0.931      1.194      0.930      1.187      1.201          =      0.947      1.033
+F16-Weierstrass          1.630e-02      1.589      0.463      0.234      1.416      1.122      0.987      4.774      2.874
+F17-SchafferF7           3.814e-05          =      0.027      0.041      0.028      0.183      4.499    508.665      0.070
+F18-SchafferF7ill        2.506e-05          =      1.298      0.693      0.196    282.068     55.361   4828.618  19734.248
+F19-GriewankRosenbrock   1.070e-01      0.904      1.521      1.801      1.465      1.360      1.064      0.751      3.493
+F20-Schwefel             6.358e-01      0.947      1.105      0.782      0.699      0.907      0.978      1.737      0.885
+F21-Gallagher101         6.226e-02      0.000      0.747      0.000      0.000      0.000          =     16.718     12.596
+F22-Gallagher21          0.000e+00          +          +          +          +          +          =          +          +
+F23-Katsuura             4.491e-02      0.770      1.325      2.780      1.363      2.212      0.999      2.071      4.923
+F24-LunacekRastrigin     5.520e+00      1.024      1.125      1.055      0.788      1.048          =      1.017      0.952
+
+== evals_succ_mean: corresponding mean over functions where BOTH base and arm succeed ==
+  v4_pace          nf=23  base   3919.3 -> arm   3941.1  (   +21.7)  base-only=[] arm-only=[]
+  v4_rank5         nf=22  base   3808.6 -> arm   4084.1  (  +275.5)  base-only=['F19'] arm-only=[]
+  v4_rank3         nf=22  base   3808.6 -> arm   4149.3  (  +340.7)  base-only=['F19'] arm-only=[]
+  v4_mirror        nf=22  base   3808.6 -> arm   3579.4  (  -229.2)  base-only=['F19'] arm-only=[]
+  v4_dither        nf=21  base   3682.7 -> arm   4189.1  (  +506.5)  base-only=['F15', 'F19'] arm-only=[]
+  v4_native        nf=23  base   3919.3 -> arm   3865.3  (   -54.0)  base-only=[] arm-only=[]
+  ctl_plainwave    nf=20  base   3716.6 -> arm   4957.1  ( +1240.5)  base-only=['F04', 'F18', 'F19'] arm-only=[]
+  ctl_sepipop      nf=21  base   3837.1 -> arm   2647.2  ( -1190.0)  base-only=['F19', 'F20'] arm-only=[]
+== Wilcoxon (ref=MC-ESO, p_two<0.05; A12>0.5 => MC-ESO better) ==
+  v4_pace          ref wins  0 / loses  0
+  v4_rank5         ref wins  0 / loses  0
+  v4_rank3         ref wins  1 / loses  0
+      MC-ESO better: F23(0.81,lar)
+  v4_mirror        ref wins  0 / loses  1
+      arm better   : F20(0.33,med)
+  v4_dither        ref wins  1 / loses  0
+      MC-ESO better: F23(0.74,lar)
+  v4_native        ref wins  4 / loses  0
+      MC-ESO better: F13(0.85,lar) F14(0.78,lar) F17(0.87,lar) F18(0.80,lar)
+  ctl_plainwave    ref wins 14 / loses  0
+      MC-ESO better: F03(1.00,lar) F04(1.00,lar) F06(0.94,lar) F07(0.68,med) F08(0.62,sma) F12(0.97,lar) F13(1.00,lar) F14(1.00,lar) F16(0.82,lar) F17(0.98,lar) F18(1.00,lar) F20(0.80,lar) F21(0.80,lar) F22(0.78,lar)
+  ctl_sepipop      ref wins 13 / loses  0
+      MC-ESO better: F02(0.60,sma) F03(0.79,lar) F08(0.70,med) F09(0.82,lar) F10(0.68,med) F11(0.70,med) F12(0.78,lar) F13(1.00,lar) F14(1.00,lar) F18(0.79,lar) F19(0.83,lar) F21(0.75,lar) F22(0.78,lar)
