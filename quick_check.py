@@ -540,6 +540,10 @@ _OPTIMIZERS = {
     "v4_paceregrow":  (MultiChannelEpidemicOptimizer, {"switch_pace": True, "switch_regrow": 0.5}),
     "v4_paceh1":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "pace_horizon": 1.0}),
     "v4_paceh03":     (MultiChannelEpidemicOptimizer, {"switch_pace": True, "pace_horizon": 0.3}),
+    # Ring vaccination: part of the spillover re-seed in multi-scale rings around the best host
+    "v4_ring3":       (MultiChannelEpidemicOptimizer, {"spill_ring": 0.3}),
+    "v4_ring7":       (MultiChannelEpidemicOptimizer, {"spill_ring": 0.7}),
+    "v4_pacering":    (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_ring": 0.3}),
     "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),

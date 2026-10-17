@@ -820,6 +820,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # of the remaining budget (None = always). Gallagher's peaks otherwise
         # let a restart keep "improving" toward a local peak that can never win.
         pace_horizon: "float | None" = None,
+        # Ring vaccination (2026-10-17): this fraction of an ordinary
+        # spillover's re-seed is placed in rings around the best host, at radii
+        # log-uniform between 10·σ and the restart σ (None = off). In 10D a
+        # uniform re-seed lands nowhere useful: on F17 a run stuck at 0.016
+        # fires 8 failed spillovers in a row while the neighbouring basins of
+        # the Schaffer rings sit just outside the converged σ.
+        spill_ring: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
         air_cauchy: bool = False,
@@ -887,6 +894,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.switch_regrow = switch_regrow
         self.switch_pace = switch_pace
         self.pace_horizon = pace_horizon
+        self.spill_ring = spill_ring
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -1500,8 +1508,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Shuffle so the assignment of "diversified" vs "local" is random
         rng.shuffle(reseed_idx)
         diversified = set(reseed_idx[:n_div])
+        ring_lo = math.log(max(10.0 * st.sigma, 1e-12))
+        ring_hi = math.log(max(sigma_restart, 10.0 * st.sigma, 1e-12))
         for i in reseed_idx:
-            if i in diversified or x_best_snap is None:
+            if (self.spill_ring is not None and x_best_snap is not None
+                    and rng.random() < self.spill_ring):
+                r = math.exp(rng.uniform(ring_lo, ring_hi))
+                new_x = self._reflect(x_best_snap + r * rng.standard_normal(self.dim), lo, hi)
+                sig_log = r
+            elif i in diversified or x_best_snap is None:
                 new_x = self._diversified_reseed(st, x_best_snap)
                 sig_log = (float(np.linalg.norm(new_x - x_best_snap))
                            if x_best_snap is not None else float(sigma_restart))
