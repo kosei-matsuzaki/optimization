@@ -827,6 +827,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # fires 8 failed spillovers in a row while the neighbouring basins of
         # the Schaffer rings sit just outside the converged σ.
         spill_ring: "float | None" = None,
+        # σ steps per evaluation, not per generation (2026-10-17, ≥3D): the
+        # σ factor of a generation is raised to the power
+        # max(1, evaluations of that generation / sigma_batch) (None = off).
+        # One generation is 0.25·n_pop evaluations (80 at 20D with 16·D hosts),
+        # so σ moves ×0.95–1.1 per 80 evaluations: on 20D F01 σ goes 5.2 → 4.3
+        # in the first 2000 evaluations while CMA-ES is already at f 1e-4.
+        sigma_batch: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
         air_cauchy: bool = False,
@@ -895,6 +902,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.switch_pace = switch_pace
         self.pace_horizon = pace_horizon
         self.spill_ring = spill_ring
+        self.sigma_batch = sigma_batch
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -2343,10 +2351,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             m = min(len(f), len(st.gen_parent_f))
             if m > 0:
                 improved = float(np.mean(f[:m] < st.gen_parent_f[:m])) > self.hd_sigma_success
+        k = 1.0
+        if self.sigma_batch is not None and self.dim >= 3:
+            k = max(1.0, (len(st.history_f) - st.gen_eval_start) / self.sigma_batch)
         if improved:
-            st.sigma *= self.sigma_up
+            st.sigma *= self.sigma_up ** k
         else:
-            st.sigma *= self.sigma_drill_down if in_drilling else self.sigma_down
+            st.sigma *= (self.sigma_drill_down if in_drilling else self.sigma_down) ** k
         st.sigma = max(sigma_floor_eff, min(st.sigma, span * self.sigma_ceil_ratio))
 
     # ── host competition (overridable for niching variants) ──────────────────

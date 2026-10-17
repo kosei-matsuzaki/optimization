@@ -89,10 +89,10 @@
 
 **MC-ESO が 1 つの最適解を見つける精度と速さを、既存手法（CMA-ES 系・DE 系）より高める。**
 
-- **主指標**: BBOB-24 の SR@1e-10。補助に SR@1e-2 / 1e-4 / 1e-7、`evals_succ_mean`（比べる手法どうしで同じ関数集合を平均する）、Wilcoxon（MC-ESO を reference、α=0.05）＋ A12。
-- **判定**: 2 次元 BBOB-24（n=20、5000 評価）。5 次元・10 次元（予算 `2500×D`）を併記し、改善の対象に含める。**2D の SR@1e-10 を下げる変更は採用しない。**
-- **比較対象**: CMA-ES / IPOP-CMA-ES / BIPOP-CMA-ES / DE / L-SHADE。
-- **現在地**: 2026-10-12 に既定を `v1_w4q3E` に変更（[mceso.md](mceso.md) の「高次元の終盤」）。正準の SR@1e-10 は 2D 95.00 / 5D 68.33 / 10D 52.71%（`analysis/single/j29/`、旧既定 `MC-ESO-v1` 93.33 / 59.17 / 42.08）。比較 5 手法との同じ run の並びは測定ジョブ。参考に修正後の比較手法の正準値（[findings.md](findings.md) の 0 節）は 5D L-SHADE 58.54 が最高、10D IPOP 49.58 が最高。
+- **主指標**: v3（2026-10-13〜）から CEC 式の平均誤差の順位（ユーザー決定）。SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean`（比べる手法どうしで同じ関数集合を平均する）、Wilcoxon（MC-ESO を reference、α=0.05）＋ A12 を併記する。2026-10-12 までの主指標は SR@1e-10。
+- **判定**: 調整は `--instances 1-5`、採用の前に instance 6-10 と別 seed（`--seed-offset`）で確かめる。2D / 5D / 10D（予算 `2500×D`）はローカル、20D 以上はクラウド。**2D の CEC 順位を下げる変更は採用しない**（2D の SR@1e-10 の大きな悪化も併せて報告する）。
+- **比較対象**: 標準の 16 手法パネル（[baselines.md](baselines.md)）。CEC 順位は 10 手法パネル（`scripts/single/cec_panel.py`）で出す。
+- **現在地**: 2026-10-13 から既定は `v2_scan2d`（[findings.md](findings.md) の 7・8 節）。18 手法の中で SR@1e-10 は 2D/5D/10D とも 1 位、CEC 順位は 2D 3 位・5D 1 位・10D 2 位、20D（8 手法）は最下位、CEC2022 は下位。v4 の候補 `switch_pace` は既定化を保留中（[history.md](history.md) 末尾）。
 - **判定の注意**: `best_f` の Wilcoxon で large が出ても、SR が 100% の関数では主指標の何桁も下の差であることが多い（F06 がその例）。それだけを改善対象の根拠にしない。
 
 **占有されている領域（単一解テーマ）**

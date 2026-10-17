@@ -544,6 +544,10 @@ _OPTIMIZERS = {
     "v4_ring3":       (MultiChannelEpidemicOptimizer, {"spill_ring": 0.3}),
     "v4_ring7":       (MultiChannelEpidemicOptimizer, {"spill_ring": 0.7}),
     "v4_pacering":    (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_ring": 0.3}),
+    # σ steps per evaluation: a generation's σ factor raised to (its evaluations / sigma_batch)
+    "v4_sb10":        (MultiChannelEpidemicOptimizer, {"sigma_batch": 10.0}),
+    "v4_sb20":        (MultiChannelEpidemicOptimizer, {"sigma_batch": 20.0}),
+    "v4_sb40":        (MultiChannelEpidemicOptimizer, {"sigma_batch": 40.0}),
     "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
