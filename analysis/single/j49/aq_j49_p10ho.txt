@@ -1,0 +1,89 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261017_163411_j49_p10ho_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=fb66c77
+functions: 24   methods: LSHADE-SPACMA, EBOwithCMAR, ARRDE, NL-SHADE-RSP, RCMAES, BIPOP-aCMA-ES, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, MC-ESO
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  LSHADE-SPACMA     55.6%   56.7%   62.1%   65.8%       13560         7/5
+  EBOwithCMAR       35.2%   51.2%   57.9%   69.0%       18109        11/4
+  ARRDE             34.8%   46.0%   53.8%   61.5%       10565        13/2
+  NL-SHADE-RSP      19.0%   22.7%   36.7%   39.8%       22146        18/1
+  RCMAES            49.0%   49.0%   53.8%   56.2%        4029         9/5
+  BIPOP-aCMA-ES     41.0%   41.0%   41.0%   43.8%        3201        11/1
+  ELSHADE-SPACMA    42.3%   52.1%   62.5%   67.7%       16954        12/2
+  IPOP-CMA-ES       49.8%   54.0%   60.0%   61.0%        6774        17/2
+  L-SHADE           34.4%   49.8%   59.8%   67.7%       19217        14/2
+  MC-ESO            63.3%   64.6%   68.3%   69.4%       10477            
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%   LSHADE-SPACMA 100%            4917/6528
+  F02-EllipsoidalSep              100%   LSHADE-SPACMA 100%            7919/9803
+  F03-RastriginSep                100%   LSHADE-SPACMA 100%           9592/21622
+  F04-BucheRastrigin               50%     NL-SHADE-RSP 60%          10555/22499  <-- ref behind
+  F05-LinearSlope                 100%   LSHADE-SPACMA 100%            7347/8994
+  F06-AttractiveSector            100%   LSHADE-SPACMA 100%          10685/12557
+  F07-StepEllipsoidal              95%   LSHADE-SPACMA 100%            6686/7113  <-- ref behind
+  F08-Rosenbrock                  100%   LSHADE-SPACMA 100%          13560/17973
+  F09-RosenbrockRot               100%   LSHADE-SPACMA 100%          14064/17918
+  F10-EllipsoidalRot              100%   LSHADE-SPACMA 100%           6998/11796
+  F11-Discus                      100%   LSHADE-SPACMA 100%            6953/9810
+  F12-BentCigar                    95%          RCMAES 100%           12658/8860  <-- ref behind
+  F13-SharpRidge                  100%          RCMAES 100%            9234/5118
+  F14-DiffPowers                  100%   LSHADE-SPACMA 100%            6006/7625
+  F15-RastriginRot                  0%     LSHADE-SPACMA 5%                    -  <-- ref behind
+  F16-Weierstrass                  20%      IPOP-CMA-ES 45%          12918/17772  <-- ref behind
+  F17-SchafferF7                   50%    LSHADE-SPACMA 70%          13593/12144  <-- ref behind
+  F18-SchafferF7ill                 0%           RCMAES 30%           19541/4343  <-- ref behind
+  F19-GriewankRosenbrock            0%     LSHADE-SPACMA 0%                    -
+  F20-Schwefel                      0%    LSHADE-SPACMA 25%                    -  <-- ref behind
+  F21-Gallagher101                 70%     NL-SHADE-RSP 90%           9252/21572  <-- ref behind
+  F22-Gallagher21                  40%            ARRDE 15%          16428/13588
+  F23-Katsuura                      0%     LSHADE-SPACMA 0%                    -
+  F24-LunacekRastrigin              0%     LSHADE-SPACMA 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F06-AttractiveSector   vs BIPOP-aCMA-ES  p=0.000694 A12=0.24 (large)
+  F06-AttractiveSector   vs LSHADE-SPACMA  p=0.00581 A12=0.29 (large)
+  F06-AttractiveSector   vs RCMAES         p=0.000289 A12=0.18 (large)
+  F14-DiffPowers         vs LSHADE-SPACMA  p=0.00202 A12=0.20 (large)
+  F15-RastriginRot       vs ARRDE          p=9.54e-06 A12=0.08 (large)
+  F15-RastriginRot       vs EBOwithCMAR    p=1.91e-06 A12=0.03 (large)
+  F15-RastriginRot       vs ELSHADE-SPACMA p=3.81e-06 A12=0.05 (large)
+  F15-RastriginRot       vs IPOP-CMA-ES    p=1.91e-06 A12=0.04 (large)
+  F15-RastriginRot       vs L-SHADE        p=1.33e-05 A12=0.07 (large)
+  F15-RastriginRot       vs LSHADE-SPACMA  p=1.91e-06 A12=0.01 (large)
+  F15-RastriginRot       vs RCMAES         p=0.00143 A12=0.20 (large)
+  F16-Weierstrass        vs RCMAES         p=0.0121 A12=0.30 (medium)
+  F19-GriewankRosenbrock vs EBOwithCMAR    p=0.000105 A12=0.12 (large)
+  F19-GriewankRosenbrock vs RCMAES         p=0.00639 A12=0.16 (large)
+  F20-Schwefel           vs ARRDE          p=0.00102 A12=0.19 (large)
+  F20-Schwefel           vs EBOwithCMAR    p=2.67e-05 A12=0.06 (large)
+  F20-Schwefel           vs ELSHADE-SPACMA p=5.72e-06 A12=0.02 (large)
+  F20-Schwefel           vs L-SHADE        p=5.72e-06 A12=0.04 (large)
+  F20-Schwefel           vs LSHADE-SPACMA  p=0.000132 A12=0.03 (large)
+  F20-Schwefel           vs NL-SHADE-RSP   p=3.81e-06 A12=0.04 (large)
+  F24-LunacekRastrigin   vs EBOwithCMAR    p=0.00169 A12=0.17 (large)
+  F24-LunacekRastrigin   vs IPOP-CMA-ES    p=0.00944 A12=0.24 (large)
+  F24-LunacekRastrigin   vs LSHADE-SPACMA  p=0.00315 A12=0.19 (large)
+  F24-LunacekRastrigin   vs RCMAES         p=0.0121 A12=0.24 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. LSHADE-SPACMA          mean rank   4.21   best on 14/24
+   2. MC-ESO                 mean rank   4.75   best on 11/24  <- ref
+   3. EBOwithCMAR            mean rank   4.90   best on  9/24
+   4. IPOP-CMA-ES            mean rank   5.04   best on 12/24
+   5. ELSHADE-SPACMA         mean rank   5.19   best on 11/24
+   6. L-SHADE                mean rank   5.25   best on  9/24
+   7. RCMAES                 mean rank   5.42   best on 13/24
+   8. ARRDE                  mean rank   5.73   best on  7/24
+   9. BIPOP-aCMA-ES          mean rank   6.94   best on  8/24
+  10. NL-SHADE-RSP           mean rank   7.58   best on  4/24
+
