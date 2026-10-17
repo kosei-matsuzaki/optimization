@@ -115,8 +115,6 @@
 いまは無し。
 
 
-1. **【v4 の全体フローの腕の 20 次元】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_rank5,v4_mirror,v4_dither,ctl_plainwave,ctl_sepipop" --jobs 4`（label `j51_a20`）。**集計**: 標準の集計に加え、j47 のパネルと並べた CEC 順位: `mkdir -p /tmp/j47p/dim20 && cp -r analysis/single/j47/stats /tmp/j47p/dim20/` として `python scripts/single/cec_panel.py --dim 20 --panel /tmp/j47p --arms results/<この run>`（j47 の MC-ESO とこの run の MC-ESO が一致するかも書く。一致しなければ CEC 順位は参考扱い）。per-run stats は `analysis/single/j51/stats/`。**記録**: `analysis/single/j51/`。採否の判断はしない。 (claimed 2026-10-17 21:30 UTC)
-
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
@@ -144,6 +142,19 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-17 j51（v4 の全体フローの腕と対照）20D を完走 — パネル CEC 順位で基準 5.81 を下回る腕は無し（`v4_rank5` 5.40 / `v4_mirror` 5.48 / `v4_dither` 5.31 が基準より良い側、対照 `ctl_sepipop` 3.73）
+- **ラン**: `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_rank5,v4_mirror,v4_dither,ctl_plainwave,ctl_sepipop" --jobs 4`（label `j51_a20`、`results/20261017_213745_j51_a20_quick`）。wall **38.7 分**（21:37:45-22:16:27 UTC）、`result.json` は `status=done` / `set=all-d20`。**24/24 関数 × 6 手法 = 144 行**（wilcoxon 120 行 = 24×5、(関数, 手法) の重複・欠落ゼロ、stats 24 本）。
+- **環境**: numpy 2.4.6 / cma 4.5.0、Intel Xeon @2.10GHz（family 6 / model 207 / stepping 2、4 コア）、avx512f あり、BLAS は openblas（SkylakeX、num_threads 4）。`requirements.txt` は `pynmmso` のビルドで落ちるので findings.md のとおり個別 install ＋ 空 stub。
+- **全体表（24 関数平均）**: SR@1e-10 / 1e-7 / 1e-4 / 1e-2、`evals_mean`、Wilcoxon（MC-ESO 基準の 勝/敗）
+  `MC-ESO` 35.4 / 38.1 / 39.4 / 42.7、26727 ｜ `v4_rank5` 39.2 / 40.4 / 41.2 / 45.8、24067、1勝2敗 ｜ `v4_mirror` 33.8 / 37.1 / 40.0 / 43.1、26845、2勝0敗 ｜ `v4_dither` 32.3 / 36.2 / 37.9 / 41.0、24765、2勝1敗 ｜ `ctl_plainwave` 12.9 / 16.9 / 21.9 / 25.2、25855、12勝4敗 ｜ `ctl_sepipop` 50.8 / 53.8 / 58.1 / 61.0、15251、7勝11敗。
+- **`evals_succ_mean`（両方に成功のある関数のみで平均）**: `v4_rank5` n=14 で 26727→24067（-2660）、`v4_mirror` n=13 で 26546→25552（-993）、`v4_dither` n=14 で 26727→24765（-1962）、`ctl_plainwave` n=6 で 21993→23778（+1785）、`ctl_sepipop` n=12 で 25745→11554（-14191）。
+- **関数別 SR@1e-10 の変化（既定 35.4% 基準、動いた関数のみ）**: `v4_rank5`（+5/-2）F04 5→15, F06 30→90, F10 95→100, F11 70→85, F12 80→70, F13 0→15, F22 10→5 ｜ `v4_mirror`（+5/-5）F04 5→10, F06 30→10, F07 20→0, F08 0→10, F10 95→100, F11 70→50, F12 80→70, F13 0→5, F21 45→55, F22 10→5 ｜ `v4_dither`（+3/-6）F02 95→90, F04 5→0, F06 30→0, F07 20→5, F10 95→100, F11 70→30, F12 80→75, F13 0→5, F21 45→60 ｜ `ctl_plainwave`（+2/-10）F02 95→100, F03 100→0, F04 5→0, F06 30→5, F07 20→0, F08 0→5, F10 95→0, F11 70→0, F12 80→0, F14 100→0, F21 45→0, F22 10→0 ｜ `ctl_sepipop`（+9/-3）F02 95→100, F04 5→0, F06 30→100, F07 20→100, F08 0→85, F09 0→100, F10 95→100, F11 70→100, F12 80→100, F13 0→15, F21 45→20, F22 10→0。F15-F20・F23・F24 は全手法 0%。
+- **Wilcoxon（p_two<0.05、A12 つき）**: `v4_rank5` 既定勝 F24(0.71) / 腕勝 F01(0.34)・F06(0.10) ｜ `v4_mirror` 既定勝 F07(0.69)・F17(0.66) / 腕勝 なし ｜ `v4_dither` 既定勝 F06(0.82)・F11(0.71) / 腕勝 F21(0.45) ｜ `ctl_plainwave` 既定勝 12（F01 0.89, F03 1.00, F04 1.00, F07 0.97, F09 0.87, F10 1.00, F12 0.83, F14 1.00, F17 0.89, F20 0.96, F21 0.91, F22 0.90）/ 腕勝 F15(0.07)・F19(0.00)・F23(0.05)・F24(0.00) ｜ `ctl_sepipop` 既定勝 7（F03 0.98, F10 0.86, F14 1.00, F20 0.82, F21 0.69, F22 0.60, F23 0.79）/ 腕勝 11（F06 0.00, F07 0.10, F08 0.00, F09 0.00, F13 0.02, F15 0.00, F16 0.26, F17 0.03, F18 0.12, F19 0.00, F24 0.03）。
+- **この run 内の CEC 順位（6 手法）**: `ctl_sepipop` 2.42 ＞ `v4_mirror` 3.31 ＞ `v4_rank5` 3.40 ＞ **`MC-ESO` 3.79** ＞ `v4_dither` 3.85 ＞ `ctl_plainwave` 4.23。
+- **j47 パネルと並べた CEC 順位（8 手法。基準 `MC-ESO` 5.81）**: `ctl_sepipop` 3.73（下回り 15 / 上回り 5）＞ `v4_dither` 5.31（9 / 11）＞ `v4_rank5` 5.40（13 / 7）＞ `v4_mirror` 5.48（12 / 8）＞ `ctl_plainwave` 6.38（9 / 13）。**j47 の `MC-ESO` はこの run の `MC-ESO` と 24 関数 × 8 列（`median_best_f` / `mean_best_f` / `evals_succ_mean` / SR 4 水準）で 1 セルも違わず一致**したので、パネル順位は参考扱いでなく直接比較できる。
+- **記録**: `analysis/single/j51/summary_j51_dim20_all24.csv` / `wilcoxon_j51_dim20_all24.csv` / `analyze_quick_j51_d20_all24.txt` / `cec_panel_j51_d20.txt`、per-run stats 24 本は `stats/*.csv.gz`。**`find analysis -type f` は 517 で上限の約 400 を超えた**（この run の前から 489 で超過。削除は行っていない＝畳むのは対話セッションの担当）。`scripts/check_doc_size.py` は全ファイル上限内で通る（最も詰まっているのは history.md 987/1000、次が report.html 2342/2500。research_loop.md はこの記録を足して 237/300）。
+- 書かれたとおりに回し、ジョブからの逸脱は無い（shard 分割もしていない）。採否の判断はしない。
 
 ### 2026-10-17 j50（v4 の全体フローの腕と対照）10D の 2 設定を完走 — 2 run をまたいで既定を上回る腕は `v4_pace` のみ（パネル CEC 順位 4.25/4.33 < 基準 4.62/4.75。ただし SR@1e-10 は両 run で基準以下、Wilcoxon は 1勝3敗 / 0勝5敗）
 
