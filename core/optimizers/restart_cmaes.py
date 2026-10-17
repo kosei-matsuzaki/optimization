@@ -120,6 +120,8 @@ class _RestartCMAESBase(BaseOptimizer):
 
             # x0 for this restart: random uniform (standard IPOP/BIPOP convention)
             x0_this = rng.uniform(lo, hi, self.dim)
+            if restart_idx == 0 and getattr(self, "x0_first", None) is not None:
+                x0_this = np.asarray(self.x0_first, dtype=float).copy()   # controls.py
             es = cma.CMAEvolutionStrategy(x0_this, sigma, opts)
 
             fe_before = len(history_f)

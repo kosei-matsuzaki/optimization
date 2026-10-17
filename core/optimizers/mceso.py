@@ -834,6 +834,22 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # so σ moves ×0.95–1.1 per 80 evaluations: on 20D F01 σ goes 5.2 → 4.3
         # in the first 2000 evaluations while CMA-ES is already at f 1e-4.
         sigma_batch: "float | None" = None,
+        # Rank infectivity (2026-10-17, ≥3D): parent weights exp(−β·rank/(n−1))
+        # with this β instead of the range-normalised f (None = off). A few
+        # very bad hosts stretch f_max − f_min, which flattens the weights of
+        # everyone else early in a run.
+        select_rank: "float | None" = None,
+        # Mirrored close contact (2026-10-17, ≥3D): close-contact children come
+        # in pairs from the same parent with opposite noise.
+        close_mirror: bool = False,
+        # Variable virulence (2026-10-17): each droplet child draws its own F
+        # from N(h2h_F, this) clipped to [0.05, 1.0] (None = the fixed h2h_F).
+        h2h_dither: "float | None" = None,
+        # Control, not a method (2026-10-17): every wave is a plain CMA-ES from
+        # the best host — default λ, σ0 = 0.2·span as the baselines, no
+        # whitening by the learned C — at the same switch points. Measures how
+        # much of the waves' gain comes from MC-ESO's state.
+        wave_plain: bool = False,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
         air_cauchy: bool = False,
@@ -903,6 +919,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.pace_horizon = pace_horizon
         self.spill_ring = spill_ring
         self.sigma_batch = sigma_batch
+        self.select_rank = select_rank
+        self.close_mirror = close_mirror
+        self.h2h_dither = h2h_dither
+        self.wave_plain = wave_plain
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -1036,6 +1056,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # f differences, so the selection pressure depends on the problem's f
         # scale; softmax_beta > 0 switches to the range-normalised form, which
         # gives the same pressure whatever the f scale or the dimension.
+        if self.select_rank is not None and self.dim >= 3 and len(f_vals) > 1:
+            r = np.empty(len(f_vals))
+            r[np.argsort(f_vals, kind="stable")] = np.arange(len(f_vals))
+            w = np.exp(-self.select_rank * r / (len(f_vals) - 1))
+            return w / w.sum()
         if self.softmax_beta > 0.0:
             f_min, f_max = float(f_vals.min()), float(f_vals.max())
             spread = f_max - f_min
@@ -1608,12 +1633,16 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             return np.empty((0, self.dim)), np.empty(0)
         rng = st.rng
         gi_arr = rng.choice(self.n_pop, size=n_local, p=weights)
+        if self.close_mirror and self.dim >= 3 and n_local >= 2:
+            gi_arr[1::2] = gi_arr[0:n_local - 1:2][:len(gi_arr[1::2])]
         lq = np.clip(
             (log_f_max - np.log10(st.pop_f[gi_arr] + 1e-10)) / (log_f_spread + 1e-30),
             0.0, 1.0)
         ar = np.minimum(st.pop_age[gi_arr].astype(float) / 5.0, 1.0)
         host_scale = self.host_sigma_min_scale ** (lq * (0.7 + 0.3 * ar))
         noise = rng.standard_normal((n_local, self.dim))
+        if self.close_mirror and self.dim >= 3 and n_local >= 2:
+            noise[1::2] = -noise[0:n_local - 1:2][:len(noise[1::2])]
         raw_noise = noise.copy()   # kept for the persistent-C stream below
         local_parent_x = st.pop_x[gi_arr].copy()
         sigma_i = st.sigma * host_scale
@@ -1708,9 +1737,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if len(elite_arr) > 0:
             strain_pos = self._droplet_strain_positions(st, elite_arr, n_h2h)
             best_pull = strain_pos - parents_x
-            h2h_step = self.h2h_F * (best_pull + diff)
+            F = self.h2h_F
+            if self.h2h_dither is not None:
+                F = np.clip(self.h2h_F + self.h2h_dither * rng.standard_normal((n_h2h, 1)), 0.05, 1.0)
+            h2h_step = F * (best_pull + diff)
         else:
-            h2h_step = self.h2h_F * diff
+            F = self.h2h_F
+            if self.h2h_dither is not None:
+                F = np.clip(self.h2h_F + self.h2h_dither * rng.standard_normal((n_h2h, 1)), 0.05, 1.0)
+            h2h_step = F * diff
         h2h_trial = parents_x + h2h_step
         cr_mask = rng.random((n_h2h, self.dim)) < self.h2h_CR
         forced = rng.integers(0, self.dim, size=n_h2h)
@@ -2016,6 +2051,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             lam = int(round(-lam_mult * (4 + int(3 * math.log(self.dim)))))
         else:
             lam = max(4, int(round(lam_mult * self.dim)))
+        if self.wave_plain:
+            lam = 4 + int(3 * math.log(self.dim))
         if cap < 2 * lam:
             return
         lo, hi = float(np.min(st.lo)), float(np.max(st.hi))
@@ -2026,6 +2063,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             ev, V = np.linalg.eigh(st.cc_C)
             ev = np.maximum(ev / max(float(ev.mean()), 1e-30), self.cc_cov_floor)
             L = V * np.sqrt(ev)[None, :]
+        if self.wave_plain:
+            L, s0 = None, 0.2 * float(np.mean(st.span))
         start = len(st.history_f)
         best_x, best_f = None, float("inf")
         best_before = st.best_so_far

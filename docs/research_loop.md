@@ -114,6 +114,14 @@
 
 いまは無し。
 
+1. **【クラウドの 10 手法パネル（5D/10D）】** 以後のジョブの腕は、このパネルと並べて CEC 順位を出す（クラウドとローカルは MC-ESO の数値が一致しないので、ローカルのパネルは使わない）。4 run を逐次で回す: `./run.sh quick --all --dim D --max-evals B --n-runs 20 --instances I [--seed-offset 7] --methods "MC-ESO,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 4`。(D, B, I, label) = (5, 12500, 1-5, `j49_p5`)、(5, 12500, 6-10 ＋ `--seed-offset 7`, `j49_p5ho`)、(10, 25000, 1-5, `j49_p10`)、(10, 25000, 6-10 ＋ `--seed-offset 7`, `j49_p10ho`)。
+   **記録**: 各 run の `dim<D>/stats/` を **`analysis/single/j49/<label>/dim<D>/stats/` にそのままの構成で `.csv.gz` で置く**（後のジョブが `scripts/single/cec_panel.py --panel analysis/single/j49/<label>` で読む）。summary / wilcoxon / analyze_quick の出力は `analysis/single/j49/`。標準の集計を 4 run それぞれで。採否の判断はしない。
+
+1. **【v4 の全体フローの腕と対照（5D/10D）】** 上のパネルの後に回す。手法 `"MC-ESO,v4_pace,v4_rank5,v4_rank3,v4_mirror,v4_dither,v4_native,ctl_plainwave,ctl_sepipop"`、上と同じ 4 設定（label `j50_a5` / `j50_a5ho` / `j50_a10` / `j50_a10ho`、`--jobs 4`）。腕の中身: `v4_rank*` は親の選択を f の範囲でなく順位の softmax に（3 次元以上）、`v4_mirror` は接触感染の子を同じ親から ±同じ雑音の対で、`v4_dither` は飛沫の F を子ごとに N(0.5, 0.2)、`v4_native` は pycma の波を外した版、`ctl_plainwave` は**対照**（同じ切替点で素の CMA-ES：既定 λ・σ0=0.2·span・白色化なし）、`ctl_sepipop` は**対照**（MC-ESO と同じ加法性の検査と座標走査を前置きした IPOP-CMA-ES）。
+   **集計**: 各設定で (a) 標準の集計を `MC-ESO` を reference に、(b) `python scripts/single/cec_panel.py --dim D --panel analysis/single/j49/<対応する j49 の label> --arms results/<この run>` で各腕のパネル内 CEC 順位（MC-ESO の順位も）。関数別の SR@1e-10 と平均誤差の変化を腕ごとに全関数列挙。per-run stats は `analysis/single/j50/<label>/dim<D>/stats/`。**記録**: `analysis/single/j50/`。採否の判断はしない。
+
+1. **【v4 の全体フローの腕の 20 次元】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_rank5,v4_mirror,v4_dither,ctl_plainwave,ctl_sepipop" --jobs 4`（label `j51_a20`）。**集計**: 標準の集計に加え、j47 のパネルと並べた CEC 順位: `mkdir -p /tmp/j47p/dim20 && cp -r analysis/single/j47/stats /tmp/j47p/dim20/` として `python scripts/single/cec_panel.py --dim 20 --panel /tmp/j47p --arms results/<この run>`（j47 の MC-ESO とこの run の MC-ESO が一致するかも書く。一致しなければ CEC 順位は参考扱い）。per-run stats は `analysis/single/j51/stats/`。**記録**: `analysis/single/j51/`。採否の判断はしない。
+
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---

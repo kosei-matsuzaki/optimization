@@ -39,6 +39,7 @@ from core.optimizers import (
 from core.optimizers.mceso_ablations import (
     MCESONoSpillover, MCESONoHostCompetition,
 )
+from core.optimizers.controls import SepScanIPOPOptimizer
 from core.optimizers.mceso_commit_reseed import CommitReseedMCESO
 from core.optimizers.mceso_phased_accept import PhasedAcceptMCESO
 # Hybrid / state-of-the-art comparison candidates (2026-10-06). Registered so
@@ -548,6 +549,15 @@ _OPTIMIZERS = {
     "v4_sb10":        (MultiChannelEpidemicOptimizer, {"sigma_batch": 10.0}),
     "v4_sb20":        (MultiChannelEpidemicOptimizer, {"sigma_batch": 20.0}),
     "v4_sb40":        (MultiChannelEpidemicOptimizer, {"sigma_batch": 40.0}),
+    # Whole-flow ideas (2026-10-17): rank infectivity, mirrored close contact, variable virulence
+    "v4_rank5":       (MultiChannelEpidemicOptimizer, {"select_rank": 5.0}),
+    "v4_rank3":       (MultiChannelEpidemicOptimizer, {"select_rank": 3.0}),
+    "v4_mirror":      (MultiChannelEpidemicOptimizer, {"close_mirror": True}),
+    "v4_dither":      (MultiChannelEpidemicOptimizer, {"h2h_dither": 0.2}),
+    # Control (not a method): the same switch points, but each wave is a plain CMA-ES
+    "ctl_plainwave":  (MultiChannelEpidemicOptimizer, {"wave_plain": True}),
+    # Control: IPOP-CMA-ES behind MC-ESO's separability test and coordinate scan
+    "ctl_sepipop":    (SepScanIPOPOptimizer, {}),
     "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
@@ -720,7 +730,7 @@ for _name, (_cls, _kw) in list(_OPTIMIZERS.items()):
 
 
 # Methods that take a per-benchmark `sigma0` initial step.
-_SIGMA_USERS = (CMAESOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer,
+_SIGMA_USERS = (CMAESOptimizer, IPOPCMAESOptimizer, BIPOPCMAESOptimizer, SepScanIPOPOptimizer,
                 RepellingCMAESOptimizer)
 
 # Result fields that only the renderers read. A --jobs worker drops them when
