@@ -115,7 +115,7 @@
 いまは無し。
 
 
-1. **【v4 の全体フローの腕の 20 次元】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_rank5,v4_mirror,v4_dither,ctl_plainwave,ctl_sepipop" --jobs 4`（label `j51_a20`）。**集計**: 標準の集計に加え、j47 のパネルと並べた CEC 順位: `mkdir -p /tmp/j47p/dim20 && cp -r analysis/single/j47/stats /tmp/j47p/dim20/` として `python scripts/single/cec_panel.py --dim 20 --panel /tmp/j47p --arms results/<この run>`（j47 の MC-ESO とこの run の MC-ESO が一致するかも書く。一致しなければ CEC 順位は参考扱い）。per-run stats は `analysis/single/j51/stats/`。**記録**: `analysis/single/j51/`。採否の判断はしない。
+1. **【v4 の全体フローの腕の 20 次元】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_rank5,v4_mirror,v4_dither,ctl_plainwave,ctl_sepipop" --jobs 4`（label `j51_a20`）。**集計**: 標準の集計に加え、j47 のパネルと並べた CEC 順位: `mkdir -p /tmp/j47p/dim20 && cp -r analysis/single/j47/stats /tmp/j47p/dim20/` として `python scripts/single/cec_panel.py --dim 20 --panel /tmp/j47p --arms results/<この run>`（j47 の MC-ESO とこの run の MC-ESO が一致するかも書く。一致しなければ CEC 順位は参考扱い）。per-run stats は `analysis/single/j51/stats/`。**記録**: `analysis/single/j51/`。採否の判断はしない。 (claimed 2026-10-17 21:30 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
