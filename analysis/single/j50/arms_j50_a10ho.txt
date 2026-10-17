@@ -1,0 +1,57 @@
+=== per-function SR@1e-10 : base -> v4_pace / v4_rank5 / v4_rank3 / v4_mirror / v4_dither / v4_native / ctl_plainwave / ctl_sepipop
+F01-Sphere                 100 -> 100,100,100,100,100,100,100,100   [all same]
+F02-EllipsoidalSep         100 -> 100,100,100,100,100,100,100,100   [all same]
+F03-RastriginSep           100 -> 100,100,100,100,100,100,0,100
+F04-BucheRastrigin          50 -> 50,45,50,40,40,45,0,40
+F05-LinearSlope            100 -> 100,100,100,100,100,100,100,100   [all same]
+F06-AttractiveSector       100 -> 100,100,100,100,100,100,100,100   [all same]
+F07-StepEllipsoidal         95 -> 95,95,95,90,85,90,0,100
+F08-Rosenbrock             100 -> 100,95,100,100,100,75,60,100
+F09-RosenbrockRot          100 -> 100,95,100,95,95,85,95,100
+F10-EllipsoidalRot         100 -> 100,100,100,100,100,100,90,100
+F11-Discus                 100 -> 100,100,100,100,100,100,100,100   [all same]
+F12-BentCigar               95 -> 95,85,90,95,90,10,0,100
+F13-SharpRidge             100 -> 100,100,100,100,100,0,0,10
+F14-DiffPowers             100 -> 100,100,100,100,100,100,65,100
+F15-RastriginRot             0 -> 0,0,0,0,0,0,0,0   [all same]
+F16-Weierstrass             20 -> 25,0,25,30,15,5,0,45
+F17-SchafferF7              50 -> 50,45,40,35,45,0,0,5
+F18-SchafferF7ill            0 -> 0,0,0,0,0,0,0,0   [all same]
+F19-GriewankRosenbrock       0 -> 0,0,0,0,0,0,0,0   [all same]
+F20-Schwefel                 0 -> 0,0,0,0,0,0,0,0   [all same]
+F21-Gallagher101            70 -> 75,80,65,65,75,70,10,30
+F22-Gallagher21             40 -> 20,25,25,25,15,40,0,5
+F23-Katsuura                 0 -> 0,0,0,0,0,0,0,0   [all same]
+F24-LunacekRastrigin         0 -> 0,0,0,0,0,0,0,0   [all same]
+
+=== overall SR levels and evals_succ_mean (own successes)
+  MC-ESO           63.3/64.6/68.3/69.4  evals(own)=10477 nf=20
+  v4_pace          62.9/64.2/67.9/69.0  evals(own)=10512 nf=20
+  v4_rank5         61.0/62.7/66.2/67.1  evals(own)=10276 nf=18
+  v4_rank3         62.1/63.8/69.0/70.0  evals(own)=10682 nf=20
+  v4_mirror        61.5/62.3/65.2/65.8  evals(own)=10290 nf=19
+  v4_dither        60.8/61.2/63.1/64.6  evals(own)=10569 nf=19
+  v4_native        50.8/55.2/58.3/65.4  evals(own)=11054 nf=18
+  ctl_plainwave    34.2/34.8/37.5/39.4  evals(own)=9088 nf=12
+  ctl_sepipop      55.6/59.8/66.2/67.5  evals(own)=6658 nf=19
+
+=== evals_succ_mean paired (functions where BOTH base and arm succeed)
+  v4_pace          nf=20 base= 10476.8 arm= 10512.3 diff=   +35.5  base-only=[] arm-only=[]
+  v4_rank5         nf=18 base= 10332.7 arm= 10276.2 diff=   -56.4  base-only=['F16', 'F23'] arm-only=[]
+  v4_rank3         nf=20 base= 10476.8 arm= 10682.0 diff=  +205.2  base-only=[] arm-only=[]
+  v4_mirror        nf=19 base= 10468.7 arm= 10290.5 diff=  -178.3  base-only=['F23'] arm-only=[]
+  v4_dither        nf=19 base= 10468.7 arm= 10568.6 diff=   +99.9  base-only=['F23'] arm-only=[]
+  v4_native        nf=18 base=  9964.7 arm= 11054.3 diff= +1089.6  base-only=['F18', 'F23'] arm-only=[]
+  ctl_plainwave    nf=12 base=  9132.8 arm=  9088.1 diff=   -44.7  base-only=['F03', 'F04', 'F07', 'F16', 'F17', 'F18', 'F22', 'F23'] arm-only=[]
+  ctl_sepipop      nf=19 base= 10468.7 arm=  6657.6 diff= -3811.2  base-only=['F23'] arm-only=[]
+
+=== Wilcoxon (ref=MC-ESO, two-sided p<0.05; A12>0.5 => MC-ESO better)  cols: ['function', 'reference', 'method', 'n', 'win_count', 'tie_count', 'p_value_two_sided', 'p_value_ref_better', 'a12', 'a12_magnitude']
+  v4_pace          win=0 loss=5  wins:[]  losses:['F15(0.21,large)', 'F16(0.36,medium)', 'F19(0.21,large)', 'F23(0.38,small)', 'F24(0.23,large)']
+  v4_rank5         win=0 loss=1  wins:[]  losses:['F06(0.29,medium)']
+  v4_rank3         win=4 loss=0  wins:['F19(0.73,large)', 'F22(0.64,small)', 'F23(0.79,large)', 'F24(0.80,large)']  losses:[]
+  v4_mirror        win=2 loss=1  wins:['F18(0.64,small)', 'F19(0.66,medium)']  losses:['F16(0.40,small)']
+  v4_dither        win=1 loss=0  wins:['F18(0.78,large)']  losses:[]
+  v4_native        win=11 loss=0  wins:['F08(0.89,large)', 'F09(1.00,large)', 'F10(1.00,large)', 'F11(0.72,large)', 'F12(0.96,large)', 'F13(1.00,large)', 'F14(1.00,large)', 'F17(0.93,large)', 'F18(0.78,large)', 'F19(0.51,negligible)', 'F23(0.55,negligible)']  losses:[]
+  ctl_plainwave    win=18 loss=3  wins:['F01(0.90,large)', 'F02(0.73,large)', 'F03(1.00,large)', 'F04(1.00,large)', 'F06(1.00,large)', 'F07(0.99,large)', 'F08(0.95,large)', 'F09(0.95,large)', 'F10(1.00,large)', 'F11(0.78,large)', 'F12(0.99,large)', 'F13(1.00,large)', 'F14(1.00,large)', 'F17(1.00,large)', 'F18(0.98,large)', 'F20(0.93,large)', 'F21(0.95,large)', 'F22(0.92,large)']  losses:['F15(0.26,large)', 'F19(0.20,large)', 'F24(0.23,large)']
+  ctl_sepipop      win=15 loss=2  wins:['F01(0.88,large)', 'F02(0.96,large)', 'F03(0.98,large)', 'F06(0.74,large)', 'F08(0.88,large)', 'F09(0.93,large)', 'F10(0.93,large)', 'F11(0.85,large)', 'F12(0.94,large)', 'F13(0.99,large)', 'F14(1.00,large)', 'F17(0.80,large)', 'F21(0.73,large)', 'F22(0.65,medium)', 'F23(0.82,large)']  losses:['F15(0.04,large)', 'F24(0.24,large)']
+=== MC-ESO vs panel summary: 168/168 cells identical

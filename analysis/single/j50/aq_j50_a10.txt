@@ -1,0 +1,74 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261017_193218_j50_a10_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=4afed68
+functions: 24   methods: MC-ESO, v4_native, v4_pace, v4_rank5, v4_rank3, v4_mirror, v4_dither, ctl_plainwave, ctl_sepipop
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            64.2%   65.0%   68.8%   70.4%       10376            
+  v4_native         52.9%   56.7%   58.8%   65.4%       10758        12/0
+  v4_pace           62.9%   64.0%   68.1%   69.8%       11017         1/3
+  v4_rank5          64.4%   64.8%   69.4%   70.8%       10515         0/1
+  v4_rank3          63.3%   63.8%   68.1%   69.4%       10468         4/1
+  v4_mirror         63.5%   64.6%   67.1%   68.8%       10238         2/0
+  v4_dither         64.0%   64.8%   68.3%   70.0%       10622         1/0
+  ctl_plainwave     37.5%   38.1%   39.4%   41.3%        8627        17/3
+  ctl_sepipop       54.4%   58.5%   64.4%   66.5%        6057        13/3
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%       v4_native 100%            4985/4985
+  F02-EllipsoidalSep              100%       v4_native 100%            7982/9540
+  F03-RastriginSep                100%       v4_native 100%            9321/9321
+  F04-BucheRastrigin               65%         v4_rank3 75%           9972/11383  <-- ref behind
+  F05-LinearSlope                 100%       v4_native 100%            7729/7729
+  F06-AttractiveSector            100%       v4_native 100%          10540/10540
+  F07-StepEllipsoidal              90%        v4_rank3 100%            7118/6675  <-- ref behind
+  F08-Rosenbrock                  100%         v4_pace 100%          14443/14443
+  F09-RosenbrockRot               100%       v4_native 100%          13740/18235
+  F10-EllipsoidalRot              100%       v4_native 100%           7013/11968
+  F11-Discus                      100%       v4_native 100%            6813/9128
+  F12-BentCigar                   100%         v4_pace 100%          12082/12082
+  F13-SharpRidge                   95%        v4_rank5 100%            9805/8899  <-- ref behind
+  F14-DiffPowers                  100%       v4_native 100%            5956/5956
+  F15-RastriginRot                  0%         v4_native 0%                    -
+  F16-Weierstrass                  25%         v4_rank5 30%          16571/11905  <-- ref behind
+  F17-SchafferF7                   25%         v4_rank5 45%          14130/14607  <-- ref behind
+  F18-SchafferF7ill                 0%         v4_rank3 10%          20040/16281  <-- ref behind
+  F19-GriewankRosenbrock            0%         v4_native 0%                    -
+  F20-Schwefel                      0%         v4_native 0%                    -
+  F21-Gallagher101                100%       v4_native 100%          10841/10841
+  F22-Gallagher21                  40%        v4_dither 60%           8058/12054  <-- ref behind
+  F23-Katsuura                      0%        v4_dither 10%                    -  <-- ref behind
+  F24-LunacekRastrigin              0%         v4_native 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F15-RastriginRot       vs ctl_plainwave  p=1.33e-05 A12=0.06 (large)
+  F15-RastriginRot       vs ctl_sepipop    p=1.91e-06 A12=0.01 (large)
+  F15-RastriginRot       vs v4_pace        p=0.000293 A12=0.13 (large)
+  F17-SchafferF7         vs v4_rank3       p=0.0192 A12=0.39 (small)
+  F17-SchafferF7         vs v4_rank5       p=0.00944 A12=0.28 (large)
+  F19-GriewankRosenbrock vs ctl_plainwave  p=0.000133 A12=0.21 (large)
+  F19-GriewankRosenbrock vs ctl_sepipop    p=0.00944 A12=0.29 (large)
+  F19-GriewankRosenbrock vs v4_pace        p=0.000398 A12=0.17 (large)
+  F24-LunacekRastrigin   vs ctl_plainwave  p=0.00102 A12=0.25 (large)
+  F24-LunacekRastrigin   vs ctl_sepipop    p=0.000322 A12=0.17 (large)
+  F24-LunacekRastrigin   vs v4_pace        p=0.00271 A12=0.26 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v4_pace                mean rank   3.79   best on 15/24
+   2. ctl_sepipop            mean rank   4.40   best on 16/24
+   3. MC-ESO                 mean rank   4.54   best on 14/24  <- ref
+   4. v4_rank5               mean rank   4.69   best on 11/24
+   5. v4_mirror              mean rank   4.81   best on 11/24
+   6. v4_dither              mean rank   5.17   best on 11/24
+   7. v4_rank3               mean rank   5.38   best on 12/24
+   8. v4_native              mean rank   5.40   best on 10/24
+   9. ctl_plainwave          mean rank   6.83   best on  5/24
+
