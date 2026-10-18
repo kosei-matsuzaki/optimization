@@ -115,7 +115,7 @@
 
 
 
-1. **【流行の規模が育つ腕（10D）】** 手法 `"MC-ESO,v4_grow4,v4_grow8,v4_small4,v4_grow16,v4_grow4r"`、j50 と同じ 10D の 2 設定（label `j52_a10`(1-5) / `j52_a10ho`(6-10 `--seed-offset 7`)、`--dim 10 --max-evals 25000 --n-runs 20 --jobs 4`）。**集計**: j50 と同じ（標準の集計 ＋ `cec_panel.py --dim 10 --panel analysis/single/j49/j49_p10`（hold-out は `j49_p10ho`））。per-run stats は `analysis/single/j52/<label>/dim10/stats/`。**記録**: `analysis/single/j52/`。採否の判断はしない。（5D の 2 設定は 2026-10-18 に完了。1 設定あたり wall 16.3 分だったので 10D の 2 設定は 1 回のルーチンに収まる見込み）
+1. **【流行の規模が育つ腕（10D）】** 手法 `"MC-ESO,v4_grow4,v4_grow8,v4_small4,v4_grow16,v4_grow4r"`、j50 と同じ 10D の 2 設定（label `j52_a10`(1-5) / `j52_a10ho`(6-10 `--seed-offset 7`)、`--dim 10 --max-evals 25000 --n-runs 20 --jobs 4`）。**集計**: j50 と同じ（標準の集計 ＋ `cec_panel.py --dim 10 --panel analysis/single/j49/j49_p10`（hold-out は `j49_p10ho`））。per-run stats は `analysis/single/j52/<label>/dim10/stats/`。**記録**: `analysis/single/j52/`。採否の判断はしない。（5D の 2 設定は 2026-10-18 に完了。1 設定あたり wall 16.3 分だったので 10D の 2 設定は 1 回のルーチンに収まる見込み） (claimed 2026-10-18 11:30 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
