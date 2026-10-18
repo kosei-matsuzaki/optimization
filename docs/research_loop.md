@@ -115,8 +115,6 @@
 
 
 
-1. **【流行の規模が育つ腕（10D）】** 手法 `"MC-ESO,v4_grow4,v4_grow8,v4_small4,v4_grow16,v4_grow4r"`、j50 と同じ 10D の 2 設定（label `j52_a10`(1-5) / `j52_a10ho`(6-10 `--seed-offset 7`)、`--dim 10 --max-evals 25000 --n-runs 20 --jobs 4`）。**集計**: j50 と同じ（標準の集計 ＋ `cec_panel.py --dim 10 --panel analysis/single/j49/j49_p10`（hold-out は `j49_p10ho`））。per-run stats は `analysis/single/j52/<label>/dim10/stats/`。**記録**: `analysis/single/j52/`。採否の判断はしない。（5D の 2 設定は 2026-10-18 に完了。1 設定あたり wall 16.3 分だったので 10D の 2 設定は 1 回のルーチンに収まる見込み） (claimed 2026-10-18 11:30 UTC)
-
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
@@ -144,6 +142,18 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-18 j52（流行の規模が育つ腕）10D の 2 設定を完走 — 5 腕すべてが 2 run とも既定を下回る（SR@1e-10 -0.4〜-9.5pt、パネル CEC 順位も全腕が基準 4.62 / 4.75 より悪い）。5D と同じ向き、20D とは逆
+
+- **ランした分**: `./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --instances I [--seed-offset 7] --methods "MC-ESO,v4_grow4,v4_grow8,v4_small4,v4_grow16,v4_grow4r" --jobs 4` を 2 本、逐次で。`j52_a10`(1-5) 11:31:55-11:51:59 UTC **wall 20.1 分**、`j52_a10ho`(6-10 +offset 7) 12:19:18-12:40:22 **21.1 分**。`result.json` は 2 本とも `status=done` / `set=all-d10`。**各 run 24/24 関数 × 6 手法 = 144 行**（wilcoxon 120 行 = 24×5、(関数, 手法) の重複・欠落ゼロ、stats 各 24 本）。shard 分割なし。**MC-ESO の 24 関数 × 8 列は j49_p10 / j49_p10ho と 1 セルも違わず一致**（各 192/192）＝ パネル順位の比較は有効。
+- **環境**: numpy 2.4.6 / cma 4.5.0 / scipy 1.17.1 / minionpy 1.9.1、python 3.11.17（`run.sh` の `PY`）。CPU Intel Xeon @2.10GHz（family 6 / model 207 / stepping 2、4 CPUs）、avx512f あり、BLAS は openblas（SkylakeX、num_threads 4）、`OMP_NUM_THREADS=1`。j49-j52 の他の run と同じ容器仕様。`pip install -r requirements.txt` は pynmmso のビルドで落ちるので findings.md のとおり個別 install ＋ 空 stub を `PYTHONPATH` に置いた。
+- **全体表（24 関数平均、SR@1e-10 / 1e-7 / 1e-4 / 1e-2、`evals(own)`＝自分の成功関数の平均。調整 `j52_a10` / hold-out `j52_a10ho`）**: **`MC-ESO` 64.2 / 65.0 / 68.8 / 70.4、10376 ｜ 63.3 / 64.6 / 68.3 / 69.4、10477**。`v4_grow16` 62.9（-1.3pt）/ 61.7（-1.7pt）、`v4_grow8` 58.5（-5.7）/ 58.3（-5.0）、`v4_grow4` 56.9（-7.3）/ 53.8（-9.5）、`v4_small4` 56.7（-7.5）/ 54.0（-9.3）、`v4_grow4r` 55.4（-8.8）/ 55.4（-7.9）。**どちらの run でも SR の 4 水準すべてで既定を上回る腕は無い。**
+- **`evals_succ_mean`（両方に成功のある関数だけの対応平均、調整 / hold-out）**: `v4_small4` -1430.9(n=18) / -1566.7(n=17)、`v4_grow4r` -1442.8(n=19) / -1142.1(n=18)、`v4_grow4` -582.6(n=19) / -1139.9(n=17)、`v4_grow8` -393.8(n=19) / -473.4(n=20)、`v4_grow16` +102.6(n=19) / -44.2(n=20)。片方だけ成功の関数: 調整は基準のみ F17（`v4_small4`）、腕のみ F23（`v4_grow8` / `v4_grow4r`）。hold-out は基準のみ F17,F18,F23（`v4_grow4` / `v4_small4`）・F18,F23（`v4_grow4r`）、腕のみ 0 本。
+- **関数別 SR@1e-10（基準 → grow4 / grow8 / small4 / grow16 / grow4r。全腕同値の関数は省略）**: 調整（動いたのは 10 関数）F04 65→60,65,60,65,65 ｜ F07 90→50,75,35,90,55 ｜ F08 100→100,100,100,100,80 ｜ F09 100→90,80,90,100,75 ｜ F12 100→80,90,80,100,85 ｜ F13 95→75,100,75,95,90 ｜ F16 25→15,5,15,25,5 ｜ F17 25→0,10,0,25,0 ｜ F21 100→85,60,75,75,60 ｜ F22 40→10,20,30,35,15。hold-out（11 関数）F04 50→40,45,40,50,40 ｜ F07 95→30,75,30,95,50 ｜ F08 100→95,100,95,100,95 ｜ F09 100→95,90,95,100,85 ｜ F12 95→70,95,70,95,75 ｜ F13 100→80,100,80,100,90 ｜ F16 20→5,10,10,20,15 ｜ F17 50→0,10,0,50,0 ｜ F21 70→60,50,65,60,70 ｜ F22 40→15,20,10,10,10 ｜ F23 0→0,5,0,0,0。**上がったセルは調整 F13(grow8 95→100)、hold-out F23(grow8 0→5) の 2 つだけ**（`v4_grow16` は 2 run とも 1 関数も上げていない）。F01-F03・F05・F06・F10・F11・F14・F15・F18-F20・F24 は 6 手法同値（100 が 9 関数、0 が 4〜5 関数）。
+- **CEC 式の平均誤差の順位（j49 の 10 手法パネルに腕を差し替えた順位、低いほど良い）**: 調整（panel `j49_p10`）**MC-ESO 4.62** に対し `v4_grow16` 5.12（誤差が下 2 関数 / 上 7）、`v4_small4` 5.17（6/9）、`v4_grow8` 5.31（5/8）、`v4_grow4` 5.50（3/12）、`v4_grow4r` 5.67（5/10）。hold-out（panel `j49_p10ho`）**MC-ESO 4.75** に対し `v4_grow16` 5.00（0/7）、`v4_grow8` 5.04（4/10）、`v4_small4` 5.23（6/10）、`v4_grow4` 5.44（5/11）、`v4_grow4r` 5.50（5/11）。**2 run とも基準を上回る腕は無い**（5D と同じ向き。20D では 5 腕中 4 腕が基準 5.81 を下回っていた＝向きが逆）。参考に腕 6 手法だけの `analyze_quick` [5]: 調整 MC-ESO 2.98 < grow16 3.27 < small4 3.35 < grow8 3.44 < grow4 = grow4r 3.98、hold-out MC-ESO 2.90 < grow8 3.29 < small4 3.42 < grow16 3.48 < grow4 = grow4r 3.96。
+- **Wilcoxon（MC-ESO を reference、両側 p<0.05、A12 の向きで勝敗。調整 / hold-out の 基準勝/腕勝）**: `v4_grow8` 4/0（F09 0.60・F11 0.62・F18 0.86・F21 0.72）/ 2/0（F17 0.85・F18 0.80）、`v4_grow16` 5/0 / 4/0、`v4_grow4` 5/2 / 5/1、`v4_grow4r` 5/3 / 5/0、`v4_small4` 6/4 / 6/4。**腕が有意に勝つのは、どちらの run でも SR が全手法 0% の多峰関数に限られる**（F15・F19・F23・F24、および F06・F14）。基準が勝つ側に多いのは F07・F13・F17・F18・F21。
+- **書かれたとおりに回せなかった点**: 無し（2 設定とも 1 回のルーチンで完走、手法・次元・予算・instance・seed-offset・n・label・集計はジョブ記載どおり）。`v4_grow16` は `pop_init_hd` を既定のままにする腕なので、名前に反して 16·D 始動ではない（`quick_check.py:566`、`switch_grow=1.5`）。
+- **記録**: per-run stats は `analysis/single/j52/j52_<label>/dim10/stats/*.csv.gz`（2 label × 24、`cec_panel.py --panel` で読め、パネル順位 4.62 を再現することを確認）、summary / wilcoxon は `analysis/single/j52/{summary,wilcoxon}_j52_<label>.csv`、analyze_quick 全文は `aq_j52_<label>.txt`、腕ごとの関数別表と Wilcoxon 明細は `arms_j52_<label>.txt`、パネル順位は `cecpanel_j52_<label>.txt`。**`find analysis -type f` は 509 で上限の約 400 を超えた**（開始時 451。削除は行っていない＝畳むのは対話セッションの担当）。`scripts/check_doc_size.py` は全ファイル上限内で通る（history.md 987/1000 が最も詰まっている）。採否の判断はしない。
 
 ### 2026-10-18 j52（流行の規模が育つ腕）5D の 2 設定を完走 — 5 腕すべてが既定を下回る（SR@1e-10 -0.9〜-14.0pt、パネル CEC 順位も全腕が基準 4.06 / 4.10 より悪い）。20D と向きが逆。10D の 2 設定はキューへ書き戻した
 

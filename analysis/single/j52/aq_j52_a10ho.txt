@@ -1,0 +1,62 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261018_121918_j52_a10ho_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=5a9f03a
+functions: 24   methods: MC-ESO, v4_grow4, v4_grow8, v4_small4, v4_grow4r, v4_grow16
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            63.3%   64.6%   68.3%   69.4%       10477            
+  v4_grow4          53.8%   55.4%   56.5%   57.9%        8611         5/1
+  v4_grow8          58.3%   59.0%   61.0%   62.9%       10003         2/0
+  v4_small4         54.0%   55.4%   56.0%   57.5%        8185         6/4
+  v4_grow4r         55.4%   56.2%   57.5%   60.0%        8823         5/0
+  v4_grow16         61.7%   62.9%   66.7%   67.7%       10433         4/0
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%        v4_grow4 100%            4917/2147
+  F02-EllipsoidalSep              100%        v4_grow4 100%            7919/6149
+  F03-RastriginSep                100%        v4_grow4 100%            9592/6956
+  F04-BucheRastrigin               50%        v4_grow16 50%          10555/10555
+  F05-LinearSlope                 100%        v4_grow4 100%            7347/3992
+  F06-AttractiveSector            100%        v4_grow4 100%           10685/6025
+  F07-StepEllipsoidal              95%        v4_grow16 95%            6686/6686
+  F08-Rosenbrock                  100%        v4_grow8 100%          13560/10968
+  F09-RosenbrockRot               100%       v4_grow16 100%          14064/14064
+  F10-EllipsoidalRot              100%        v4_grow4 100%            6998/4847
+  F11-Discus                      100%        v4_grow4 100%            6953/4408
+  F12-BentCigar                    95%         v4_grow8 95%          12658/13256
+  F13-SharpRidge                  100%        v4_grow8 100%            9234/7212
+  F14-DiffPowers                  100%        v4_grow4 100%            6006/3437
+  F15-RastriginRot                  0%          v4_grow4 0%                    -
+  F16-Weierstrass                  20%        v4_grow16 20%          12918/10071
+  F17-SchafferF7                   50%        v4_grow16 50%          13593/13593
+  F18-SchafferF7ill                 0%          v4_grow4 0%                    -
+  F19-GriewankRosenbrock            0%          v4_grow4 0%                    -
+  F20-Schwefel                      0%          v4_grow4 0%                    -
+  F21-Gallagher101                 70%        v4_grow4r 70%           9252/14256
+  F22-Gallagher21                  40%         v4_grow8 20%          16428/14404
+  F23-Katsuura                      0%          v4_grow8 5%          10630/13778  <-- ref behind
+  F24-LunacekRastrigin              0%          v4_grow4 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F14-DiffPowers         vs v4_grow4       p=0.0486 A12=0.34 (medium)
+  F14-DiffPowers         vs v4_small4      p=0.0486 A12=0.34 (medium)
+  F15-RastriginRot       vs v4_small4      p=0.0266 A12=0.28 (large)
+  F23-Katsuura           vs v4_small4      p=0.0136 A12=0.30 (medium)
+  F24-LunacekRastrigin   vs v4_small4      p=0.0239 A12=0.28 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. MC-ESO                 mean rank   2.90   best on 15/24  <- ref
+   2. v4_grow8               mean rank   3.29   best on 12/24
+   3. v4_small4              mean rank   3.42   best on 14/24
+   4. v4_grow16              mean rank   3.48   best on 14/24
+   5. v4_grow4               mean rank   3.96   best on  9/24
+   6. v4_grow4r              mean rank   3.96   best on  9/24
+
