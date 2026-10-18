@@ -1,0 +1,83 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=20   ref=MC-ESO
+run: 20261018_083439_j52_a20_quick
+meta: n_runs=20 max_evals=50000 set=all-d20 commit=6684309
+functions: 24   methods: MC-ESO, v4_grow4, v4_grow8, v4_small4, v4_grow4r, v4_grow16
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            35.4%   38.1%   39.4%   42.7%       26727            
+  v4_grow4          32.9%   33.8%   36.9%   40.0%       25002         3/7
+  v4_grow8          36.0%   37.1%   38.5%   40.8%       21504         1/4
+  v4_small4         32.3%   32.9%   35.8%   39.0%       24392         3/8
+  v4_grow4r         34.6%   35.4%   36.5%   39.2%       19930         3/7
+  v4_grow16         34.2%   36.7%   38.1%   41.7%       25923         2/0
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%        v4_grow4 100%           12536/6807
+  F02-EllipsoidalSep               95%        v4_grow8 100%          23492/21406  <-- ref behind
+  F03-RastriginSep                100%        v4_grow4 100%          16366/14756
+  F04-BucheRastrigin                5%          v4_grow8 5%          38333/36002
+  F05-LinearSlope                 100%        v4_grow4 100%           20471/7610
+  F06-AttractiveSector             30%        v4_grow8 100%          33422/25354  <-- ref behind
+  F07-StepEllipsoidal              20%        v4_grow16 20%          29086/29086
+  F08-Rosenbrock                    0%        v4_grow4r 20%                    -  <-- ref behind
+  F09-RosenbrockRot                 0%          v4_grow4 0%                    -
+  F10-EllipsoidalRot               95%        v4_grow16 95%          19836/19836
+  F11-Discus                       70%        v4_grow16 65%          23678/22225
+  F12-BentCigar                    80%        v4_grow16 80%          34599/34599
+  F13-SharpRidge                    0%         v4_grow8 10%          46799/34804  <-- ref behind
+  F14-DiffPowers                  100%        v4_grow4 100%          18359/11223
+  F15-RastriginRot                  0%          v4_grow4 0%                    -
+  F16-Weierstrass                   0%          v4_grow4 0%                    -
+  F17-SchafferF7                    0%          v4_grow4 0%                    -
+  F18-SchafferF7ill                 0%          v4_grow4 0%                    -
+  F19-GriewankRosenbrock            0%          v4_grow4 0%                    -
+  F20-Schwefel                      0%          v4_grow4 0%                    -
+  F21-Gallagher101                 45%         v4_grow4 45%          30295/33863
+  F22-Gallagher21                  10%        v4_grow4r 10%           26908/8655
+  F23-Katsuura                      0%          v4_grow4 0%                    -
+  F24-LunacekRastrigin              0%          v4_grow4 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F01-Sphere             vs v4_grow4r      p=0.00104 A12=0.18 (large)
+  F06-AttractiveSector   vs v4_grow4       p=1.33e-05 A12=0.06 (large)
+  F06-AttractiveSector   vs v4_grow4r      p=1.91e-06 A12=0.00 (large)
+  F06-AttractiveSector   vs v4_grow8       p=1.91e-06 A12=0.02 (large)
+  F06-AttractiveSector   vs v4_small4      p=1.33e-05 A12=0.06 (large)
+  F08-Rosenbrock         vs v4_grow4       p=0.000708 A12=0.17 (large)
+  F08-Rosenbrock         vs v4_grow4r      p=3.62e-05 A12=0.10 (large)
+  F08-Rosenbrock         vs v4_grow8       p=0.0073 A12=0.23 (large)
+  F08-Rosenbrock         vs v4_small4      p=0.000708 A12=0.17 (large)
+  F09-RosenbrockRot      vs v4_grow4       p=0.00199 A12=0.25 (large)
+  F09-RosenbrockRot      vs v4_grow4r      p=0.000586 A12=0.16 (large)
+  F09-RosenbrockRot      vs v4_small4      p=0.00199 A12=0.25 (large)
+  F13-SharpRidge         vs v4_grow4       p=0.00639 A12=0.25 (large)
+  F13-SharpRidge         vs v4_small4      p=0.00639 A12=0.25 (large)
+  F15-RastriginRot       vs v4_small4      p=2.67e-05 A12=0.08 (large)
+  F19-GriewankRosenbrock vs v4_grow4       p=3.81e-06 A12=0.02 (large)
+  F19-GriewankRosenbrock vs v4_grow4r      p=0.000133 A12=0.15 (large)
+  F19-GriewankRosenbrock vs v4_small4      p=1.91e-06 A12=0.00 (large)
+  F23-Katsuura           vs v4_grow4       p=5.72e-06 A12=0.05 (large)
+  F23-Katsuura           vs v4_grow4r      p=3.81e-06 A12=0.06 (large)
+  F23-Katsuura           vs v4_grow8       p=0.00831 A12=0.22 (large)
+  F23-Katsuura           vs v4_small4      p=1.91e-06 A12=0.03 (large)
+  F24-LunacekRastrigin   vs v4_grow4       p=1.91e-06 A12=0.02 (large)
+  F24-LunacekRastrigin   vs v4_grow4r      p=1.91e-06 A12=0.01 (large)
+  F24-LunacekRastrigin   vs v4_grow8       p=5.72e-06 A12=0.01 (large)
+  F24-LunacekRastrigin   vs v4_small4      p=1.91e-06 A12=0.01 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v4_grow4               mean rank   3.23   best on  8/24
+   2. v4_grow8               mean rank   3.23   best on  8/24
+   3. v4_small4              mean rank   3.23   best on 12/24
+   4. MC-ESO                 mean rank   3.65   best on  7/24  <- ref
+   5. v4_grow4r              mean rank   3.81   best on  8/24
+   6. v4_grow16              mean rank   3.85   best on  9/24
+
