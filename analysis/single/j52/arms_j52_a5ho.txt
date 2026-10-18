@@ -1,0 +1,45 @@
+functions=24 methods=6 rows=144
+dup rows: 0
+
+--- per-function SR@1e-10 (base -> v4_grow4,v4_grow8,v4_small4,v4_grow16,v4_grow4r) ---
+F01-Sphere               100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F02-EllipsoidalSep       100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F03-RastriginSep         100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F04-BucheRastrigin        75.0 ->  60.0,  70.0,  60.0,  75.0,  75.0   DIFF
+F05-LinearSlope          100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F06-AttractiveSector     100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F07-StepEllipsoidal      100.0 ->  80.0, 100.0,  70.0, 100.0,  70.0   DIFF
+F08-Rosenbrock           100.0 ->  85.0, 100.0,  85.0, 100.0,  85.0   DIFF
+F09-RosenbrockRot        100.0 ->  75.0,  85.0,  75.0, 100.0,  85.0   DIFF
+F10-EllipsoidalRot       100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F11-Discus               100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F12-BentCigar            100.0 ->  75.0, 100.0,  75.0, 100.0,  85.0   DIFF
+F13-SharpRidge           100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F14-DiffPowers           100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F15-RastriginRot          10.0 ->   0.0,   5.0,  10.0,   5.0,   0.0   DIFF
+F16-Weierstrass           70.0 ->  55.0,  65.0,  35.0,  70.0,  70.0   DIFF
+F17-SchafferF7            85.0 ->  40.0,  40.0,   5.0,  85.0,  30.0   DIFF
+F18-SchafferF7ill         70.0 ->  15.0,  55.0,   5.0,  70.0,   5.0   DIFF
+F19-GriewankRosenbrock     0.0 ->   0.0,   0.0,   0.0,   0.0,   0.0   SAME
+F20-Schwefel               5.0 ->   0.0,   5.0,   0.0,   5.0,   0.0   DIFF
+F21-Gallagher101          85.0 ->  80.0,  95.0,  70.0,  90.0,  95.0   DIFF
+F22-Gallagher21           95.0 ->  90.0,  90.0,  75.0,  85.0,  80.0   DIFF
+F23-Katsuura              45.0 ->  40.0,  50.0,  40.0,  35.0,  25.0   DIFF
+F24-LunacekRastrigin       0.0 ->   0.0,   0.0,   0.0,   0.0,   0.0   SAME
+
+functions where some arm differs: 13
+
+--- evals_succ_mean paired (both succeed) ---
+v4_grow4     n=20  base   3779.1 -> arm   3807.8  (   +28.8)   base-only:['F15', 'F20'] arm-only:[]
+v4_grow8     n=22  base   3958.1 -> arm   3741.3  (  -216.8)   base-only:[] arm-only:[]
+v4_small4    n=21  base   3977.2 -> arm   3996.1  (   +18.9)   base-only:['F20'] arm-only:[]
+v4_grow16    n=22  base   3958.1 -> arm   4092.0  (  +133.9)   base-only:[] arm-only:[]
+v4_grow4r    n=20  base   3779.1 -> arm   3804.9  (   +25.8)   base-only:['F15', 'F20'] arm-only:[]
+
+--- Wilcoxon (p_two<0.05) ---
+wilcoxon rows: 120
+v4_grow4     base-wins 7: F09 0.62, F12 0.65, F13 0.88, F17 0.85, F18 0.91, F20 0.74, F24 0.88  | arm-wins 0: 
+v4_grow8     base-wins 4: F15 0.69, F17 0.77, F19 0.68, F24 0.83  | arm-wins 0: 
+v4_small4    base-wins 9: F07 0.65, F09 0.62, F12 0.65, F13 0.88, F16 0.72, F17 0.97, F18 0.95, F20 0.74, F22 0.70  | arm-wins 0: 
+v4_grow16    base-wins 4: F15 0.70, F19 0.74, F23 0.65, F24 0.81  | arm-wins 0: 
+v4_grow4r    base-wins 8: F07 0.65, F12 0.65, F13 0.89, F15 0.75, F17 0.78, F18 0.91, F20 0.80, F24 0.78  | arm-wins 0: 
