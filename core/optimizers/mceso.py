@@ -850,6 +850,16 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # whitening by the learned C — at the same switch points. Measures how
         # much of the waves' gain comes from MC-ESO's state.
         wave_plain: bool = False,
+        # Growing outbreaks (2026-10-18, ≥3D): the run starts from
+        # max(20, pop_init_hd·D) hosts instead of pop_init_mult·D (None = off),
+        # and each basin switch regrows the population to switch_grow × the
+        # size the previous outbreak started with, restarting the size schedule
+        # over the remaining budget (None = off). Reverses the large-to-small
+        # order of the default: at 20D IPOP-CMA-ES behind the same separability
+        # scan beats MC-ESO on the ill-conditioned unimodal functions (F06-F12)
+        # that a 320-host start wastes, and on multimodal ones grows λ later.
+        pop_init_hd: "float | None" = None,
+        switch_grow: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
         air_cauchy: bool = False,
@@ -883,6 +893,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             self.n_pop = max(20, int(round(pop_init_mult * self.dim)))
             if pop_init_cap is not None:
                 self.n_pop = max(20, min(self.n_pop, int(pop_init_cap)))
+            if pop_init_hd is not None and self.dim >= 3:
+                self.n_pop = max(20, int(round(pop_init_hd * self.dim)))
         self._pop_final = max(pop_min, int(round(pop_final_mult * self.dim)))
         self.sigma_floor_ill_ratio = sigma_floor_ill_ratio
         self.hd_sigma_success = hd_sigma_success
@@ -923,6 +935,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.close_mirror = close_mirror
         self.h2h_dither = h2h_dither
         self.wave_plain = wave_plain
+        self.switch_grow = switch_grow
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -1509,8 +1522,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         div_ratio = 1.0
 
         best_pre_spillover = st.best_so_far
-        if basin_switch and self.switch_regrow is not None and self.pop_schedule == "linear":
-            n_new = max(self.n_pop, int(round(self._n_pop0 * self.switch_regrow)))
+        if (basin_switch and (self.switch_regrow is not None or self.switch_grow is not None)
+                and self.pop_schedule == "linear"):
+            if self.switch_grow is not None:
+                n_new = max(self.n_pop, int(round((st.sched_n0 or self._n_pop0) * self.switch_grow)))
+            else:
+                n_new = max(self.n_pop, int(round(self._n_pop0 * self.switch_regrow)))
             left = st.max_evals - len(st.history_f)
             n_new = min(n_new, max(self.n_pop, left // 4))
             if n_new > self.n_pop:

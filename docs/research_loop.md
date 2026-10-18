@@ -115,6 +115,10 @@
 いまは無し。
 
 
+1. **【流行の規模が育つ腕（20D）】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_grow4,v4_grow8,v4_small4,v4_grow16,v4_grow4r" --jobs 4`（label `j52_a20`）。腕の中身: 3 次元以上で初期集団を `pop_init_hd`·D に小さくし（`v4_grow4` / `v4_grow4r` / `v4_small4` は 4·D、`v4_grow8` は 8·D、`v4_grow16` は既定の 16·D のまま）、盆地乗換えのたびに前の流行の初期サイズの `switch_grow` 倍（2 倍、`v4_grow16` は 1.5 倍）へ集団を戻して縮小をやり直す。`v4_small4` は増やさない対照。すべて `switch_pace` つき、`v4_grow4r` はさらに順位の感染力（`select_rank=5`）。**集計**: j51 と同じ（標準の集計 ＋ j47 のパネルと並べた CEC 順位、`/tmp/j47p` の作り方は j51 と同じ。j47 の MC-ESO との一致も書く）。per-run stats は `analysis/single/j52/a20/dim20/stats/`。**記録**: `analysis/single/j52/`。採否の判断はしない。
+
+1. **【流行の規模が育つ腕（5D/10D）】** 手法 `"MC-ESO,v4_grow4,v4_grow8,v4_small4,v4_grow16,v4_grow4r"`、j50 と同じ 4 設定（label `j52_a5` / `j52_a5ho` / `j52_a10` / `j52_a10ho`、`--jobs 4`）。**集計**: j50 と同じ（標準の集計 ＋ `cec_panel.py --panel analysis/single/j49/<対応する label>`）。per-run stats は `analysis/single/j52/<label>/dim<D>/stats/`。**記録**: `analysis/single/j52/`。採否の判断はしない。
+
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---

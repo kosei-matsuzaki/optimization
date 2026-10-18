@@ -558,6 +558,12 @@ _OPTIMIZERS = {
     "ctl_plainwave":  (MultiChannelEpidemicOptimizer, {"wave_plain": True}),
     # Control: IPOP-CMA-ES behind MC-ESO's separability test and coordinate scan
     "ctl_sepipop":    (SepScanIPOPOptimizer, {}),
+    # Growing outbreaks: small start (pop_init_hd·D), each basin switch regrows ×switch_grow
+    "v4_grow4":       (MultiChannelEpidemicOptimizer, {"pop_init_hd": 4.0, "switch_grow": 2.0, "switch_pace": True}),
+    "v4_grow8":       (MultiChannelEpidemicOptimizer, {"pop_init_hd": 8.0, "switch_grow": 2.0, "switch_pace": True}),
+    "v4_small4":      (MultiChannelEpidemicOptimizer, {"pop_init_hd": 4.0, "switch_pace": True}),
+    "v4_grow4r":      (MultiChannelEpidemicOptimizer, {"pop_init_hd": 4.0, "switch_grow": 2.0, "switch_pace": True, "select_rank": 5.0}),
+    "v4_grow16":      (MultiChannelEpidemicOptimizer, {"switch_grow": 1.5, "switch_pace": True}),
     "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
