@@ -112,7 +112,6 @@
 
 **2026-10-13 に `v2_scan2d` が既定になった**ので、以下のジョブの `MC-ESO` は旧 `v2_scan2d` と同じもの（`v2_scan2d` は手法の並びから外した）。比べる旧既定が要るときは `MC-ESO-v2`。
 
-いまは無し。
 
 
 1. **【流行の規模が育つ腕（20D）】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_grow4,v4_grow8,v4_small4,v4_grow16,v4_grow4r" --jobs 4`（label `j52_a20`）。腕の中身: 3 次元以上で初期集団を `pop_init_hd`·D に小さくし（`v4_grow4` / `v4_grow4r` / `v4_small4` は 4·D、`v4_grow8` は 8·D、`v4_grow16` は既定の 16·D のまま）、盆地乗換えのたびに前の流行の初期サイズの `switch_grow` 倍（2 倍、`v4_grow16` は 1.5 倍）へ集団を戻して縮小をやり直す。`v4_small4` は増やさない対照。すべて `switch_pace` つき、`v4_grow4r` はさらに順位の感染力（`select_rank=5`）。**集計**: j51 と同じ（標準の集計 ＋ j47 のパネルと並べた CEC 順位、`/tmp/j47p` の作り方は j51 と同じ。j47 の MC-ESO との一致も書く）。per-run stats は `analysis/single/j52/a20/dim20/stats/`。**記録**: `analysis/single/j52/`。採否の判断はしない。
@@ -209,7 +208,7 @@
 - **CEC 式の平均誤差の順位 ([5]、24/24 関数)**: (a) v4_paceh03 2.35 < v4_pace 2.38 < v4_paceh1 2.46 < **MC-ESO 2.81**。(b) v4_pace 2.27 < v4_paceh1 2.40 < v4_paceh03 2.56 < **MC-ESO 2.77**。
 - **Wilcoxon（MC-ESO を reference、両側 p<0.05、A12）**: (a) 3 腕とも **MC-ESO が勝つ 1 関数（F21 A12=0.62 p=0.043 medium）／負ける 3 関数**（F15 A12=0.13/0.13/0.10、F19 0.17/0.17/0.20、F24 0.26/0.26/0.24 いずれも large）。(b) 3 腕とも **MC-ESO が勝つ関数は 0／負ける 5 関数**（F15 A12=0.21/0.21/0.24、F19 0.21/0.21/0.20、F24 0.23/0.23/0.24 は large、F16 0.36/0.36/0.37、F23 0.38/0.38/0.40 は small〜medium）。
 - **書かれたとおりに回せなかった点**: 無し。手法・予算・instance・seed-offset・n・label・集計はジョブ記載どおり。
-- **記録**: `analysis/single/j48/{summary,wilcoxon}_j48_d10.csv` / `..._j48_ho_d10.csv` / `analyze_quick_j48_d10.txt` / `analyze_quick_j48_ho_d10.txt`、per-run stats は `stats_j48_d10/` と `stats_j48_ho_d10/` に各 24 本の `.csv.gz`。`find analysis -type f` は **265**（上限 約 400 以内）。`scripts/check_doc_size.py` は全ファイル上限内で通るが、**research_loop.md がちょうど 300/300 で上限に達した**（次の記録の前に統合が要る＝畳むのは対話セッションの担当）。history.md 984/1000 も詰まっている。
+- **記録**: `analysis/single/j48/{summary,wilcoxon}_j48_d10.csv` / `..._j48_ho_d10.csv` / `analyze_quick_j48_d10.txt` / `analyze_quick_j48_ho_d10.txt`、per-run stats は `stats_j48_d10/` と `stats_j48_ho_d10/` に各 24 本の `.csv.gz`（`j48/` は削除済み、commit `f395d5e` から復元可）。`find analysis -type f` は **265**（上限 約 400 以内）。`scripts/check_doc_size.py` は全ファイル上限内で通るが、**research_loop.md がちょうど 300/300 で上限に達した**（次の記録の前に統合が要る＝畳むのは対話セッションの担当）。history.md 984/1000 も詰まっている。
 - 両 run 24/24 関数の結果である。採否の判断はしない。
 
 ### 2026-10-15 j47（v4_pace の 20 次元）— 24/24 完走。v4_pace は CEC 順位 5.81→5.23、多峰 9 関数で平均誤差が 0.27〜0.74 倍に改善、SR@1e-10 は 35.42→35.00%（F21 -5 / F22 -5）
@@ -226,7 +225,7 @@
 - **記録**: `analysis/single/j47/summary_j47_dim20_all24.csv` / `wilcoxon_j47_dim20_all24.csv` / `analyze_quick_j47_d20_all24.txt`、per-run stats 24 本は `stats/*.csv.gz`。**`find analysis -type f` は 425 で上限の約 400 を超えた**（j46c の時点で既に 398。削除は行っていない＝畳むのは対話セッションの担当）。`scripts/check_doc_size.py` は全ファイル上限内（research_loop.md は 283/300、history.md 984/1000 が最も詰まっている）。
 - 24/24 関数の結果である。採否の判断はしない。
 
-（以下の j45・j46 は見出しだけ残した。本文は commit `f395d5e` の docs/research_loop.md にある）
+（以下の j45・j46 は見出しだけ残した。本文は commit `f395d5e` の docs/research_loop.md にある。`analysis/single/j46/` は削除済み、commit `f56aaf5` から復元可）
 
 - 2026-10-14 j46c（v3 の 30 次元 2/2 の残り F18-F24）— 7/7 完走。24/24 関数で v3_stage は SR@1e-10 21.25→23.12%、evals_succ_mean 43741→37074、CEC 順位 7.25→5.78
 - 2026-10-14 j46b（v3 の 30 次元 2/2）— F13-F17 の 5 関数のみ完走（17/24）。F01-F17 平均で v3_stage は SR@1e-10 26.5→30.9%、CEC 順位 8.67→5.72

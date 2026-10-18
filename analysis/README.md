@@ -20,3 +20,5 @@
 **2026-10-06: `mmo2024/`（一時停止中の多解路線、354 ファイル）は作業ツリーから外した。** 中身はタグ `archive/multisolution-2026-09-29` と同一（外す前に差分ゼロを確認）。docs に残る `analysis/mmo2024/...` のパスはタグの中のパスとして読む。取り出すには `git checkout archive/multisolution-2026-09-29 -- analysis/mmo2024`。
 
 **2026-10-16: `single/` の古いジョブ（`e177`〜`e183`、`j11`〜`j17`、`j24`・`j25`・`j28`、`j30`〜`j34`、`local_*` の 29 ディレクトリ、214 ファイル）を作業ツリーから外した。** 数値は `docs/findings.md`・`docs/history.md` に書いてあり、docs の該当パスには復元用の commit を添えた。まとめて取り出すには `git checkout f378fba -- analysis/single/<dir>`。
+
+**2026-10-18: `single/` の `j36`〜`j43`・`j46`・`j48` の 10 ディレクトリ（152 ファイル）を作業ツリーから外した（517→365 ファイル）。** 数値は `docs/findings.md`・`docs/history.md`・`docs/research_loop.md` に書いてあり、docs の該当パスには復元用の commit を添えた。まとめて取り出すには `git checkout 95cf9b7 -- analysis/single/<dir>`。`j49/` の per-run stats は j52 のパネルとして、`j47/stats/` は j52 の 20D のパネルとして、`j50/` の per-run stats は v4_pace の再解析用に残してある。
