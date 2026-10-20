@@ -115,6 +115,10 @@
 
 
 
+1. **【隔離と流行の継続（20D）】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_keep25,v4_keep50,v4_keep25p,v4_med03,v4_med1" --jobs 4`（label `j53_a20`）。腕の中身（3 次元以上）: `v4_keep25` / `v4_keep50` は通常のスピルオーバーで上位 25% / 50% の宿主をそのまま残し、残りだけ撒き直す（`spill_keep`）。`v4_keep25p` はそれに `switch_pace`。`v4_med03` / `v4_med1` は直近の停滞窓で集団の中央値が 0.3 / 1 桁以上下がっている間はスピルオーバーしない（`spill_med_veto`）。ねらいは 20D の F07/F08/F09（谷を進んでいる集団をスピルオーバーが壊している）。**集計**: j52 と同じ（標準の集計 ＋ j47 のパネルと並べた CEC 順位。j47 の MC-ESO との一致も書く）。per-run stats は `analysis/single/j53/a20/dim20/stats/`。**記録**: `analysis/single/j53/`。採否の判断はしない。
+
+1. **【隔離と流行の継続（5D/10D）】** 手法 `"MC-ESO,v4_keep25,v4_keep50,v4_keep25p,v4_med03,v4_med1"`、j50 と同じ 4 設定（label `j53_a5` / `j53_a5ho` / `j53_a10` / `j53_a10ho`、`--jobs 4`）。**集計**: j50 と同じ（標準の集計 ＋ `cec_panel.py --panel analysis/single/j49/<対応する label>`）。per-run stats は `analysis/single/j53/<label>/dim<D>/stats/`。**記録**: `analysis/single/j53/`。採否の判断はしない。
+
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---

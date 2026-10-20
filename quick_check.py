@@ -564,6 +564,13 @@ _OPTIMIZERS = {
     "v4_small4":      (MultiChannelEpidemicOptimizer, {"pop_init_hd": 4.0, "switch_pace": True}),
     "v4_grow4r":      (MultiChannelEpidemicOptimizer, {"pop_init_hd": 4.0, "switch_grow": 2.0, "switch_pace": True, "select_rank": 5.0}),
     "v4_grow16":      (MultiChannelEpidemicOptimizer, {"switch_grow": 1.5, "switch_pace": True}),
+    # Quarantine: an ordinary spillover keeps the top fraction of hosts
+    "v4_keep25":      (MultiChannelEpidemicOptimizer, {"spill_keep": 0.25}),
+    "v4_keep50":      (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5}),
+    "v4_keep25p":     (MultiChannelEpidemicOptimizer, {"spill_keep": 0.25, "switch_pace": True}),
+    # Still spreading: no ordinary spillover while the population median keeps falling
+    "v4_med03":       (MultiChannelEpidemicOptimizer, {"spill_med_veto": 0.3}),
+    "v4_med1":        (MultiChannelEpidemicOptimizer, {"spill_med_veto": 1.0}),
     "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),

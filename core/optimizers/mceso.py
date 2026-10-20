@@ -81,6 +81,7 @@ class _MCESOState:
     sched_n0: int = 0               # its initial size (0 = the run's initial size)
     # switch_pace: after a basin switch the new outbreak is paced on its own best.
     paced: bool = False
+    med_hist: list = field(default_factory=list)   # spill_med_veto: (evals, log10 median f)
     pace_ref: float = 0.0           # log10 of the outbreak's best at its last meaningful step
     pace_since: int = 0
     # The learned C has reached 10^router_learned_cond (latched; σ floor and
@@ -859,6 +860,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # scan beats MC-ESO on the ill-conditioned unimodal functions (F06-F12)
         # that a 320-host start wastes, and on multimodal ones grows λ later.
         pop_init_hd: "float | None" = None,
+        # Quarantine (2026-10-20, ≥3D): an ordinary spillover keeps this
+        # fraction of the best hosts as they are and re-seeds only the rest
+        # (None = keep only the best). On 20D F09 / F07 a spillover fires every
+        # ~3200 evaluations while the population is still creeping along the
+        # curved valley, and re-seeding everyone but the best destroys it.
+        spill_keep: "float | None" = None,
+        # Still spreading (2026-10-20, ≥3D): no ordinary spillover while the
+        # population's median f fell by more than this many decades over the
+        # last stagnation window (None = off): the best has stalled but the
+        # outbreak is still moving along the valley.
+        spill_med_veto: "float | None" = None,
         switch_grow: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
@@ -936,6 +948,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.h2h_dither = h2h_dither
         self.wave_plain = wave_plain
         self.switch_grow = switch_grow
+        self.spill_keep = spill_keep
+        self.spill_med_veto = spill_med_veto
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -1420,6 +1434,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
           drilling), which protects SR@1e-10 on hard single-optimum functions.
         """
         window = self._stagnation_window()
+        if self.spill_med_veto is not None and self.dim >= 3 and len(st.pop_f):
+            now = len(st.history_f)
+            st.med_hist.append((now, math.log10(max(float(np.median(st.pop_f)), 1e-300))))
+            past = [m for e, m in st.med_hist if e <= now - window]
+            if (past and past[-1] - st.med_hist[-1][1] > self.spill_med_veto
+                    and not self._basin_exhausted(st)):
+                return False
         if self.spill_adapt_veto is not None and len(st.cc_cond_hist) >= 2:
             now_e, now_c = st.cc_cond_hist[-1]
             past = [c for e, c in st.cc_cond_hist if e <= now_e - window]
@@ -1548,6 +1569,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             best_idx_global = int(np.argmin(st.pop_f))
             x_best_snap = st.pop_x[best_idx_global].copy()
             reseed_idx = [i for i in range(self.n_pop) if i != best_idx_global]
+            if self.spill_keep is not None and self.dim >= 3:
+                keep = set(int(i) for i in np.argsort(st.pop_f)[:max(1, int(round(self.spill_keep * self.n_pop)))])
+                reseed_idx = [i for i in reseed_idx if i not in keep]
 
         # Informed-restart hook: population still holds the converging basin
         # here, so a subclass can harvest a persistent archive / record the
