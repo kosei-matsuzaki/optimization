@@ -1,0 +1,91 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=20   ref=MC-ESO
+run: 20261020_073209_j54_a20_quick
+meta: n_runs=20 max_evals=50000 set=all-d20 commit=fb48872
+functions: 24   methods: MC-ESO, v4_fcast, v4_pbest, v4_archive, v4_fcastp, v4_fcastk, v4_pbarch
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            35.4%   38.1%   39.4%   42.7%       26727            
+  v4_fcast          36.5%   37.1%   38.5%   42.5%       22956         0/5
+  v4_pbest          31.7%   35.4%   36.9%   42.1%       25991         2/3
+  v4_archive        31.0%   35.2%   38.5%   42.9%       25931         2/3
+  v4_fcastp         37.1%   37.7%   39.2%   43.1%       23335         0/9
+  v4_fcastk         37.3%   41.0%   43.5%   47.1%       26365        0/10
+  v4_pbarch         31.2%   34.4%   38.3%   43.8%       28841         3/2
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%        v4_fcast 100%            12536/400
+  F02-EllipsoidalSep               95%         v4_fcast 95%          23492/28066
+  F03-RastriginSep                100%        v4_fcast 100%          16366/16092
+  F04-BucheRastrigin                5%        v4_archive 5%          38333/33124
+  F05-LinearSlope                 100%        v4_fcast 100%          20471/17503
+  F06-AttractiveSector             30%         v4_fcast 65%          33422/34717  <-- ref behind
+  F07-StepEllipsoidal              20%       v4_archive 15%          29086/24765
+  F08-Rosenbrock                    0%        v4_archive 5%                    -  <-- ref behind
+  F09-RosenbrockRot                 0%        v4_fcastk 15%                    -  <-- ref behind
+  F10-EllipsoidalRot               95%        v4_pbest 100%          19836/20163  <-- ref behind
+  F11-Discus                       70%       v4_fcastk 100%          23678/16607  <-- ref behind
+  F12-BentCigar                    80%         v4_fcast 75%          34599/28140
+  F13-SharpRidge                    0%         v4_fcast 10%          46799/34527  <-- ref behind
+  F14-DiffPowers                  100%        v4_pbest 100%          18359/18481
+  F15-RastriginRot                  0%          v4_fcast 0%                    -
+  F16-Weierstrass                   0%          v4_fcast 0%                    -
+  F17-SchafferF7                    0%          v4_fcast 0%                    -
+  F18-SchafferF7ill                 0%          v4_fcast 0%                    -
+  F19-GriewankRosenbrock            0%          v4_fcast 0%                    -
+  F20-Schwefel                      0%          v4_fcast 0%                    -
+  F21-Gallagher101                 45%        v4_pbarch 65%          30295/33108  <-- ref behind
+  F22-Gallagher21                  10%       v4_archive 10%          26908/13412
+  F23-Katsuura                      0%          v4_fcast 0%                    -
+  F24-LunacekRastrigin              0%          v4_fcast 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F01-Sphere             vs v4_archive     p=0.00347 A12=0.23 (large)
+  F01-Sphere             vs v4_fcast       p=0.000165 A12=0.05 (large)
+  F01-Sphere             vs v4_fcastk      p=0.000165 A12=0.05 (large)
+  F01-Sphere             vs v4_fcastp      p=0.000165 A12=0.05 (large)
+  F01-Sphere             vs v4_pbarch      p=0.0449 A12=0.29 (medium)
+  F04-BucheRastrigin     vs v4_fcastk      p=0.0198 A12=0.32 (medium)
+  F08-Rosenbrock         vs v4_fcastk      p=0.00121 A12=0.14 (large)
+  F09-RosenbrockRot      vs v4_fcast       p=3.81e-06 A12=0.06 (large)
+  F09-RosenbrockRot      vs v4_fcastk      p=1.91e-06 A12=0.00 (large)
+  F09-RosenbrockRot      vs v4_fcastp      p=3.81e-06 A12=0.06 (large)
+  F11-Discus             vs v4_fcastk      p=0.00264 A12=0.20 (large)
+  F11-Discus             vs v4_fcastp      p=0.023 A12=0.24 (large)
+  F13-SharpRidge         vs v4_archive     p=0.0192 A12=0.28 (large)
+  F15-RastriginRot       vs v4_fcast       p=0.0239 A12=0.25 (large)
+  F15-RastriginRot       vs v4_fcastk      p=0.00271 A12=0.19 (large)
+  F15-RastriginRot       vs v4_fcastp      p=5.72e-06 A12=0.05 (large)
+  F15-RastriginRot       vs v4_pbarch      p=0.0484 A12=0.32 (medium)
+  F15-RastriginRot       vs v4_pbest       p=0.04 A12=0.28 (large)
+  F16-Weierstrass        vs v4_fcastp      p=0.0296 A12=0.30 (medium)
+  F17-SchafferF7         vs v4_fcast       p=0.0153 A12=0.28 (large)
+  F17-SchafferF7         vs v4_fcastk      p=0.00831 A12=0.27 (large)
+  F17-SchafferF7         vs v4_fcastp      p=0.00639 A12=0.26 (large)
+  F17-SchafferF7         vs v4_pbest       p=0.0266 A12=0.30 (medium)
+  F19-GriewankRosenbrock vs v4_fcastk      p=0.00944 A12=0.29 (large)
+  F19-GriewankRosenbrock vs v4_fcastp      p=0.000322 A12=0.12 (large)
+  F22-Gallagher21        vs v4_fcast       p=0.0112 A12=0.27 (large)
+  F23-Katsuura           vs v4_archive     p=0.0328 A12=0.38 (small)
+  F23-Katsuura           vs v4_fcastk      p=0.000851 A12=0.15 (large)
+  F23-Katsuura           vs v4_fcastp      p=3.62e-05 A12=0.07 (large)
+  F23-Katsuura           vs v4_pbest       p=0.0192 A12=0.33 (medium)
+  F24-LunacekRastrigin   vs v4_fcastk      p=6.29e-05 A12=0.08 (large)
+  F24-LunacekRastrigin   vs v4_fcastp      p=3.81e-06 A12=0.03 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v4_fcastp              mean rank   3.10   best on 12/24
+   2. v4_fcastk              mean rank   3.25   best on 10/24
+   3. v4_fcast               mean rank   3.98   best on  6/24
+   4. v4_pbarch              mean rank   4.21   best on  7/24
+   5. v4_archive             mean rank   4.25   best on  6/24
+   6. v4_pbest               mean rank   4.50   best on  7/24
+   7. MC-ESO                 mean rank   4.71   best on  4/24  <- ref
+
