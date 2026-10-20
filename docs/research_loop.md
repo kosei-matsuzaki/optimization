@@ -117,7 +117,7 @@
 
 
 
-1. **【予報の子・pbest・保管庫（10D のみ。5D は 2026-10-20 に完了）】** 手法 `"MC-ESO,v4_fcast,v4_fcastp,v4_fcastk,v4_pbest,v4_archive,v4_pbarch"`、j50 と同じ 10D の 2 設定（`--all --dim 10 --max-evals 25000 --n-runs 20 --jobs 4` を `--instances 1-5`（label `j54_a10`）と `--instances 6-10 --seed-offset 7`（label `j54_a10ho`））。**集計**: j50 と同じ（標準の集計を `MC-ESO` reference ＋ `python scripts/single/cec_panel.py --dim 10 --panel analysis/single/j49/j49_p10[ho] --arms results/<この run>`）。per-run stats は `analysis/single/j54/<label>/dim10/stats/`。**記録**: `analysis/single/j54/`。採否の判断はしない。
+1. **【予報の子・pbest・保管庫（10D のみ。5D は 2026-10-20 に完了）】** 手法 `"MC-ESO,v4_fcast,v4_fcastp,v4_fcastk,v4_pbest,v4_archive,v4_pbarch"`、j50 と同じ 10D の 2 設定（`--all --dim 10 --max-evals 25000 --n-runs 20 --jobs 4` を `--instances 1-5`（label `j54_a10`）と `--instances 6-10 --seed-offset 7`（label `j54_a10ho`））。**集計**: j50 と同じ（標準の集計を `MC-ESO` reference ＋ `python scripts/single/cec_panel.py --dim 10 --panel analysis/single/j49/j49_p10[ho] --arms results/<この run>`）。per-run stats は `analysis/single/j54/<label>/dim10/stats/`。**記録**: `analysis/single/j54/`。採否の判断はしない。 (claimed 2026-10-20 10:30 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
