@@ -117,7 +117,7 @@
 
 
 
-1. **【予報の子・pbest・保管庫（5D/10D）】** 手法 `"MC-ESO,v4_fcast,v4_fcastp,v4_fcastk,v4_pbest,v4_archive,v4_pbarch"`、j50 と同じ 4 設定（label `j54_a5` / `j54_a5ho` / `j54_a10` / `j54_a10ho`、`--jobs 4`）。**集計**: j50 と同じ。per-run stats は `analysis/single/j54/<label>/dim<D>/stats/`。**記録**: `analysis/single/j54/`。採否の判断はしない。
+1. **【予報の子・pbest・保管庫（5D/10D）】** 手法 `"MC-ESO,v4_fcast,v4_fcastp,v4_fcastk,v4_pbest,v4_archive,v4_pbarch"`、j50 と同じ 4 設定（label `j54_a5` / `j54_a5ho` / `j54_a10` / `j54_a10ho`、`--jobs 4`）。**集計**: j50 と同じ。per-run stats は `analysis/single/j54/<label>/dim<D>/stats/`。**記録**: `analysis/single/j54/`。採否の判断はしない。 (claimed 2026-10-20 08:32 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
