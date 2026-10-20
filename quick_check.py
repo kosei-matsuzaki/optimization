@@ -571,6 +571,13 @@ _OPTIMIZERS = {
     # Still spreading: no ordinary spillover while the population median keeps falling
     "v4_med03":       (MultiChannelEpidemicOptimizer, {"spill_med_veto": 0.3}),
     "v4_med1":        (MultiChannelEpidemicOptimizer, {"spill_med_veto": 1.0}),
+    # Other approaches (2026-10-20): forecast child, JADE-style pbest pull and archive
+    "v4_fcast":       (MultiChannelEpidemicOptimizer, {"forecast": True}),
+    "v4_pbest":       (MultiChannelEpidemicOptimizer, {"h2h_pbest": 0.1}),
+    "v4_archive":     (MultiChannelEpidemicOptimizer, {"h2h_archive": True}),
+    "v4_fcastp":      (MultiChannelEpidemicOptimizer, {"forecast": True, "switch_pace": True}),
+    "v4_fcastk":      (MultiChannelEpidemicOptimizer, {"forecast": True, "spill_keep": 0.5}),
+    "v4_pbarch":      (MultiChannelEpidemicOptimizer, {"h2h_pbest": 0.1, "h2h_archive": True}),
     "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),

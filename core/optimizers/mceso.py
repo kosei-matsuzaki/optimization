@@ -82,6 +82,7 @@ class _MCESOState:
     # switch_pace: after a basin switch the new outbreak is paced on its own best.
     paced: bool = False
     med_hist: list = field(default_factory=list)   # spill_med_veto: (evals, log10 median f)
+    dead_x: list = field(default_factory=list)     # h2h_archive: hosts displaced by children
     pace_ref: float = 0.0           # log10 of the outbreak's best at its last meaningful step
     pace_since: int = 0
     # The learned C has reached 10^router_learned_cond (latched; σ floor and
@@ -871,6 +872,18 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # last stagnation window (None = off): the best has stalled but the
         # outbreak is still moving along the valley.
         spill_med_veto: "float | None" = None,
+        # Forecast child (2026-10-20, ≥3D): each generation one extra child at
+        # the minimiser of a separable quadratic f ≈ a + bᵀy + Σ c_i y_i² fitted
+        # to the better half of the hosts, y = Vᵀ(x − x_best) in the learned
+        # C's eigenbasis (coordinates with c_i ≤ 0 do not move; the step is
+        # capped at the population's radius). Replaces the worst host if better.
+        forecast: bool = False,
+        # Droplet pull toward a random host of the best h2h_pbest fraction
+        # instead of a niched strain (None = strains), as JADE's current-to-pbest.
+        h2h_pbest: "float | None" = None,
+        # Droplet difference x_a − x_b with x_b drawn from the population plus
+        # the hosts displaced by children (capped at n_pop), as JADE's archive.
+        h2h_archive: bool = False,
         switch_grow: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
@@ -950,6 +963,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.switch_grow = switch_grow
         self.spill_keep = spill_keep
         self.spill_med_veto = spill_med_veto
+        self.forecast = forecast
+        self.h2h_pbest = h2h_pbest
+        self.h2h_archive = h2h_archive
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -1354,6 +1370,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         indices (original behaviour, RNG-identical). A subclass returns positions
         from a persistent strain archive so the pull keeps targeting coexisting
         basins even after the live population has collapsed onto one."""
+        if self.h2h_pbest is not None:
+            top = np.argsort(st.pop_f)[:max(2, int(round(self.h2h_pbest * len(st.pop_f))))]
+            return st.pop_x[st.rng.choice(top, size=n_h2h)]
         return st.pop_x[st.rng.choice(elite_arr, size=n_h2h)]
 
     # ── spillover (stagnation re-seed) + sequential niching ─────────────────
@@ -1763,7 +1782,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         h2h_parents_gi = rng.choice(n, size=n_h2h, p=weights)
         h2h_a_li = rng.integers(0, n, size=n_h2h)
         h2h_b_li = rng.integers(0, n, size=n_h2h)
-        diff = st.pop_x[h2h_a_li] - st.pop_x[h2h_b_li]
+        if self.h2h_archive and st.dead_x:
+            pool = np.vstack([st.pop_x, np.asarray(st.dead_x)])
+            xb = pool[rng.integers(0, len(pool), size=n_h2h)]
+            diff = st.pop_x[h2h_a_li] - xb
+        else:
+            diff = st.pop_x[h2h_a_li] - st.pop_x[h2h_b_li]
         parents_x = st.pop_x[h2h_parents_gi]
         # current-to-best/2 on the committed DROPLET route: a second difference
         # vector adds donor diversity that rescues runs stalled in a wrong ill-
@@ -2410,8 +2434,49 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             codes.extend([code] * cnt)
         st.eval_channel.extend(codes[:len(st.history_f) - st.gen_eval_start])
         self._pad_eval_channel(st, _CH_UNKNOWN)
+        if self.forecast and self.dim >= 3 and st.budget_left:
+            self._forecast_step(st)
 
         self._adapt_sigma(st, gen_best_before)
+
+    def _forecast_step(self, st: _MCESOState) -> None:
+        """forecast: one child at the minimiser of a separable quadratic fitted
+        to the better half of the hosts in the learned C's eigenbasis."""
+        n, D = len(st.pop_f), self.dim
+        m = max(2 * D + 2, n // 2)
+        if n < 2 * D + 2:
+            return
+        idx = np.argsort(st.pop_f)[:m]
+        X, F = st.pop_x[idx], st.pop_f[idx]
+        xb = X[0]
+        if st.cc_C is not None:
+            _, V = np.linalg.eigh(st.cc_C)
+        else:
+            V = np.eye(D)
+        Y = (X - xb) @ V
+        sc = np.maximum(Y.std(axis=0), 1e-300)
+        Z = Y / sc
+        A = np.hstack([np.ones((m, 1)), Z, Z ** 2])
+        try:
+            coef, *_ = np.linalg.lstsq(A, F, rcond=None)
+        except np.linalg.LinAlgError:
+            return
+        b, c = coef[1:D + 1], coef[D + 1:]
+        z = np.where(c > 0, -b / (2 * np.where(c > 0, c, 1.0)), 0.0)
+        y = z * sc
+        r = float(np.max(np.linalg.norm(Y, axis=1)))
+        ny = float(np.linalg.norm(y))
+        if not np.isfinite(ny) or ny <= 0:
+            return
+        if ny > r:
+            y *= r / ny
+        x = self._reflect(xb + V @ y, st.lo, st.hi)
+        f = float(self.func(x))
+        self._record_eval(st, x, f, float(np.linalg.norm(y)))
+        st.eval_channel.append(_CH_LS)
+        w = int(np.argmax(st.pop_f))
+        if f < st.pop_f[w]:
+            st.pop_x[w], st.pop_f[w], st.pop_age[w] = x, f, 0
 
     def _adapt_sigma(self, st: _MCESOState, gen_best_before: float) -> None:
         """σ_global adaptation (always on): improved → × sigma_up, else
@@ -2516,7 +2581,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 if dead_orig_f[k] < st.pop_f[slot]:
                     st.pop_x[slot] = dead_orig_x[k]
                     st.pop_f[slot] = dead_orig_f[k]
-                elif self._cc_dim_gate() > 0.0:
+                    continue
+                if self.h2h_archive:
+                    st.dead_x.append(dead_orig_x[k].copy())
+                    if len(st.dead_x) > self.n_pop:
+                        st.dead_x.pop(int(st.rng.integers(0, len(st.dead_x))))
+                if self._cc_dim_gate() > 0.0:
                     survived.append((k, st.pop_x[slot].copy(), st.pop_f[slot]))
         if (self._cc_dim_gate() > 0.0
                 and len(st.history_sigma_global) >= st.cc_freeze_until):
