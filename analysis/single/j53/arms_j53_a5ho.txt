@@ -1,0 +1,37 @@
+functions=24 methods=6 rows=144
+dup rows: 0
+
+--- per-function SR@1e-10 (base -> v4_keep25,v4_keep50,v4_keep25p,v4_med03,v4_med1) ---
+F01-Sphere               100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F02-EllipsoidalSep       100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F03-RastriginSep         100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F04-BucheRastrigin        75.0 ->  75.0,  75.0,  75.0,  75.0,  75.0   SAME
+F05-LinearSlope          100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F06-AttractiveSector     100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F07-StepEllipsoidal      100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F08-Rosenbrock           100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F09-RosenbrockRot        100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F10-EllipsoidalRot       100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F11-Discus               100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F12-BentCigar            100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F13-SharpRidge           100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F14-DiffPowers           100.0 -> 100.0, 100.0, 100.0, 100.0, 100.0   SAME
+F15-RastriginRot          10.0 ->   5.0,  10.0,   0.0,  10.0,   5.0   DIFF
+F16-Weierstrass           70.0 ->  70.0,  80.0,  70.0,  65.0,  65.0   DIFF
+F17-SchafferF7            85.0 ->  85.0,  85.0,  85.0,  85.0,  85.0   SAME
+F18-SchafferF7ill         70.0 ->  70.0,  70.0,  70.0,  65.0,  70.0   DIFF
+F19-GriewankRosenbrock     0.0 ->   0.0,   0.0,   0.0,   0.0,   0.0   SAME
+F20-Schwefel               5.0 ->   5.0,  10.0,   5.0,   5.0,   5.0   DIFF
+F21-Gallagher101          85.0 ->  85.0,  95.0,  85.0,  90.0,  85.0   DIFF
+F22-Gallagher21           95.0 ->  90.0,  90.0,  85.0,  95.0,  85.0   DIFF
+F23-Katsuura              45.0 ->  45.0,  55.0,  50.0,  40.0,  45.0   DIFF
+F24-LunacekRastrigin       0.0 ->   0.0,   0.0,   0.0,   0.0,   0.0   SAME
+
+functions where some arm differs: 7
+
+--- evals_succ_mean (paired: functions where BOTH have successes) ---
+v4_keep25      base    3958.1  arm    4012.6  diff     +54.5 (nf=22)  base-only: -  arm-only: -
+v4_keep50      base    3958.1  arm    4070.2  diff    +112.1 (nf=22)  base-only: -  arm-only: -
+v4_keep25p     base    3768.5  arm    3775.3  diff      +6.8 (nf=21)  base-only: F15  arm-only: -
+v4_med03       base    3958.1  arm    3977.2  diff     +19.1 (nf=22)  base-only: -  arm-only: -
+v4_med1        base    3958.1  arm    3955.2  diff      -2.9 (nf=22)  base-only: -  arm-only: -
