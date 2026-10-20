@@ -1,0 +1,44 @@
+=== paired evals_succ_mean (functions where BOTH have successes) ===
+v4_fcast     n=18  ref=  9838.8 arm=  8866.4 delta=  -972.4  ref-only=[] arm-only=[]
+v4_fcastp    n=18  ref=  9838.8 arm=  9435.7 delta=  -403.2  ref-only=[] arm-only=[]
+v4_fcastk    n=18  ref=  9838.8 arm=  8790.0 delta= -1048.8  ref-only=[] arm-only=['F23-Katsuura']
+v4_pbest     n=18  ref=  9838.8 arm= 10013.9 delta=  +175.1  ref-only=[] arm-only=[]
+v4_archive   n=18  ref=  9838.8 arm=  9840.1 delta=    +1.3  ref-only=[] arm-only=['F23-Katsuura']
+v4_pbarch    n=18  ref=  9838.8 arm=  9984.2 delta=  +145.4  ref-only=[] arm-only=['F18-SchafferF7ill']
+
+=== per-function SR@1e-10 changes vs MC-ESO ===
+v4_fcast     UP(2): F17 25->30, F22 40->50
+             DN(6): F07 90->85, F08 100->95, F12 100->75, F13 95->75, F16 25->5, F21 100->85
+v4_fcastp    UP(2): F17 25->30, F22 40->50
+             DN(6): F07 90->85, F08 100->95, F12 100->75, F13 95->75, F16 25->15, F21 100->70
+v4_fcastk    UP(2): F22 40->50, F23 0->5
+             DN(4): F12 100->75, F13 95->75, F16 25->5, F21 100->80
+v4_pbest     UP(2): F13 95->100, F22 40->45
+             DN(5): F09 100->90, F12 100->95, F16 25->20, F17 25->15, F21 100->90
+v4_archive   UP(3): F13 95->100, F22 40->45, F23 0->5
+             DN(6): F04 65->60, F08 100->95, F12 100->95, F16 25->20, F17 25->15, F21 100->90
+v4_pbarch    UP(3): F13 95->100, F18 0->10, F22 40->55
+             DN(7): F07 90->80, F08 100->85, F09 100->90, F12 100->95, F16 25->5, F17 25->20, F21 100->80
+
+=== overall SR levels ===
+MC-ESO        64.2 /  65.0 /  68.8 /  70.4   evals(own)=  9838.8 (n=18)
+v4_fcast      61.0 /  62.7 /  66.5 /  68.1   evals(own)=  8866.4 (n=18)
+v4_fcastp     60.8 /  62.5 /  66.0 /  67.9   evals(own)=  9435.7 (n=18)
+v4_fcastk     61.2 /  63.3 /  66.2 /  68.3   evals(own)=  9106.2 (n=19)
+v4_pbest      62.9 /  63.8 /  67.3 /  68.8   evals(own)= 10013.9 (n=18)
+v4_archive    63.1 /  64.6 /  69.2 /  70.0   evals(own)=  9935.4 (n=19)
+v4_pbarch     61.9 /  62.7 /  66.2 /  67.7   evals(own)= 10444.9 (n=19)
+
+=== Wilcoxon per arm (p_two<0.05) ===
+v4_fcast     ref-wins 2: F12(0.59 small), F18(0.70 medium)
+             arm-wins 3: F02(0.38 small), F14(0.26 large), F15(0.32 medium)
+v4_fcastp    ref-wins 2: F12(0.59 small), F21(0.65 medium)
+             arm-wins 5: F02(0.38 small), F14(0.26 large), F15(0.13 large), F19(0.18 large), F24(0.27 large)
+v4_fcastk    ref-wins 1: F12(0.59 small)
+             arm-wins 5: F02(0.38 small), F04(0.41 small), F14(0.26 large), F15(0.20 large), F24(0.33 medium)
+v4_pbest     ref-wins 1: F18(0.72 large)
+             arm-wins 0: none
+v4_archive   ref-wins 0: none
+             arm-wins 0: none
+v4_pbarch    ref-wins 0: none
+             arm-wins 0: none
