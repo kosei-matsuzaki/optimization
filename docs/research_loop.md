@@ -116,7 +116,7 @@
 
 
 
-1. **【隔離と流行の継続（5D/10D）】** 手法 `"MC-ESO,v4_keep25,v4_keep50,v4_keep25p,v4_med03,v4_med1"`、j50 と同じ 4 設定（label `j53_a5` / `j53_a5ho` / `j53_a10` / `j53_a10ho`、`--jobs 4`）。**集計**: j50 と同じ（標準の集計 ＋ `cec_panel.py --panel analysis/single/j49/<対応する label>`）。per-run stats は `analysis/single/j53/<label>/dim<D>/stats/`。**記録**: `analysis/single/j53/`。採否の判断はしない。
+1. **【隔離と流行の継続（5D/10D）】** 手法 `"MC-ESO,v4_keep25,v4_keep50,v4_keep25p,v4_med03,v4_med1"`、j50 と同じ 4 設定（label `j53_a5` / `j53_a5ho` / `j53_a10` / `j53_a10ho`、`--jobs 4`）。**集計**: j50 と同じ（標準の集計 ＋ `cec_panel.py --panel analysis/single/j49/<対応する label>`）。per-run stats は `analysis/single/j53/<label>/dim<D>/stats/`。**記録**: `analysis/single/j53/`。採否の判断はしない。 (claimed 2026-10-20 05:30 UTC)
 
 1. **【予報の子・pbest・保管庫（20D）】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_fcast,v4_fcastp,v4_fcastk,v4_pbest,v4_archive,v4_pbarch" --jobs 4`（label `j54_a20`）。腕の中身（3 次元以上）: `v4_fcast` は毎世代 1 子を、上位半分の宿主に学習 C の固有基底で分離 2 次式を当てはめた最小点に置く（`forecast`）。`v4_fcastp` は ＋`switch_pace`、`v4_fcastk` は ＋`spill_keep=0.5`。`v4_pbest` は飛沫の引き寄せ先を上位 10% の宿主に（`h2h_pbest`）、`v4_archive` は飛沫の差分の片側を置き換えられた宿主の保管庫からも取る（`h2h_archive`）、`v4_pbarch` は両方。**集計**: j52 と同じ（標準の集計 ＋ j47 のパネルと並べた CEC 順位、j47 の MC-ESO との一致も書く）。per-run stats は `analysis/single/j54/a20/dim20/stats/`。**記録**: `analysis/single/j54/`。採否の判断はしない。
 
