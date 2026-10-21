@@ -117,7 +117,7 @@
 
 
 
-1. **【候補の CEC2022（調整に使っていない問題で）／20D の残り】** `./run.sh quick --suite cec2022 --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v4_pace,v4_keep50,v4_keep25p,v4_keep50p,v4_keep50f,v4_fcastk,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 4` を label `j56_c20` で。**10D（`j56_c10`）は 2026-10-21 に完走済み**（作業ログ参照）。**集計**: 標準の集計を `MC-ESO` を reference に、[5] の CEC 順位は 16 手法（腕と比較 9 手法を全部並べた順位）と、腕を 1 つずつ MC-ESO と差し替えた 10 手法の順位（`cec_panel.py --panel results/<この run> --arms results/<この run>` で、パネル側から腕を `--drop` する）。関数別の SR@1e-10 と平均誤差の変化を腕ごとに全関数列挙。**記録**: `analysis/single/j56/`（10D 分は `summary_c10.csv` / `wilcoxon_c10.csv` で入っている）。採否の判断はしない。**12 funcs × 16 手法は 10D/25000 評価で 38.8 分かかった。20D/50000 評価は 90 分に収まらない見込みなので、関数で shard して分けて回すこと。**
+1. **【候補の CEC2022（調整に使っていない問題で）／20D の残り】** `./run.sh quick --suite cec2022 --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v4_pace,v4_keep50,v4_keep25p,v4_keep50p,v4_keep50f,v4_fcastk,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 4` を label `j56_c20` で。**10D（`j56_c10`）は 2026-10-21 に完走済み**（作業ログ参照）。**集計**: 標準の集計を `MC-ESO` を reference に、[5] の CEC 順位は 16 手法（腕と比較 9 手法を全部並べた順位）と、腕を 1 つずつ MC-ESO と差し替えた 10 手法の順位（`cec_panel.py --panel results/<この run> --arms results/<この run>` で、パネル側から腕を `--drop` する）。関数別の SR@1e-10 と平均誤差の変化を腕ごとに全関数列挙。**記録**: `analysis/single/j56/`（10D 分は `summary_c10.csv` / `wilcoxon_c10.csv` で入っている）。採否の判断はしない。**12 funcs × 16 手法は 10D/25000 評価で 38.8 分かかった。20D/50000 評価は 90 分に収まらない見込みなので、関数で shard して分けて回すこと。** (claimed 2026-10-21 19:30 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
