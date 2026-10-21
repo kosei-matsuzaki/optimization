@@ -1,0 +1,34 @@
+evals_succ_mean, paired with MC-ESO over functions where BOTH have successes
+method            nf   ref mean  method mean       diff   ref-only / method-only
+v4_pace            4    20390.0      23477.5    +3087.5   [] / []
+v4_keep50          4    20390.0      20454.8      +64.8   [] / []
+v4_keep25p         4    20390.0      22334.2    +1944.2   [] / []
+v4_keep50p         4    20390.0      23272.8    +2882.8   [] / [G02]
+v4_keep50f         4    20390.0      21225.5     +835.5   [] / [G02]
+v4_fcastk          4    20390.0      20980.5     +590.5   [] / [G02]
+ELSHADE-SPACMA     3    18250.0      44821.7   +26571.7   [G11] / []
+LSHADE-SPACMA      3    18250.0      36544.7   +18294.7   [G11] / []
+EBOwithCMAR        4    20390.0      36919.8   +16529.8   [] / []
+L-SHADE            3    18250.0      37361.0   +19111.0   [G11] / []
+IPOP-CMA-ES        4    20390.0      13149.5    -7240.5   [] / []
+ARRDE              4    20390.0      27310.5    +6920.5   [] / []
+NL-SHADE-RSP       2    19315.0      46386.0   +27071.0   [G01,G11] / []
+RCMAES             3    18250.0       7920.0   -10330.0   [G11] / [G02]
+BIPOP-aCMA-ES      3    18997.3       3847.3   -15150.0   [G03] / [G02]
+
+MC-ESO own: functions with successes = ['G01', 'G03', 'G05', 'G11']
+
+per-function evals_succ_mean (blank = no success at 1e-10)
+func          MC-ESO     v4_pace   v4_keep50  v4_keep25p  v4_keep50p  v4_keep50f   v4_fcastk
+G01            16120       18018       15604       15820       15604       13740       13740
+G02                -           -           -           -       49846       39565       39565
+G03            24568       24568       24201       23929       24201       25760       25760
+G04                -           -           -           -           -           -           -
+G05            14062       15241       15204       14763       15599       10175       10456
+G06                -           -           -           -           -           -           -
+G07                -           -           -           -           -           -           -
+G08                -           -           -           -           -           -           -
+G09                -           -           -           -           -           -           -
+G10                -           -           -           -           -           -           -
+G11            26810       36083       26810       34825       37687       35227       33966
+G12                -           -           -           -           -           -           -

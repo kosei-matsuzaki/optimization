@@ -1,0 +1,18 @@
+Wilcoxon, reference = MC-ESO, alpha=0.05 two-sided, direction by A12
+ref-wins = MC-ESO significantly better (A12>0.5); meth-wins = method better (A12<0.5)
+
+v4_pace          ref-wins 0 []  meth-wins 9 [G02 0.35 medium; G03 0.50 negligible; G04 0.35 medium; G06 0.50 negligible; G07 0.17 large; G08 0.21 large; G10 0.30 medium; G11 0.16 large; G12 0.33 medium]
+v4_keep50        ref-wins 0 []  meth-wins 4 [G01 0.35 medium; G06 0.47 negligible; G08 0.24 large; G11 0.41 small]
+v4_keep25p       ref-wins 0 []  meth-wins 6 [G01 0.35 medium; G06 0.47 negligible; G07 0.20 large; G08 0.16 large; G11 0.16 large; G12 0.28 large]
+v4_keep50p       ref-wins 0 []  meth-wins 9 [G01 0.35 medium; G02 0.30 medium; G04 0.30 medium; G06 0.47 negligible; G07 0.19 large; G08 0.16 large; G09 0.28 large; G11 0.17 large; G12 0.25 large]
+v4_keep50f       ref-wins 0 []  meth-wins 9 [G01 0.25 large; G04 0.13 large; G05 0.10 large; G07 0.13 large; G08 0.15 large; G09 0.23 large; G10 0.20 large; G11 0.08 large; G12 0.21 large]
+v4_fcastk        ref-wins 0 []  meth-wins 7 [G01 0.25 large; G04 0.28 large; G05 0.10 large; G08 0.20 large; G09 0.23 large; G10 0.23 large; G11 0.10 large]
+ELSHADE-SPACMA   ref-wins 0 []  meth-wins 8 [G04 0.23 large; G06 0.02 large; G07 0.10 large; G08 0.31 medium; G09 0.00 large; G10 0.12 large; G11 0.10 large; G12 0.00 large]
+LSHADE-SPACMA    ref-wins 0 []  meth-wins 9 [G04 0.03 large; G05 0.10 large; G06 0.02 large; G07 0.06 large; G08 0.36 small; G09 0.00 large; G10 0.06 large; G11 0.13 large; G12 0.00 large]
+EBOwithCMAR      ref-wins 0 []  meth-wins 9 [G04 0.01 large; G05 0.27 large; G06 0.05 large; G07 0.17 large; G08 0.22 large; G09 0.00 large; G10 0.09 large; G11 0.10 large; G12 0.00 large]
+L-SHADE          ref-wins 0 []  meth-wins 9 [G04 0.05 large; G05 0.32 medium; G06 0.04 large; G07 0.10 large; G08 0.35 medium; G09 0.00 large; G10 0.06 large; G11 0.10 large; G12 0.00 large]
+IPOP-CMA-ES      ref-wins 1 [G03 0.79 large]  meth-wins 4 [G04 0.00 large; G09 0.00 large; G11 0.12 large; G12 0.14 large]
+ARRDE            ref-wins 0 []  meth-wins 10 [G02 0.28 large; G04 0.03 large; G05 0.18 large; G06 0.01 large; G07 0.03 large; G08 0.22 large; G09 0.00 large; G10 0.06 large; G11 0.09 large; G12 0.00 large]
+NL-SHADE-RSP     ref-wins 4 [G03 0.90 large; G04 1.00 large; G05 0.91 large; G06 0.90 large]  meth-wins 4 [G07 0.11 large; G08 0.31 medium; G09 0.01 large; G11 0.10 large]
+RCMAES           ref-wins 0 []  meth-wins 9 [G01 0.25 large; G02 0.27 large; G03 0.17 large; G04 0.00 large; G05 0.10 large; G06 0.14 large; G07 0.07 large; G08 0.12 large; G11 0.19 large]
+BIPOP-aCMA-ES    ref-wins 6 [G03 0.99 large; G04 0.68 medium; G05 0.76 large; G07 0.84 large; G10 0.81 large; G12 0.90 large]  meth-wins 2 [G02 0.06 large; G06 0.18 large]
