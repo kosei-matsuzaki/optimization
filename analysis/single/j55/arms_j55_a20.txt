@@ -1,0 +1,40 @@
+functions=24 methods=3 rows=72
+dup rows: 0
+missing (function,method) pairs: 0 []
+
+--- per-function SR@1e-10 (base -> v4_keep50p,v4_keep50f) ---
+F01-Sphere                  100.0 -> 100.0, 100.0   SAME
+F02-EllipsoidalSep           95.0 ->  95.0,  95.0   SAME
+F03-RastriginSep            100.0 -> 100.0, 100.0   SAME
+F04-BucheRastrigin            5.0 ->   5.0,   5.0   SAME
+F05-LinearSlope             100.0 -> 100.0, 100.0   SAME
+F06-AttractiveSector         30.0 ->  30.0,  60.0   DIFF
+F07-StepEllipsoidal          20.0 ->  10.0,   0.0   DIFF
+F08-Rosenbrock                0.0 ->   0.0,   5.0   DIFF
+F09-RosenbrockRot             0.0 ->   5.0,  15.0   DIFF
+F10-EllipsoidalRot           95.0 ->  95.0,  90.0   DIFF
+F11-Discus                   70.0 ->  85.0, 100.0   DIFF
+F12-BentCigar                80.0 ->  80.0,  75.0   DIFF
+F13-SharpRidge                0.0 ->  35.0,  10.0   DIFF
+F14-DiffPowers              100.0 -> 100.0,  95.0   DIFF
+F15-RastriginRot              0.0 ->   0.0,   0.0   SAME
+F16-Weierstrass               0.0 ->   0.0,   0.0   SAME
+F17-SchafferF7                0.0 ->   0.0,   0.0   SAME
+F18-SchafferF7ill             0.0 ->   0.0,   0.0   SAME
+F19-GriewankRosenbrock        0.0 ->   0.0,   0.0   SAME
+F20-Schwefel                  0.0 ->   0.0,   0.0   SAME
+F21-Gallagher101             45.0 ->  45.0,  35.0   DIFF
+F22-Gallagher21              10.0 ->   5.0,   5.0   DIFF
+F23-Katsuura                  0.0 ->   0.0,   0.0   SAME
+F24-LunacekRastrigin          0.0 ->   0.0,   0.0   SAME
+functions where some arm differs: 11
+
+--- evals_succ_mean (paired: functions where BOTH have successes) ---
+v4_keep50p     base   26727.1  arm   24585.4  diff   -2141.7 (nf=14)  base-only: -  arm-only: F09,F17
+v4_keep50f     base   26545.7  arm   22461.8  diff   -4083.8 (nf=13)  base-only: F07  arm-only: F08,F09,F17
+
+--- Wilcoxon (ref=MC-ESO, p_two<0.05; base-win = A12>0.5, arm-win = A12<0.5) ---
+v4_keep50p     base-win 1: F07(0.66 medium)
+               arm-win  12: F04(0.31 medium), F08(0.28 large), F09(0.01 large), F13(0.06 large), F15(0.07 large), F16(0.29 large), F17(0.31 medium), F18(0.32 medium), F19(0.04 large), F20(0.48 negligible), F23(0.05 large), F24(0.03 large)
+v4_keep50f     base-win 0: -
+               arm-win  10: F01(0.05 large), F04(0.32 medium), F08(0.14 large), F09(0.00 large), F11(0.20 large), F15(0.05 large), F17(0.26 large), F19(0.04 large), F23(0.05 large), F24(0.02 large)
