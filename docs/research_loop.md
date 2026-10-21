@@ -117,7 +117,7 @@
 
 
 
-1. **【発表（2026-07-07）からの段階の比較 — 最優先。10D / 20D の残り】** ユーザーの依頼。j57 の (a) 2D と (b) 5D は 2026-10-21 に完走した（`analysis/single/j57/`）。残りは (c)(d) の 2 run。段階は (b) と同じ 9 手法 `"MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,MC-ESO,v3_stage,v4_pace,v4_keep50,v4_keep25p"`、すべて `--n-runs 20 --instances 1-5 --jobs 4`:
+1. **【発表（2026-07-07）からの段階の比較 — 最優先。10D / 20D の残り】** ユーザーの依頼。j57 の (a) 2D と (b) 5D は 2026-10-21 に完走した（`analysis/single/j57/`）。残りは (c)(d) の 2 run。段階は (b) と同じ 9 手法 `"MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,MC-ESO,v3_stage,v4_pace,v4_keep50,v4_keep25p"`、すべて `--n-runs 20 --instances 1-5 --jobs 4`: (claimed 2026-10-21 14:30 UTC)
    (c) 10D: `./run.sh quick --all --dim 10 --max-evals 25000 --methods "<上の 9 手法>"`（label `j57_d10`）。(d) 20D: `--dim 20 --max-evals 50000`（label `j57_d20`、手法は同じ）。**10D で 90 分の目安に収まらない場合は (c) だけ回して (d) を書き戻すこと**（2026-10-21 の実績: 5D 9 手法で 31.1 分）。
    **集計**: 次元ごとに、各段階を 1 つずつ MC-ESO と差し替えたパネル内の CEC 順位（10D は `analysis/single/j49/j49_p10`、20D は j47 のパネル（`/tmp/j47p` の作り方は j51 と同じ））。比較手法そのものの CEC 順位（パネル内、MC-ESO が現既定のとき）と SR@1e-2 / 1e-4 / 1e-7 / 1e-10 も同じ表に並べる。段階ごとの SR@1e-2〜1e-10、`evals_succ_mean`、前の段階との関数別 SR@1e-10 の変化（全関数）、現既定を reference にした Wilcoxon。各 run の MC-ESO が j49 / j47 の MC-ESO と一致するかも書く。per-run stats は `analysis/single/j57/<label>/dim<D>/stats/`。**記録**: `analysis/single/j57/`。採否の判断はしない。
 
