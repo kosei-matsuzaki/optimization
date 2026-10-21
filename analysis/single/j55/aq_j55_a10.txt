@@ -1,0 +1,65 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261021_091136_j55_a10_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=c66bcf8
+functions: 24   methods: MC-ESO, v4_keep50p, v4_keep50f
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            64.2%   65.0%   68.8%   70.4%       10376            
+  v4_keep50p        62.7%   65.0%   68.8%   70.8%       10407         1/7
+  v4_keep50f        61.5%   63.8%   66.7%   68.5%        9543         1/7
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%      v4_keep50p 100%            4985/4985
+  F02-EllipsoidalSep              100%      v4_keep50p 100%            7982/7982
+  F03-RastriginSep                100%      v4_keep50p 100%            9321/9222
+  F04-BucheRastrigin               65%       v4_keep50p 65%            9972/9996
+  F05-LinearSlope                 100%      v4_keep50p 100%            7729/7729
+  F06-AttractiveSector            100%      v4_keep50p 100%          10540/10540
+  F07-StepEllipsoidal              90%       v4_keep50f 90%            7118/5569
+  F08-Rosenbrock                  100%      v4_keep50p 100%          14443/13496
+  F09-RosenbrockRot               100%      v4_keep50p 100%          13740/13474
+  F10-EllipsoidalRot              100%      v4_keep50p 100%            7013/7013
+  F11-Discus                      100%      v4_keep50p 100%            6813/6813
+  F12-BentCigar                   100%      v4_keep50p 100%          12082/12082
+  F13-SharpRidge                   95%       v4_keep50p 95%            9805/9588
+  F14-DiffPowers                  100%      v4_keep50p 100%            5956/5956
+  F15-RastriginRot                  0%        v4_keep50p 0%                    -
+  F16-Weierstrass                  25%       v4_keep50p 10%          16571/17010
+  F17-SchafferF7                   25%       v4_keep50p 25%          14130/14744
+  F18-SchafferF7ill                 0%        v4_keep50p 0%          20040/19432
+  F19-GriewankRosenbrock            0%        v4_keep50p 0%                    -
+  F20-Schwefel                      0%        v4_keep50p 0%                    -
+  F21-Gallagher101                100%       v4_keep50f 85%          10841/12687
+  F22-Gallagher21                  40%       v4_keep50p 55%            8058/9276  <-- ref behind
+  F23-Katsuura                      0%        v4_keep50p 5%                    -  <-- ref behind
+  F24-LunacekRastrigin              0%        v4_keep50p 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F02-EllipsoidalSep     vs v4_keep50f     p=0.0339 A12=0.38 (small)
+  F04-BucheRastrigin     vs v4_keep50f     p=0.00763 A12=0.41 (small)
+  F04-BucheRastrigin     vs v4_keep50p     p=0.0128 A12=0.45 (negligible)
+  F14-DiffPowers         vs v4_keep50f     p=0.0265 A12=0.26 (large)
+  F15-RastriginRot       vs v4_keep50f     p=3.62e-05 A12=0.12 (large)
+  F15-RastriginRot       vs v4_keep50p     p=2.67e-05 A12=0.12 (large)
+  F17-SchafferF7         vs v4_keep50p     p=0.0125 A12=0.47 (negligible)
+  F19-GriewankRosenbrock vs v4_keep50f     p=8.2e-05 A12=0.15 (large)
+  F19-GriewankRosenbrock vs v4_keep50p     p=0.000105 A12=0.14 (large)
+  F20-Schwefel           vs v4_keep50p     p=0.00944 A12=0.45 (negligible)
+  F23-Katsuura           vs v4_keep50f     p=0.0153 A12=0.26 (large)
+  F23-Katsuura           vs v4_keep50p     p=0.00944 A12=0.19 (large)
+  F24-LunacekRastrigin   vs v4_keep50f     p=0.00639 A12=0.27 (large)
+  F24-LunacekRastrigin   vs v4_keep50p     p=0.000168 A12=0.18 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v4_keep50p             mean rank   1.83   best on 18/24
+   2. v4_keep50f             mean rank   2.00   best on 15/24
+   3. MC-ESO                 mean rank   2.17   best on 15/24  <- ref
+
