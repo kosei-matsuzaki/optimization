@@ -40,6 +40,7 @@ from core.optimizers.mceso_ablations import (
     MCESONoSpillover, MCESONoHostCompetition,
 )
 from core.optimizers.controls import SepScanIPOPOptimizer
+from core.optimizers.legacy.mceso_20260707 import MultiChannelEpidemicOptimizer as MCESO0707
 from core.optimizers.mceso_commit_reseed import CommitReseedMCESO
 from core.optimizers.mceso_phased_accept import PhasedAcceptMCESO
 # Hybrid / state-of-the-art comparison candidates (2026-10-06). Registered so
@@ -580,6 +581,8 @@ _OPTIMIZERS = {
     "v4_fcastp":      (MultiChannelEpidemicOptimizer, {"forecast": True, "switch_pace": True}),
     "v4_fcastk":      (MultiChannelEpidemicOptimizer, {"forecast": True, "spill_keep": 0.5}),
     "v4_pbarch":      (MultiChannelEpidemicOptimizer, {"h2h_pbest": 0.1, "h2h_archive": True}),
+    # The version presented on 2026-07-07 (commit 4d85c1c), frozen
+    "MC-ESO-0707":    (MCESO0707, {}),
     "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
