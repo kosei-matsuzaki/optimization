@@ -1,0 +1,90 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261021_143747_j57_d10_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=3024135
+functions: 24   methods: MC-ESO, MC-ESO-v1, MC-ESO-v2, v3_stage, v4_pace, v4_keep50, v4_keep25p, MC-ESO-0707, MC-ESO-v0
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            64.2%   65.0%   68.8%   70.4%       10376            
+  MC-ESO-v1         42.7%   44.8%   50.0%   56.9%       11529        15/5
+  MC-ESO-v2         52.7%   54.8%   55.6%   58.5%       10078         8/4
+  v3_stage          63.3%   64.2%   69.2%   71.5%       10389         1/2
+  v4_pace           62.9%   64.0%   68.1%   69.8%       11017         1/3
+  v4_keep50         63.5%   65.6%   69.4%   71.3%       10130         0/6
+  v4_keep25p        61.0%   63.3%   67.3%   69.0%       10271         1/4
+  MC-ESO-0707        6.2%    7.1%    9.6%   21.0%       10213        22/0
+  MC-ESO-v0         37.5%   38.1%   39.4%   41.3%        8627        17/3
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%       MC-ESO-v1 100%            4985/6261
+  F02-EllipsoidalSep              100%       MC-ESO-v1 100%           7982/10214
+  F03-RastriginSep                100%        v3_stage 100%            9321/9321
+  F04-BucheRastrigin               65%         v3_stage 65%            9972/9972
+  F05-LinearSlope                 100%       MC-ESO-v1 100%            7729/9373
+  F06-AttractiveSector            100%       MC-ESO-v1 100%          10540/11912
+  F07-StepEllipsoidal              90%        MC-ESO-v2 95%            7118/6439  <-- ref behind
+  F08-Rosenbrock                  100%        v3_stage 100%          14443/14443
+  F09-RosenbrockRot               100%       MC-ESO-v1 100%          13740/19263
+  F10-EllipsoidalRot              100%       MC-ESO-v1 100%           7013/12013
+  F11-Discus                      100%       MC-ESO-v1 100%           6813/10540
+  F12-BentCigar                   100%        v3_stage 100%          12082/12082
+  F13-SharpRidge                   95%        MC-ESO-v2 95%           9805/10770
+  F14-DiffPowers                  100%       MC-ESO-v1 100%            5956/7399
+  F15-RastriginRot                  0%         MC-ESO-v1 0%                    -
+  F16-Weierstrass                  25%         v3_stage 30%          16571/17050  <-- ref behind
+  F17-SchafferF7                   25%         v3_stage 25%          14130/16573
+  F18-SchafferF7ill                 0%         MC-ESO-v2 5%          20040/13934  <-- ref behind
+  F19-GriewankRosenbrock            0%         MC-ESO-v1 0%                    -
+  F20-Schwefel                      0%         MC-ESO-v1 0%                    -
+  F21-Gallagher101                100%       v4_keep50 100%          10841/11978
+  F22-Gallagher21                  40%        v4_keep50 55%            8058/9103  <-- ref behind
+  F23-Katsuura                      0%         v4_keep50 5%                    -  <-- ref behind
+  F24-LunacekRastrigin              0%         MC-ESO-v1 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F02-EllipsoidalSep     vs MC-ESO-v1      p=0.0339 A12=0.38 (small)
+  F04-BucheRastrigin     vs v4_keep50      p=0.0128 A12=0.45 (negligible)
+  F14-DiffPowers         vs MC-ESO-v2      p=0.00029 A12=0.10 (large)
+  F15-RastriginRot       vs MC-ESO-v0      p=1.33e-05 A12=0.06 (large)
+  F15-RastriginRot       vs MC-ESO-v1      p=1.91e-05 A12=0.06 (large)
+  F15-RastriginRot       vs MC-ESO-v2      p=9.54e-06 A12=0.06 (large)
+  F15-RastriginRot       vs v4_keep25p     p=9.54e-06 A12=0.07 (large)
+  F15-RastriginRot       vs v4_keep50      p=0.000168 A12=0.30 (medium)
+  F15-RastriginRot       vs v4_pace        p=0.000293 A12=0.13 (large)
+  F16-Weierstrass        vs v3_stage       p=0.00373 A12=0.40 (small)
+  F17-SchafferF7         vs v3_stage       p=0.00506 A12=0.38 (small)
+  F17-SchafferF7         vs v4_keep50      p=0.0125 A12=0.47 (negligible)
+  F19-GriewankRosenbrock vs MC-ESO-v0      p=0.000133 A12=0.21 (large)
+  F19-GriewankRosenbrock vs MC-ESO-v1      p=0.000261 A12=0.15 (large)
+  F19-GriewankRosenbrock vs MC-ESO-v2      p=0.00199 A12=0.20 (large)
+  F19-GriewankRosenbrock vs v4_keep25p     p=0.000586 A12=0.18 (large)
+  F19-GriewankRosenbrock vs v4_pace        p=0.000398 A12=0.17 (large)
+  F20-Schwefel           vs v4_keep50      p=0.00944 A12=0.45 (negligible)
+  F23-Katsuura           vs MC-ESO-v1      p=0.00558 A12=0.21 (large)
+  F23-Katsuura           vs v4_keep25p     p=3.62e-05 A12=0.13 (large)
+  F23-Katsuura           vs v4_keep50      p=0.0484 A12=0.25 (large)
+  F24-LunacekRastrigin   vs MC-ESO-v0      p=0.00102 A12=0.25 (large)
+  F24-LunacekRastrigin   vs MC-ESO-v1      p=0.00558 A12=0.30 (medium)
+  F24-LunacekRastrigin   vs MC-ESO-v2      p=0.00831 A12=0.29 (medium)
+  F24-LunacekRastrigin   vs v4_keep25p     p=0.000261 A12=0.24 (large)
+  F24-LunacekRastrigin   vs v4_keep50      p=0.0215 A12=0.38 (small)
+  F24-LunacekRastrigin   vs v4_pace        p=0.00271 A12=0.26 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v4_pace                mean rank   3.42   best on 14/24
+   2. v4_keep25p             mean rank   3.58   best on 14/24
+   3. v4_keep50              mean rank   4.15   best on 15/24
+   4. v3_stage               mean rank   4.21   best on 15/24
+   5. MC-ESO                 mean rank   4.23   best on 15/24  <- ref
+   6. MC-ESO-v1              mean rank   4.96   best on  9/24
+   7. MC-ESO-v2              mean rank   4.98   best on 11/24
+   8. MC-ESO-v0              mean rank   6.56   best on  6/24
+   9. MC-ESO-0707            mean rank   8.92   best on  0/24
+

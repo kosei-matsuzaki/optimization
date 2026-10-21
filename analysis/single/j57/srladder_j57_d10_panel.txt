@@ -1,0 +1,11 @@
+10D panel (j49_p10) comparison methods: SR@1e-10 / 1e-7 / 1e-4 / 1e-2, mean over 24 functions
+  MC-ESO              64.2 /  65.0 /  68.8 /  70.4
+  LSHADE-SPACMA       55.2 /  56.7 /  63.5 /  65.4
+  RCMAES              48.3 /  48.3 /  53.5 /  55.6
+  IPOP-CMA-ES         47.9 /  51.5 /  57.9 /  60.0
+  ELSHADE-SPACMA      42.9 /  52.9 /  64.6 /  70.2
+  BIPOP-aCMA-ES       41.7 /  41.7 /  41.7 /  44.6
+  EBOwithCMAR         38.3 /  55.0 /  59.8 /  70.4
+  ARRDE               37.3 /  48.1 /  56.7 /  65.0
+  L-SHADE             33.3 /  50.2 /  61.0 /  68.5
+  NL-SHADE-RSP        20.6 /  23.5 /  36.7 /  41.7
