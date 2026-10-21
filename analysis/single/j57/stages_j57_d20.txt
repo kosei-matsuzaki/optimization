@@ -1,0 +1,70 @@
+functions: 24  methods: 9
+
+[1] overall table (mean over 24 functions, %)  SR@1e-10 / 1e-7 / 1e-4 / 1e-2 | evals_succ_mean(own)
+  MC-ESO-0707      0.62 /   0.62 /   1.25 /   6.46 |   14765.0 (nf=2)
+  MC-ESO-v0       12.92 /  16.88 /  21.88 /  25.21 |   25855.1 (nf=7)
+  MC-ESO-v1       12.92 /  16.88 /  21.88 /  25.42 |   27487.1 (nf=9)
+  MC-ESO-v2       26.67 /  28.96 /  31.25 /  38.33 |   26241.9 (nf=12)
+  MC-ESO          35.42 /  38.12 /  39.38 /  42.71 |   26727.1 (nf=14)
+  v3_stage        40.00 /  44.79 /  52.29 /  59.38 |   26670.9 (nf=18)
+  v4_pace         35.00 /  37.71 /  38.96 /  42.29 |   25694.4 (nf=14)
+  v4_keep50       37.08 /  40.21 /  42.50 /  47.08 |   26050.1 (nf=15)
+  v4_keep25p      35.62 /  39.17 /  41.46 /  46.04 |   22860.7 (nf=13)
+
+[2] paired evals_succ_mean vs MC-ESO (functions where BOTH have a successful run)
+  MC-ESO-0707      16503.5 ->   14765.0 (  -1738.5, nf=2)  ref-only=['F02', 'F03', 'F04', 'F06', 'F07', 'F10', 'F11', 'F12', 'F13', 'F14', 'F21', 'F22'] arm-only=[]
+  MC-ESO-v0        21993.0 ->   23777.8 (  +1784.8, nf=6)  ref-only=['F03', 'F04', 'F07', 'F10', 'F12', 'F13', 'F21', 'F22'] arm-only=['F08']
+  MC-ESO-v1        26217.8 ->   27487.1 (  +1269.3, nf=9)  ref-only=['F03', 'F04', 'F07', 'F10', 'F12'] arm-only=[]
+  MC-ESO-v2        26623.4 ->   26241.9 (   -381.5, nf=12)  ref-only=['F03', 'F04'] arm-only=[]
+  v3_stage         26727.1 ->   25415.8 (  -1311.4, nf=14)  ref-only=[] arm-only=['F08', 'F09', 'F17', 'F18']
+  v4_pace          26727.1 ->   25694.4 (  -1032.7, nf=14)  ref-only=[] arm-only=[]
+  v4_keep50        26727.1 ->   24711.9 (  -2015.2, nf=14)  ref-only=[] arm-only=['F09']
+  v4_keep25p       25834.4 ->   22860.7 (  -2973.7, nf=13)  ref-only=['F04'] arm-only=[]
+
+[3] per-function SR@1e-10 between consecutive stages (only functions that moved)
+  MC-ESO-0707 -> MC-ESO-v0: up 5 [F01 0->100, F02 0->100, F05 15->100, F06 0->5, F08 0->5] down 0 []
+  MC-ESO-v0 -> MC-ESO-v1: up 2 [F21 0->5, F22 0->5] down 2 [F06 5->0, F08 5->0]
+  MC-ESO-v1 -> MC-ESO-v2: up 5 [F06 0->30, F07 0->15, F10 0->100, F11 0->95, F14 0->100] down 1 [F02 100->90]
+  MC-ESO-v2 -> MC-ESO: up 7 [F02 90->95, F03 0->100, F04 0->5, F07 15->20, F12 0->80, F21 5->45, F22 5->10] down 2 [F10 100->95, F11 95->70]
+  MC-ESO -> v3_stage: up 5 [F02 95->100, F06 30->100, F07 20->45, F08 0->45, F09 0->75] down 6 [F04 5->0, F10 95->70, F11 70->50, F12 80->40, F21 45->30, F22 10->5]
+  v3_stage -> v4_pace: up 5 [F04 0->5, F10 70->95, F11 50->70, F12 40->80, F21 30->40] down 5 [F02 100->95, F06 100->30, F07 45->20, F08 45->0, F09 75->0]
+  v4_pace -> v4_keep50: up 4 [F09 0->5, F11 70->85, F13 0->35, F21 40->45] down 1 [F07 20->10]
+  v4_keep50 -> v4_keep25p: up 1 [F11 85->90] down 5 [F04 5->0, F07 10->5, F09 5->0, F13 35->20, F21 45->35]
+
+[4] SR@1e-10 of every stage, per function
+  func    MC-ESO-0707   MC-ESO-v0   MC-ESO-v1   MC-ESO-v2      MC-ESO    v3_stage     v4_pace   v4_keep50  v4_keep25p
+  F01               0         100         100         100         100         100         100         100         100
+  F02               0         100         100          90          95         100          95          95          95
+  F03               0           0           0           0         100         100         100         100         100
+  F04               0           0           0           0           5           0           5           5           0
+  F05              15         100         100         100         100         100         100         100         100
+  F06               0           5           0          30          30         100          30          30          30
+  F07               0           0           0          15          20          45          20          10           5
+  F08               0           5           0           0           0          45           0           0           0
+  F09               0           0           0           0           0          75           0           5           0
+  F10               0           0           0         100          95          70          95          95          95
+  F11               0           0           0          95          70          50          70          85          90
+  F12               0           0           0           0          80          40          80          80          80
+  F13               0           0           0           0           0           0           0          35          20
+  F14               0           0           0         100         100         100         100         100         100
+  F15               0           0           0           0           0           0           0           0           0
+  F16               0           0           0           0           0           0           0           0           0
+  F17               0           0           0           0           0           0           0           0           0
+  F18               0           0           0           0           0           0           0           0           0
+  F19               0           0           0           0           0           0           0           0           0
+  F20               0           0           0           0           0           0           0           0           0
+  F21               0           0           5           5          45          30          40          45          35
+  F22               0           0           5           5          10           5           5           5           5
+  F23               0           0           0           0           0           0           0           0           0
+  F24               0           0           0           0           0           0           0           0           0
+
+[5] Wilcoxon, reference=MC-ESO, alpha=0.05 two-sided (A12>0.5 => default wins)
+  wilcoxon rows: 192
+  MC-ESO-0707    default-wins 23 [F01 1.00 large, F02 1.00 large, F03 1.00 large, F04 1.00 large, F05 0.93 large, F06 1.00 large, F07 0.96 large, F08 0.99 large, F09 0.94 large, F10 1.00 large, F11 0.87 large, F12 0.96 large, F13 0.91 large, F14 1.00 large, F15 0.68 medium, F16 0.85 large, F17 0.96 large, F18 0.89 large, F19 0.72 large, F20 0.98 large, F21 0.91 large, F22 0.95 large, F23 0.77 large] | stage-wins 0 []
+  MC-ESO-v0      default-wins 12 [F01 0.89 large, F03 1.00 large, F04 1.00 large, F07 0.97 large, F09 0.87 large, F10 1.00 large, F12 0.83 large, F14 1.00 large, F17 0.89 large, F20 0.96 large, F21 0.91 large, F22 0.90 large] | stage-wins 4 [F15 0.07 large, F19 0.00 large, F23 0.05 large, F24 0.00 large]
+  MC-ESO-v1      default-wins 8 [F03 1.00 large, F04 1.00 large, F09 0.90 large, F10 1.00 large, F14 1.00 large, F20 0.96 large, F21 0.85 large, F22 0.65 medium] | stage-wins 5 [F15 0.05 large, F18 0.42 small, F19 0.00 large, F23 0.05 large, F24 0.00 large]
+  MC-ESO-v2      default-wins 5 [F03 1.00 large, F04 1.00 large, F20 0.98 large, F21 0.86 large, F22 0.75 large] | stage-wins 10 [F08 0.07 large, F09 0.15 large, F11 0.24 large, F13 0.39 small, F15 0.15 large, F16 0.27 large, F17 0.41 small, F18 0.30 medium, F19 0.08 large, F24 0.07 large]
+  v3_stage       default-wins 2 [F03 0.74 large, F23 0.78 large] | stage-wins 12 [F01 0.09 large, F02 0.33 medium, F06 0.00 large, F07 0.25 large, F08 0.00 large, F09 0.01 large, F13 0.11 large, F15 0.03 large, F16 0.07 large, F17 0.03 large, F18 0.16 large, F19 0.11 large]
+  v4_pace        default-wins 0 [] | stage-wins 6 [F15 0.05 large, F16 0.32 medium, F18 0.35 medium, F19 0.12 large, F23 0.10 large, F24 0.05 large]
+  v4_keep50      default-wins 1 [F07 0.66 medium] | stage-wins 9 [F04 0.31 medium, F08 0.28 large, F09 0.01 large, F13 0.06 large, F15 0.28 large, F17 0.42 small, F20 0.48 negligible, F23 0.10 large, F24 0.10 large]
+  v4_keep25p     default-wins 1 [F07 0.64 medium] | stage-wins 12 [F04 0.31 medium, F08 0.31 medium, F09 0.07 large, F11 0.32 medium, F13 0.08 large, F15 0.07 large, F16 0.29 large, F18 0.34 medium, F19 0.07 large, F20 0.48 negligible, F23 0.04 large, F24 0.03 large]

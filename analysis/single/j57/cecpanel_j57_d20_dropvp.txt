@@ -1,0 +1,18 @@
+dim 20: 24 functions, panel = MC-ESO + EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, RCMAES
+  MC-ESO                 mean rank  5.12
+  MC-ESO-0707            mean rank  6.75   mean error below base on 1, above on 23
+      rank moved: F01 4->7, F03 1->7, F04 2->7, F05 3.5->6, F09 6->7, F10 5->7, F14 2.5->7, F20 5->7, F21 1->7, F22 1->7, F23 5->6
+  MC-ESO-v0              mean rank  5.71   mean error below base on 9, above on 13
+      rank moved: F02 7->4, F03 1->7, F04 2->7, F06 7->2.5, F08 7->6, F09 6->7, F10 5->7, F14 2.5->7, F19 7->4, F20 5->6, F21 1->7, F22 1->7, F23 5->1, F24 7->5
+  MC-ESO-v1              mean rank  5.81   mean error below base on 13, above on 9
+      rank moved: F02 7->4, F03 1->7, F04 2->7, F06 7->5, F09 6->7, F10 5->7, F14 2.5->7, F19 7->4, F20 5->6, F21 1->6, F22 1->7, F23 5->1, F24 7->5
+  MC-ESO-v2              mean rank  5.85   mean error below base on 14, above on 7
+      rank moved: F03 1->7, F04 2->7, F08 7->6, F09 6->5, F10 5->2.5, F20 5->7, F21 1->6, F22 1->6, F23 5->4
+  v3_stage               mean rank  4.19   mean error below base on 18, above on 2
+      rank moved: F02 7->4, F06 7->2.5, F07 7->6, F08 7->4, F09 6->4, F10 5->6, F12 7->4, F13 7->5, F16 3->2, F17 7->5, F18 7->6, F19 7->5, F23 5->6
+  v4_keep25p             mean rank  4.50   mean error below base on 17, above on 2
+      rank moved: F06 7->4, F09 6->5, F12 7->5, F13 7->4, F19 7->5, F23 5->1
+  v4_keep50              mean rank  4.62   mean error below base on 15, above on 4
+      rank moved: F06 7->4, F09 6->5, F12 7->5, F13 7->4, F23 5->2
+  v4_pace                mean rank  4.92   mean error below base on 9, above on 0
+      rank moved: F19 7->5, F23 5->2

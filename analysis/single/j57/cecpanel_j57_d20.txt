@@ -1,0 +1,18 @@
+dim 20: 24 functions, panel = MC-ESO + EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, RCMAES, v4_pace
+  MC-ESO                 mean rank  5.81
+  MC-ESO-0707            mean rank  7.71   mean error below base on 1, above on 23
+      rank moved: F01 4.5->8, F02 7.5->8, F03 1.5->8, F04 2.5->8, F05 4->7, F06 7.5->8, F07 7.5->8, F08 7.5->8, F09 6.5->8, F10 5.5->8, F11 7.5->7, F12 7.5->8, F13 7.5->8, F14 3->8, F20 5.5->8, F21 2->8, F22 2->8, F23 6->7
+  MC-ESO-v0              mean rank  6.38   mean error below base on 9, above on 13
+      rank moved: F02 7.5->4, F03 1.5->8, F04 2.5->8, F06 7.5->2.5, F07 7.5->8, F08 7.5->6, F09 6.5->8, F10 5.5->8, F11 7.5->7, F12 7.5->8, F13 7.5->8, F14 3->8, F19 8->4, F20 5.5->7, F21 2->8, F22 2->8, F23 6->1, F24 8->5
+  MC-ESO-v1              mean rank  6.35   mean error below base on 13, above on 9
+      rank moved: F02 7.5->4, F03 1.5->8, F04 2.5->8, F06 7.5->5, F07 7.5->8, F08 7.5->7, F09 6.5->8, F10 5.5->8, F11 7.5->7, F12 7.5->7, F13 7.5->7, F14 3->8, F15 8->7, F19 8->4, F20 5.5->7, F21 2->7, F22 2->8, F23 6->1, F24 8->5
+  MC-ESO-v2              mean rank  6.38   mean error below base on 14, above on 7
+      rank moved: F02 7.5->8, F03 1.5->8, F04 2.5->8, F06 7.5->8, F07 7.5->7, F08 7.5->6, F09 6.5->5, F10 5.5->2.5, F11 7.5->7, F12 7.5->7, F13 7.5->7, F16 4->3, F17 8->7, F18 8->7, F20 5.5->8, F21 2->7, F22 2->7, F23 6->5
+  v3_stage               mean rank  4.52   mean error below base on 18, above on 2
+      rank moved: F02 7.5->4, F04 2.5->2, F06 7.5->2.5, F07 7.5->6, F08 7.5->4, F09 6.5->4, F10 5.5->7, F11 7.5->7, F12 7.5->4, F13 7.5->5, F15 8->7, F16 4->2, F17 8->5, F18 8->6, F19 8->6, F20 5.5->5, F23 6->7
+  v4_keep25p             mean rank  4.77   mean error below base on 17, above on 2
+      rank moved: F02 7.5->7, F04 2.5->2, F06 7.5->4, F07 7.5->8, F08 7.5->7, F09 6.5->5, F11 7.5->7, F12 7.5->5, F13 7.5->4, F16 4->3, F17 8->7, F18 8->7, F19 8->5, F20 5.5->5, F23 6->1, F24 8->7
+  v4_keep50              mean rank  5.19   mean error below base on 15, above on 4
+      rank moved: F02 7.5->7, F04 2.5->2, F06 7.5->4, F07 7.5->8, F08 7.5->7, F09 6.5->5, F11 7.5->7, F12 7.5->5, F13 7.5->4, F20 5.5->6, F23 6->3
+  v4_pace                mean rank  5.42   mean error below base on 9, above on 0
+      rank moved: F15 8->7.5, F16 4->3.5, F17 8->7.5, F18 8->7.5, F19 8->5.5, F21 2->1.5, F22 2->1.5, F23 6->2.5, F24 8->7.5
