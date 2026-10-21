@@ -567,6 +567,8 @@ _OPTIMIZERS = {
     # Quarantine: an ordinary spillover keeps the top fraction of hosts
     "v4_keep25":      (MultiChannelEpidemicOptimizer, {"spill_keep": 0.25}),
     "v4_keep50":      (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5}),
+    "v4_keep50p":     (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "switch_pace": True}),
+    "v4_keep50f":     (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "forecast": True, "switch_pace": True}),
     "v4_keep25p":     (MultiChannelEpidemicOptimizer, {"spill_keep": 0.25, "switch_pace": True}),
     # Still spreading: no ordinary spillover while the population median keeps falling
     "v4_med03":       (MultiChannelEpidemicOptimizer, {"spill_med_veto": 0.3}),

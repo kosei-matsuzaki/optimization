@@ -117,6 +117,10 @@
 
 
 
+1. **【候補の組み合わせ（5D/10D/20D）】** 手法 `"MC-ESO,v4_keep50p,v4_keep50f"`（`v4_keep50p` = 隔離 50% ＋ `switch_pace`、`v4_keep50f` = それに予報の子）。j50 と同じ 4 設定（label `j55_a5` / `j55_a5ho` / `j55_a10` / `j55_a10ho`）と 20D（`--dim 20 --max-evals 50000 --instances 1-5`、label `j55_a20`）。**集計**: 5D/10D は j50 と同じ、20D は j52 と同じ。per-run stats は `analysis/single/j55/<label>/dim<D>/stats/`。**記録**: `analysis/single/j55/`。採否の判断はしない。
+
+1. **【候補の CEC2022（調整に使っていない問題で）】** `./run.sh quick --suite cec2022 --all --dim D --max-evals B --n-runs 20 --methods "MC-ESO,v4_pace,v4_keep50,v4_keep25p,v4_keep50p,v4_keep50f,v4_fcastk,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 4` を (D, B, label) = (10, 25000, `j56_c10`)、(20, 50000, `j56_c20`) で。**集計**: 標準の集計を `MC-ESO` を reference に、[5] の CEC 順位は 16 手法（腕と比較 9 手法を全部並べた順位）と、腕を 1 つずつ MC-ESO と差し替えた 10 手法の順位（`cec_panel.py --panel results/<この run> --arms results/<この run>` で、パネル側から腕を `--drop` する）。関数別の SR@1e-10 と平均誤差の変化を腕ごとに全関数列挙。**記録**: `analysis/single/j56/`。採否の判断はしない。
+
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---
