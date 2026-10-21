@@ -117,7 +117,7 @@
 
 
 
-1. **【発表（2026-07-07）からの段階の比較 — 最優先。20D の残り】** ユーザーの依頼。j57 の (a) 2D・(b) 5D・(c) 10D は 2026-10-21 に完走した（`analysis/single/j57/`）。残りは (d) の 1 run。段階は (b)(c) と同じ 9 手法 `"MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,MC-ESO,v3_stage,v4_pace,v4_keep50,v4_keep25p"`、`--n-runs 20 --instances 1-5 --jobs 4`:
+1. **【発表（2026-07-07）からの段階の比較 — 最優先。20D の残り】** ユーザーの依頼。j57 の (a) 2D・(b) 5D・(c) 10D は 2026-10-21 に完走した（`analysis/single/j57/`）。残りは (d) の 1 run。段階は (b)(c) と同じ 9 手法 `"MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,MC-ESO,v3_stage,v4_pace,v4_keep50,v4_keep25p"`、`--n-runs 20 --instances 1-5 --jobs 4`: (claimed 2026-10-21 15:29 UTC)
    (d) 20D: `./run.sh quick --all --dim 20 --max-evals 50000 --methods "<上の 9 手法>"`（label `j57_d20`）。**90 分の目安に収まらない見込み**（2026-10-21 の実績: 5D 9 手法 31.1 分、10D 9 手法 40.0 分。20D は予算 2 倍 ＋ 次元 2 倍）。収まらないときは関数で shard に分け、`summary.csv` / `wilcoxon.csv` を結合してから集計すること。
    **集計**: 10D（j57 (c)）と同じ内容を 20D で。パネルは j47 のパネル（`/tmp/j47p` の作り方は j51 と同じ）。各段階を 1 つずつ MC-ESO と差し替えたパネル内の CEC 順位、比較手法そのもののパネル順位と SR@1e-2 / 1e-4 / 1e-7 / 1e-10 を同じ表に、段階ごとの SR@1e-2〜1e-10・`evals_succ_mean`・前の段階との関数別 SR@1e-10 の変化（全関数）・現既定を reference にした Wilcoxon。run の MC-ESO が j47 の MC-ESO と一致するかも書く。per-run stats は `analysis/single/j57/j57_d20/dim20/stats/`。**記録**: `analysis/single/j57/`。採否の判断はしない。
 
