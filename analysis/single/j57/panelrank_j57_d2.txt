@@ -1,0 +1,11 @@
+24 functions, panel of 10
+  EBOwithCMAR              4.35
+  MC-ESO                   4.52
+  L-SHADE                  4.60
+  ELSHADE-SPACMA           4.62
+  ARRDE                    5.02
+  LSHADE-SPACMA            5.25
+  NL-SHADE-RSP             5.25
+  IPOP-CMA-ES              6.10
+  RCMAES                   7.38
+  BIPOP-aCMA-ES            7.90

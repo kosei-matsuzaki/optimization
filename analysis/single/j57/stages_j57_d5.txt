@@ -1,0 +1,70 @@
+functions: 24
+
+[A] SR ladder + own evals_succ_mean (mean over all functions)
+  method           SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2 evals(own)
+  MC-ESO-0707         13.1%    15.4%    29.8%    42.3%       6610
+  MC-ESO-v0           41.7%    45.4%    50.6%    54.4%       4957
+  MC-ESO-v1           56.3%    60.4%    65.0%    66.2%       4282
+  MC-ESO-v2           67.1%    69.2%    71.2%    71.9%       4005
+  MC-ESO              76.7%    78.3%    80.4%    81.2%       3919
+  v3_stage            76.9%    78.5%    80.6%    81.5%       3925
+  v4_pace             76.9%    78.3%    80.2%    81.0%       3941
+  v4_keep50           76.0%    77.5%    79.4%    80.4%       3736
+  v4_keep25p          76.5%    77.7%    79.8%    80.8%       3843
+
+[B] evals_succ_mean paired with MC-ESO (only functions where BOTH have successes)
+  MC-ESO-0707      nf=16  MC-ESO   3608.8 -> MC-ESO-0707   6610.4  diff   +3001.6   ref-only:['F03', 'F04', 'F10', 'F18', 'F19', 'F20', 'F23'] arm-only:[]
+  MC-ESO-v0        nf=20  MC-ESO   3716.6 -> MC-ESO-v0   4957.1  diff   +1240.5   ref-only:['F04', 'F18', 'F19'] arm-only:[]
+  MC-ESO-v1        nf=22  MC-ESO   3951.6 -> MC-ESO-v1   4282.0  diff    +330.4   ref-only:['F20'] arm-only:[]
+  MC-ESO-v2        nf=22  MC-ESO   3879.2 -> MC-ESO-v2   4005.3  diff    +126.1   ref-only:['F04'] arm-only:[]
+  v3_stage         nf=23  MC-ESO   3919.3 -> v3_stage   3924.9  diff      +5.5   ref-only:[] arm-only:[]
+  v4_pace          nf=23  MC-ESO   3919.3 -> v4_pace   3941.1  diff     +21.7   ref-only:[] arm-only:[]
+  v4_keep50        nf=22  MC-ESO   3808.6 -> v4_keep50   3735.5  diff     -73.1   ref-only:['F19'] arm-only:[]
+  v4_keep25p       nf=22  MC-ESO   3808.6 -> v4_keep25p   3842.6  diff     +34.0   ref-only:['F19'] arm-only:[]
+
+[C] per-function SR@1e-10, consecutive stages (changes only; '=' means no change)
+  function               MC-ESO-0707   MC-ESO-v0   MC-ESO-v1   MC-ESO-v2      MC-ESO    v3_stage     v4_pace   v4_keep50  v4_keep25p
+  F01-Sphere                     75%        100%        100%        100%        100%        100%        100%        100%        100%  <-- differs
+  F02-EllipsoidalSep              0%        100%        100%        100%        100%        100%        100%        100%        100%  <-- differs
+  F03-RastriginSep                0%          5%         10%         30%        100%        100%        100%        100%        100%  <-- differs
+  F04-BucheRastrigin              0%          0%          5%          0%         85%         85%         85%         85%         85%  <-- differs
+  F05-LinearSlope               100%        100%        100%        100%        100%        100%        100%        100%        100%
+  F06-AttractiveSector            0%        100%        100%        100%        100%        100%        100%        100%        100%  <-- differs
+  F07-StepEllipsoidal            65%         65%        100%        100%        100%        100%        100%        100%        100%  <-- differs
+  F08-Rosenbrock                 10%         85%        100%        100%        100%        100%        100%        100%        100%  <-- differs
+  F09-RosenbrockRot               0%         90%        100%        100%        100%        100%        100%        100%        100%  <-- differs
+  F10-EllipsoidalRot              0%        100%        100%        100%        100%        100%        100%        100%        100%  <-- differs
+  F11-Discus                      0%        100%        100%        100%        100%        100%        100%        100%        100%  <-- differs
+  F12-BentCigar                   0%         30%         95%        100%        100%        100%        100%        100%        100%  <-- differs
+  F13-SharpRidge                  0%         15%        100%        100%        100%        100%        100%        100%        100%  <-- differs
+  F14-DiffPowers                  0%         15%        100%        100%        100%        100%        100%        100%        100%  <-- differs
+  F15-RastriginRot                0%          0%         10%         10%          5%          5%         15%          5%          5%  <-- differs
+  F16-Weierstrass                 0%          0%         15%         75%         60%         60%         55%         55%         70%  <-- differs
+  F17-SchafferF7                  0%          0%          5%         75%         80%         80%         80%         80%         80%  <-- differs
+  F18-SchafferF7ill               0%          0%         15%         65%         55%         55%         55%         55%         55%  <-- differs
+  F19-GriewankRosenbrock          0%          0%          5%          5%         10%         10%          5%          0%          0%  <-- differs
+  F20-Schwefel                    0%          5%          0%          5%          5%          5%         10%          5%          5%  <-- differs
+  F21-Gallagher101               35%         35%         45%         70%         95%        100%        100%         95%         95%  <-- differs
+  F22-Gallagher21                30%         55%         40%         50%        100%        100%         95%         95%         95%  <-- differs
+  F23-Katsuura                    0%          0%          5%         25%         45%         45%         45%         50%         45%  <-- differs
+  F24-LunacekRastrigin            0%          0%          0%          0%          0%          0%          0%          0%          0%
+
+[D] consecutive-stage SR@1e-10 changes (prev -> next, per function)
+  MC-ESO-0707 -> MC-ESO-v0:  up 13 [F01 75->100, F02 0->100, F03 0->5, F06 0->100, F08 10->85, F09 0->90, F10 0->100, F11 0->100, F12 0->30, F13 0->15, F14 0->15, F20 0->5, F22 30->55]  down 0 []
+  MC-ESO-v0 -> MC-ESO-v1:  up 15 [F03 5->10, F04 0->5, F07 65->100, F08 85->100, F09 90->100, F12 30->95, F13 15->100, F14 15->100, F15 0->10, F16 0->15, F17 0->5, F18 0->15, F19 0->5, F21 35->45, F23 0->5]  down 2 [F20 5->0, F22 55->40]
+  MC-ESO-v1 -> MC-ESO-v2:  up 9 [F03 10->30, F12 95->100, F16 15->75, F17 5->75, F18 15->65, F20 0->5, F21 45->70, F22 40->50, F23 5->25]  down 1 [F04 5->0]
+  MC-ESO-v2 -> MC-ESO:  up 7 [F03 30->100, F04 0->85, F17 75->80, F19 5->10, F21 70->95, F22 50->100, F23 25->45]  down 3 [F15 10->5, F16 75->60, F18 65->55]
+  MC-ESO -> v3_stage:  up 1 [F21 95->100]  down 0 []
+  v3_stage -> v4_pace:  up 2 [F15 5->15, F20 5->10]  down 3 [F16 60->55, F19 10->5, F22 100->95]
+  v4_pace -> v4_keep50:  up 1 [F23 45->50]  down 4 [F15 15->5, F19 5->0, F20 10->5, F21 100->95]
+  v4_keep50 -> v4_keep25p:  up 1 [F16 55->70]  down 1 [F23 50->45]
+
+[E] Wilcoxon vs MC-ESO (alpha=0.05 two-sided, winner by A12 direction)
+  MC-ESO-0707      ref-wins 19 [F01 0.72 large, F02 1.00 large, F03 1.00 large, F04 1.00 large, F06 1.00 large, F07 0.68 medium, F08 0.95 large, F09 1.00 large, F10 1.00 large, F11 1.00 large, F12 1.00 large, F13 1.00 large, F14 1.00 large, F17 0.99 large, F18 1.00 large, F19 0.79 large, F21 0.92 large, F22 1.00 large, F23 0.92 large]  arm-wins  0 []
+  MC-ESO-v0        ref-wins 14 [F03 1.00 large, F04 1.00 large, F06 0.94 large, F07 0.68 medium, F08 0.62 small, F12 0.97 large, F13 1.00 large, F14 1.00 large, F16 0.82 large, F17 0.98 large, F18 1.00 large, F20 0.80 large, F21 0.80 large, F22 0.78 large]  arm-wins  0 []
+  MC-ESO-v1        ref-wins 10 [F03 0.97 large, F04 0.98 large, F06 0.95 large, F13 0.85 large, F14 0.95 large, F16 0.79 large, F17 0.91 large, F18 0.80 large, F21 0.76 large, F22 0.80 large]  arm-wins  0 []
+  MC-ESO-v2        ref-wins  4 [F03 0.87 large, F04 1.00 large, F21 0.63 small, F22 0.75 large]  arm-wins  2 [F15 0.28 large, F16 0.43 small]
+  v3_stage         ref-wins  0 []  arm-wins  0 []
+  v4_pace          ref-wins  0 []  arm-wins  0 []
+  v4_keep50        ref-wins  0 []  arm-wins  1 [F04 0.41 small]
+  v4_keep25p       ref-wins  0 []  arm-wins  0 []
