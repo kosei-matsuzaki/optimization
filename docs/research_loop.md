@@ -117,7 +117,7 @@
 
 
 
-1. **【発表（2026-07-07）からの段階の比較 — 最優先】** ユーザーの依頼。各段階の MC-ESO を同じ条件で並べ、比較手法のパネルと並べた CEC 順位と SR を出す。段階: `MC-ESO-0707`（発表時の版、commit 4d85c1c の凍結コピー）→ `MC-ESO-v0`（2026-10-08 より前の既定）→ `MC-ESO-v1`（10-08〜10-12 の既定）→ `MC-ESO-v2`（10-12〜10-13 の既定）→ `MC-ESO`（現既定、10-13〜）→ `v3_stage`（v3 の代表、不採用）→ v4 の候補 `v4_pace` / `v4_keep50` / `v4_keep25p`。
+1. **【発表（2026-07-07）からの段階の比較 — 最優先】** ユーザーの依頼。各段階の MC-ESO を同じ条件で並べ、比較手法のパネルと並べた CEC 順位と SR を出す。段階: `MC-ESO-0707`（発表時の版、commit 4d85c1c の凍結コピー）→ `MC-ESO-v0`（2026-10-08 より前の既定）→ `MC-ESO-v1`（10-08〜10-12 の既定）→ `MC-ESO-v2`（10-12〜10-13 の既定）→ `MC-ESO`（現既定、10-13〜）→ `v3_stage`（v3 の代表、不採用）→ v4 の候補 `v4_pace` / `v4_keep50` / `v4_keep25p`。 (claimed 2026-10-21 12:31 UTC)
    4 run を逐次で、すべて `--n-runs 20 --instances 1-5 --jobs 4`:
    (a) 2D: `./run.sh quick --all --max-evals 5000 --methods "MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,MC-ESO,v3_stage,v4_pace,v4_keep50,v4_keep25p,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES"`（label `j57_d2`。2D はパネルが無いので比較 9 手法も同じ run に入れる）。
    (b) 5D: `--dim 5 --max-evals 12500 --methods "MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,MC-ESO,v3_stage,v4_pace,v4_keep50,v4_keep25p"`（label `j57_d5`）。(c) 10D: `--dim 10 --max-evals 25000`（label `j57_d10`、手法は (b) と同じ）。(d) 20D: `--dim 20 --max-evals 50000`（label `j57_d20`、手法は (b) と同じ）。
