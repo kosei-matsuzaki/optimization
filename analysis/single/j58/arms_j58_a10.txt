@@ -1,0 +1,38 @@
+=== OVERALL SR means (24 funcs) ===
+  MC-ESO           64.2 / 65.0 / 68.8 / 70.4
+  v4_keep50f       61.5 / 63.8 / 66.7 / 68.5
+  v4_recover20     64.2 / 65.2 / 69.2 / 70.0
+  v4_recover50     63.3 / 64.2 / 68.3 / 70.0
+  v4_ctrace        62.1 / 62.9 / 67.3 / 68.8
+  v4_fcasth        57.7 / 59.8 / 63.1 / 65.0
+  v4_k50f_rec      63.1 / 65.2 / 69.0 / 70.8
+  v4_k50f_chain    60.2 / 62.7 / 66.9 / 68.8
+
+=== evals_succ_mean paired (arm vs ref, common funcs where both succeed) ===
+  v4_keep50f         9266.8 vs  10375.7  (n=19)  LOWER
+  v4_recover20      10139.0 vs  10375.7  (n=19)  LOWER
+  v4_recover50      10299.5 vs  10375.7  (n=19)  LOWER
+  v4_ctrace         10554.6 vs  10375.7  (n=19)  higher
+  v4_fcasth          8554.4 vs  10375.7  (n=19)  LOWER
+  v4_k50f_rec        9242.0 vs  10375.7  (n=19)  LOWER
+  v4_k50f_chain      9566.9 vs  10375.7  (n=19)  LOWER
+
+=== per-function SR@1e-10 changes (ref -> arm) ===
+  v4_keep50f       up 2 [F22 40->50, F23 0->5] down 4 [F12 100->75, F13 95->75, F16 25->5, F21 100->85]
+  v4_recover20     up 5 [F07 90->100, F13 95->100, F16 25->30, F22 40->45, F23 0->5] down 3 [F08 100->95, F09 100->95, F21 100->80]
+  v4_recover50     up 2 [F17 25->30, F23 0->5] down 3 [F07 90->80, F08 100->95, F16 25->10]
+  v4_ctrace        up 1 [F23 0->10] down 4 [F07 90->85, F08 100->95, F16 25->15, F21 100->60]
+  v4_fcasth        up 1 [F04 65->70] down 8 [F07 90->85, F08 100->95, F09 100->95, F12 100->75, F13 95->80, F16 25->15, F21 100->15, F22 40->30]
+  v4_k50f_rec      up 4 [F17 25->40, F18 0->5, F22 40->45, F23 0->20] down 5 [F07 90->85, F12 100->80, F13 95->70, F16 25->20, F21 100->85]
+  v4_k50f_chain    up 1 [F22 40->45] down 5 [F03 100->90, F12 100->75, F13 95->75, F16 25->5, F21 100->75]
+
+  unchanged across ref+all arms: F01(100%), F02(100%), F05(100%), F06(100%), F10(100%), F11(100%), F14(100%), F15(0%), F19(0%), F20(0%), F24(0%)
+
+=== Wilcoxon (ref=MC-ESO, alpha=0.05 two-sided) ===
+  v4_keep50f       1win [F12 0.59 small] 7loss [F02 0.38 small, F04 0.41 small, F14 0.26 large, F15 0.12 large, F19 0.15 large, F23 0.26 large, F24 0.27 large]
+  v4_recover20     2win [F21 0.62 small, F24 0.65 medium] 3loss [F02 0.38 small, F06 0.39 small, F17 0.42 small]
+  v4_recover50     0win [] 0loss []
+  v4_ctrace        1win [F21 0.70 medium] 3loss [F15 0.39 small, F17 0.48 negligible, F24 0.34 medium]
+  v4_fcasth        3win [F12 0.59 small, F21 0.93 large, F22 0.58 small] 2loss [F02 0.38 small, F06 0.40 small]
+  v4_k50f_rec      0win [] 7loss [F02 0.38 small, F06 0.44 negligible, F15 0.12 large, F17 0.29 large, F19 0.14 large, F23 0.19 large, F24 0.26 large]
+  v4_k50f_chain    3win [F12 0.59 small, F18 0.70 medium, F21 0.65 medium] 7loss [F02 0.38 small, F04 0.42 small, F14 0.26 large, F15 0.07 large, F19 0.14 large, F23 0.20 large, F24 0.19 large]
