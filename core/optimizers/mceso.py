@@ -83,6 +83,7 @@ class _MCESOState:
     paced: bool = False
     med_hist: list = field(default_factory=list)   # spill_med_veto: (evals, log10 median f)
     dead_x: list = field(default_factory=list)     # h2h_archive: hosts displaced by children
+    trace_spent: bool = False       # chain_trace: traced since the last meaningful improvement
     pace_ref: float = 0.0           # log10 of the outbreak's best at its last meaningful step
     pace_since: int = 0
     # The learned C has reached 10^router_learned_cond (latched; σ floor and
@@ -884,6 +885,19 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Droplet difference x_a − x_b with x_b drawn from the population plus
         # the hosts displaced by children (capped at n_pop), as JADE's archive.
         h2h_archive: bool = False,
+        # Recovery (2026-10-22, ≥3D, the R of SIR): hosts older than this many
+        # generations — none of their children has displaced them as worst, so
+        # they have stopped transmitting — are removed first, up to half of
+        # each generation's kill quota, never the best fifth (None = SI only).
+        recover_age: "int | None" = None,
+        # Chain tracing (2026-10-22, ≥3D): before an ordinary spillover, a
+        # golden-section line search from the best host along each of the
+        # learned C's top-2 axes (≤ 2·40 evaluations); the spillover is skipped
+        # if it improves the best (once per meaningful improvement).
+        chain_trace: bool = False,
+        # forecast fitted to the best 4·D points of the last 20·D evaluations
+        # instead of the better half of the hosts.
+        forecast_hist: bool = False,
         switch_grow: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
@@ -966,6 +980,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.forecast = forecast
         self.h2h_pbest = h2h_pbest
         self.h2h_archive = h2h_archive
+        self.recover_age = recover_age
+        self.chain_trace = chain_trace
+        self.forecast_hist = forecast_hist
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -1539,6 +1556,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 budget_frac=(self.wave_fail_budget_frac if gated else None))
             self._pad_eval_channel(st, _CH_LS)
             return not st.budget_left
+        if (self.chain_trace and self.dim >= 3 and not st.trace_spent
+                and not self._basin_exhausted(st) and st.cc_C is not None):
+            st.trace_spent = True
+            before = st.best_so_far
+            self._chain_trace(st)
+            self._pad_eval_channel(st, _CH_SWEEP)
+            if not st.budget_left:
+                return True
+            if st.best_so_far < before:
+                st.no_improve = 0
+                return False
         if (self.reassort_sweep and self.dim >= self.reassort_min_dim
                 and not st.sweep_spent and not st.sweep_dead
                 and st.consecutive_failed_spillovers >= 1
@@ -2349,6 +2377,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Children that fail to outcompete the host they replaced are rolled back.
         n_kill = max(1, min(n, int(round(self.kill_fraction * n))))
         dead_global = np.argsort(st.pop_f)[::-1][:n_kill]
+        if self.recover_age is not None and self.dim >= 3 and n_kill >= 2:
+            order = np.argsort(st.pop_f)
+            protect = set(int(i) for i in order[:max(1, n // 5)])
+            old = [int(i) for i in np.argsort(-st.pop_age)
+                   if st.pop_age[i] >= self.recover_age and int(i) not in protect]
+            old = old[:n_kill // 2]
+            if old:
+                rest = [int(i) for i in order[::-1] if int(i) not in old]
+                dead_global = np.array(old + rest[:n_kill - len(old)])
         n_dead = len(dead_global)
         if n_dead > 0:
             dead_orig_x = st.pop_x[dead_global].copy()
@@ -2439,6 +2476,40 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
 
         self._adapt_sigma(st, gen_best_before)
 
+    def _chain_trace(self, st: _MCESOState) -> None:
+        """chain_trace: golden-section line search from the best host along the
+        learned C's top-2 eigenvectors, bracket ±σ·√λ·4."""
+        ev, V = np.linalg.eigh(st.cc_C)
+        bi = int(np.argmin(st.pop_f))
+        x0, f0 = st.pop_x[bi].copy(), float(st.pop_f[bi])
+        phi = (math.sqrt(5) - 1) / 2
+        for k in (-1, -2):
+            d = V[:, k] * math.sqrt(max(float(ev[k]), 1e-12))
+            h = 4.0 * st.sigma
+            a, b = -h, h
+            best_t, best_f = 0.0, f0
+            for _ in range(20):
+                if not st.budget_left:
+                    return
+                c, e = b - phi * (b - a), a + phi * (b - a)
+                fs = []
+                for t in (c, e):
+                    x = self._reflect(x0 + t * d, st.lo, st.hi)
+                    f = float(self.func(x))
+                    self._record_eval(st, x, f, abs(t))
+                    fs.append(f)
+                    if f < best_f:
+                        best_t, best_f = t, f
+                if fs[0] < fs[1]:
+                    b = e
+                else:
+                    a = c
+            if best_f < f0:
+                x0 = self._reflect(x0 + best_t * d, st.lo, st.hi)
+                f0 = best_f
+        if f0 < float(st.pop_f[bi]):
+            st.pop_x[bi], st.pop_f[bi], st.pop_age[bi] = x0, f0, 0
+
     def _forecast_step(self, st: _MCESOState) -> None:
         """forecast: one child at the minimiser of a separable quadratic fitted
         to the better half of the hosts in the learned C's eigenbasis."""
@@ -2446,8 +2517,17 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         m = max(2 * D + 2, n // 2)
         if n < 2 * D + 2:
             return
-        idx = np.argsort(st.pop_f)[:m]
-        X, F = st.pop_x[idx], st.pop_f[idx]
+        if self.forecast_hist:
+            w = min(len(st.history_f), 20 * D)
+            HX = np.asarray(st.history_x[-w:]); HF = np.asarray(st.history_f[-w:])
+            m = min(len(HF), 4 * D)
+            if m < 2 * D + 2:
+                return
+            idx = np.argsort(HF)[:m]
+            X, F = HX[idx], HF[idx]
+        else:
+            idx = np.argsort(st.pop_f)[:m]
+            X, F = st.pop_x[idx], st.pop_f[idx]
         xb = X[0]
         if st.cc_C is not None:
             _, V = np.linalg.eigh(st.cc_C)
@@ -2540,6 +2620,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 st.no_improve = 0
                 st.wave_spent = False
                 st.sweep_spent = False
+                st.trace_spent = False
                 st.log_best_ref = math.log10(max(f, 1e-300))
                 st.evals_since_reset = 0
             else:

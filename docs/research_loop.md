@@ -117,6 +117,10 @@
 
 
 
+1. **【回復・感染経路の追跡・履歴での予報（20D）】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_keep50f,v4_recover20,v4_recover50,v4_ctrace,v4_fcasth,v4_k50f_rec,v4_k50f_chain" --jobs 4`（label `j58_a20`）。腕の中身（3 次元以上）: `v4_recover20` / `_50` は 20 / 50 世代以上残っている宿主（上位 1/5 を除く）を淘汰の枠の半分まで先に除く（SIR の回復、`recover_age`）。`v4_ctrace` はスピルオーバーの前に学習 C の上位 2 軸に沿って最良から 1 次元の黄金分割探索（`chain_trace`）。`v4_fcasth` は予報の子を直近 20·D 評価の上位 4·D 点で当てはめる（`forecast_hist`）。`v4_keep50f` は j55 の候補（隔離 50% ＋ `switch_pace` ＋ 予報の子）、`v4_k50f_rec` / `v4_k50f_chain` はそれに回復 / 追跡。**集計**: j52 と同じ（標準の集計 ＋ j47 のパネルと並べた CEC 順位。j47 の MC-ESO との一致も書く）。per-run stats は `analysis/single/j58/a20/dim20/stats/`。**記録**: `analysis/single/j58/`。採否の判断はしない。
+
+1. **【回復・感染経路の追跡・履歴での予報（5D/10D）】** 手法 `"MC-ESO,v4_keep50f,v4_recover20,v4_recover50,v4_ctrace,v4_fcasth,v4_k50f_rec,v4_k50f_chain"`、j50 と同じ 4 設定（label `j58_a5` / `j58_a5ho` / `j58_a10` / `j58_a10ho`、`--jobs 4`）。1 回の起動に収まらなければ設定ごとに書き戻してよい。**集計**: j50 と同じ。per-run stats は `analysis/single/j58/<label>/dim<D>/stats/`。**記録**: `analysis/single/j58/`。採否の判断はしない。
+
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---

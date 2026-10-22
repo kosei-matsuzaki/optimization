@@ -583,6 +583,13 @@ _OPTIMIZERS = {
     "v4_pbarch":      (MultiChannelEpidemicOptimizer, {"h2h_pbest": 0.1, "h2h_archive": True}),
     # The version presented on 2026-07-07 (commit 4d85c1c), frozen
     "MC-ESO-0707":    (MCESO0707, {}),
+    # 2026-10-22: recovery (SIR), chain tracing, history-fitted forecast
+    "v4_recover20":   (MultiChannelEpidemicOptimizer, {"recover_age": 20}),
+    "v4_recover50":   (MultiChannelEpidemicOptimizer, {"recover_age": 50}),
+    "v4_ctrace":      (MultiChannelEpidemicOptimizer, {"chain_trace": True}),
+    "v4_fcasth":      (MultiChannelEpidemicOptimizer, {"forecast": True, "forecast_hist": True}),
+    "v4_k50f_rec":    (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "forecast": True, "switch_pace": True, "recover_age": 20}),
+    "v4_k50f_chain":  (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "forecast": True, "switch_pace": True, "chain_trace": True}),
     "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
