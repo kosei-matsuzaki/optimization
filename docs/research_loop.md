@@ -118,7 +118,7 @@
 
 
 
-1. **【回復・感染経路の追跡・履歴での予報（5D/10D）】** 手法 `"MC-ESO,v4_keep50f,v4_recover20,v4_recover50,v4_ctrace,v4_fcasth,v4_k50f_rec,v4_k50f_chain"`、j50 と同じ 4 設定（label `j58_a5` / `j58_a5ho` / `j58_a10` / `j58_a10ho`、`--jobs 4`）。1 回の起動に収まらなければ設定ごとに書き戻してよい。**集計**: j50 と同じ。per-run stats は `analysis/single/j58/<label>/dim<D>/stats/`。**記録**: `analysis/single/j58/`。採否の判断はしない。
+1. **【回復・感染経路の追跡・履歴での予報（5D/10D）】** 手法 `"MC-ESO,v4_keep50f,v4_recover20,v4_recover50,v4_ctrace,v4_fcasth,v4_k50f_rec,v4_k50f_chain"`、j50 と同じ 4 設定（label `j58_a5` / `j58_a5ho` / `j58_a10` / `j58_a10ho`、`--jobs 4`）。1 回の起動に収まらなければ設定ごとに書き戻してよい。**集計**: j50 と同じ。per-run stats は `analysis/single/j58/<label>/dim<D>/stats/`。**記録**: `analysis/single/j58/`。採否の判断はしない。 (claimed 2026-10-22 09:31 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
