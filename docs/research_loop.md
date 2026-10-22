@@ -118,7 +118,7 @@
 
 
 
-1. **【回復・感染経路の追跡・履歴での予報（5D/10D）の残り 3 設定】** 手法 `"MC-ESO,v4_keep50f,v4_recover20,v4_recover50,v4_ctrace,v4_fcasth,v4_k50f_rec,v4_k50f_chain"`、j50 と同じ 4 設定のうち **`j58_a5`（5D 調整 instance 1-5）は 2026-10-22 に完走したので残りは 3 設定**（label `j58_a5ho` = `--dim 5 --max-evals 12500 --instances 6-10 --seed-offset 7` / `j58_a10` = `--dim 10 --max-evals 25000 --instances 1-5` / `j58_a10ho` = `--dim 10 --max-evals 25000 --instances 6-10 --seed-offset 7`、いずれも `--all --n-runs 20 --jobs 4`）。**1 設定で約 45-90 分かかるので、1 回の起動で入る分だけ回し、残りは設定ごとに書き戻す。****集計**: j50 と同じ（標準の集計を `MC-ESO` を reference に ＋ `python3 scripts/single/cec_panel.py --dim D --panel analysis/single/j49/<j49_p5ho / j49_p10 / j49_p10ho> --arms results/<この run>`）。per-run stats は `analysis/single/j58/<label>/dim<D>/stats/`。**記録**: `analysis/single/j58/`。採否の判断はしない。
+1. **【回復・感染経路の追跡・履歴での予報（5D/10D）の残り 3 設定】** 手法 `"MC-ESO,v4_keep50f,v4_recover20,v4_recover50,v4_ctrace,v4_fcasth,v4_k50f_rec,v4_k50f_chain"`、j50 と同じ 4 設定のうち **`j58_a5`（5D 調整 instance 1-5）は 2026-10-22 に完走したので残りは 3 設定**（label `j58_a5ho` = `--dim 5 --max-evals 12500 --instances 6-10 --seed-offset 7` / `j58_a10` = `--dim 10 --max-evals 25000 --instances 1-5` / `j58_a10ho` = `--dim 10 --max-evals 25000 --instances 6-10 --seed-offset 7`、いずれも `--all --n-runs 20 --jobs 4`）。**1 設定で約 45-90 分かかるので、1 回の起動で入る分だけ回し、残りは設定ごとに書き戻す。****集計**: j50 と同じ（標準の集計を `MC-ESO` を reference に ＋ `python3 scripts/single/cec_panel.py --dim D --panel analysis/single/j49/<j49_p5ho / j49_p10 / j49_p10ho> --arms results/<この run>`）。per-run stats は `analysis/single/j58/<label>/dim<D>/stats/`。**記録**: `analysis/single/j58/`。採否の判断はしない。 (claimed 2026-10-22 10:30 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
