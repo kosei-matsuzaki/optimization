@@ -118,7 +118,7 @@
 
 
 
-1. **【回復・感染経路の追跡・履歴での予報（10D hold-out）の残り 1 設定】** 手法 `"MC-ESO,v4_keep50f,v4_recover20,v4_recover50,v4_ctrace,v4_fcasth,v4_k50f_rec,v4_k50f_chain"`、j50 と同じ 4 設定のうち **`j58_a5`（5D 調整）・`j58_a5ho`（5D hold-out）・`j58_a10`（10D 調整）は完走したので残りは 1 設定**（label `j58_a10ho` = `--all --dim 10 --max-evals 25000 --n-runs 20 --instances 6-10 --seed-offset 7 --jobs 4`）。**この容器では 10D 1 設定で約 36 分。****集計**: j50 と同じ（標準の集計を `MC-ESO` を reference に ＋ `python3 scripts/single/cec_panel.py --dim 10 --panel analysis/single/j49/j49_p10ho --arms results/<この run>`）。per-run stats は `analysis/single/j58/<label>/dim<D>/stats/`。**記録**: `analysis/single/j58/`。採否の判断はしない。
+1. **【回復・感染経路の追跡・履歴での予報（10D hold-out）の残り 1 設定】** 手法 `"MC-ESO,v4_keep50f,v4_recover20,v4_recover50,v4_ctrace,v4_fcasth,v4_k50f_rec,v4_k50f_chain"`、j50 と同じ 4 設定のうち **`j58_a5`（5D 調整）・`j58_a5ho`（5D hold-out）・`j58_a10`（10D 調整）は完走したので残りは 1 設定**（label `j58_a10ho` = `--all --dim 10 --max-evals 25000 --n-runs 20 --instances 6-10 --seed-offset 7 --jobs 4`）。**この容器では 10D 1 設定で約 36 分。****集計**: j50 と同じ（標準の集計を `MC-ESO` を reference に ＋ `python3 scripts/single/cec_panel.py --dim 10 --panel analysis/single/j49/j49_p10ho --arms results/<この run>`）。per-run stats は `analysis/single/j58/<label>/dim<D>/stats/`。**記録**: `analysis/single/j58/`。採否の判断はしない。 (claimed 2026-10-22 12:30 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
