@@ -1,0 +1,68 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=5   ref=MC-ESO
+run: 20261022_093425_j58_a5_quick
+meta: n_runs=20 max_evals=12500 set=all-d5 commit=0d9576d
+functions: 24   methods: MC-ESO, v4_keep50f, v4_recover20, v4_recover50, v4_ctrace, v4_fcasth, v4_k50f_rec, v4_k50f_chain
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            76.7%   78.3%   80.4%   81.2%        3919            
+  v4_keep50f        79.4%   79.8%   81.2%   81.5%        3499         0/2
+  v4_recover20      75.6%   76.9%   79.4%   80.2%        3962         0/0
+  v4_recover50      76.0%   77.3%   79.0%   79.8%        3826         0/0
+  v4_ctrace         74.6%   76.9%   79.8%   81.3%        4137         0/0
+  v4_fcasth         73.7%   74.2%   75.4%   75.6%        3022         2/2
+  v4_k50f_rec       80.0%   80.4%   81.7%   82.1%        3828         0/2
+  v4_k50f_chain     75.6%   76.0%   77.5%   77.9%        3664         1/1
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%      v4_keep50f 100%             1744/101
+  F02-EllipsoidalSep              100%      v4_keep50f 100%            3391/2659
+  F03-RastriginSep                100%    v4_recover20 100%            4692/4587
+  F04-BucheRastrigin               85%       v4_keep50f 95%            4803/4514  <-- ref behind
+  F05-LinearSlope                 100%      v4_keep50f 100%            2553/2153
+  F06-AttractiveSector            100%      v4_keep50f 100%            3520/3455
+  F07-StepEllipsoidal             100%      v4_keep50f 100%            1587/1237
+  F08-Rosenbrock                  100%    v4_recover20 100%            3863/3792
+  F09-RosenbrockRot               100%      v4_keep50f 100%            3915/3611
+  F10-EllipsoidalRot              100%      v4_keep50f 100%            3425/2956
+  F11-Discus                      100%      v4_keep50f 100%            3296/2510
+  F12-BentCigar                   100%      v4_keep50f 100%            5244/4391
+  F13-SharpRidge                  100%      v4_keep50f 100%            3706/3577
+  F14-DiffPowers                  100%      v4_keep50f 100%            2099/1691
+  F15-RastriginRot                  5%       v4_keep50f 20%            6453/6846  <-- ref behind
+  F16-Weierstrass                  60%      v4_k50f_rec 85%            5343/3390  <-- ref behind
+  F17-SchafferF7                   80%       v4_keep50f 90%            4155/3262  <-- ref behind
+  F18-SchafferF7ill                55%      v4_k50f_rec 70%            4655/4893  <-- ref behind
+  F19-GriewankRosenbrock           10%       v4_k50f_rec 5%            6356/9394
+  F20-Schwefel                      5%     v4_recover20 20%            3209/4740  <-- ref behind
+  F21-Gallagher101                 95%      v4_keep50f 100%            3097/2904  <-- ref behind
+  F22-Gallagher21                 100%      v4_keep50f 100%            3775/3553
+  F23-Katsuura                     45%       v4_keep50f 70%            5264/6122  <-- ref behind
+  F24-LunacekRastrigin              0%        v4_keep50f 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F06-AttractiveSector   vs v4_fcasth      p=0.000954 A12=0.16 (large)
+  F06-AttractiveSector   vs v4_k50f_chain  p=0.000601 A12=0.20 (large)
+  F06-AttractiveSector   vs v4_k50f_rec    p=0.0461 A12=0.27 (large)
+  F06-AttractiveSector   vs v4_keep50f     p=0.000601 A12=0.20 (large)
+  F17-SchafferF7         vs v4_fcasth      p=0.044 A12=0.14 (large)
+  F17-SchafferF7         vs v4_k50f_rec    p=0.0137 A12=0.14 (large)
+  F20-Schwefel           vs v4_keep50f     p=0.0176 A12=0.31 (medium)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v4_k50f_rec            mean rank   3.69   best on 19/24
+   2. v4_recover50           mean rank   4.17   best on 16/24
+   3. MC-ESO                 mean rank   4.21   best on 14/24  <- ref
+   4. v4_keep50f             mean rank   4.23   best on 14/24
+   5. v4_recover20           mean rank   4.33   best on 14/24
+   6. v4_ctrace              mean rank   4.48   best on 13/24
+   7. v4_k50f_chain          mean rank   5.35   best on 11/24
+   8. v4_fcasth              mean rank   5.54   best on 12/24
+
