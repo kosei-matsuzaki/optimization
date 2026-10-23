@@ -1,0 +1,130 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=20   ref=MC-ESO
+run: merged
+functions: 24   methods: MC-ESO, v4_k50fR, v4_k50fR_r50, v4_k50f_r50, v4_k50f_np, v4_k50_r50, v4_k50fR_r50np
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            35.4%   38.1%   39.4%   42.7%       26727            
+  v4_k50fR          37.5%   40.6%   43.1%   47.1%       27087        1/13
+  v4_k50fR_r50      37.1%   40.8%   43.1%   46.9%       26100        1/14
+  v4_k50f_r50       37.5%   40.8%   43.5%   47.9%       25965        0/10
+  v4_k50f_np        37.3%   41.0%   43.5%   47.1%       26365        0/10
+  v4_k50_r50        35.8%   39.6%   42.3%   46.9%       26285        1/12
+  v4_k50fR_r50np    36.9%   40.6%   42.9%   46.9%       26188        1/13
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%        v4_k50fR 100%          12536/12536
+  F02-EllipsoidalSep               95%         v4_k50fR 95%          23492/23543
+  F03-RastriginSep                100%        v4_k50fR 100%          16366/16639
+  F04-BucheRastrigin                5%       v4_k50f_r50 5%          38333/36478
+  F05-LinearSlope                 100%        v4_k50fR 100%          20471/20464
+  F06-AttractiveSector             30%      v4_k50f_r50 60%          33422/34987  <-- ref behind
+  F07-StepEllipsoidal              20%         v4_k50fR 10%          29086/30075
+  F08-Rosenbrock                    0%       v4_k50f_r50 5%                    -  <-- ref behind
+  F09-RosenbrockRot                 0%      v4_k50f_r50 20%                    -  <-- ref behind
+  F10-EllipsoidalRot               95%         v4_k50fR 95%          19836/19752
+  F11-Discus                       70%        v4_k50fR 100%          23678/16567  <-- ref behind
+  F12-BentCigar                    80%         v4_k50fR 80%          34599/34599
+  F13-SharpRidge                    0%         v4_k50fR 35%          46799/37293  <-- ref behind
+  F14-DiffPowers                  100%        v4_k50fR 100%          18359/18359
+  F15-RastriginRot                  0%          v4_k50fR 0%                    -
+  F16-Weierstrass                   0%          v4_k50fR 0%                    -
+  F17-SchafferF7                    0%          v4_k50fR 0%                    -
+  F18-SchafferF7ill                 0%          v4_k50fR 0%                    -
+  F19-GriewankRosenbrock            0%          v4_k50fR 0%                    -
+  F20-Schwefel                      0%          v4_k50fR 0%                    -
+  F21-Gallagher101                 45%         v4_k50fR 45%          30295/26913
+  F22-Gallagher21                  10%          v4_k50fR 5%          26908/12740
+  F23-Katsuura                      0%          v4_k50fR 0%                    -
+  F24-LunacekRastrigin              0%          v4_k50fR 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F01-Sphere             vs v4_k50_r50     p=0.00169 A12=0.24 (large)
+  F01-Sphere             vs v4_k50fR_r50   p=0.00169 A12=0.24 (large)
+  F01-Sphere             vs v4_k50fR_r50np p=0.00169 A12=0.24 (large)
+  F01-Sphere             vs v4_k50f_np     p=0.000165 A12=0.05 (large)
+  F01-Sphere             vs v4_k50f_r50    p=0.000165 A12=0.05 (large)
+  F04-BucheRastrigin     vs v4_k50_r50     p=0.00112 A12=0.30 (medium)
+  F04-BucheRastrigin     vs v4_k50fR       p=0.000708 A12=0.30 (medium)
+  F04-BucheRastrigin     vs v4_k50fR_r50   p=0.00329 A12=0.31 (medium)
+  F04-BucheRastrigin     vs v4_k50fR_r50np p=0.00329 A12=0.31 (medium)
+  F04-BucheRastrigin     vs v4_k50f_np     p=0.0198 A12=0.32 (medium)
+  F08-Rosenbrock         vs v4_k50_r50     p=0.000851 A12=0.34 (medium)
+  F08-Rosenbrock         vs v4_k50fR       p=0.00199 A12=0.28 (large)
+  F08-Rosenbrock         vs v4_k50fR_r50   p=0.000851 A12=0.34 (medium)
+  F08-Rosenbrock         vs v4_k50fR_r50np p=0.000851 A12=0.34 (medium)
+  F08-Rosenbrock         vs v4_k50f_np     p=0.00121 A12=0.14 (large)
+  F08-Rosenbrock         vs v4_k50f_r50    p=0.00121 A12=0.14 (large)
+  F09-RosenbrockRot      vs v4_k50_r50     p=1.91e-06 A12=0.02 (large)
+  F09-RosenbrockRot      vs v4_k50fR       p=1.91e-06 A12=0.01 (large)
+  F09-RosenbrockRot      vs v4_k50fR_r50   p=1.91e-06 A12=0.02 (large)
+  F09-RosenbrockRot      vs v4_k50fR_r50np p=1.91e-06 A12=0.02 (large)
+  F09-RosenbrockRot      vs v4_k50f_np     p=1.91e-06 A12=0.00 (large)
+  F09-RosenbrockRot      vs v4_k50f_r50    p=1.91e-06 A12=0.00 (large)
+  F11-Discus             vs v4_k50fR       p=0.00145 A12=0.20 (large)
+  F11-Discus             vs v4_k50fR_r50   p=0.00571 A12=0.20 (large)
+  F11-Discus             vs v4_k50fR_r50np p=0.00571 A12=0.20 (large)
+  F11-Discus             vs v4_k50f_np     p=0.00264 A12=0.20 (large)
+  F11-Discus             vs v4_k50f_r50    p=0.00145 A12=0.17 (large)
+  F13-SharpRidge         vs v4_k50_r50     p=1.91e-06 A12=0.06 (large)
+  F13-SharpRidge         vs v4_k50fR       p=1.91e-06 A12=0.06 (large)
+  F13-SharpRidge         vs v4_k50fR_r50   p=1.91e-06 A12=0.06 (large)
+  F13-SharpRidge         vs v4_k50fR_r50np p=1.91e-06 A12=0.06 (large)
+  F15-RastriginRot       vs v4_k50_r50     p=8.2e-05 A12=0.29 (large)
+  F15-RastriginRot       vs v4_k50fR       p=5.72e-06 A12=0.07 (large)
+  F15-RastriginRot       vs v4_k50fR_r50   p=5.72e-06 A12=0.07 (large)
+  F15-RastriginRot       vs v4_k50fR_r50np p=8.2e-05 A12=0.29 (large)
+  F15-RastriginRot       vs v4_k50f_np     p=0.00271 A12=0.19 (large)
+  F15-RastriginRot       vs v4_k50f_r50    p=9.54e-06 A12=0.06 (large)
+  F16-Weierstrass        vs v4_k50_r50     p=0.0484 A12=0.46 (negligible)
+  F16-Weierstrass        vs v4_k50fR       p=1.91e-05 A12=0.29 (large)
+  F16-Weierstrass        vs v4_k50fR_r50   p=0.000133 A12=0.29 (medium)
+  F16-Weierstrass        vs v4_k50fR_r50np p=0.0484 A12=0.46 (negligible)
+  F16-Weierstrass        vs v4_k50f_r50    p=0.00422 A12=0.28 (large)
+  F17-SchafferF7         vs v4_k50_r50     p=0.000261 A12=0.39 (small)
+  F17-SchafferF7         vs v4_k50fR       p=0.00232 A12=0.31 (medium)
+  F17-SchafferF7         vs v4_k50fR_r50   p=0.000261 A12=0.37 (small)
+  F17-SchafferF7         vs v4_k50fR_r50np p=0.000261 A12=0.39 (small)
+  F17-SchafferF7         vs v4_k50f_np     p=0.00831 A12=0.27 (large)
+  F17-SchafferF7         vs v4_k50f_r50    p=0.00365 A12=0.24 (large)
+  F18-SchafferF7ill      vs v4_k50fR       p=0.00271 A12=0.32 (medium)
+  F18-SchafferF7ill      vs v4_k50fR_r50   p=0.00639 A12=0.35 (medium)
+  F19-GriewankRosenbrock vs v4_k50_r50     p=0.0107 A12=0.27 (large)
+  F19-GriewankRosenbrock vs v4_k50fR       p=1.91e-06 A12=0.04 (large)
+  F19-GriewankRosenbrock vs v4_k50fR_r50   p=1.91e-06 A12=0.07 (large)
+  F19-GriewankRosenbrock vs v4_k50fR_r50np p=0.0107 A12=0.27 (large)
+  F19-GriewankRosenbrock vs v4_k50f_np     p=0.00944 A12=0.29 (large)
+  F19-GriewankRosenbrock vs v4_k50f_r50    p=1.91e-06 A12=0.03 (large)
+  F20-Schwefel           vs v4_k50_r50     p=0.0121 A12=0.49 (negligible)
+  F20-Schwefel           vs v4_k50fR       p=0.000708 A12=0.48 (negligible)
+  F20-Schwefel           vs v4_k50fR_r50   p=0.0121 A12=0.49 (negligible)
+  F20-Schwefel           vs v4_k50fR_r50np p=0.0121 A12=0.49 (negligible)
+  F23-Katsuura           vs v4_k50_r50     p=9.54e-06 A12=0.12 (large)
+  F23-Katsuura           vs v4_k50fR       p=1.91e-06 A12=0.05 (large)
+  F23-Katsuura           vs v4_k50fR_r50   p=3.81e-06 A12=0.04 (large)
+  F23-Katsuura           vs v4_k50fR_r50np p=9.54e-06 A12=0.12 (large)
+  F23-Katsuura           vs v4_k50f_np     p=0.000851 A12=0.15 (large)
+  F23-Katsuura           vs v4_k50f_r50    p=5.72e-06 A12=0.04 (large)
+  F24-LunacekRastrigin   vs v4_k50_r50     p=1.33e-05 A12=0.07 (large)
+  F24-LunacekRastrigin   vs v4_k50fR       p=3.81e-06 A12=0.03 (large)
+  F24-LunacekRastrigin   vs v4_k50fR_r50   p=1.91e-06 A12=0.04 (large)
+  F24-LunacekRastrigin   vs v4_k50fR_r50np p=1.33e-05 A12=0.07 (large)
+  F24-LunacekRastrigin   vs v4_k50f_np     p=6.29e-05 A12=0.08 (large)
+  F24-LunacekRastrigin   vs v4_k50f_r50    p=1.91e-06 A12=0.02 (large)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v4_k50f_r50            mean rank   2.77   best on 10/24
+   2. v4_k50fR_r50           mean rank   3.50   best on 10/24
+   3. v4_k50fR               mean rank   3.69   best on  6/24
+   4. v4_k50f_np             mean rank   4.06   best on 10/24
+   5. v4_k50_r50             mean rank   4.33   best on  7/24
+   6. v4_k50fR_r50np         mean rank   4.48   best on  7/24
+   7. MC-ESO                 mean rank   5.17   best on  7/24  <- ref
+
