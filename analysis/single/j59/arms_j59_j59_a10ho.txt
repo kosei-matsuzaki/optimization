@@ -1,0 +1,37 @@
+functions=24 methods=7 rows=168
+dup (func,method): none
+missing: none
+
+=== per-function SR@1e-10 (base -> arm), changed only ===
+v4_k50fR: up 1 [F23 0->25] down 3 [F16 20->15, F21 70->65, F22 40->30]
+v4_k50fR_r50: up 3 [F16 20->25, F17 50->55, F23 0->15] down 1 [F21 70->55]
+v4_k50f_r50: up 3 [F18 0->5, F21 70->75, F23 0->5] down 6 [F04 50->40, F07 95->90, F12 95->65, F13 100->85, F17 50->35, F22 40->25]
+v4_k50f_np: up 2 [F18 0->5, F23 0->5] down 5 [F04 50->40, F07 95->90, F12 95->65, F13 100->80, F17 50->35]
+v4_k50_r50: up 2 [F17 50->55, F23 0->10] down 2 [F16 20->15, F21 70->65]
+v4_k50fR_r50np: up 2 [F17 50->55, F23 0->15] down 2 [F16 20->15, F21 70->65]
+
+all-100 funcs (10): F01, F02, F03, F05, F06, F08, F09, F10, F11, F14
+all-0 funcs (4): F15, F19, F20, F24
+
+=== F21/F22 SR@1e-10 ===
+  F21-Gallagher101 MC-ESO=70 v4_k50fR=65 v4_k50fR_r50=55 v4_k50f_r50=75 v4_k50f_np=70 v4_k50_r50=65 v4_k50fR_r50np=65
+  F22-Gallagher21 MC-ESO=40 v4_k50fR=30 v4_k50fR_r50=40 v4_k50f_r50=25 v4_k50f_np=40 v4_k50_r50=40 v4_k50fR_r50np=40
+
+=== evals_succ_mean (arm vs base, functions where BOTH have successes) ===
+  v4_k50fR: 10218.6 vs base 10476.8  (n=20)
+  v4_k50fR_r50: 10328.4 vs base 10476.8  (n=20)
+  v4_k50f_r50: 9761.2 vs base 10476.8  (n=20)
+  v4_k50f_np: 9934.1 vs base 10476.8  (n=20)
+  v4_k50_r50: 10160.4 vs base 10476.8  (n=20)
+  v4_k50fR_r50np: 10053.0 vs base 10476.8  (n=20)
+
+=== MC-ESO vs panel: 1080/1080 cells identical, 0 differ ===
+
+cols: ['function', 'reference', 'method', 'n', 'win_count', 'tie_count', 'p_value_two_sided', 'p_value_ref_better', 'a12', 'a12_magnitude']
+references: {'MC-ESO'}
+v4_k50fR: base WIN 0 [] | base LOSS 8 [F04 0.47 negligible, F13 0.31 medium, F15 0.17 large, F16 0.40 small, F19 0.18 large, F20 0.46 negligible, F23 0.21 large, F24 0.27 large]
+v4_k50fR_r50: base WIN 0 [] | base LOSS 8 [F04 0.46 negligible, F06 0.41 small, F13 0.31 medium, F15 0.20 large, F16 0.36 small, F19 0.20 large, F23 0.24 large, F24 0.26 large]
+v4_k50f_r50: base WIN 1 [F12 0.64 medium] | base LOSS 4 [F06 0.30 medium, F15 0.20 large, F19 0.27 large, F24 0.21 large]
+v4_k50f_np: base WIN 1 [F12 0.64 medium] | base LOSS 0 []
+v4_k50_r50: base WIN 0 [] | base LOSS 3 [F04 0.46 negligible, F06 0.41 small, F23 0.22 large]
+v4_k50fR_r50np: base WIN 0 [] | base LOSS 5 [F04 0.46 negligible, F06 0.41 small, F13 0.31 medium, F16 0.42 small, F23 0.29 large]
