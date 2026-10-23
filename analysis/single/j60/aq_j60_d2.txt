@@ -1,0 +1,54 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=2   ref=MC-ESO
+run: 20261023_134639_j60_d2_quick
+meta: n_runs=20 max_evals=5000 set=all-d2 commit=bbf4b85
+functions: 24   methods: MC-ESO, v4_k50fR, v4_k50fR_r50, v4_k50_r50
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            94.4%   95.2%   95.8%   95.8%         771            
+  v4_k50fR          94.8%   95.4%   96.0%   96.2%         776         0/0
+  v4_k50fR_r50      94.8%   95.4%   96.0%   96.2%         776         0/0
+  v4_k50_r50        94.4%   95.2%   95.8%   95.8%         771         0/0
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%        v4_k50fR 100%              281/281
+  F02-EllipsoidalSep              100%        v4_k50fR 100%              618/618
+  F03-RastriginSep                100%        v4_k50fR 100%              862/862
+  F04-BucheRastrigin              100%        v4_k50fR 100%            1160/1160
+  F05-LinearSlope                 100%        v4_k50fR 100%              416/416
+  F06-AttractiveSector            100%        v4_k50fR 100%              582/582
+  F07-StepEllipsoidal             100%        v4_k50fR 100%              215/215
+  F08-Rosenbrock                  100%        v4_k50fR 100%              487/487
+  F09-RosenbrockRot               100%        v4_k50fR 100%              573/573
+  F10-EllipsoidalRot              100%        v4_k50fR 100%              674/674
+  F11-Discus                      100%        v4_k50fR 100%              712/712
+  F12-BentCigar                    90%         v4_k50fR 90%              957/957
+  F13-SharpRidge                   95%         v4_k50fR 95%              764/764
+  F14-DiffPowers                  100%        v4_k50fR 100%              424/424
+  F15-RastriginRot                100%        v4_k50fR 100%            1098/1163
+  F16-Weierstrass                 100%        v4_k50fR 100%              800/800
+  F17-SchafferF7                  100%        v4_k50fR 100%              925/925
+  F18-SchafferF7ill                85%         v4_k50fR 85%            1234/1234
+  F19-GriewankRosenbrock          100%      v4_k50_r50 100%              827/827
+  F20-Schwefel                     90%        v4_k50fR 100%            1179/1335  <-- ref behind
+  F21-Gallagher101                100%        v4_k50fR 100%              214/214
+  F22-Gallagher21                 100%        v4_k50fR 100%              283/283
+  F23-Katsuura                     95%        v4_k50fR 100%            1633/1557  <-- ref behind
+  F24-LunacekRastrigin             10%         v4_k50fR 10%            1582/1582
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  none — MC-ESO is never significantly beaten.
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. MC-ESO                 mean rank   2.46   best on 23/24  <- ref
+   2. v4_k50_r50             mean rank   2.46   best on 23/24
+   3. v4_k50fR               mean rank   2.54   best on 22/24
+   4. v4_k50fR_r50           mean rank   2.54   best on 22/24
+

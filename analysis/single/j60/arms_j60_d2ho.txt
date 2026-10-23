@@ -1,0 +1,26 @@
+run=results/20261023_134647_j60_d2ho_quick dim=2 ref=MC-ESO  functions=24 methods=['MC-ESO', 'v4_k50fR', 'v4_k50fR_r50', 'v4_k50_r50']
+
+=== per-function SR@1e-10 (ref -> arm), only functions that moved ===
+v4_k50fR: up 2 [F03 95->100, F23 95->100] down 2 [F19 100->95, F20 90->80]
+v4_k50fR_r50: up 2 [F03 95->100, F23 95->100] down 2 [F19 100->95, F20 90->80]
+v4_k50_r50: up 0 [] down 0 []
+
+=== functions where ALL methods are 100% / 0% at 1e-10 ===
+100%: 18 ['F01', 'F02', 'F04', 'F05', 'F06', 'F07', 'F08', 'F09', 'F10', 'F11', 'F13', 'F14', 'F15', 'F16', 'F17', 'F18', 'F21', 'F22']
+  0%: 0 []
+
+=== evals_succ_mean on functions where BOTH ref and arm have successes ===
+v4_k50fR: 873.5 vs ref 868.0  (n=24 common functions)
+v4_k50fR_r50: 873.5 vs ref 868.0  (n=24 common functions)
+v4_k50_r50: 868.0 vs ref 868.0  (n=24 common functions)
+
+=== Wilcoxon on best_f, reference=ref, two-sided alpha=0.05 ===
+v4_k50fR: ref wins 0 [] | ref loses 0 []
+v4_k50fR_r50: ref wins 0 [] | ref loses 0 []
+v4_k50_r50: ref wins 0 [] | ref loses 0 []
+
+=== overall SR ladder + evals_mean (mean over all functions) ===
+MC-ESO            94.6 /  95.2 /  95.6 /  95.6   evals_mean      868 (n=24)
+v4_k50fR          94.4 /  95.2 /  95.6 /  95.6   evals_mean      874 (n=24)
+v4_k50fR_r50      94.4 /  95.2 /  95.6 /  95.6   evals_mean      874 (n=24)
+v4_k50_r50        94.6 /  95.2 /  95.6 /  95.6   evals_mean      868 (n=24)
