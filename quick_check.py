@@ -590,6 +590,13 @@ _OPTIMIZERS = {
     "v4_fcasth":      (MultiChannelEpidemicOptimizer, {"forecast": True, "forecast_hist": True}),
     "v4_k50f_rec":    (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "forecast": True, "switch_pace": True, "recover_age": 20}),
     "v4_k50f_chain":  (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "forecast": True, "switch_pace": True, "chain_trace": True}),
+    # 2026-10-23: route-gated forecast, combinations without switch_pace
+    "v4_k50fR":       (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "forecast": True, "forecast_route": True, "switch_pace": True}),
+    "v4_k50fR_r50":   (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "forecast": True, "forecast_route": True, "switch_pace": True, "recover_age": 50}),
+    "v4_k50f_r50":    (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "forecast": True, "switch_pace": True, "recover_age": 50}),
+    "v4_k50f_np":     (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "forecast": True}),
+    "v4_k50_r50":     (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "recover_age": 50}),
+    "v4_k50fR_r50np": (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "forecast": True, "forecast_route": True, "recover_age": 50}),
     "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),

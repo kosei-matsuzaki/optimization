@@ -119,6 +119,10 @@
 
 
 
+1. **【予報の子のルート限定と、switch_pace なしの組み合わせ（20D）】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_k50fR,v4_k50fR_r50,v4_k50f_r50,v4_k50f_np,v4_k50_r50,v4_k50fR_r50np" --jobs 4`（label `j59_a20`）。腕の中身（3 次元以上）: 末尾 `R` は予報の子をチャネルルーターが DROPLET に確定した run だけで使う（`forecast_route`）、`_r50` は回復（`recover_age=50`）、`np` は `switch_pace` なし、それ以外は `switch_pace` つき。すべて隔離 50%（`spill_keep=0.5`）。ねらいは 10D の Gallagher（F21/F22）の SR の低下（switch_pace と予報の子が原因）を消しつつ 20D の改善を残すこと。**集計**: j58 と同じ（標準の集計 ＋ j47 のパネルと並べた CEC 順位。j47 の MC-ESO との一致も書く）。per-run stats は `analysis/single/j59/a20/dim20/stats/`。**記録**: `analysis/single/j59/`。採否の判断はしない。
+
+1. **【予報の子のルート限定と、switch_pace なしの組み合わせ（5D/10D）】** 手法 `"MC-ESO,v4_k50fR,v4_k50fR_r50,v4_k50f_r50,v4_k50f_np,v4_k50_r50,v4_k50fR_r50np"`、j50 と同じ 4 設定（label `j59_a5` / `j59_a5ho` / `j59_a10` / `j59_a10ho`、`--jobs 4`）。1 回の起動に収まらなければ設定ごとに書き戻してよい。**集計**: j50 と同じ。関数別の SR@1e-10 では F21/F22 を必ず並べる。per-run stats は `analysis/single/j59/<label>/dim<D>/stats/`。**記録**: `analysis/single/j59/`。採否の判断はしない。
+
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---

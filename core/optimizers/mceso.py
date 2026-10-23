@@ -898,6 +898,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # forecast fitted to the best 4·D points of the last 20·D evaluations
         # instead of the better half of the hosts.
         forecast_hist: bool = False,
+        # forecast only on runs the channel router committed to DROPLET (the
+        # ill-conditioned valleys it was measured to help), not on multimodal
+        # keep-air runs (Gallagher, where it misleads).
+        forecast_route: bool = False,
         switch_grow: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
@@ -983,6 +987,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.recover_age = recover_age
         self.chain_trace = chain_trace
         self.forecast_hist = forecast_hist
+        self.forecast_route = forecast_route
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -2471,7 +2476,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             codes.extend([code] * cnt)
         st.eval_channel.extend(codes[:len(st.history_f) - st.gen_eval_start])
         self._pad_eval_channel(st, _CH_UNKNOWN)
-        if self.forecast and self.dim >= 3 and st.budget_left:
+        if (self.forecast and self.dim >= 3 and st.budget_left
+                and (not self.forecast_route or st.channel_route == "droplet")):
             self._forecast_step(st)
 
         self._adapt_sigma(st, gen_best_before)
