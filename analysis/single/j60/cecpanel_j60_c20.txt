@@ -1,0 +1,26 @@
+dim 20: 12 functions, panel = MC-ESO + ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES
+  MC-ESO                 mean rank  8.17
+  ARRDE                  mean rank  3.00   mean error below base on 11, above on 1
+      rank moved: G01 10->4, G02 7->3.5, G03 8->1.5, G04 8->4.5, G05 8->4.5, G06 9->2.5, G07 9->1.5, G08 9->1.5, G09 10->4, G10 1->1.5, G11 10->1.5, G12 9->5.5
+  BIPOP-aCMA-ES          mean rank  8.04   mean error below base on 5, above on 7
+      rank moved: G01 10->4, G02 7->1.5, G03 8->9.5, G04 8->8.5, G05 8->9.5, G06 9->7.5, G07 9->9.5, G08 9->9.5, G09 10->8.5, G10 1->9.5, G11 10->9.5, G12 9->9.5
+  EBOwithCMAR            mean rank  4.42   mean error below base on 10, above on 2
+      rank moved: G01 10->4, G02 7->8.5, G03 8->5.5, G04 8->1.5, G05 8->4.5, G06 9->5.5, G07 9->7.5, G08 9->2.5, G09 10->4, G10 1->4.5, G11 10->2.5, G12 9->2.5
+  ELSHADE-SPACMA         mean rank  4.88   mean error below base on 11, above on 1
+      rank moved: G01 10->8.5, G02 7->4.5, G03 8->4.5, G04 8->7.5, G05 8->4.5, G06 9->3.5, G07 9->5.5, G08 9->3.5, G09 10->4, G10 1->5.5, G11 10->5.5, G12 9->1.5
+  IPOP-CMA-ES            mean rank  6.08   mean error below base on 11, above on 1
+      rank moved: G01 10->4, G02 7->6.5, G03 8->7.5, G04 8->3.5, G05 8->4.5, G06 9->8.5, G07 9->8.5, G08 9->7.5, G09 10->4, G10 1->8.5, G11 10->3.5, G12 9->6.5
+  L-SHADE                mean rank  4.96   mean error below base on 10, above on 2
+      rank moved: G01 10->7.5, G02 7->7.5, G03 8->3.5, G04 8->6.5, G05 8->4.5, G06 9->4.5, G07 9->4.5, G08 9->5.5, G09 10->4, G10 1->2.5, G11 10->4.5, G12 9->4.5
+  LSHADE-SPACMA          mean rank  4.25   mean error below base on 11, above on 1
+      rank moved: G01 10->4, G02 7->5.5, G03 8->2.5, G04 8->5.5, G05 8->4.5, G06 9->1.5, G07 9->2.5, G08 9->6.5, G09 10->4, G10 1->3.5, G11 10->7.5, G12 9->3.5
+  NL-SHADE-RSP           mean rank  7.92   mean error below base on 6, above on 6
+      rank moved: G01 10->9.5, G02 7->9.5, G03 8->8.5, G04 8->9.5, G05 8->8.5, G06 9->9.5, G07 9->6.5, G08 9->4.5, G09 10->7.5, G10 1->6.5, G11 10->6.5, G12 9->8.5
+  RCMAES                 mean rank  5.96   mean error below base on 11, above on 1
+      rank moved: G01 10->4, G02 7->2.5, G03 8->6.5, G04 8->2.5, G05 8->4.5, G06 9->6.5, G07 9->3.5, G08 9->8.5, G09 10->9.5, G10 1->7.5, G11 10->8.5, G12 9->7.5
+  v4_k50_r50             mean rank  7.75   mean error below base on 9, above on 3
+      rank moved: G01 10->8, G02 7->5, G03 8->9, G08 9->3, G09 10->8, G10 1->7
+  v4_k50fR               mean rank  6.00   mean error below base on 11, above on 1
+      rank moved: G01 10->4, G02 7->4, G07 9->7, G08 9->1, G09 10->8, G10 1->7, G11 10->1, G12 9->7
+  v4_k50fR_r50           mean rank  5.92   mean error below base on 11, above on 1
+      rank moved: G01 10->4, G02 7->4, G07 9->7, G08 9->1, G09 10->8, G10 1->6, G11 10->1, G12 9->7

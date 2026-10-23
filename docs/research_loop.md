@@ -120,9 +120,6 @@
 
 
 
-1. **【候補 `v4_k50fR_r50` の確認（CEC2022 20D のみ。j60 の残り）】** j60 で 2D の 2 設定と CEC2022 10D は測り終えた（結果は作業ログ 2026-10-23 j60）。残りは CEC2022 20D だけ。比べるのは `"MC-ESO,v4_k50fR_r50,v4_k50fR,v4_k50_r50"`。 (claimed 2026-10-23 15:30 UTC)
-   `./run.sh quick --suite cec2022 --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v4_k50fR_r50,v4_k50fR,v4_k50_r50,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 4`（label `j60_c20`）。10D は 24.7 分だったので 20D は 90 分に収まらない見込み＝関数 shard に分けて回す（`--all --funcs` を併用し、label を分ける）。
-   **集計**: 標準の集計を `MC-ESO` を reference に、パネル内 CEC 順位（腕を 1 つずつ MC-ESO と差し替え。パネルは同じ run の比較 9 手法 ＝ `cec_panel.py --dim 20 --panel <run> --arms <run> --base MC-ESO --drop "v4_k50fR,v4_k50fR_r50,v4_k50_r50"`）、関数別の SR@1e-10 と平均誤差の変化を全関数列挙。**記録**: `analysis/single/j60/`。採否の判断はしない。
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
@@ -151,6 +148,19 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-23 j60 (c20) CEC2022 20D を完走 — 3 腕すべてがパネル内 CEC 順位で基準 8.17 を下回る（最良 `v4_k50fR_r50` 5.92）が比較手法 5 つに届かず、20D では `recover_age=50` も効く（2D の bit 一致と違う）。Wilcoxon は 12 関数で基準が腕に勝った関数 0
+- **ランした分**: ジョブ 1 の CEC2022 20D のみ（キューの残り）。`./run.sh quick --suite cec2022 --all --dim 20 --max-evals 50000 --n-runs 20 --methods <13 手法> --jobs 4` を **関数 2 shard** に分けて逐次実行（`--all --funcs` 併用、label 別）。`j60_c20a` = G01/G05/G09 16:07:21-16:14:03 = **6.7 分**、`j60_c20b` = 残り 9 関数 16:14:43-16:31:46 = **17.1 分**。合計 wall **23.8 分**（10D の 24.7 分とほぼ同じ＝ジョブの「90 分に収まらない見込み」は外れた）。2 本とも `result.json` が `status=done`、merge 後に **12/12 関数**（summary 156 行 = 12×13、wilcoxon 144 行 = 12×12、reference はすべて `MC-ESO`）
+- **環境**: numpy 2.4.6 / cma 4.5.0、python 3.11.17。CPU Intel Xeon @**2.10GHz**（family 6 / **model 207 / stepping 2**、4 CPUs）、avx512f あり、BLAS は openblas（SkylakeX、num_threads 4）、`OMP_NUM_THREADS=1`。**j60 の 2D・10D の容器（@2.80GHz / model 85 / stepping 7）とは別仕様**なので、10D・2D との横並びは参考にとどめる（腕の比較はこの run 内で閉じている）
+- **パネル内 CEC 順位**（比較 9 手法 ＋ 腕を 1 つずつ基準と差し替え）: 基準 `MC-ESO` **8.17** / `v4_k50fR_r50` **5.92** / `v4_k50fR` **6.00** / `v4_k50_r50` **7.75**。比較手法は ARRDE 3.00・LSHADE-SPACMA 4.25・EBOwithCMAR 4.42・ELSHADE-SPACMA 4.88・L-SHADE 4.96・RCMAES 5.96・IPOP-CMA-ES 6.08・NL-SHADE-RSP 7.92・BIPOP-aCMA-ES 8.04 ＝ **3 腕すべて基準より良いが、最良の腕でも上位 5 手法に届かない**（RCMAES 5.96 とはほぼ同等）。13 手法の run 内順位（analyze [5]）では基準 10.75・腕 6.42〜9.83・ARRDE 3.00
+- **SR@1e-10 の全体平均**: 基準 12.9% / `v4_k50_r50` 14.6% / `v4_k50fR` 16.2% / `v4_k50fR_r50` 16.2%。梯子（1e-7 / 1e-4 / 1e-2）は 基準 14.2 / 20.8 / 21.7%、`v4_k50fR_r50` 17.1 / 24.2 / 26.2%
+- **関数別 SR@1e-10 の変化（全 12 関数）**: 動いたのは **2 関数のみ** — G01-Zakharov 70%→`v4_k50_r50` 90%・`v4_k50fR` 100%・`v4_k50fR_r50` 100%、G05-Levy 85%→85% / 95% / 95%。**残り 10 関数は 4 腕すべて 0%**（G02/G03/G04/G06/G07/G08/G09/G10/G11/G12。悪化した関数は無い）。平均誤差は 12 関数中 11 で `v4_k50fR*` が基準より小（例外は G10-Composition2 9.57e1→1.006e2）
+- **`evals_succ_mean`**（両方に成功のある 4 関数 G01/G03/G05/G11 で平均）: 基準 20390 に対し `v4_k50_r50` 20293（-97）・`v4_k50fR` 22804（+2414）・`v4_k50fR_r50` 22729（+2339）＝ **`fR` を含む腕は成功時の評価回数が増えている**（G11 26810→36930 が主因）
+- **Wilcoxon**（`MC-ESO` を reference、α=0.05 両側、12 関数）: 基準が腕に有意に勝った関数は **3 腕すべて 0**。腕が基準に勝ったのは `v4_k50_r50` 3（G06 A12=0.47 negligible・G08 0.18 large・G11 0.41 small）、`v4_k50fR` 8（G01 0.25・G02 0.30・G04 0.30・G07 0.19・G08 0.17・G09 0.28・G11 0.17・G12 0.19）、`v4_k50fR_r50` 9（同 ＋ G05 0.32、G02 0.31）
+- **2D と違い 20D では `recover_age=50` が効く**: per-run の `best_f`/`n_evals`/`success` を 12 関数 × 20 run × 3 列 = 720 セルで比べると `MC-ESO` 対 `v4_k50_r50` は **490/720 一致**、`v4_k50fR` 対 `v4_k50fR_r50` は **552/720 一致**（2D では両ペアとも完全一致だった）。`MC-ESO` 対 `v4_k50fR` は 486/720
+- **書かれたとおりに行かなかった点**: (1) `pip install -r requirements.txt` が `pynmmso` のビルドで落ちるのは既知だが、**`minionpy==1.9.1` も入らないため ARRDE / NL-SHADE-RSP / RCMAES が `ImportError` で最初の 1 本（約 20 分）が全損した**。findings.md「セットアップ」の短縮 install 一覧に `minionpy` が無い（この 3 手法は 2026-10-13 追加）。`python3 -m pip install minionpy==1.9.1` を足して再実行。(2) 併せて **`pip` は python3.13 向け・`run.sh` の `PY`（`python3`）は 3.11** という取り違えがあり、素の `pip install` では 3.11 側に入らない（`python3 -m pip` を使う必要がある）。(3) shard を 2 本に分けたのは、10D の実績から 20D が 90 分を超えると見込んだため。実測 23.8 分なので分割は不要だった
+- **`analysis` のファイル数が上限超過**: `find analysis -type f | wc -l` = **1436**（目安 約 400）。このジョブで 5 ファイル増やしたが、削除は行っていない（畳むのは対話セッションの担当）
+- **`check_doc_size.py` が落ちる**: この追記で `docs/research_loop.md` が **310 / 300 行** で上限超過。規則どおり commit はしたので、統合は対話セッションでお願いする
 
 ### 2026-10-23 j60 (d2 / d2ho / c10) 2D の 2 設定と CEC2022 10D を完走 — 2D では `recover_age=50` が 1 セルも効かず（`v4_k50_r50` は既定と bit 一致、`v4_k50fR_r50` は `v4_k50fR` と bit 一致）、`fR` を含む 2 腕のパネル CEC 順位は 4.44（基準 4.52）／SR@1e-10 は調整 94.8%（基準 94.4%）・hold-out 94.4%（基準 94.6%）。CEC2022 10D はパネル順位で 3 腕すべてが基準 6.62 を下回る（`v4_k50fR_r50` 5.54 が最良）が、13 手法の run 内順位では基準 8.83・腕も 6.29〜7.92 で比較手法（ARRDE 4.00・LSHADE-SPACMA 4.54・L-SHADE 4.96）に届かない。**CEC2022 20D はキューへ書き戻した**
 - **ランした分**: ジョブ (a) の 2 設定と (b) の 10D のみ。(a) `./run.sh quick --all --max-evals 5000 --n-runs 20 --instances 1-5 [--instances 6-10 --seed-offset 7] --methods "MC-ESO,v4_k50fR_r50,v4_k50fR,v4_k50_r50"` を **2 本同時に `--jobs 2` ずつ**（4 コアの取り分はジョブの `--jobs 4` 逐次と同じ。`run.sh` のとおり結果は `--jobs` に依らない）、`j60_d2` 13:46:39-14:13:44 = **27.1 分**・`j60_d2ho` 13:46:47-14:13:38 = **26.9 分**。(b) `--suite cec2022 --all --dim 10 --max-evals 25000 --n-runs 20` の 13 手法を 1 本 `--jobs 4` で、`j60_c10` 14:28:19-14:53:02 = **24.7 分**。shard 分割なし。合計 wall **66.4 分**。3 本とも `result.json` が `status=done`、2D は **各 24/24 関数**（summary 96 行 = 24×4・wilcoxon 72 行 = 24×3）、10D は **12/12 関数**（summary 156 行 = 12×13・wilcoxon 144 行 = 12×12、reference はすべて `MC-ESO`）。**`j60_d2` の MC-ESO は j57 の 2D パネルと 24 関数 × 20 run × 5 列が 1 セルも違わず一致（2400/2400）＝ パネル順位の比較は有効**

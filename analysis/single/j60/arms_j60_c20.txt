@@ -1,0 +1,59 @@
+run=results/20261023_160721_j60_c20_merged_quick (merged shards j60_c20a+j60_c20b) dim=20 ref=MC-ESO  functions=12 methods=['ARRDE', 'BIPOP-aCMA-ES', 'EBOwithCMAR', 'ELSHADE-SPACMA', 'IPOP-CMA-ES', 'L-SHADE', 'LSHADE-SPACMA', 'MC-ESO', 'NL-SHADE-RSP', 'RCMAES', 'v4_k50_r50', 'v4_k50fR', 'v4_k50fR_r50']
+
+=== per-function SR@1e-10 (ref -> arm), only functions that moved ===
+ARRDE: up 3 [G01 70->100, G03 0->10, G05 85->100] down 0 []
+BIPOP-aCMA-ES: up 3 [G01 70->100, G02 0->70, G11 0->5] down 1 [G05 85->35]
+EBOwithCMAR: up 2 [G01 70->100, G05 85->100] down 0 []
+ELSHADE-SPACMA: up 1 [G05 85->100] down 1 [G01 70->0]
+IPOP-CMA-ES: up 2 [G01 70->100, G05 85->100] down 0 []
+L-SHADE: up 1 [G05 85->100] down 1 [G01 70->0]
+LSHADE-SPACMA: up 3 [G01 70->85, G03 0->5, G05 85->100] down 0 []
+NL-SHADE-RSP: up 0 [] down 2 [G01 70->0, G05 85->0]
+RCMAES: up 4 [G01 70->100, G02 0->20, G03 0->45, G05 85->100] down 0 []
+v4_k50_r50: up 1 [G01 70->90] down 0 []
+v4_k50fR: up 2 [G01 70->100, G05 85->95] down 0 []
+v4_k50fR_r50: up 2 [G01 70->100, G05 85->95] down 0 []
+
+=== functions where ALL methods are 100% / 0% at 1e-10 ===
+100%: 0 []
+  0%: 7 ['G04', 'G06', 'G07', 'G08', 'G09', 'G10', 'G12']
+
+=== mean_best_f (CEC mean error), arms vs base ===
+func                      MC-ESO    v4_k50_r50      v4_k50fR  v4_k50fR_r50
+G01-Zakharov          1.5233e+03    3.4577e-04    0.0000e+00    0.0000e+00
+G02-Rosenbrock        4.8546e+01    4.7788e+01    4.2751e+01    4.2948e+01
+G03-SchafferF7        1.0711e-04    7.3673e-04    5.8015e-05    7.2722e-05
+G04-Rastrigin         2.6726e+01    2.6298e+01    2.1395e+01    2.1349e+01
+G05-Levy              1.9687e-02    1.6883e-02    4.4764e-03    4.4764e-03
+G06-Hybrid1           1.1216e+02    1.0657e+02    1.1066e+02    1.1045e+02
+G07-Hybrid2           4.3279e+01    4.0212e+01    3.1666e+01    2.9741e+01
+G08-Hybrid3           2.8177e+01    2.2846e+01    2.1930e+01    2.1574e+01
+G09-Composition1      1.8078e+02    1.8073e+02    1.8073e+02    1.8073e+02
+G10-Composition2      9.5669e+01    1.0065e+02    1.0062e+02    1.0061e+02
+G11-Composition3      3.3120e+02    3.3136e+02    2.4412e+02    2.4395e+02
+G12-Composition4      2.5455e+02    2.5095e+02    2.4659e+02    2.4440e+02
+
+=== evals_succ_mean, arms vs base (inf = no success) ===
+func                      MC-ESO    v4_k50_r50      v4_k50fR  v4_k50fR_r50
+G01-Zakharov               16120         15826         13729         13773
+G02-Rosenbrock               inf           inf         49846           inf
+G03-SchafferF7             24568         24467         24201         24467
+G04-Rastrigin                inf           inf           inf           inf
+G05-Levy                   14062         14068         15599         15746
+G06-Hybrid1                  inf           inf           inf           inf
+G07-Hybrid2                  inf           inf           inf           inf
+G08-Hybrid3                  inf           inf           inf           inf
+G09-Composition1             inf           inf           inf           inf
+G10-Composition2             inf           inf           inf           inf
+G11-Composition3           26810         26810         37687         36930
+G12-Composition4             inf           inf           inf           inf
+
+=== evals_succ_mean averaged over functions where BOTH have successes ===
+v4_k50_r50     n_func=4 (G01,G03,G05,G11)  base    20390  arm    20293  delta      -97
+v4_k50fR       n_func=4 (G01,G03,G05,G11)  base    20390  arm    22804  delta    +2414
+v4_k50fR_r50   n_func=4 (G01,G03,G05,G11)  base    20390  arm    22729  delta    +2339
+
+=== per-run identity (best_f/n_evals/success, 12 funcs x 20 runs = 720 cells) ===
+MC-ESO vs v4_k50_r50: 490/720 cells identical
+v4_k50fR vs v4_k50fR_r50: 552/720 cells identical
+MC-ESO vs v4_k50fR: 486/720 cells identical
