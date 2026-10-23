@@ -119,7 +119,7 @@
 
 
 
-1. **【予報の子のルート限定と、switch_pace なしの組み合わせ（10D のみ・j59 の残り）】** 手法 `"MC-ESO,v4_k50fR,v4_k50fR_r50,v4_k50f_r50,v4_k50f_np,v4_k50_r50,v4_k50fR_r50np"`、j50 と同じ 4 設定のうち **10D の 2 設定だけ**（`j59_a10` = `--all --dim 10 --max-evals 25000 --n-runs 20 --instances 1-5 --jobs 4`、`j59_a10ho` = 同じで `--instances 6-10 --seed-offset 7`）。5D の 2 設定（`j59_a5` / `j59_a5ho`）と 20D は測定済み。1 回の起動に収まらなければ設定ごとに書き戻してよい。**集計**: j50 と同じ（標準の集計 ＋ `cec_panel.py --dim 10 --panel analysis/single/j49/j49_p10`（hold-out は `j49_p10ho`））。関数別の SR@1e-10 では F21/F22 を必ず並べる。per-run stats は `analysis/single/j59/<label>/dim10/stats/`。**記録**: `analysis/single/j59/`。採否の判断はしない。
+1. **【予報の子のルート限定と、switch_pace なしの組み合わせ（10D のみ・j59 の残り）】** 手法 `"MC-ESO,v4_k50fR,v4_k50fR_r50,v4_k50f_r50,v4_k50f_np,v4_k50_r50,v4_k50fR_r50np"`、j50 と同じ 4 設定のうち **10D の 2 設定だけ**（`j59_a10` = `--all --dim 10 --max-evals 25000 --n-runs 20 --instances 1-5 --jobs 4`、`j59_a10ho` = 同じで `--instances 6-10 --seed-offset 7`）。5D の 2 設定（`j59_a5` / `j59_a5ho`）と 20D は測定済み。1 回の起動に収まらなければ設定ごとに書き戻してよい。**集計**: j50 と同じ（標準の集計 ＋ `cec_panel.py --dim 10 --panel analysis/single/j49/j49_p10`（hold-out は `j49_p10ho`））。関数別の SR@1e-10 では F21/F22 を必ず並べる。per-run stats は `analysis/single/j59/<label>/dim10/stats/`。**記録**: `analysis/single/j59/`。採否の判断はしない。 (claimed 2026-10-23 06:31 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
