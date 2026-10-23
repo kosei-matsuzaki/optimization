@@ -1,0 +1,65 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=5   ref=MC-ESO
+run: 20261023_043742_j59_a5_quick
+meta: n_runs=20 max_evals=12500 set=all-d5 commit=129268c
+functions: 24   methods: MC-ESO, v4_k50fR, v4_k50fR_r50, v4_k50f_r50, v4_k50f_np, v4_k50_r50, v4_k50fR_r50np
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            76.7%   78.3%   80.4%   81.2%        3919            
+  v4_k50fR          75.4%   77.5%   79.6%   81.0%        3675         0/2
+  v4_k50fR_r50      76.9%   78.3%   80.4%   81.2%        3841         0/0
+  v4_k50f_r50       77.9%   78.8%   79.8%   79.8%        3165         0/2
+  v4_k50f_np        78.3%   78.8%   80.0%   80.2%        3390         0/2
+  v4_k50_r50        76.7%   77.7%   79.8%   80.8%        4023         0/0
+  v4_k50fR_r50np    76.7%   77.7%   79.6%   80.4%        3561         0/0
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%        v4_k50fR 100%            1744/1744
+  F02-EllipsoidalSep              100%        v4_k50fR 100%            3391/2588
+  F03-RastriginSep                100%        v4_k50fR 100%            4692/4494
+  F04-BucheRastrigin               85%       v4_k50f_np 95%            4803/4514  <-- ref behind
+  F05-LinearSlope                 100%        v4_k50fR 100%            2553/2530
+  F06-AttractiveSector            100%        v4_k50fR 100%            3520/3520
+  F07-StepEllipsoidal             100%        v4_k50fR 100%            1587/1587
+  F08-Rosenbrock                  100%        v4_k50fR 100%            3863/3863
+  F09-RosenbrockRot               100%        v4_k50fR 100%            3915/3824
+  F10-EllipsoidalRot              100%        v4_k50fR 100%            3425/2957
+  F11-Discus                      100%        v4_k50fR 100%            3296/2400
+  F12-BentCigar                   100%        v4_k50fR 100%            5244/5346
+  F13-SharpRidge                  100%        v4_k50fR 100%            3706/3660
+  F14-DiffPowers                  100%        v4_k50fR 100%            2099/2100
+  F15-RastriginRot                  5%     v4_k50fR_r50 10%            6453/6514  <-- ref behind
+  F16-Weierstrass                  60%       v4_k50f_np 80%            5343/4138  <-- ref behind
+  F17-SchafferF7                   80%      v4_k50f_r50 95%            4155/3470  <-- ref behind
+  F18-SchafferF7ill                55%     v4_k50fR_r50 70%            4655/4197  <-- ref behind
+  F19-GriewankRosenbrock           10%          v4_k50fR 0%                    -
+  F20-Schwefel                      5%     v4_k50fR_r50 15%            3209/6201  <-- ref behind
+  F21-Gallagher101                 95%     v4_k50f_r50 100%            3097/2904  <-- ref behind
+  F22-Gallagher21                 100%     v4_k50f_r50 100%            3775/3553
+  F23-Katsuura                     45%       v4_k50f_np 55%            5264/4817  <-- ref behind
+  F24-LunacekRastrigin              0%          v4_k50fR 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F04-BucheRastrigin     vs v4_k50fR       p=0.0269 A12=0.41 (small)
+  F06-AttractiveSector   vs v4_k50f_np     p=0.00647 A12=0.26 (large)
+  F06-AttractiveSector   vs v4_k50f_r50    p=0.0205 A12=0.23 (large)
+  F17-SchafferF7         vs v4_k50f_r50    p=0.0172 A12=0.20 (large)
+  F20-Schwefel           vs v4_k50fR       p=0.0159 A12=0.39 (small)
+  F20-Schwefel           vs v4_k50f_np     p=0.0157 A12=0.29 (medium)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v4_k50fR_r50           mean rank   3.50   best on 16/24
+   2. v4_k50_r50             mean rank   3.88   best on 13/24
+   3. v4_k50fR               mean rank   4.00   best on 14/24
+   4. v4_k50fR_r50np         mean rank   4.06   best on 14/24
+   5. v4_k50f_np             mean rank   4.06   best on 15/24
+   6. MC-ESO                 mean rank   4.12   best on 14/24  <- ref
+   7. v4_k50f_r50            mean rank   4.38   best on 15/24
+

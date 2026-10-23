@@ -1,0 +1,62 @@
+methods: ['MC-ESO', 'v4_k50fR', 'v4_k50fR_r50', 'v4_k50f_r50', 'v4_k50f_np', 'v4_k50_r50', 'v4_k50fR_r50np']
+funcs: 24
+
+[A] OVERALL  SR@1e-10 / 1e-7 / 1e-4 / 1e-2  (mean over 24 funcs), evals_succ_mean over own successes
+  MC-ESO              76.7  77.7  78.8  79.4   evals_own=  3958.1 (n=22)
+  v4_k50fR            77.1  78.1  79.4  79.8   evals_own=  3824.0 (n=22)
+  v4_k50fR_r50        75.4  76.7  77.7  78.1   evals_own=  3916.1 (n=22)
+  v4_k50f_r50         75.0  75.4  76.9  78.1   evals_own=  3353.8 (n=20)
+  v4_k50f_np          75.8  76.0  77.5  77.9   evals_own=  3568.8 (n=21)
+  v4_k50_r50          75.8  76.7  77.9  78.5   evals_own=  4046.4 (n=22)
+  v4_k50fR_r50np      75.6  76.5  77.7  78.1   evals_own=  3953.0 (n=22)
+
+[B] evals_succ_mean PAIRED (only funcs where BOTH ref and arm have successes)
+  v4_k50fR           arm    3824.0 vs ref    3958.1   (common 22)
+  v4_k50fR_r50       arm    3916.1 vs ref    3958.1   (common 22)
+  v4_k50f_r50        arm    3353.8 vs ref    3779.1   (common 20)
+  v4_k50f_np         arm    3568.8 vs ref    3977.2   (common 21)
+  v4_k50_r50         arm    4046.4 vs ref    3958.1   (common 22)
+  v4_k50fR_r50np     arm    3953.0 vs ref    3958.1   (common 22)
+
+[C] PER-FUNCTION SR@1e-10 change (ref -> arm), only funcs that moved
+  v4_k50fR           up 2 [F20 5->10, F23 45->65] down 3 [F16 70->65, F21 85->80, F22 95->90]
+  v4_k50fR_r50       up 1 [F17 85->90] down 5 [F16 70->65, F18 70->55, F21 85->80, F22 95->90, F23 45->40]
+  v4_k50f_r50        up 2 [F18 70->75, F23 45->60] down 7 [F03 100->85, F04 75->65, F15 10->0, F17 85->75, F20 5->0, F21 85->80, F22 95->90]
+  v4_k50f_np         up 3 [F16 70->75, F21 85->90, F23 45->65] down 5 [F03 100->80, F04 75->65, F15 10->5, F17 85->75, F20 5->0]
+  v4_k50_r50         up 2 [F17 85->90, F21 85->95] down 4 [F16 70->65, F18 70->55, F22 95->90, F23 45->35]
+  v4_k50fR_r50np     up 2 [F17 85->90, F21 85->95] down 4 [F16 70->65, F18 70->55, F22 95->90, F23 45->30]
+
+[D] SR@1e-10 by function, all methods (%%)
+  function                          MC-ESO        v4_k50fR    v4_k50fR_r50     v4_k50f_r50      v4_k50f_np      v4_k50_r50  v4_k50fR_r50np
+  F01-Sphere                           100             100             100             100             100             100             100
+  F02-EllipsoidalSep                   100             100             100             100             100             100             100
+  F03-RastriginSep                     100             100             100              85              80             100             100
+  F04-BucheRastrigin                    75              75              75              65              65              75              75
+  F05-LinearSlope                      100             100             100             100             100             100             100
+  F06-AttractiveSector                 100             100             100             100             100             100             100
+  F07-StepEllipsoidal                  100             100             100             100             100             100             100
+  F08-Rosenbrock                       100             100             100             100             100             100             100
+  F09-RosenbrockRot                    100             100             100             100             100             100             100
+  F10-EllipsoidalRot                   100             100             100             100             100             100             100
+  F11-Discus                           100             100             100             100             100             100             100
+  F12-BentCigar                        100             100             100             100             100             100             100
+  F13-SharpRidge                       100             100             100             100             100             100             100
+  F14-DiffPowers                       100             100             100             100             100             100             100
+  F15-RastriginRot                      10              10              10               0               5              10              10
+  F16-Weierstrass                       70              65              65              70              75              65              65
+  F17-SchafferF7                        85              85              90              75              75              90              90
+  F18-SchafferF7ill                     70              70              55              75              70              55              55
+  F19-GriewankRosenbrock                 0               0               0               0               0               0               0
+  F20-Schwefel                           5              10               5               0               0               5               5
+  F21-Gallagher101                      85              80              80              80              90              95              95
+  F22-Gallagher21                       95              90              90              90              95              90              90
+  F23-Katsuura                          45              65              40              60              65              35              30
+  F24-LunacekRastrigin                   0               0               0               0               0               0               0
+
+[E] WILCOXON (reference=MC-ESO, p_two<0.05). 'ref wins' = A12>0.5
+  v4_k50fR           ref wins 0 []  ref loses 0 []
+  v4_k50fR_r50       ref wins 0 []  ref loses 1 [F17 A12=0.39 small]
+  v4_k50f_r50        ref wins 0 []  ref loses 2 [F06 A12=0.25 large, F19 A12=0.34 medium]
+  v4_k50f_np         ref wins 0 []  ref loses 0 []
+  v4_k50_r50         ref wins 0 []  ref loses 1 [F17 A12=0.39 small]
+  v4_k50fR_r50np     ref wins 0 []  ref loses 1 [F17 A12=0.39 small]
