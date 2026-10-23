@@ -120,7 +120,7 @@
 
 
 
-1. **【候補 `v4_k50fR_r50` の確認（2D と CEC2022）】** j59 で 5D は雑音の範囲（4.12/4.15 対 基準 4.06/4.10）、10D 4.25/4.46（基準 4.62/4.75）、20D 4.73（基準 5.81）、SR@1e-10 は 10D 63.5/63.8%（基準 64.2/63.3%）、20D 37.1%（35.4%）だった腕を、残りの条件で確かめる。比べるのは `"MC-ESO,v4_k50fR_r50,v4_k50fR,v4_k50_r50"`。
+1. **【候補 `v4_k50fR_r50` の確認（2D と CEC2022）】** j59 で 5D は雑音の範囲（4.12/4.15 対 基準 4.06/4.10）、10D 4.25/4.46（基準 4.62/4.75）、20D 4.73（基準 5.81）、SR@1e-10 は 10D 63.5/63.8%（基準 64.2/63.3%）、20D 37.1%（35.4%）だった腕を、残りの条件で確かめる。比べるのは `"MC-ESO,v4_k50fR_r50,v4_k50fR,v4_k50_r50"`。 (claimed 2026-10-23 13:30 UTC)
    (a) 2D: `./run.sh quick --all --max-evals 5000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_k50fR_r50,v4_k50fR,v4_k50_r50" --jobs 4`（label `j60_d2`）と、`--instances 6-10 --seed-offset 7`（label `j60_d2ho`）。2D のパネルは `analysis/single/j57/j57_d2`（instance 1-5 の比較 9 手法入り。hold-out は同じ run の中の 4 手法だけの比較で可）。
    (b) CEC2022: `./run.sh quick --suite cec2022 --all --dim D --max-evals B --n-runs 20 --methods "MC-ESO,v4_k50fR_r50,v4_k50fR,v4_k50_r50,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 4` を (10, 25000, `j60_c10`)、(20, 50000, `j60_c20`)。
    **集計**: 標準の集計を `MC-ESO` を reference に、パネル内 CEC 順位（腕を 1 つずつ MC-ESO と差し替え。CEC2022 は同じ run の比較 9 手法がパネル）、関数別の SR@1e-10 と平均誤差の変化を全関数列挙。2D の (a) の MC-ESO が j57 の 2D と一致するかも書く。**記録**: `analysis/single/j60/`。採否の判断はしない。
