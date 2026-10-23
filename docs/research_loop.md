@@ -120,7 +120,7 @@
 
 
 
-1. **【候補 `v4_k50fR_r50` の確認（CEC2022 20D のみ。j60 の残り）】** j60 で 2D の 2 設定と CEC2022 10D は測り終えた（結果は作業ログ 2026-10-23 j60）。残りは CEC2022 20D だけ。比べるのは `"MC-ESO,v4_k50fR_r50,v4_k50fR,v4_k50_r50"`。
+1. **【候補 `v4_k50fR_r50` の確認（CEC2022 20D のみ。j60 の残り）】** j60 で 2D の 2 設定と CEC2022 10D は測り終えた（結果は作業ログ 2026-10-23 j60）。残りは CEC2022 20D だけ。比べるのは `"MC-ESO,v4_k50fR_r50,v4_k50fR,v4_k50_r50"`。 (claimed 2026-10-23 15:30 UTC)
    `./run.sh quick --suite cec2022 --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v4_k50fR_r50,v4_k50fR,v4_k50_r50,ELSHADE-SPACMA,LSHADE-SPACMA,EBOwithCMAR,L-SHADE,IPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES" --jobs 4`（label `j60_c20`）。10D は 24.7 分だったので 20D は 90 分に収まらない見込み＝関数 shard に分けて回す（`--all --funcs` を併用し、label を分ける）。
    **集計**: 標準の集計を `MC-ESO` を reference に、パネル内 CEC 順位（腕を 1 つずつ MC-ESO と差し替え。パネルは同じ run の比較 9 手法 ＝ `cec_panel.py --dim 20 --panel <run> --arms <run> --base MC-ESO --drop "v4_k50fR,v4_k50fR_r50,v4_k50_r50"`）、関数別の SR@1e-10 と平均誤差の変化を全関数列挙。**記録**: `analysis/single/j60/`。採否の判断はしない。
 
