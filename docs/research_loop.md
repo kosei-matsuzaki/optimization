@@ -119,7 +119,7 @@
 
 
 
-1. **【予報の子のルート限定と、switch_pace なしの組み合わせ（5D/10D）】** 手法 `"MC-ESO,v4_k50fR,v4_k50fR_r50,v4_k50f_r50,v4_k50f_np,v4_k50_r50,v4_k50fR_r50np"`、j50 と同じ 4 設定（label `j59_a5` / `j59_a5ho` / `j59_a10` / `j59_a10ho`、`--jobs 4`）。1 回の起動に収まらなければ設定ごとに書き戻してよい。**集計**: j50 と同じ。関数別の SR@1e-10 では F21/F22 を必ず並べる。per-run stats は `analysis/single/j59/<label>/dim<D>/stats/`。**記録**: `analysis/single/j59/`。採否の判断はしない。
+1. **【予報の子のルート限定と、switch_pace なしの組み合わせ（5D/10D）】** 手法 `"MC-ESO,v4_k50fR,v4_k50fR_r50,v4_k50f_r50,v4_k50f_np,v4_k50_r50,v4_k50fR_r50np"`、j50 と同じ 4 設定（label `j59_a5` / `j59_a5ho` / `j59_a10` / `j59_a10ho`、`--jobs 4`）。1 回の起動に収まらなければ設定ごとに書き戻してよい。**集計**: j50 と同じ。関数別の SR@1e-10 では F21/F22 を必ず並べる。per-run stats は `analysis/single/j59/<label>/dim<D>/stats/`。**記録**: `analysis/single/j59/`。採否の判断はしない。 (claimed 2026-10-23 04:30 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
