@@ -816,7 +816,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # the global best) until it overtakes the global best. Otherwise a fresh
         # outbreak cannot "improve" until it beats the old best and is cut after
         # one window (10D F15: a basin switch every ~1660 evaluations).
-        switch_pace: bool = False,
+        # Default from 2026-10-30 (v4_k50fR_r50; was False).
+        switch_pace: bool = True,
         # Pacing only while the outbreak can still overtake (2026-10-16): a
         # paced step resets the stall count only if, at the log-rate of that
         # step, the outbreak would reach the global best within this fraction
@@ -867,7 +868,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # (None = keep only the best). On 20D F09 / F07 a spillover fires every
         # ~3200 evaluations while the population is still creeping along the
         # curved valley, and re-seeding everyone but the best destroys it.
-        spill_keep: "float | None" = None,
+        # Default 0.5 from 2026-10-30 (v4_k50fR_r50; was None).
+        spill_keep: "float | None" = 0.5,
         # Still spreading (2026-10-20, ≥3D): no ordinary spillover while the
         # population's median f fell by more than this many decades over the
         # last stagnation window (None = off): the best has stalled but the
@@ -878,7 +880,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # to the better half of the hosts, y = Vᵀ(x − x_best) in the learned
         # C's eigenbasis (coordinates with c_i ≤ 0 do not move; the step is
         # capped at the population's radius). Replaces the worst host if better.
-        forecast: bool = False,
+        # Default from 2026-10-30 (v4_k50fR_r50; was False).
+        forecast: bool = True,
         # Droplet pull toward a random host of the best h2h_pbest fraction
         # instead of a niched strain (None = strains), as JADE's current-to-pbest.
         h2h_pbest: "float | None" = None,
@@ -889,7 +892,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # generations — none of their children has displaced them as worst, so
         # they have stopped transmitting — are removed first, up to half of
         # each generation's kill quota, never the best fifth (None = SI only).
-        recover_age: "int | None" = None,
+        # Default 50 from 2026-10-30 (v4_k50fR_r50; was None).
+        recover_age: "int | None" = 50,
         # Chain tracing (2026-10-22, ≥3D): before an ordinary spillover, a
         # golden-section line search from the best host along each of the
         # learned C's top-2 axes (≤ 2·40 evaluations); the spillover is skipped
@@ -901,7 +905,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # forecast only on runs the channel router committed to DROPLET (the
         # ill-conditioned valleys it was measured to help), not on multimodal
         # keep-air runs (Gallagher, where it misleads).
-        forecast_route: bool = False,
+        # Default from 2026-10-30 (v4_k50fR_r50; was False).
+        forecast_route: bool = True,
         switch_grow: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
