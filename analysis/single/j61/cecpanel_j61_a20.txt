@@ -1,0 +1,16 @@
+dim 20: 24 functions, panel = MC-ESO + EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, RCMAES, v4_pace
+  MC-ESO                 mean rank  5.81
+  ctl_plainwave          mean rank  4.23   mean error below base on 16, above on 4
+      rank moved: F02 7.5->4, F04 2.5->3, F06 7.5->2.5, F07 7.5->8, F08 7.5->5, F09 6.5->3, F10 5.5->2.5, F11 7.5->2.5, F12 7.5->3, F13 7.5->7, F16 4->3, F17 8->7, F18 8->7, F19 8->5, F20 5.5->6, F23 6->1, F24 8->7
+  v4_k50fR_r50           mean rank  4.73   mean error below base on 15, above on 5
+      rank moved: F02 7.5->7, F04 2.5->3, F06 7.5->4, F07 7.5->8, F08 7.5->7, F09 6.5->5, F10 5.5->7, F11 7.5->2.5, F12 7.5->5, F13 7.5->4, F16 4->3, F17 8->7, F18 8->7, F19 8->5, F20 5.5->6, F23 6->1, F24 8->7
+  v5_chainR              mean rank  4.69   mean error below base on 16, above on 4
+      rank moved: F02 7.5->7, F04 2.5->2, F06 7.5->4, F07 7.5->8, F08 7.5->7, F09 6.5->5, F10 5.5->7, F11 7.5->2.5, F12 7.5->5, F13 7.5->4, F16 4->3, F17 8->7, F18 8->7, F19 8->5, F20 5.5->6, F23 6->1, F24 8->7
+  v5_herd                mean rank  4.62   mean error below base on 15, above on 5
+      rank moved: F02 7.5->4, F04 2.5->2, F06 7.5->4, F07 7.5->8, F08 7.5->6, F09 6.5->5, F10 5.5->2.5, F11 7.5->2.5, F12 7.5->6, F13 7.5->8, F19 8->5, F20 5.5->6, F23 6->1, F24 8->6
+  v5_paceR               mean rank  5.10   mean error below base on 13, above on 7
+      rank moved: F02 7.5->7, F04 2.5->3, F06 7.5->4, F07 7.5->8, F08 7.5->7, F09 6.5->5, F10 5.5->7, F11 7.5->2.5, F12 7.5->5, F13 7.5->4, F20 5.5->6, F23 6->3
+  v5_pmax3               mean rank  4.73   mean error below base on 15, above on 5
+      rank moved: F02 7.5->7, F04 2.5->3, F06 7.5->4, F07 7.5->8, F08 7.5->7, F09 6.5->5, F10 5.5->7, F11 7.5->2.5, F12 7.5->5, F13 7.5->4, F16 4->3, F17 8->7, F18 8->7, F19 8->5, F20 5.5->6, F23 6->1, F24 8->7
+  v5_slow5               mean rank  5.10   mean error below base on 14, above on 6
+      rank moved: F02 7.5->7, F04 2.5->3, F06 7.5->6, F07 7.5->8, F08 7.5->7, F09 6.5->5, F10 5.5->7, F11 7.5->2.5, F12 7.5->4, F13 7.5->5, F17 8->7, F18 8->7, F20 5.5->6, F23 6->3

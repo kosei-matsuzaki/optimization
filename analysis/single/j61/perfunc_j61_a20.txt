@@ -1,0 +1,65 @@
+== SR@1e-10 per function (ref = MC-ESO = new default; v4_k50fR_r50 identical to ref) ==
+function                        MC-ESO ctl_plainwave      v5_paceR      v5_pmax3       v5_herd      v5_slow5     v5_chainR
+F01-Sphere                        100%          100%          100%          100%          100%          100%          100%
+F02-EllipsoidalSep                 95%          100%           95%           95%          100%           95%           95%
+F03-RastriginSep                  100%          100%          100%          100%          100%          100%          100%
+F04-BucheRastrigin                  0%            0%            0%            0%            5%            0%            5%
+F05-LinearSlope                   100%          100%          100%          100%          100%          100%          100%
+F06-AttractiveSector               30%           55%           30%           30%           80%            5%           30%
+F07-StepEllipsoidal                10%            0%           10%           10%            0%           10%           10%
+F08-Rosenbrock                      0%            0%            0%            0%           20%            0%            0%
+F09-RosenbrockRot                   5%            0%            5%            5%           10%            5%            5%
+F10-EllipsoidalRot                 95%          100%           95%           95%          100%           95%           95%
+F11-Discus                        100%          100%          100%          100%          100%          100%          100%
+F12-BentCigar                      80%           70%           80%           80%           55%           70%           80%
+F13-SharpRidge                     25%            0%           25%           25%            0%           30%           25%
+F14-DiffPowers                    100%          100%          100%          100%          100%          100%          100%
+F15-RastriginRot                    0%            0%            0%            0%            0%            0%            0%
+F16-Weierstrass                     0%            0%            0%            0%            0%            0%            0%
+F17-SchafferF7                      0%            0%            0%            0%            0%            0%            0%
+F18-SchafferF7ill                   0%            0%            0%            0%            0%            0%            0%
+F19-GriewankRosenbrock              0%            0%            0%            0%            0%            0%            0%
+F20-Schwefel                        0%            0%            0%            0%            0%            0%            0%
+F21-Gallagher101                   45%           45%           40%           45%           45%           40%           45%
+F22-Gallagher21                     5%            5%            5%            5%            5%            5%            5%
+F23-Katsuura                        0%            0%            0%            0%            0%            0%            0%
+F24-LunacekRastrigin                0%            0%            0%            0%            0%            0%            0%
+
+== SR@1e-10 changes vs ref (all functions where it moved) ==
+ctl_plainwave: F02 95%->100%, F06 30%->55%, F07 10%->0%, F09 5%->0%, F10 95%->100%, F12 80%->70%, F13 25%->0%
+v5_paceR: F21 45%->40%
+v5_pmax3: none
+v5_herd: F02 95%->100%, F04 0%->5%, F06 30%->80%, F07 10%->0%, F08 0%->20%, F09 5%->10%, F10 95%->100%, F12 80%->55%, F13 25%->0%
+v5_slow5: F06 30%->5%, F12 80%->70%, F13 25%->30%, F21 45%->40%
+v5_chainR: F04 0%->5%
+(dim_dir: 'Path') -> 'dict[str, dict[str, float]]'
+
+== CEC mean error (per-run f-f*, <1e-8 as 0) on the functions the job names ==
+function                     MC-ESO ctl_plainwav     v5_paceR     v5_pmax3      v5_herd     v5_slow5    v5_chainR
+F07-StepEllipsoidal           1.356        1.352        1.356        1.356         1.89        1.288        1.356
+F08-Rosenbrock                7.198       0.4711        7.198        7.198        4.825        7.347        7.198
+F09-RosenbrockRot             2.146       0.1468        2.146        2.146        1.626        3.559        2.146
+F10-EllipsoidalRot         0.008761            0     0.008761     0.008761            0     0.008761     0.007257
+F15-RastriginRot              22.22        22.22        38.22        22.22        23.55        31.35        22.22
+F17-SchafferF7              0.02389      0.02048      0.04778      0.02389      0.08589       0.0153      0.02389
+F18-SchafferF7ill            0.1278       0.1252       0.5473       0.1222       0.3968      0.07342       0.1278
+F21-Gallagher101             0.6133       0.6133       0.7737       0.6133       0.5559       0.8011       0.6133
+F22-Gallagher21                1.29         1.29        1.034         1.29         1.16        1.655         1.29
+F24-LunacekRastrigin          59.68        59.68        73.91        59.68        56.32        81.72        59.68
+
+== evals_succ_mean, averaged over functions where BOTH ref and arm have successes ==
+  v4_k50fR_r50     n_funcs=24  ref      inf  arm      inf  diff     +nan
+  ctl_plainwave    n_funcs=24  ref      inf  arm      inf  diff     +nan
+  v5_paceR         n_funcs=24  ref      inf  arm      inf  diff     +nan
+  v5_pmax3         n_funcs=24  ref      inf  arm      inf  diff     +nan
+  v5_herd          n_funcs=24  ref      inf  arm      inf  diff     +nan
+  v5_slow5         n_funcs=24  ref      inf  arm      inf  diff     +nan
+  v5_chainR        n_funcs=24  ref      inf  arm      inf  diff     +nan
+== evals_succ_mean, averaged over functions where BOTH ref and arm have successes ==
+  v4_k50fR_r50     n_funcs=15  ref  26099.8  arm  26099.8  diff     +0.0
+  ctl_plainwave    n_funcs=12  ref  22796.3  arm  23551.4  diff   +755.1
+  v5_paceR         n_funcs=15  ref  26099.8  arm  26188.4  diff    +88.6
+  v5_pmax3         n_funcs=15  ref  26099.8  arm  26099.8  diff     +0.0
+  v5_herd          n_funcs=14  ref  25795.6  arm  24947.9  diff   -847.7
+  v5_slow5         n_funcs=15  ref  26099.8  arm  26030.4  diff    -69.4
+  v5_chainR        n_funcs=15  ref  26099.8  arm  25819.1  diff   -280.7
