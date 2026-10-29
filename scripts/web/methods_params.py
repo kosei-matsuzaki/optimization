@@ -21,16 +21,22 @@ sys.path.insert(0, str(ROOT))
 OUT = ROOT / "web" / "static" / "methods_params.json"
 
 # Mechanism groups, in page order: (label, predicate on the parameter name).
+# v5 arms (2026-10-30, all off by default); kept in their own group.
+V5 = ("pace_route", "pace_max", "herd_child", "keepair_slow", "chain_route")
+
 GROUPS = [
-    ("集団と選択", lambda n: n.startswith(("n_pop", "pop_")) or n in ("kill_fraction", "softmax_beta")),
-    ("伝染経路（接触・飛沫・空気）", lambda n: n.startswith(("air_", "h2h_", "droplet_")) or n in ("cc_air_ratio", "cc_h2h_ratio", "host_sigma_min_scale")),
+    ("集団と選択", lambda n: n.startswith(("n_pop", "pop_")) or n in ("kill_fraction", "softmax_beta", "select_rank", "init_lhs")),
+    ("伝染経路（接触・飛沫・空気）", lambda n: n.startswith(("air_", "h2h_", "droplet_")) or n in ("cc_air_ratio", "cc_h2h_ratio", "host_sigma_min_scale", "close_mirror")),
     ("チャネルルーター", lambda n: n.startswith(("channel_", "cond_", "align_", "close_", "route_", "router_"))),
     ("集団共分散の下限", lambda n: n.startswith(("empirical_cov", "cov_"))),
     ("学習共分散（3 次元以上）", lambda n: n.startswith("cc_")),
     ("歩幅 σ", lambda n: n.startswith(("sigma", "precision_", "hd_sigma")) or n == "log_slope_threshold"),
-    ("スピルオーバーと再着火", lambda n: n.startswith(("restart_", "basin_", "ir_"))),
-    ("組換え波（3 次元以上）", lambda n: n.startswith(("wave_", "hd_wave"))),
+    ("スピルオーバー・乗換え・回復", lambda n: n not in V5 and n.startswith(("restart_", "basin_", "ir_", "spill_", "switch_", "pace_", "recover_", "chain_"))),
+    ("予報の子（3 次元以上）", lambda n: n.startswith("forecast")),
+    ("組換え波（3 次元以上）", lambda n: n.startswith(("wave_", "hd_wave")) or n == "handover_frac"),
     ("再集合の掃引", lambda n: n.startswith("reassort_")),
+    ("変異株の競合・試し打ち（不採用）", lambda n: n.startswith(("strain_", "probe_"))),
+    ("v5 の腕（実験中）", lambda n: n in V5),
     ("系統と逐次 niching", lambda n: n.startswith(("n_elite", "niche_", "exhausted_", "hunt_", "solution_"))),
 ]
 STATUS = [("不採用", "rejected"), ("診断用", "diagnostic"), ("実験中", "experimental")]

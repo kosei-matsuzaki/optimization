@@ -100,7 +100,10 @@ function renderResults(dim) {
 
   document.getElementById('res-meta').innerHTML =
     `${run.dim} 次元、${run.n_runs} run、予算 ${Number(run.max_evals).toLocaleString()} 評価。`
-    + `結果 <code>${esc(run.run)}</code>（commit <code>${esc(run.commit)}</code>）`;
+    + `結果 <code>${esc(run.run)}</code>（commit <code>${esc(run.commit)}</code>）`
+    + ((run.created_at || '') < LAST_DEFAULT_CHANGE
+      ? `。この run の MC-ESO は当時の既定（いまの ${esc(PREV_DEFAULT)}）`
+      : '');
 
   const order = [...run.methods].sort((a, b) =>
     (run.overall[b]['sr_1e-10'] ?? -1) - (run.overall[a]['sr_1e-10'] ?? -1));
@@ -131,6 +134,11 @@ function renderResults(dim) {
   renderHeat(run, order, ref);
 }
 
+// The latest MC-ESO default change and the arm that keeps the default before it
+// (quick_check.py). A run recorded earlier shows that default under "MC-ESO".
+const LAST_DEFAULT_CHANGE = '2026-10-30';
+const PREV_DEFAULT = 'MC-ESO-v3';
+
 // Reading notes, computed from the same data so they cannot drift from the table.
 function notesFor(run, order, ref) {
   const o = run.overall;
@@ -151,7 +159,7 @@ function notesFor(run, order, ref) {
   s += '</p>';
 
   // Compare with the most recent earlier default present in the run.
-  const v0 = [`${ref}-v2`, `${ref}-v1`, `${ref}-v0`].find(m => o[m]);
+  const v0 = [`${ref}-v3`, `${ref}-v2`, `${ref}-v1`, `${ref}-v0`].find(m => o[m]);
   if (v0) {
     const diff = (refSr - o[v0]['sr_1e-10']) * 100;
     const up = [], down = [];

@@ -1,5 +1,5 @@
 {
- "n_params": 85,
+ "n_params": 140,
  "groups": [
   {
    "label": "集団と選択",
@@ -57,6 +57,41 @@
      ],
      "meaning": "親（感染源）選択の選択圧。<code>w ∝ exp(−beta × (f_i − f_min)/(f_max − f_min))</code> と集団の f 範囲で正規化するため、f のスケールにも次元にも依存しない。0.0 で旧式 <code>exp(f_max − f_i)</code>（絶対差依存＝収束後は一様選択に退化）に復帰。β=8 は高次元で更に強いが dim2 を −2.29pt 落とすため不採用",
      "status": ""
+    },
+    {
+     "names": [
+      "select_rank"
+     ],
+     "doc_default": "None",
+     "code_default": [
+      "None"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-17）。3 次元以上で親の重みを f の範囲でなく順位で <code>exp(−β·rank/(n−1))</code>（この値が β）",
+     "status": "rejected"
+    },
+    {
+     "names": [
+      "init_lhs"
+     ],
+     "doc_default": "False",
+     "code_default": [
+      "False"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-14、雑音の範囲）。初期の宿主をラテン超方格で置く",
+     "status": "rejected"
+    },
+    {
+     "names": [
+      "pop_init_hd",
+      "pop_init_cap"
+     ],
+     "doc_default": "None / None",
+     "code_default": [
+      "None",
+      "None"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-18 / 10-13）。3 次元以上の初期集団を <code>max(20, この値·D)</code> にする（20D は良いが 5D / 10D で悪化）／初期集団の上限",
+     "status": "rejected"
     }
    ]
   },
@@ -152,6 +187,43 @@
      ],
      "meaning": "飛沫の差分構造。<code>best2_droplet</code>（デフォルト）＝ droplet ルート確定 run のみ第 2 差分ベクトルを追加 (current-to-best/2)、他ルートは current-to-best/1 で base と bit-identical。<code>\"cur2best\"</code> で全ルート単一差分（旧挙動、回帰リファレンス）。route-gate なので悪条件 (F13/F14) を救出しつつ多峰 keep-air を無傷にする（グローバル第 2 差分は多峰を毀損）",
      "status": ""
+    },
+    {
+     "names": [
+      "close_mirror"
+     ],
+     "doc_default": "False",
+     "code_default": [
+      "False"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-17）。3 次元以上で接触感染の子を同じ親から符号を反転した雑音の対で作る",
+     "status": "rejected"
+    },
+    {
+     "names": [
+      "h2h_dither",
+      "h2h_pbest",
+      "h2h_archive"
+     ],
+     "doc_default": "None / None / False",
+     "code_default": [
+      "None",
+      "None",
+      "False"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-17 / 10-20）。飛沫の F を子ごとに N(<code>h2h_F</code>, この値) から引く／引力の対象を系統でなく上位この割合の宿主から（JADE の current-to-pbest）／差分の x_b を集団 ＋ 押し出された宿主から引く（JADE の保管庫）",
+     "status": "rejected"
+    },
+    {
+     "names": [
+      "air_cauchy"
+     ],
+     "doc_default": "False",
+     "code_default": [
+      "False"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-14、雑音の範囲）。空気感染の跳躍をガウスでなくコーシーで",
+     "status": "rejected"
     }
    ]
   },
@@ -367,6 +439,17 @@
      ],
      "meaning": "通常の spillover では学習 <code>C</code> を保持し、basin 乗換えのときだけリセット。毎回リセットすると F12-BentCigar のように「C が一方向へ伸びきること」が解の条件の関数を永久に解けない",
      "status": ""
+    },
+    {
+     "names": [
+      "cc_chain"
+     ],
+     "doc_default": "False",
+     "code_default": [
+      "False"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-14）。学習 C に、流行の中心（上位 1/4 の平均）の累積移動方向の rank-1 項を足す（CMA-ES の進化パスの考え方）。波なしでは効くが既定の上では雑音の範囲",
+     "status": "rejected"
     }
    ]
   },
@@ -473,11 +556,22 @@
      ],
      "meaning": "3 次元以上の σ の「改善」判定: 接触感染の子のうち親に勝った割合がこれを超えたら σ を上げる。None で 2D と同じ「最良が更新されたら」",
      "status": ""
+    },
+    {
+     "names": [
+      "sigma_batch"
+     ],
+     "doc_default": "None",
+     "code_default": [
+      "None"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-17）。3 次元以上で 1 世代の σ の係数を（その世代の評価数 / この値）乗にする",
+     "status": "rejected"
     }
    ]
   },
   {
-   "label": "スピルオーバーと再着火",
+   "label": "スピルオーバー・乗換え・回復",
    "rows": [
     {
      "names": [
@@ -599,6 +693,120 @@
      ],
      "meaning": "3 次元以上での再着火の割合（段差）。既定の 0 で 3 次元以上は再着火なし（高次元では Gallagher を既知の峰に引き戻していた）。None で全次元 <code>ir_archive_frac</code>",
      "status": ""
+    },
+    {
+     "names": [
+      "spill_keep"
+     ],
+     "doc_default": "<b>0.5</b>（2026-10-30、旧 None）",
+     "code_default": [
+      "0.5"
+     ],
+     "meaning": "<b>隔離</b>（3 次元以上）。通常のスピルオーバーで f の上位この割合の宿主をそのまま残し、残りだけ撒き直す。None で最良 1 体だけ残す（旧挙動）。20D の F07 / F09 では曲がった谷をまだ這っている集団を約 3200 評価ごとのスピルオーバーが壊していた。盆地乗換えでは従来どおり全体を撒き直す",
+     "status": ""
+    },
+    {
+     "names": [
+      "switch_pace"
+     ],
+     "doc_default": "<b>True</b>（2026-10-30、旧 False）",
+     "code_default": [
+      "True"
+     ],
+     "meaning": "<b>乗換え後の延命</b>（全次元）。盆地乗換えの後は、新しい流行自身の最良の意味のある改善で停滞を数え直し、全体の最良を超えたら通常の判定に戻る。False では新しい流行は全体の最良を超えるまで「改善」と数えられず、1 窓で打ち切られていた（10D F15: 約 1660 評価ごとの乗換え）",
+     "status": ""
+    },
+    {
+     "names": [
+      "recover_age"
+     ],
+     "doc_default": "<b>50</b>（2026-10-30、旧 None）",
+     "code_default": [
+      "50"
+     ],
+     "meaning": "<b>回復</b>（3 次元以上、SIR の R）。この世代数以上入れ替わっていない宿主を、毎世代の淘汰枠の半分まで先に外す（上位 1/5 は対象外）。None で淘汰は f の悪い順だけ（旧挙動）。寄与は小さい（history.md の j59 / j60）",
+     "status": ""
+    },
+    {
+     "names": [
+      "pace_horizon"
+     ],
+     "doc_default": "None",
+     "code_default": [
+      "None"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-16）。<code>switch_pace</code> の延命を「その改善の速さで残り予算のこの割合以内に全体の最良へ届く間」に限る。Gallagher（F21 / F22）の悪化を消せなかった",
+     "status": "rejected"
+    },
+    {
+     "names": [
+      "switch_regrow",
+      "switch_grow"
+     ],
+     "doc_default": "None / None",
+     "code_default": [
+      "None",
+      "None"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-15 / 10-18）。盆地乗換えで集団を初期のこの割合まで戻し縮小をやり直す／乗換えごとに前の流行の初期サイズのこの倍へ育てる",
+     "status": "rejected"
+    },
+    {
+     "names": [
+      "spill_trace",
+      "spill_ring"
+     ],
+     "doc_default": "None / None",
+     "code_default": [
+      "None",
+      "None"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-15 / 10-17）。スピルオーバーの撒き直しのこの割合を、過去の盆地の最良たちの重み付き中心のまわり（接触追跡）／最良のまわりの 10σ〜再起動 σ の多段の輪（輪状の予防接種）に置く",
+     "status": "rejected"
+    },
+    {
+     "names": [
+      "spill_med_veto",
+      "spill_adapt_veto"
+     ],
+     "doc_default": "None / None",
+     "code_default": [
+      "None",
+      "None"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-20 / 10-15）。直近の停滞窓で集団の中央値の f がこの桁数以上下がっている間／学習 C の log10 条件数がこれ以上伸びている間はスピルオーバーしない",
+     "status": "rejected"
+    },
+    {
+     "names": [
+      "chain_trace"
+     ],
+     "doc_default": "False",
+     "code_default": [
+      "False"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-22）。通常のスピルオーバーの前に、最良の宿主から学習 C の上位 2 軸に沿う黄金分割の 1 次元探索（最大 2·40 評価）。改善すればスピルオーバーを見送る",
+     "status": "rejected"
+    }
+   ]
+  },
+  {
+   "label": "予報の子（3 次元以上）",
+   "rows": [
+    {
+     "names": [
+      "forecast",
+      "forecast_route",
+      "forecast_hist"
+     ],
+     "doc_default": "<b>True</b> / <b>True</b>（2026-10-30、旧 False / False）/ False",
+     "code_default": [
+      "True",
+      "True",
+      "False"
+     ],
+     "meaning": "<b>予報の子</b>（3 次元以上）。毎世代 1 体、学習 C の固有軸の座標で上位半分の宿主に軸ごとに独立な 2 次式をあてはめ、その最小点に子を置く（下に凸でない軸は動かさない、一歩は集団の半径まで）。最悪の宿主より良ければ入れ替える。2 番目: チャネルルーターが DROPLET と確定した run に限る（全 run では Gallagher を誤導し 10D F12 / F13 を落とした）。3 番目は<b>不採用</b>（直近 20·D 評価の上位 4·D 点にあてはめる。Gallagher を壊す）",
+     "status": ""
     }
    ]
   },
@@ -662,6 +870,43 @@
      ],
      "meaning": "<b>実験中（<code>wave_follow</code>、候補 <code>v2_follow</code>）</b>。組換え波（停滞時・封じ込め）を使う最小次元（2 で 2D でも停滞時の波）／停滞時の波が予算の割り当てを使い切った時点で流行の最良をまだ上回っていれば、残り予算でそのまま続ける（run に 1 回、封じ込めは別に残る）",
      "status": "experimental"
+    },
+    {
+     "names": [
+      "wave_fail_gate",
+      "wave_fail_budget_frac",
+      "wave_fail_min_dim"
+     ],
+     "doc_default": "None / None / 0",
+     "code_default": [
+      "None",
+      "None",
+      "0"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-13〜14）。スピルオーバーがこの回数続けて失敗したら品質の条件を無視して停滞時の波を打つ／その波の予算の割合（None で <code>wave_budget_frac</code>）／それを使う最小次元",
+     "status": "rejected"
+    },
+    {
+     "names": [
+      "wave_plain"
+     ],
+     "doc_default": "False",
+     "code_default": [
+      "False"
+     ],
+     "meaning": "<b>診断用</b>（対照 <code>ctl_plainwave</code>、手法ではない）。すべての波を最良の宿主からの素の CMA-ES（既定 λ、σ0 = 0.2·span、学習 C で白色化しない）にして、波の利得のうち MC-ESO の状態から来る分を測る",
+     "status": "diagnostic"
+    },
+    {
+     "names": [
+      "handover_frac"
+     ],
+     "doc_default": "1.0",
+     "code_default": [
+      "1.0"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-14、延長が常に成立して不変）。封じ込めの波に渡す残り予算の割合。&lt; 1 なら波が流行を上回る間だけ延長する",
+     "status": "rejected"
     }
    ]
   },
@@ -730,6 +975,129 @@
      ],
      "meaning": "変数分離の分解。加法性の検査が変数分離と判定したとき、座標ごとの 1 次元走査（この数の格子点 ＋ 最良の格子のまわりの 3 分探索、最大 2 周、掃引とは別予算）で各座標の大域最適を求める",
      "status": ""
+    },
+    {
+     "names": [
+      "reassort_scan_retry"
+     ],
+     "doc_default": "True",
+     "code_default": [
+      "True"
+     ],
+     "meaning": "空振りに終わった変数分離の走査の後も、次の停滞で走査を許す（2026-10-13 の既定の挙動）。False は <code>v3_scan1*</code> の腕で<b>不採用</b>",
+     "status": ""
+    }
+   ]
+  },
+  {
+   "label": "変異株の競合・試し打ち（不採用）",
+   "rows": [
+    {
+     "names": [
+      "probe_at",
+      "probe_frac"
+     ],
+     "doc_default": "None / 0.05",
+     "code_default": [
+      "None",
+      "0.05"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-13、方針 2026-10-14 で畳んだ外部委譲の腕）。予算のこの割合を使った時点で最良の宿主から短い CMA 波を試し打ちし（予算の後者の割合）、流行より速ければ残り予算を渡す",
+     "status": "rejected"
+    },
+    {
+     "names": [
+      "strain_compete",
+      "strain_min",
+      "strain_max",
+      "strain_immigrate",
+      "strain_stop_on_handover",
+      "strain_credit",
+      "strain_dim_gate",
+      "strain_dim_ref",
+      "strain_min_dim",
+      "strain_takeover",
+      "strain_handover",
+      "strain_retire_ill",
+      "strain_share_shape",
+      "strain_lam_mult",
+      "strain_idle",
+      "strain_init",
+      "strain_ema"
+     ],
+     "doc_default": "False / 0.1 / None / True / False / <code>\"own\"</code> / False / None / 0 / False / False / False / False / 2.0 / <code>\"keep\"</code> / None / 0.3",
+     "code_default": [
+      "False",
+      "0.1",
+      "None",
+      "True",
+      "False",
+      "'own'",
+      "False",
+      "None",
+      "0",
+      "False",
+      "False",
+      "False",
+      "False",
+      "2.0",
+      "'keep'",
+      "None",
+      "0.3"
+     ],
+     "meaning": "<b>不採用</b>（2026-10-13〜14 の v3、方針 2026-10-14 で畳んだ外部委譲の腕）。<b>変異株の競合</b>: CMA 株（λ = <code>strain_lam_mult</code> × CMA-ES 既定）を流行と並走させ、各株の最良が評価あたりに稼いだ桁数の EMA（率 <code>strain_ema</code>）の比で評価を配分する（下限 <code>strain_min</code>、上限 <code>strain_max</code>）。ほかの引数は株の最良の移入・封じ込め後の引退・功績の数え方・次元ゲート・乗っ取り・封じ込めの委譲・悪条件での引退・形の共有・両株停止時の配分・初期の配分。<code>v3_stage</code>（20D 以上で株を並走）を含め採用しなかった（history.md の 2026-10-14）",
+     "status": "rejected"
+    }
+   ]
+  },
+  {
+   "label": "v5 の腕（実験中）",
+   "rows": [
+    {
+     "names": [
+      "pace_route",
+      "pace_max"
+     ],
+     "doc_default": "False / None",
+     "code_default": [
+      "False",
+      "None"
+     ],
+     "meaning": "<b>実験中（v5、腕 <code>v5_paceR</code> / <code>v5_pmax3</code>）</b>。<code>switch_pace</code> の延命を、チャネルルーターが KEEP-AIR のままでない run に限る（Gallagher の峰では延命した再起動が勝てない峰を登る）／延命を盆地乗換えから停滞窓この数ぶんまでに限る（None で全体の最良を超えるまで）",
+     "status": "experimental"
+    },
+    {
+     "names": [
+      "herd_child"
+     ],
+     "doc_default": "False",
+     "code_default": [
+      "False"
+     ],
+     "meaning": "<b>実験中（v5、腕 <code>v5_herd</code>）</b>。3 次元以上で毎世代 1 体、上位半分の宿主の対数重みつき平均（流行の中心）に子を置き、最悪の宿主より良ければ入れ替える。大域構造のある起伏（回転 Rastrigin・Schaffer）では、中心がどの宿主よりもならした谷底に近い",
+     "status": "experimental"
+    },
+    {
+     "names": [
+      "keepair_slow"
+     ],
+     "doc_default": "None",
+     "code_default": [
+      "None"
+     ],
+     "meaning": "<b>実験中（v5、腕 <code>v5_slow5</code>）</b>。3 次元以上の KEEP-AIR の run で、drilling の前は σ を <code>sigma_down</code> のこの値乗で縮める（None でほかと同じ）。多峰の流行を 1 つの谷に決めるまで広く保つ",
+     "status": "experimental"
+    },
+    {
+     "names": [
+      "chain_route"
+     ],
+     "doc_default": "False",
+     "code_default": [
+      "False"
+     ],
+     "meaning": "<b>実験中（v5、腕 <code>v5_chainR</code>）</b>。<code>chain_trace</code> をルーターが DROPLET と確定した run に限る",
+     "status": "experimental"
     }
    ]
   },

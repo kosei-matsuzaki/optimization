@@ -69,7 +69,9 @@ _DEFAULT_CHANGES = (("2026-10-08", "MC-ESO-v0"), ("2026-10-12", "MC-ESO-v1"))
 # From 2026-10-13 runs are recorded by local and cloud clocks in different
 # zones the same day, so the change is decided by the run's commit instead:
 # a run whose commit does not contain this one used the earlier default.
-_COMMIT_CHANGES = (("ba8d455c7bd6044bbfdf0da6d6a29983c29b1514", "MC-ESO-v2"),)
+# (commit, arm of the earlier default, date for runs without a usable commit)
+_COMMIT_CHANGES = (("ba8d455c7bd6044bbfdf0da6d6a29983c29b1514", "MC-ESO-v2", "2026-10-13"),
+                   ("69e8f2364b21e9bf28f1e68adc9449f7dc661e23", "MC-ESO-v3", "2026-10-30"))
 
 
 @functools.lru_cache(maxsize=256)
@@ -92,9 +94,9 @@ def _method_at(method: str, meta: dict) -> str:
         if created and created < date:
             return arm
     commit = str(meta.get("commit") or "")
-    for change, arm in _COMMIT_CHANGES:
+    for change, arm, date in _COMMIT_CHANGES:
         has = _contains(commit, change) if commit and commit != "nogit" else None
-        if has is False or (has is None and created and created < "2026-10-13"):
+        if has is False or (has is None and created and created < date):
             return arm
     return method
 

@@ -159,7 +159,7 @@ web/
 | GET | `/api/stats/<run_id>/<dim>/<func>` | per-run 詳細統計 CSV |
 | GET | `/api/curves/<run_id>/<dim>/<func>` | 収束の中央値・四分位（`curves/{Func}.json.gz`） |
 | GET | `/api/mceso-runs/<run_id>/<dim>` | MC-ESO の全 run の要約（`mceso_runs.csv`） |
-| GET | `/api/replay/<run_id>/<dim>/<func>/<method>/<seed>` | その run を再実行して全評価点（float32 base64）、f − f*、最適解までの距離、経路、集団（最大 240 コマ）、MC-ESO の内部状態、記録との一致を返す（`app_lib/replay.py`）。手法名 `MC-ESO` は、既定値の変更より前の run なら当時の既定で再実行する: 作成日が 2026-10-08 より前は `MC-ESO-v0`、10-12 より前は `MC-ESO-v1`。2026-10-13 の変更はローカルとクラウドの時計がずれて同じ日に混ざるので、作成日でなく **run の commit が `ba8d455` を含むか**（`git merge-base --is-ancestor`）で決め、含まなければ `MC-ESO-v2`。commit が判定できない（記録が無い・`nogit`・この clone に無い commit）ときは作成日が 2026-10-13 より前なら `MC-ESO-v2`（`_DEFAULT_CHANGES` / `_COMMIT_CHANGES`）|
+| GET | `/api/replay/<run_id>/<dim>/<func>/<method>/<seed>` | その run を再実行して全評価点（float32 base64）、f − f*、最適解までの距離、経路、集団（最大 240 コマ）、MC-ESO の内部状態、記録との一致を返す（`app_lib/replay.py`）。手法名 `MC-ESO` は、既定値の変更より前の run なら当時の既定で再実行する: 作成日が 2026-10-08 より前は `MC-ESO-v0`、10-12 より前は `MC-ESO-v1`。2026-10-13 の変更はローカルとクラウドの時計がずれて同じ日に混ざるので、作成日でなく **run の commit が `ba8d455` を含むか**（`git merge-base --is-ancestor`）で決め、含まなければ `MC-ESO-v2`。2026-10-30 の変更も同じく **commit が `69e8f23` を含むか**で決め、含まなければ `MC-ESO-v3`。commit が判定できない（記録が無い・`nogit`・この clone に無い commit）ときは作成日がそれぞれ 2026-10-13 / 2026-10-30 より前なら `MC-ESO-v2` / `MC-ESO-v3`（`_DEFAULT_CHANGES` / `_COMMIT_CHANGES`）|
 | GET | `/api/landscape/<dim>/<func>?a=&b=` | 最適解を通る x_a–x_b 平面の f の格子（log10、120×120） |
 | GET | `/api/media-index/<run_id>/<dim>` | 可視化ファイルの索引 |
 | GET | `/api/result-data/<run_id>` | 次元・関数・summary・wilcoxon |
@@ -177,7 +177,7 @@ python scripts/web/methods_data.py results/<2D の run> results/<5D の run> res
 
 パラメータ一覧は、`docs/mceso.md` のパラメータ表（意味）と `MultiChannelEpidemicOptimizer.__init__`（既定値）から `python scripts/web/methods_params.py` で `web/static/methods_params.json` を作る。表とコードの引数がずれていると作成に失敗するので、引数を足したら表にも行を足す。
 
-本文の「読みどころ」（既存手法との比較、旧既定からの変化）も JSON から JS が組み立てるので、数値と文章がずれない。いま載っているのは 2026-10-13 の標準の比較手法 16 ＋ MC-ESO 2 世代の run（`runs/20261013_200000_panel16_bbob_d{2,5,10}_quick`、34 手法の run と新しい 4 手法の run を `scripts/single/merge_runs.py` で結合）。成績表には CEC 式の順位の列がある（`methods_data.py` が run ごとの stats から `core.run_data` で計算）。「旧既定からの変化」が比べる相手は run にある `MC-ESO-v2` / `-v1` / `-v0` の最新（`methods.js` の `notesFor()`）。解説カードの役割は「標準比較」（標準の比較手法 16）と「参考」（登録のみ）。比較手法を足したら `methods.html` に解説カード（`id="m-<登録名>"`、`data-method="<登録名>"`）を、`methods.js` の `NODES` / `EDGES` に系譜を足す。
+本文の「読みどころ」（既存手法との比較、旧既定からの変化）も JSON から JS が組み立てるので、数値と文章がずれない。いま載っているのは 2026-10-13 の標準の比較手法 16 ＋ MC-ESO 2 世代の run（`runs/20261013_200000_panel16_bbob_d{2,5,10}_quick`、34 手法の run と新しい 4 手法の run を `scripts/single/merge_runs.py` で結合）。成績表には CEC 式の順位の列がある（`methods_data.py` が run ごとの stats から `core.run_data` で計算）。「旧既定からの変化」が比べる相手は run にある `MC-ESO-v3` / `-v2` / `-v1` / `-v0` の最新（`methods.js` の `notesFor()`）。**いまの成績の run（2026-10-13）の `MC-ESO` は当時の既定（現 `MC-ESO-v3`）で、2026-10-30 の既定の変更は入っていない**。ページは本文と表の上（`methods.js` の `LAST_DEFAULT_CHANGE` / `PREV_DEFAULT`、run の作成日で判定）でそう注記する。新しい既定で取り直した run を載せたら注記は消える（取り直しはクラウドの j61）。既定を変えたら `LAST_DEFAULT_CHANGE` / `PREV_DEFAULT` も更新する。解説カードの役割は「標準比較」（標準の比較手法 16）と「参考」（登録のみ）。比較手法を足したら `methods.html` に解説カード（`id="m-<登録名>"`、`data-method="<登録名>"`）を、`methods.js` の `NODES` / `EDGES` に系譜を足す。
 
 ## 開発メモ
 

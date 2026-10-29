@@ -22,3 +22,5 @@
 **2026-10-16: `single/` の古いジョブ（`e177`〜`e183`、`j11`〜`j17`、`j24`・`j25`・`j28`、`j30`〜`j34`、`local_*` の 29 ディレクトリ、214 ファイル）を作業ツリーから外した。** 数値は `docs/findings.md`・`docs/history.md` に書いてあり、docs の該当パスには復元用の commit を添えた。まとめて取り出すには `git checkout f378fba -- analysis/single/<dir>`。
 
 **2026-10-18: `single/` の `j36`〜`j43`・`j46`・`j48` の 10 ディレクトリ（152 ファイル）を作業ツリーから外した（517→365 ファイル）。** 数値は `docs/findings.md`・`docs/history.md`・`docs/research_loop.md` に書いてあり、docs の該当パスには復元用の commit を添えた。まとめて取り出すには `git checkout 95cf9b7 -- analysis/single/<dir>`。`j49/` の per-run stats は j52 のパネルとして、`j47/stats/` は j52 の 20D のパネルとして、`j50/` の per-run stats は v4_pace の再解析用に残してある。
+
+**2026-10-30: `j49/` の `ctl_plainwave` の列は素の CMA の波ではない。** この腕は 2026-10-08 以前の既定で埋められて走り、波が一度も打たれていない（v0 の MC-ESO と同じ）。再解析に使わない。測り直しは j61（[docs/history.md](../docs/history.md) の 2026-10-17〜18 の訂正）。2026-10-30 から j49 / j47 / j57 のパネルの `MC-ESO` 列は旧既定（現 `MC-ESO-v3`）の値。
