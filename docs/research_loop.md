@@ -115,18 +115,17 @@
 ジョブを取ったら行末に `(claimed YYYY-MM-DD HH:MM UTC)` を書いて即 push する。終えたらジョブを消し、下の「作業ログ」に結果を書く。
 **標準の集計**: `scripts/analyze_quick.py` の [1] 全体表（SR@1e-2 / 1e-4 / 1e-7 / 1e-10、`evals_succ_mean` は比べる手法の両方で成功のある関数だけで平均）、関数別の SR@1e-10 の変化（全関数）、Wilcoxon の有意な関数（両方向、A12 つき）、参考として [5] CEC 式の平均誤差の順位（2026-10-13 追加）。
 
-**2026-10-13 に `v2_scan2d` が既定になった**ので、以下のジョブの `MC-ESO` は旧 `v2_scan2d` と同じもの（`v2_scan2d` は手法の並びから外した）。比べる旧既定が要るときは `MC-ESO-v2`。
+**2026-10-30 から `MC-ESO` は新しい既定（旧 `v4_k50fR_r50`）。** 旧既定は `MC-ESO-v3`。`v3_*` / `v4_*` の腕は旧既定の上で走る（記録した数値が再現する）。`v5_*` と `ctl_*` は新しい既定の上。j47 / j49 / j57 のパネルの `MC-ESO` は**旧既定**なので、新しい既定のパネル順位は同じ run に入れた `v4_k50fR_r50`（新しい既定と bit 一致）で読む。
 
+1. **【j61 (m) 手法解説ページの成績の取り直し（新しい既定）】** web の `/methods` の成績は旧既定のローカル run（`runs/20261013_200000_panel16_*`）から作っている。正準環境で 5 設定を取り直す。手法 `"MC-ESO,MC-ESO-v3,EBOwithCMAR,IMODE,EA4eig,L-SRTDE,L-SHADE,jSO,LSHADE-SPACMA,ELSHADE-SPACMA,SPS-L-SHADE-EIG,AMALGAM-SO,IPOP-CMA-ES,BIPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES"`、`--n-runs 20 --jobs 4`、instance は既定（1）。(set, D, B, label) = (BBOB `--all`, 2, 5000, `j61_md2`)、(BBOB `--all --dim 5`, 5, 12500, `j61_md5`)、(BBOB `--all --dim 10`, 10, 25000, `j61_md10`)、(`--suite cec2022 --all --dim 10`, 10, 25000, `j61_mc10`)、(`--suite cec2022 --all --dim 20`, 20, 50000, `j61_mc20`)。1 回の起動に収まらなければ設定ごと・関数 shard ごとに書き戻してよい（shard は `scripts/single/merge_runs.py` で結合）。終えた run は `./run.sh publish results/<run>` で `runs/` に写して commit する。**集計**: 標準の集計を `MC-ESO` を reference に（`MC-ESO-v3` との差の関数別列挙を含む）。**記録**: `analysis/single/j61/m/`（集計の txt のみ。数値の本体は `runs/`）。web の再生成は対話セッションがやる。採否の判断はしない。
 
+1. **【j61 (a20) v5 の 1 本目（20D）】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_k50fR_r50,v5_paceR,v5_pmax3,v5_herd,v5_slow5,v5_chainR,ctl_plainwave" --jobs 4`（label `j61_a20`）。腕の中身: `v5_paceR` は乗換え後の延命（`switch_pace`）をルーターが KEEP-AIR にした run では使わない、`v5_pmax3` は延命を乗換えから停滞窓 3 つ分までに限る、`v5_herd` は毎世代 1 体、上位半分の宿主の対数重み付き重心に子を置く（3 次元以上）、`v5_slow5` は KEEP-AIR の run で掘削前の σ の縮みを `sigma_down ** 0.5` に（3 次元以上）、`v5_chainR` は感染経路の追跡（`chain_trace`）を DROPLET の run だけで、`ctl_plainwave` は**対照の測り直し**（j49〜j51 では旧い既定値で埋められて波が一度も出ていなかった。今回が初めての正しい測定）。ねらいは Gallagher（F21/F22）の代償を消すこと（paceR / pmax3）と、20D でパネル最下位の F15/F17/F18/F24（herd / slow5）と F07-F10（chainR）。**集計**: 標準の集計（reference `MC-ESO` ＝ 新しい既定）＋ j47 の 20D パネルと並べた CEC 順位（`mkdir -p /tmp/j47p/dim20 && cp -r analysis/single/j47/stats /tmp/j47p/dim20/` → `python scripts/single/cec_panel.py --dim 20 --panel /tmp/j47p --arms results/<この run>`）。**確かめること**: (i) `MC-ESO` と `v4_k50fR_r50` が全セル一致、(ii) `v4_k50fR_r50` が j59 の 20D（`analysis/single/j59/summary_j59_a20_dim20_all24.csv`）の同名の行と一致（パネル順位 4.73 の再現）。一致しなければ書いて、順位は参考扱い。関数別の SR@1e-10 と平均誤差は F15/F17/F18/F21/F22/F24/F07-F10 を必ず並べる。per-run stats は `analysis/single/j61/a20/dim20/stats/`。**記録**: `analysis/single/j61/`。採否の判断はしない。
 
+1. **【j61 (a) v5 の 1 本目（5D/10D）】** 手法は上と同じ 8 つ、j50 と同じ 4 設定（label `j61_a5` / `j61_a5ho` / `j61_a10` / `j61_a10ho`、`--jobs 4`）。1 回の起動に収まらなければ設定ごとに書き戻してよい。**集計**: j59 と同じ（パネルは `analysis/single/j49/j49_p5[ho]` / `j49_p10[ho]`）。**確かめること**: `v4_k50fR_r50` のパネル順位が j59 の値（5D 4.12/4.15、10D 4.25/4.46）を再現するか。関数別では F15/F17/F18/F21/F22/F24 を必ず並べる。per-run stats は `analysis/single/j61/<label>/dim<D>/stats/`。**記録**: `analysis/single/j61/`。採否の判断はしない。
 
+1. **【j61 (d2) v5 の 1 本目（2D）】** 2D で動くのは延命の 2 腕だけ（ほかの v5 の腕は 3 次元以上なので bit 一致になる）。`./run.sh quick --all --max-evals 5000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_k50fR_r50,v5_paceR,v5_pmax3" --jobs 4`（label `j61_d2`）と `--instances 6-10 --seed-offset 7`（label `j61_d2ho`）。**集計**: j60 (a) と同じ（パネルは `cec_panel.py --dim 2 --panel analysis/single/j57/j57_d2 --drop "MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,v3_stage,v4_keep25p,v4_keep50,v4_pace"`、`v4_k50fR_r50` が 4.44 を再現するか）。**記録**: `analysis/single/j61/`。採否の判断はしない。
 
-
-
-
-
-
-**対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
+**対話セッションでやること（測定ルーチンは取らない）**: j61 (m) が `runs/` に載ったら `scripts/web/methods_data.py` で `web/static/methods_data.json` を作り直し、`/methods` の「表の MC-ESO は前の既定」の注記を外す。
 
 ---
 
