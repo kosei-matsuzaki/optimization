@@ -1,0 +1,15 @@
+{
+  "type": "quick",
+  "created_at": "2026-10-29T20:00:16",
+  "commit": "0cca16a",
+  "n_runs": 20,
+  "max_evals": 50000,
+  "set": "all-d20",
+  "dim": 20,
+  "methods": "MC-ESO,MC-ESO-v3,EBOwithCMAR,IMODE,EA4eig,L-SRTDE,L-SHADE,jSO,LSHADE-SPACMA,ELSHADE-SPACMA,SPS-L-SHADE-EIG,AMALGAM-SO,IPOP-CMA-ES,BIPOP-CMA-ES,ARRDE,NL-SHADE-RSP,RCMAES,BIPOP-aCMA-ES",
+  "status": "done",
+  "note": "merged function shards: G01-G09 from 20261029_200016_j61_mc20 (OOM-killed at G10), G10-G12 from 20261029_202552_j61_mc20b",
+  "published_at": "2026-10-29T20:36:35",
+  "published_from": "vm",
+  "source_dir": "20261029_200016_j61_mc20m_quick"
+}

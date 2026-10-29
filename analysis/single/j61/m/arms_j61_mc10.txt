@@ -1,0 +1,70 @@
+== 20261029_193423_j61_mc10_quick  dim=10  ref=MC-ESO vs MC-ESO-v3 ==
+functions: 12  methods: 18
+
+-- per-function SR@1e-10 (ref=MC-ESO -> MC-ESO-v3) --
+  G01-Zakharov             MC-ESO 100.0%   MC-ESO-v3 100.0%
+  G02-Rosenbrock           MC-ESO  55.0%   MC-ESO-v3  50.0%  <- arm lower
+  G03-SchafferF7           MC-ESO  65.0%   MC-ESO-v3  60.0%  <- arm lower
+  G04-Rastrigin            MC-ESO   0.0%   MC-ESO-v3   0.0%
+  G05-Levy                 MC-ESO 100.0%   MC-ESO-v3 100.0%
+  G06-Hybrid1              MC-ESO   0.0%   MC-ESO-v3   0.0%
+  G07-Hybrid2              MC-ESO   0.0%   MC-ESO-v3   0.0%
+  G08-Hybrid3              MC-ESO   0.0%   MC-ESO-v3   0.0%
+  G09-Composition1         MC-ESO   0.0%   MC-ESO-v3   0.0%
+  G10-Composition2         MC-ESO   0.0%   MC-ESO-v3   0.0%
+  G11-Composition3         MC-ESO  50.0%   MC-ESO-v3  60.0%  <- arm higher
+  G12-Composition4         MC-ESO   0.0%   MC-ESO-v3   0.0%
+  summary: arm higher on 1 [G11-Composition3 50->60], arm lower on 2 [G02-Rosenbrock 55->50, G03-SchafferF7 65->60], same on 9
+
+-- mean error per function (ref -> arm) --
+  G01-Zakharov             0.0000e+00 -> 5.6843e-15
+  G02-Rosenbrock           3.0263e+00 -> 3.3518e+00
+  G03-SchafferF7           1.2168e-05 -> 3.8576e-05
+  G04-Rastrigin            8.9546e+00 -> 7.1182e+00
+  G05-Levy                 5.6843e-15 -> 5.6843e-15
+  G06-Hybrid1              1.1911e+01 -> 3.0434e+01
+  G07-Hybrid2              1.4312e+01 -> 1.6380e+01
+  G08-Hybrid3              6.1609e+00 -> 1.5116e+01
+  G09-Composition1         2.2929e+02 -> 2.2929e+02
+  G10-Composition2         1.0039e+02 -> 1.0046e+02
+  G11-Composition3         1.1919e-10 -> 1.0270e-10
+  G12-Composition4         1.6351e+02 -> 1.6418e+02
+
+-- evals_succ_mean (paired over functions where BOTH have successes) --
+  G01-Zakharov                 5507.0 ->     9763.0
+  G02-Rosenbrock               8787.0 ->     8236.0
+  G03-SchafferF7               9537.0 ->     9424.0
+  G05-Levy                     4959.0 ->     4959.0
+  G07-Hybrid2                 10599.0 ->     9339.0
+  G11-Composition3            10036.0 ->    10172.0
+  paired mean over 6 functions: MC-ESO 8237.5  MC-ESO-v3 8648.8  (arm +411.3)
+
+-- overall SR means (all 12 functions) --
+  MC-ESO         1e-10=30.8%  1e-7=37.5%  1e-4=37.9%  1e-2=38.8%
+  MC-ESO-v3      1e-10=30.8%  1e-7=37.1%  1e-4=37.5%  1e-2=37.9%
+
+-- Wilcoxon detail: reference MC-ESO vs MC-ESO-v3 (alpha=0.05 two-sided) --
+  G07-Hybrid2              p=0.0486 A12=0.57 (small) ref better
+  G08-Hybrid3              p=0.00121 A12=0.79 (large) ref better
+  G10-Composition2         p=0.000586 A12=0.81 (large) ref better
+  G12-Composition4         p=0.0215 A12=0.69 (medium) ref better
+  counts: ref(MC-ESO) wins 4 / losses 0 over 12 functions
+
+-- Wilcoxon counts, reference MC-ESO vs every method --
+  BIPOP-aCMA-ES      ref 8 win / 0 loss
+  IMODE              ref 7 win / 2 loss
+  IPOP-CMA-ES        ref 7 win / 2 loss
+  NL-SHADE-RSP       ref 6 win / 2 loss
+  BIPOP-CMA-ES       ref 6 win / 2 loss
+  MC-ESO-v3          ref 4 win / 0 loss
+  AMALGAM-SO         ref 4 win / 1 loss
+  RCMAES             ref 4 win / 1 loss
+  EBOwithCMAR        ref 5 win / 5 loss
+  L-SRTDE            ref 5 win / 6 loss
+  EA4eig             ref 3 win / 5 loss
+  SPS-L-SHADE-EIG    ref 4 win / 6 loss
+  jSO                ref 3 win / 6 loss
+  ELSHADE-SPACMA     ref 2 win / 5 loss
+  L-SHADE            ref 3 win / 6 loss
+  LSHADE-SPACMA      ref 2 win / 6 loss
+  ARRDE              ref 2 win / 6 loss
