@@ -117,7 +117,7 @@
 
 **2026-10-30 から `MC-ESO` は新しい既定（旧 `v4_k50fR_r50`）。** 旧既定は `MC-ESO-v3`。`v3_*` / `v4_*` の腕は旧既定の上で走る（記録した数値が再現する）。`v5_*` と `ctl_*` は新しい既定の上。j47 / j49 / j57 のパネルの `MC-ESO` は**旧既定**なので、新しい既定のパネル順位は同じ run に入れた `v4_k50fR_r50`（新しい既定と bit 一致）で読む。
 
-1. **【j61 (a) v5 の 1 本目（5D/10D）】** 手法は上と同じ 8 つ、j50 と同じ 4 設定（label `j61_a5` / `j61_a5ho` / `j61_a10` / `j61_a10ho`、`--jobs 4`）。1 回の起動に収まらなければ設定ごとに書き戻してよい。**集計**: j59 と同じ（パネルは `analysis/single/j49/j49_p5[ho]` / `j49_p10[ho]`）。**確かめること**: `v4_k50fR_r50` のパネル順位が j59 の値（5D 4.12/4.15、10D 4.25/4.46）を再現するか。関数別では F15/F17/F18/F21/F22/F24 を必ず並べる。per-run stats は `analysis/single/j61/<label>/dim<D>/stats/`。**記録**: `analysis/single/j61/`。採否の判断はしない。
+1. **【j61 (a) v5 の 1 本目（5D/10D）】** 手法は上と同じ 8 つ、j50 と同じ 4 設定（label `j61_a5` / `j61_a5ho` / `j61_a10` / `j61_a10ho`、`--jobs 4`）。1 回の起動に収まらなければ設定ごとに書き戻してよい。**集計**: j59 と同じ（パネルは `analysis/single/j49/j49_p5[ho]` / `j49_p10[ho]`）。**確かめること**: `v4_k50fR_r50` のパネル順位が j59 の値（5D 4.12/4.15、10D 4.25/4.46）を再現するか。関数別では F15/F17/F18/F21/F22/F24 を必ず並べる。per-run stats は `analysis/single/j61/<label>/dim<D>/stats/`。**記録**: `analysis/single/j61/`。採否の判断はしない。 (claimed 2026-10-29 23:30 UTC)
 
 1. **【j61 (d2) v5 の 1 本目（2D）】** 2D で動くのは延命の 2 腕だけ（ほかの v5 の腕は 3 次元以上なので bit 一致になる）。`./run.sh quick --all --max-evals 5000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_k50fR_r50,v5_paceR,v5_pmax3" --jobs 4`（label `j61_d2`）と `--instances 6-10 --seed-offset 7`（label `j61_d2ho`）。**集計**: j60 (a) と同じ（パネルは `cec_panel.py --dim 2 --panel analysis/single/j57/j57_d2 --drop "MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,v3_stage,v4_keep25p,v4_keep50,v4_pace"`、`v4_k50fR_r50` が 4.44 を再現するか）。**記録**: `analysis/single/j61/`。採否の判断はしない。
 
