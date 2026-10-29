@@ -601,6 +601,12 @@ _OPTIMIZERS = {
     "v4_k50_r50":     (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "recover_age": 50}),
     "v4_k50fR_r50np": (MultiChannelEpidemicOptimizer, {"spill_keep": 0.5, "forecast": True, "forecast_route": True, "recover_age": 50}),
     "v4_pacetr":      (MultiChannelEpidemicOptimizer, {"switch_pace": True, "spill_trace": 0.7}),
+    # v5 (2026-10-30): on the new default (v4_k50fR_r50), not filled.
+    "v5_paceR":       (MultiChannelEpidemicOptimizer, {"pace_route": True}),
+    "v5_pmax3":       (MultiChannelEpidemicOptimizer, {"pace_max": 3.0}),
+    "v5_herd":        (MultiChannelEpidemicOptimizer, {"herd_child": True}),
+    "v5_slow5":       (MultiChannelEpidemicOptimizer, {"keepair_slow": 0.5}),
+    "v5_chainR":      (MultiChannelEpidemicOptimizer, {"chain_trace": True, "chain_route": True}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
     "v3_scan1wf8":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 8}),

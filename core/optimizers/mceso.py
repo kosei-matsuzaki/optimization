@@ -86,6 +86,7 @@ class _MCESOState:
     trace_spent: bool = False       # chain_trace: traced since the last meaningful improvement
     pace_ref: float = 0.0           # log10 of the outbreak's best at its last meaningful step
     pace_since: int = 0
+    pace_start: int = 0             # pace_max: evaluations spent when pacing began
     # The learned C has reached 10^router_learned_cond (latched; σ floor and
     # the containment hand-over read it).
     cc_ill: bool = False
@@ -907,6 +908,25 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # keep-air runs (Gallagher, where it misleads).
         # Default from 2026-10-30 (v4_k50fR_r50; was False).
         forecast_route: bool = True,
+        # v5 (2026-10-30). Pacing only on runs the router did not leave on
+        # KEEP-AIR (Gallagher's peaks, where a paced restart climbs a peak that
+        # can never win).
+        pace_route: bool = False,
+        # Pacing lasts at most this many stagnation windows after the basin
+        # switch (None = until the outbreak overtakes the global best).
+        pace_max: "float | None" = None,
+        # Herd child (≥3D): each generation one extra child at the log-weighted
+        # mean of the best half of the hosts — the outbreak's centre, which on a
+        # rugged surface with global structure (rotated Rastrigin, Schaffer)
+        # lies nearer the bottom of the smoothed bowl than any single host.
+        # Replaces the worst host if better.
+        herd_child: bool = False,
+        # On KEEP-AIR runs (≥3D, before drilling) σ contracts by sigma_down ** this
+        # instead of sigma_down (None = as elsewhere): the multimodal outbreak
+        # stays wide longer before it commits to one basin.
+        keepair_slow: "float | None" = None,
+        # chain_trace only on runs the router committed to DROPLET.
+        chain_route: bool = False,
         switch_grow: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
@@ -993,6 +1013,11 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.chain_trace = chain_trace
         self.forecast_hist = forecast_hist
         self.forecast_route = forecast_route
+        self.pace_route = pace_route
+        self.pace_max = pace_max
+        self.herd_child = herd_child
+        self.keepair_slow = keepair_slow
+        self.chain_route = chain_route
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -1567,6 +1592,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             self._pad_eval_channel(st, _CH_LS)
             return not st.budget_left
         if (self.chain_trace and self.dim >= 3 and not st.trace_spent
+                and (not self.chain_route or st.channel_route == "droplet")
                 and not self._basin_exhausted(st) and st.cc_C is not None):
             st.trace_spent = True
             before = st.best_so_far
@@ -1670,10 +1696,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         st.sigma = sigma_restart
         st.no_improve = 0
         st.basin_best = float(np.min(st.pop_f))
-        if self.switch_pace and basin_switch and not self._basin_exhausted(st):
+        if (self.switch_pace and basin_switch and not self._basin_exhausted(st)
+                and not (self.pace_route and st.channel_route == "keepair")):
             st.paced = st.basin_best > st.best_so_far
             st.pace_ref = math.log10(max(st.basin_best, 1e-300))
             st.pace_since = 0
+            st.pace_start = len(st.history_f)
         st.log_best_ref = math.log10(max(st.best_so_far, 1e-300))
         st.evals_since_reset = 0
         if not basin_switch:
@@ -2484,6 +2512,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         if (self.forecast and self.dim >= 3 and st.budget_left
                 and (not self.forecast_route or st.channel_route == "droplet")):
             self._forecast_step(st)
+        if self.herd_child and self.dim >= 3 and st.budget_left:
+            self._herd_step(st)
 
         self._adapt_sigma(st, gen_best_before)
 
@@ -2520,6 +2550,22 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 f0 = best_f
         if f0 < float(st.pop_f[bi]):
             st.pop_x[bi], st.pop_f[bi], st.pop_age[bi] = x0, f0, 0
+
+    def _herd_step(self, st: _MCESOState) -> None:
+        """herd_child: one child at the log-weighted mean of the best half."""
+        n = len(st.pop_f)
+        mu = n // 2
+        if mu < 2:
+            return
+        idx = np.argsort(st.pop_f)[:mu]
+        w = math.log(mu + 0.5) - np.log(np.arange(1, mu + 1))
+        x = self._reflect(w @ st.pop_x[idx] / w.sum(), st.lo, st.hi)
+        f = float(self.func(x))
+        self._record_eval(st, x, f, float(np.linalg.norm(x - st.pop_x[idx[0]])))
+        st.eval_channel.append(_CH_LS)
+        k = int(np.argmax(st.pop_f))
+        if f < st.pop_f[k]:
+            st.pop_x[k], st.pop_f[k], st.pop_age[k] = x, f, 0
 
     def _forecast_step(self, st: _MCESOState) -> None:
         """forecast: one child at the minimiser of a separable quadratic fitted
@@ -2590,10 +2636,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         k = 1.0
         if self.sigma_batch is not None and self.dim >= 3:
             k = max(1.0, (len(st.history_f) - st.gen_eval_start) / self.sigma_batch)
+        if (self.keepair_slow is not None and self.dim >= 3 and not in_drilling
+                and st.channel_route == "keepair"):
+            k_down = k * self.keepair_slow
+        else:
+            k_down = k
         if improved:
             st.sigma *= self.sigma_up ** k
         else:
-            st.sigma *= (self.sigma_drill_down if in_drilling else self.sigma_down) ** k
+            st.sigma *= (self.sigma_drill_down if in_drilling else self.sigma_down) ** k_down
         st.sigma = max(sigma_floor_eff, min(st.sigma, span * self.sigma_ceil_ratio))
 
     # ── host competition (overridable for niching variants) ──────────────────
@@ -2609,6 +2660,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         st.history_sigma_eval.append(sigma_used)
         st.evals_since_reset += 1
         paced_step = False
+        if (st.paced and self.pace_max is not None
+                and len(st.history_f) - st.pace_start > self.pace_max * self._stagnation_window()):
+            st.paced = False
         if st.paced:
             st.pace_since += 1
             if f < st.basin_best and self._meaningful_improvement(f, st.pace_ref, st.pace_since):
