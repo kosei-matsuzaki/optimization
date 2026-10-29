@@ -1,0 +1,79 @@
+== results/20261029_173913_j61_md2_quick  dim=2  ref=MC-ESO vs MC-ESO-v3 ==
+functions: 24  methods: 18
+
+-- per-function SR@1e-10 (ref=MC-ESO -> MC-ESO-v3) --
+  F01-Sphere               MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F02-EllipsoidalSep       MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F03-RastriginSep         MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F04-BucheRastrigin       MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F05-LinearSlope          MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F06-AttractiveSector     MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F07-StepEllipsoidal      MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F08-Rosenbrock           MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F09-RosenbrockRot        MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F10-EllipsoidalRot       MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F11-Discus               MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F12-BentCigar            MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F13-SharpRidge           MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F14-DiffPowers           MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F15-RastriginRot         MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F16-Weierstrass          MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F17-SchafferF7           MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F18-SchafferF7ill        MC-ESO  80.0%   MC-ESO-v3  80.0%
+  F19-GriewankRosenbrock   MC-ESO  95.0%   MC-ESO-v3 100.0%  <- v3 higher
+  F20-Schwefel             MC-ESO  95.0%   MC-ESO-v3  95.0%
+  F21-Gallagher101         MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F22-Gallagher21          MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F23-Katsuura             MC-ESO  95.0%   MC-ESO-v3  95.0%
+  F24-LunacekRastrigin     MC-ESO  15.0%   MC-ESO-v3  15.0%
+
+  changed: MC-ESO-v3 higher on 1 [F19-GriewankRosenbrock 95->100]
+           MC-ESO-v3 lower  on 0 []
+           identical on 23
+
+-- overall SR ladder (mean over all functions) --
+  MC-ESO       1e-10 95.0%  1e-7 95.4%  1e-4 96.2%  1e-2 96.2%
+  MC-ESO-v3    1e-10 95.2%  1e-7 95.6%  1e-4 96.2%  1e-2 96.2%
+
+-- evals_succ_mean (both-success functions, n=24) --
+  MC-ESO 780.8   MC-ESO-v3 772.8   diff -8.1
+
+-- evals_succ_mean vs MC-ESO, per method (common-success functions) --
+  AMALGAM-SO             745.8 vs MC-ESO     736.0  (n=23)
+  ARRDE                  938.9 vs MC-ESO     751.3  (n=23)
+  BIPOP-CMA-ES          1077.6 vs MC-ESO     736.0  (n=23)
+  BIPOP-aCMA-ES          345.7 vs MC-ESO     736.0  (n=23)
+  EA4eig                2445.9 vs MC-ESO     703.0  (n=22)
+  EBOwithCMAR           1996.4 vs MC-ESO     780.8  (n=24)
+  ELSHADE-SPACMA        1564.4 vs MC-ESO     780.8  (n=24)
+  IMODE                 1794.4 vs MC-ESO     780.8  (n=24)
+  IPOP-CMA-ES            997.8 vs MC-ESO     780.8  (n=24)
+  L-SHADE               2099.2 vs MC-ESO     780.8  (n=24)
+  L-SRTDE               1088.8 vs MC-ESO     780.8  (n=24)
+  LSHADE-SPACMA         1197.2 vs MC-ESO     780.8  (n=24)
+  MC-ESO-v3              772.8 vs MC-ESO     780.8  (n=24)
+  NL-SHADE-RSP          2850.7 vs MC-ESO     751.3  (n=23)
+  RCMAES                 508.8 vs MC-ESO     730.2  (n=21)
+  SPS-L-SHADE-EIG       2008.0 vs MC-ESO     780.8  (n=24)
+  jSO                   1404.5 vs MC-ESO     751.3  (n=23)
+
+-- Wilcoxon (reference MC-ESO, alpha=0.05 two-sided) --
+  vs RCMAES             ref wins 14  ref loses  0
+  vs BIPOP-aCMA-ES      ref wins 14  ref loses  0
+  vs BIPOP-CMA-ES       ref wins 11  ref loses  0
+  vs IPOP-CMA-ES        ref wins  8  ref loses  0
+  vs EA4eig             ref wins  7  ref loses  0
+  vs AMALGAM-SO         ref wins  6  ref loses  0
+  vs LSHADE-SPACMA      ref wins  4  ref loses  2
+  vs L-SRTDE            ref wins  3  ref loses  2
+  vs NL-SHADE-RSP       ref wins  3  ref loses  0
+  vs SPS-L-SHADE-EIG    ref wins  2  ref loses  1
+  vs jSO                ref wins  2  ref loses  2
+  vs ARRDE              ref wins  2  ref loses  2
+  vs ELSHADE-SPACMA     ref wins  2  ref loses  2
+  vs L-SHADE            ref wins  2  ref loses  1
+  vs EBOwithCMAR        ref wins  2  ref loses  0
+  vs IMODE              ref wins  1  ref loses  1
+
+-- Wilcoxon detail MC-ESO vs MC-ESO-v3 --
+      (no significant function)

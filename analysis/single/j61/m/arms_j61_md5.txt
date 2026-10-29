@@ -1,0 +1,81 @@
+== results/20261029_174903_j61_md5_quick  dim=5  ref=MC-ESO vs MC-ESO-v3 ==
+functions: 24  methods: 18
+
+-- per-function SR@1e-10 (ref=MC-ESO -> MC-ESO-v3) --
+  F01-Sphere               MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F02-EllipsoidalSep       MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F03-RastriginSep         MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F04-BucheRastrigin       MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F05-LinearSlope          MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F06-AttractiveSector     MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F07-StepEllipsoidal      MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F08-Rosenbrock           MC-ESO  95.0%   MC-ESO-v3  95.0%
+  F09-RosenbrockRot        MC-ESO  95.0%   MC-ESO-v3  95.0%
+  F10-EllipsoidalRot       MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F11-Discus               MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F12-BentCigar            MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F13-SharpRidge           MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F14-DiffPowers           MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F15-RastriginRot         MC-ESO  20.0%   MC-ESO-v3  10.0%  <- v3 lower
+  F16-Weierstrass          MC-ESO  70.0%   MC-ESO-v3  90.0%  <- v3 higher
+  F17-SchafferF7           MC-ESO 100.0%   MC-ESO-v3 100.0%
+  F18-SchafferF7ill        MC-ESO  75.0%   MC-ESO-v3  65.0%  <- v3 lower
+  F19-GriewankRosenbrock   MC-ESO   0.0%   MC-ESO-v3   0.0%
+  F20-Schwefel             MC-ESO  20.0%   MC-ESO-v3   5.0%  <- v3 lower
+  F21-Gallagher101         MC-ESO  75.0%   MC-ESO-v3  75.0%
+  F22-Gallagher21          MC-ESO  95.0%   MC-ESO-v3 100.0%  <- v3 higher
+  F23-Katsuura             MC-ESO  60.0%   MC-ESO-v3  45.0%  <- v3 lower
+  F24-LunacekRastrigin     MC-ESO   0.0%   MC-ESO-v3   0.0%
+
+  changed: MC-ESO-v3 higher on 2 [F16-Weierstrass 70->90, F22-Gallagher21 95->100]
+           MC-ESO-v3 lower  on 4 [F15-RastriginRot 20->10, F18-SchafferF7ill 75->65, F20-Schwefel 20->5, F23-Katsuura 60->45]
+           identical on 18
+
+-- overall SR ladder (mean over all functions) --
+  MC-ESO       1e-10 79.4%  1e-7 80.2%  1e-4 81.5%  1e-2 82.1%
+  MC-ESO-v3    1e-10 78.3%  1e-7 79.4%  1e-4 80.2%  1e-2 81.0%
+
+-- evals_succ_mean (both-success functions, n=22) --
+  MC-ESO 3849.0   MC-ESO-v3 3926.5   diff +77.5
+
+-- evals_succ_mean vs MC-ESO, per method (common-success functions) --
+  AMALGAM-SO            3477.8 vs MC-ESO    3797.0  (n=21)
+  ARRDE                 4515.9 vs MC-ESO    3797.0  (n=21)
+  BIPOP-CMA-ES          3877.7 vs MC-ESO    3811.9  (n=21)
+  BIPOP-aCMA-ES         1563.0 vs MC-ESO    3377.2  (n=17)
+  EA4eig                8374.5 vs MC-ESO    3822.1  (n=20)
+  EBOwithCMAR           7916.3 vs MC-ESO    3875.4  (n=21)
+  ELSHADE-SPACMA        6579.5 vs MC-ESO    3797.0  (n=21)
+  IMODE                10695.6 vs MC-ESO    3756.4  (n=17)
+  IPOP-CMA-ES           3515.5 vs MC-ESO    3811.9  (n=21)
+  L-SHADE               8171.8 vs MC-ESO    3766.5  (n=19)
+  L-SRTDE               4518.4 vs MC-ESO    3755.3  (n=20)
+  LSHADE-SPACMA         4942.9 vs MC-ESO    3797.0  (n=21)
+  MC-ESO-v3             3926.5 vs MC-ESO    3849.0  (n=22)
+  NL-SHADE-RSP         10261.2 vs MC-ESO    3647.5  (n=18)
+  RCMAES                1483.1 vs MC-ESO    3488.4  (n=17)
+  SPS-L-SHADE-EIG       9295.5 vs MC-ESO    3822.1  (n=20)
+  jSO                   7436.2 vs MC-ESO    3822.1  (n=20)
+
+-- Wilcoxon (reference MC-ESO, alpha=0.05 two-sided) --
+  vs EA4eig             ref wins 17  ref loses  2
+  vs IPOP-CMA-ES        ref wins 16  ref loses  0
+  vs IMODE              ref wins 16  ref loses  2
+  vs BIPOP-aCMA-ES      ref wins 16  ref loses  1
+  vs NL-SHADE-RSP       ref wins 16  ref loses  1
+  vs BIPOP-CMA-ES       ref wins 14  ref loses  0
+  vs RCMAES             ref wins 13  ref loses  1
+  vs AMALGAM-SO         ref wins 12  ref loses  0
+  vs ARRDE              ref wins 11  ref loses  2
+  vs EBOwithCMAR        ref wins 11  ref loses  2
+  vs jSO                ref wins 10  ref loses  3
+  vs L-SRTDE            ref wins 10  ref loses  4
+  vs L-SHADE            ref wins 10  ref loses  1
+  vs SPS-L-SHADE-EIG    ref wins  9  ref loses  1
+  vs ELSHADE-SPACMA     ref wins  6  ref loses  4
+  vs LSHADE-SPACMA      ref wins  4  ref loses  6
+  vs MC-ESO-v3          ref wins  1  ref loses  1
+
+-- Wilcoxon detail MC-ESO vs MC-ESO-v3 --
+    +F15-RastriginRot A12=0.68 medium
+    -F16-Weierstrass A12=0.40 small
