@@ -117,7 +117,7 @@
 
 **2026-10-30 から `MC-ESO` は新しい既定（旧 `v4_k50fR_r50`）。** 旧既定は `MC-ESO-v3`。`v3_*` / `v4_*` の腕は旧既定の上で走る（記録した数値が再現する）。`v5_*` と `ctl_*` は新しい既定の上。j47 / j49 / j57 のパネルの `MC-ESO` は**旧既定**なので、新しい既定のパネル順位は同じ run に入れた `v4_k50fR_r50`（新しい既定と bit 一致）で読む。
 
-1. **【j61 (d2) v5 の 1 本目（2D）】** 2D で動くのは延命の 2 腕だけ（ほかの v5 の腕は 3 次元以上なので bit 一致になる）。`./run.sh quick --all --max-evals 5000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_k50fR_r50,v5_paceR,v5_pmax3" --jobs 4`（label `j61_d2`）と `--instances 6-10 --seed-offset 7`（label `j61_d2ho`）。**集計**: j60 (a) と同じ（パネルは `cec_panel.py --dim 2 --panel analysis/single/j57/j57_d2 --drop "MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,v3_stage,v4_keep25p,v4_keep50,v4_pace"`、`v4_k50fR_r50` が 4.44 を再現するか）。**記録**: `analysis/single/j61/`。採否の判断はしない。
+1. **【j61 (d2) v5 の 1 本目（2D）】** 2D で動くのは延命の 2 腕だけ（ほかの v5 の腕は 3 次元以上なので bit 一致になる）。`./run.sh quick --all --max-evals 5000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_k50fR_r50,v5_paceR,v5_pmax3" --jobs 4`（label `j61_d2`）と `--instances 6-10 --seed-offset 7`（label `j61_d2ho`）。**集計**: j60 (a) と同じ（パネルは `cec_panel.py --dim 2 --panel analysis/single/j57/j57_d2 --drop "MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,v3_stage,v4_keep25p,v4_keep50,v4_pace"`、`v4_k50fR_r50` が 4.44 を再現するか）。**記録**: `analysis/single/j61/`。採否の判断はしない。 (claimed 2026-10-30 02:30 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: j61 (m) が `runs/` に載ったら `scripts/web/methods_data.py` で `web/static/methods_data.json` を作り直し、`/methods` の「表の MC-ESO は前の既定」の注記を外す。
 
