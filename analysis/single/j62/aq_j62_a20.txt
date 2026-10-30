@@ -1,0 +1,63 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=20   ref=MC-ESO
+run: 20261030_154107_j62_a20m_quick
+functions: 24   methods: MC-ESO, v5_wlam, v5_wnoC, v5_wsig, v5_cp, v5_cpl
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            37.1%   40.8%   43.1%   46.9%       26100            
+  v5_wlam           45.0%   47.1%   50.0%   52.1%       23132         5/3
+  v5_wnoC           36.7%   40.8%   43.1%   46.9%       26174         0/0
+  v5_wsig           37.5%   41.2%   43.3%   46.0%       24585         4/0
+  v5_cp             37.3%   40.8%   42.9%   46.9%       25819         0/1
+  v5_cpl            44.8%   46.9%   50.0%   52.1%       24134         4/3
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%         v5_wlam 100%          12536/12536
+  F02-EllipsoidalSep               95%         v5_wlam 100%          23586/21209  <-- ref behind
+  F03-RastriginSep                100%         v5_wlam 100%          16569/16569
+  F04-BucheRastrigin                0%           v5_wlam 5%          41043/26296  <-- ref behind
+  F05-LinearSlope                 100%         v5_wlam 100%          20464/20452
+  F06-AttractiveSector             30%          v5_wlam 55%          33602/26757  <-- ref behind
+  F07-StepEllipsoidal              10%          v5_wsig 30%          30358/26894  <-- ref behind
+  F08-Rosenbrock                    0%          v5_wlam 85%                    -  <-- ref behind
+  F09-RosenbrockRot                 5%          v5_wlam 95%          46540/31292  <-- ref behind
+  F10-EllipsoidalRot               95%         v5_wlam 100%          19752/21998  <-- ref behind
+  F11-Discus                      100%         v5_wlam 100%          17521/15451
+  F12-BentCigar                    80%          v5_wlam 90%          34599/33411  <-- ref behind
+  F13-SharpRidge                   25%          v5_wnoC 25%          36915/36915
+  F14-DiffPowers                  100%         v5_wlam 100%          18359/17646
+  F15-RastriginRot                  0%           v5_wlam 0%                    -
+  F16-Weierstrass                   0%           v5_wlam 0%                    -
+  F17-SchafferF7                    0%           v5_wlam 0%                    -
+  F18-SchafferF7ill                 0%           v5_wlam 0%                    -
+  F19-GriewankRosenbrock            0%           v5_wlam 0%                    -
+  F20-Schwefel                      0%           v5_wlam 0%                    -
+  F21-Gallagher101                 45%          v5_wlam 45%          26913/26913
+  F22-Gallagher21                   5%           v5_wlam 5%          12740/12740
+  F23-Katsuura                      0%           v5_wlam 0%                    -
+  F24-LunacekRastrigin              0%           v5_wlam 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F06-AttractiveSector   vs v5_cpl         p=0.0431 A12=0.28 (large)
+  F06-AttractiveSector   vs v5_wlam        p=0.0431 A12=0.28 (large)
+  F08-Rosenbrock         vs v5_cpl         p=1.91e-06 A12=0.01 (large)
+  F08-Rosenbrock         vs v5_wlam        p=1.91e-06 A12=0.01 (large)
+  F09-RosenbrockRot      vs v5_cpl         p=3.81e-06 A12=0.07 (large)
+  F09-RosenbrockRot      vs v5_wlam        p=3.81e-06 A12=0.07 (large)
+  F23-Katsuura           vs v5_cp          p=0.0117 A12=0.32 (medium)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v5_cp                  mean rank   3.10   best on 15/24
+   2. v5_wnoC                mean rank   3.27   best on 13/24
+   3. MC-ESO                 mean rank   3.40   best on 12/24  <- ref
+   4. v5_cpl                 mean rank   3.58   best on 15/24
+   5. v5_wlam                mean rank   3.67   best on 16/24
+   6. v5_wsig                mean rank   3.98   best on 13/24
+

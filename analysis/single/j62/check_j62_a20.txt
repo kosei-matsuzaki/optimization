@@ -1,0 +1,11 @@
+MC-ESO (j62) vs MC-ESO (j61 a20): 1176/1176 cells equal, 0 differ
+v5_cp (j62) vs v5_chainR (j61 a20): 1150/1176 cells equal, 26 differ
+    ('F01-Sphere', 'method', 'v5_cp', 'v5_chainR')
+    ('F02-EllipsoidalSep', 'method', 'v5_cp', 'v5_chainR')
+    ('F03-RastriginSep', 'method', 'v5_cp', 'v5_chainR')
+    ('F04-BucheRastrigin', 'method', 'v5_cp', 'v5_chainR')
+    ('F05-LinearSlope', 'method', 'v5_cp', 'v5_chainR')
+    ('F06-AttractiveSector', 'method', 'v5_cp', 'v5_chainR')
+v5_cp vs j61 v5_chainR, excluding method/mean_time_s: 1150/1152 equal, 2 differ
+    ('F18-SchafferF7ill', 'mean_best_f', '1.2224e-01', '1.2777e-01')
+    ('F18-SchafferF7ill', 'median_best_f', '9.7138e-02', '9.7268e-02')
