@@ -1,0 +1,54 @@
+methods: ['MC-ESO', 'v4_k50fR_r50', 'v5_paceR', 'v5_pmax3']
+funcs: 24
+
+[A] OVERALL  SR@1e-10 / 1e-7 / 1e-4 / 1e-2  (mean over 24 funcs), evals_succ_mean over own successes
+  MC-ESO               94.4  95.2  95.6  95.6   evals_own=    873.5 (n=24)
+  v4_k50fR_r50         94.4  95.2  95.6  95.6   evals_own=    873.5 (n=24)
+  v5_paceR             94.6  95.4  95.8  95.8   evals_own=    876.3 (n=24)
+  v5_pmax3             94.4  95.2  95.6  95.6   evals_own=    873.5 (n=24)
+
+[B] evals_succ_mean  PAIRED over funcs where BOTH arm and ref have successes
+  v4_k50fR_r50             873.5 vs ref     873.5   (common funcs 24)   diff +0.0
+  v5_paceR                 876.3 vs ref     873.5   (common funcs 24)   diff +2.8
+  v5_pmax3                 873.5 vs ref     873.5   (common funcs 24)   diff +0.0
+
+[C] PER-FUNCTION SR@1e-10 (%)  ref -> arm, all funcs
+  function                          MC-ESO    v4_k50fR_r50        v5_paceR        v5_pmax3
+  F01-Sphere                           100             100             100             100
+  F02-EllipsoidalSep                   100             100             100             100
+  F03-RastriginSep                     100             100             100             100
+  F04-BucheRastrigin                   100             100             100             100
+  F05-LinearSlope                      100             100             100             100
+  F06-AttractiveSector                 100             100             100             100
+  F07-StepEllipsoidal                  100             100             100             100
+  F08-Rosenbrock                       100             100             100             100
+  F09-RosenbrockRot                    100             100             100             100
+  F10-EllipsoidalRot                   100             100             100             100
+  F11-Discus                           100             100             100             100
+  F12-BentCigar                         80              80              80              80
+  F13-SharpRidge                       100             100             100             100
+  F14-DiffPowers                       100             100             100             100
+  F15-RastriginRot                     100             100             100             100
+  F16-Weierstrass                      100             100             100             100
+  F17-SchafferF7                       100             100             100             100
+  F18-SchafferF7ill                    100             100             100             100
+  F19-GriewankRosenbrock                95              95             100              95
+  F20-Schwefel                          80              80              85              80
+  F21-Gallagher101                     100             100             100             100
+  F22-Gallagher21                      100             100             100             100
+  F23-Katsuura                         100             100              95             100
+  F24-LunacekRastrigin                  10              10              10              10
+
+[D] PER-FUNCTION SR@1e-10 CHANGES vs ref (only funcs that moved)
+  v4_k50fR_r50         up 0 []  down 0 []
+  v5_paceR             up 2 [F19 95->100, F20 80->85]  down 1 [F23 100->95]
+  v5_pmax3             up 0 []  down 0 []
+
+[E] WILCOXON (reference = MC-ESO, alpha=0.05 two-sided; a12>0.5 => ref better)
+  v4_k50fR_r50         ref 0 win / 0 loss
+  v5_paceR             ref 0 win / 0 loss
+  v5_pmax3             ref 0 win / 0 loss
+
+[F] funcs where every method is 100% / where every method is 0%
+  all-100%: 19 ['F01', 'F02', 'F03', 'F04', 'F05', 'F06', 'F07', 'F08', 'F09', 'F10', 'F11', 'F13', 'F14', 'F15', 'F16', 'F17', 'F18', 'F21', 'F22']
+  all-0%:   0 []

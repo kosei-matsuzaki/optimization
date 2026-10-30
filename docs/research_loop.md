@@ -117,8 +117,6 @@
 
 **2026-10-30 から `MC-ESO` は新しい既定（旧 `v4_k50fR_r50`）。** 旧既定は `MC-ESO-v3`。`v3_*` / `v4_*` の腕は旧既定の上で走る（記録した数値が再現する）。`v5_*` と `ctl_*` は新しい既定の上。j47 / j49 / j57 のパネルの `MC-ESO` は**旧既定**なので、新しい既定のパネル順位は同じ run に入れた `v4_k50fR_r50`（新しい既定と bit 一致）で読む。
 
-1. **【j61 (d2) v5 の 1 本目（2D）】** 2D で動くのは延命の 2 腕だけ（ほかの v5 の腕は 3 次元以上なので bit 一致になる）。`./run.sh quick --all --max-evals 5000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v4_k50fR_r50,v5_paceR,v5_pmax3" --jobs 4`（label `j61_d2`）と `--instances 6-10 --seed-offset 7`（label `j61_d2ho`）。**集計**: j60 (a) と同じ（パネルは `cec_panel.py --dim 2 --panel analysis/single/j57/j57_d2 --drop "MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,v3_stage,v4_keep25p,v4_keep50,v4_pace"`、`v4_k50fR_r50` が 4.44 を再現するか）。**記録**: `analysis/single/j61/`。採否の判断はしない。 (claimed 2026-10-30 02:30 UTC)
-
 **対話セッションでやること（測定ルーチンは取らない）**: j61 (m) が `runs/` に載ったら `scripts/web/methods_data.py` で `web/static/methods_data.json` を作り直し、`/methods` の「表の MC-ESO は前の既定」の注記を外す。
 
 ---
@@ -146,6 +144,22 @@
 ---
 
 ## 作業ログ
+
+### 2026-10-30 j61 (d2) 2D の 2 設定を完走 — 2D で動く v5 の腕は `v5_paceR` だけ（`v5_pmax3` は既定と bit 一致）。パネル CEC 順位は `v4_k50fR_r50` 4.44 で j60 (d2) を再現、`v5_paceR` は 4.52 で新既定より上（悪い）。SR@1e-10 は調整で基準 94.8% に対し `v5_paceR` 94.4%、hold-out は基準 94.4% に対し 94.6%。Wilcoxon は 2 設定とも 3 腕すべて 0勝0敗
+- **ランした分**: ジョブ (d2) の 2 設定。`./run.sh quick --all --max-evals 5000 --n-runs 20 --instances 1-5 [--instances 6-10 --seed-offset 7] --methods "MC-ESO,v4_k50fR_r50,v5_paceR,v5_pmax3"` を **2 本同時に `--jobs 2` ずつ**（ジョブは `--jobs 4`。`--jobs` は結果を変えない）。`j61_d2` 02:36:55-02:50:14 = **13.3 分**、`j61_d2ho` 02:37:50-02:51:01 = **13.2 分**。shard 分割なし、合計 wall **14.1 分**。2 本とも `result.json` が `status=done`、**各 24/24 関数**（summary 96 行 = 24×4・wilcoxon 72 行 = 24×3、reference はすべて `MC-ESO`）
+- **環境**: numpy 2.4.6 / cma 4.5.0 / scipy 1.17.1、python 3.11.17（`run.sh` の `PY` ＝ `/usr/local/bin/python3`）。CPU Intel Xeon @**2.10GHz**（family 6 / **model 207 / stepping 2**、4 CPUs）、avx512f あり、BLAS は openblas（SkylakeX、num_threads 4）、`OMP_NUM_THREADS=1`。容器仕様は j60 (c20)・j61 (m2) と同じで、**j60 (d2) の容器（@2.80GHz / model 85 / stepping 7）とは別仕様。だが下の bit 一致のとおり 2D では 1 セルも動かなかった**
+- **容器差は 2D では出なかった（パネル比較の妥当性）**: この run の `v4_k50fR_r50` は j60 (d2) の同名手法と per-run の `best_f` / `n_evals` / `success` が **1440/1440 一致**（hold-out も新既定 `MC-ESO` 対 j60 の `v4_k50fR_r50` で 1440/1440）。j60 の `MC-ESO`（旧既定）対 j57 パネルの `MC-ESO` も 1440/1440
+- **名前の付け替えの検算**: 新既定 `MC-ESO` 対 `v4_k50fR_r50` が 2 設定とも per-run 1440/1440 一致・[1] の全セル一致 ＝ 付け替えは bit 一致
+- **2D で `v5_pmax3` は既定と区別できない**: `v5_pmax3` 対 `MC-ESO` も 2 設定とも **1440/1440 一致**。ジョブは「2D で動くのは延命の 2 腕」と書いていたが、**実際に動いたのは `v5_paceR` だけ**（`v5_paceR` 対基準は調整 1419/1440・hold-out 1416/1440、差は F04・F19・F20・F23・F24 に限る）
+- **全体表 2D 調整 instance 1-5（24 関数平均、SR@1e-10 / 1e-7 / 1e-4 / 1e-2、`evals_mean` ＝ `analyze_quick` [1]）**: 基準 `MC-ESO` **94.8 / 95.4 / 96.0 / 96.2、776** ｜ `v4_k50fR_r50` 94.8 / 95.4 / 96.0 / 96.2、776（基準と同値）｜ `v5_paceR` **94.4 / 95.2 / 95.8 / 95.8、772** ｜ `v5_pmax3` 94.8 / 95.4 / 96.0 / 96.2、776（基準と同値）
+- **全体表 2D hold-out instance 6-10 (+seed-offset 7)**: 基準 `MC-ESO` **94.4 / 95.2 / 95.6 / 95.6、874** ｜ `v4_k50fR_r50` 同値 ｜ `v5_paceR` **94.6 / 95.4 / 95.8 / 95.8、876** ｜ `v5_pmax3` 同値 ＝ **`v5_paceR` は調整で 0.4pt 下、hold-out で 0.2pt 上**（符号が逆）
+- **`evals_succ_mean`（基準と腕の両方で成功のある関数だけの対応平均。腕 対 基準、共通関数数）**: 調整 `v5_paceR` 772.2 対 775.5（24、−3.3）｜ `v4_k50fR_r50` ＝ `v5_pmax3` 775.5 対 775.5（24）。hold-out `v5_paceR` 876.3 対 873.5（24、+2.8）｜ 他 2 腕は 873.5 対 873.5（24）
+- **パネル CEC 順位（低いほど良い。かっこ内は平均誤差が基準より下 / 上の関数数）**: 調整 instance の 10 手法パネル（`cec_panel.py --dim 2 --panel analysis/single/j57/j57_d2 --drop` で旧腕 8 手法を外す。**パネルの基準 ＝ 旧既定 4.52 ＝ j57 を再現**）**`v4_k50fR_r50` 4.44（1/2）＝ `v5_pmax3` 4.44（1/2）＝ 新既定の値で j60 (d2) の 4.44 を再現**（動いた関数も同じ F19 2→4・F20 7→3）｜ **`v5_paceR` 4.52（1/0）** ＝ 新既定 4.44 より上（悪い）で旧既定と同値。hold-out は instance が違うのでパネルを当てていない
+- **run 内の CEC 順位（`analyze_quick` [5]、参考。4 手法）**: 調整 `v5_paceR` **2.44**（24 関数中 23 で最良）＜ 基準 ＝ `v4_k50fR_r50` ＝ `v5_pmax3` 2.52（22）｜ hold-out `v5_paceR` **2.38**（23）＜ 他 3 つ 2.54（21）＝ **run 内順位では `v5_paceR` が 2 設定とも上。パネル順位とは向きが逆**
+- **関数別 SR@1e-10 の変化（基準 → 腕、動いた関数のみ）**: 調整 `v5_paceR` up 1 [F19 95→100] down 2 [F20 100→90, F23 100→95]、`v4_k50fR_r50` と `v5_pmax3` は **変化なし**。F01-F11・F14-F17・F21・F22 の 17 関数は 4 手法すべて 100%、0% の関数は無し ｜ hold-out `v5_paceR` up 2 [F19 95→100, F20 80→85] down 1 [F23 100→95]、他 2 腕は **変化なし**。19 関数が全手法 100%、0% の関数は無し（F24 は全手法 10%）
+- **Wilcoxon（`best_f`、reference `MC-ESO`、α=0.05 両側、基準の 勝/敗 ＋ A12）**: **調整・hold-out とも 3 腕すべて 0勝0敗**（有意差のある関数が無い）。`analyze_quick` [4] も「MC-ESO is never significantly beaten」
+- **記録**: summary / wilcoxon は `analysis/single/j61/{summary,wilcoxon}_j61_{d2,d2ho}.csv`、`analyze_quick` 全文は `aq_j61_{d2,d2ho}.txt`、腕ごとの関数別表と Wilcoxon 明細は `arms_j61_{d2,d2ho}.txt`、パネル順位は `cecpanel_j61_d2.txt`、per-run stats は `analysis/single/j61/j61_{d2,d2ho}/dim2/stats/*.csv.gz`
+- **書かれたとおりに行かなかったこと**: (1) `pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので findings.md の手順どおり空 stub を `PYTHONPATH` に置いた。さらに**この容器では `pip` が python 3.13 を指していて `run.sh` の `python3`（3.11）に何も入っていなかった**ので、`/usr/local/bin/python3 -m pip` で 3.11 側に入れ直し、過去 12 回の記録と同じ numpy 2.4.6 に固定した（素の `pip install numpy` は 2.5.4 になる）。`minionpy` / `nevergrad` は今回の 4 手法に不要なので入れていない。(2) 2 設定を同時に `--jobs 2` ずつで回した（ジョブは `--jobs 4`）。(3) `arms_*.txt` を出すスクリプトはリポジトリに無いので、記録用に同じ体裁のものを書いて使った（判断は足していない）。(4) `find analysis -type f` は **1649 で上限の約 400 を大きく超えている**（この run で +57。削除はしていない）。(5) `check_doc_size.py` が **`docs/research_loop.md` 346 / 300 行で OVER**（この追記を含む）。統合は対話セッションの担当なのでそのまま commit した
 
 ### 2026-10-30 j61 (a10ho) 10D hold-out を完走 — パネル CEC 順位は `v4_k50fR_r50` 4.46 で j59 の値を再現。腕で基準より下（良い）は `v5_pmax3` 4.38 と `v5_slow5` 4.42 の 2 つだけ、`v5_paceR` 4.54 ＜ `ctl_plainwave` ＝ `v5_herd` 4.81 は上。SR@1e-10 は基準 63.8% に対し上回る腕は無く、`ctl_plainwave` と `v5_herd` が 54.8% で大きく下。腕が Wilcoxon で基準に勝った関数はゼロ
 - **ランした分**: ジョブのとおり 1 本（shard 分割なし）。`./run.sh quick --all --dim 10 --max-evals 25000 --n-runs 20 --instances 6-10 --seed-offset 7 --methods "MC-ESO,v4_k50fR_r50,v5_paceR,v5_pmax3,v5_herd,v5_slow5,v5_chainR,ctl_plainwave" --jobs 4`（label `j61_a10ho`）。01:36:21-02:05:35 = **29.2 分**。`result.json` は `status=done` / `set=all-d10`、**24/24 関数**（summary 192 行 = 24×8・wilcoxon 168 行 = 24×7・stats 24・`mceso_runs.csv` 3840 行 = 8×24×20、(関数, 手法) の重複・欠落ゼロ、wilcoxon の reference はすべて `MC-ESO`）
