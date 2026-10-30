@@ -136,7 +136,7 @@ function renderResults(dim) {
 
 // The latest MC-ESO default change and the arm that keeps the default before it
 // (quick_check.py). A run recorded earlier shows that default under "MC-ESO".
-const LAST_DEFAULT_CHANGE = '2026-10-30';
+const LAST_DEFAULT_CHANGE = '2026-10-29T17:02';   // commit 69e8f23 (UTC; run created_at is UTC on the cloud)
 const PREV_DEFAULT = 'MC-ESO-v3';
 
 // Reading notes, computed from the same data so they cannot drift from the table.

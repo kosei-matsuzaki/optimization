@@ -310,7 +310,7 @@
     <section class="mt-section" id="results">
       <h2>成績</h2>
       <p class="mt-p">
-        2026-10-13 に回した quick（BBOB-24 関数、instance 1、各 20 run、予算 2500 × 次元）の結果。<b>表の MC-ESO は 2026-10-13〜29 の既定（いまの MC-ESO-v3）で、2026-10-30 の既定の変更（<a href="#quarantine">隔離・延命・回復・予報の子</a>）は入っていない</b>（新しい既定での取り直しはクラウドの測定ジョブ j61）。標準の比較手法 16 個（CEC の競技の優勝手法と最新の ARRDE・RCMAES・NL-SHADE-RSP・BIPOP-aCMA-ES を含む。選び方は <code>docs/baselines.md</code>）と MC-ESO の 2 世代（2026-10-13〜29 の既定 ＝ いまの MC-ESO-v3、2026-10-12 の既定 MC-ESO-v2）を並べた。31 手法すべての比較と CEC2022（10D / 20D）の結果も共有の結果置き場にある
+        2026-10-29 に正準環境（クラウド）で回した quick（BBOB-24 関数、instance 1、各 20 run、予算 2500 × 次元、測定ジョブ j61 (m)）の結果。表の MC-ESO は 2026-10-30 からの既定（<a href="#quarantine">隔離・延命・回復・予報の子</a>を含む）。標準の比較手法 16 個（CEC の競技の優勝手法と最新の ARRDE・RCMAES・NL-SHADE-RSP・BIPOP-aCMA-ES を含む。選び方は <code>docs/baselines.md</code>）と MC-ESO の 2 世代（いまの既定と、2026-10-13〜29 の既定 MC-ESO-v3）を並べた。同じ 18 手法の CEC2022（10D / 20D）の結果と、2026-10-13 の 31 手法すべての比較（ローカル）も共有の結果置き場にある
         （<code>LSHADE-cnEpSin</code> と <code>NGOpt</code> はこの環境の numpy 2.4.6 で動かないため除外、多解専用の手法は回していない）。
         共有の結果置き場 <code>runs/</code> に入っているので、どの PC の Results UI からも開ける。
         数値は <code>results/</code> の CSV を <code>scripts/web/methods_data.py</code> で集計したもので、<code>scripts/analyze_quick.py</code> の集計と同じ。
@@ -331,12 +331,12 @@
       <aside class="mt-caveat">
         <h3>読むときの注意</h3>
         <ul>
-          <li>このPC（Windows）で回したもの。このプロジェクトの正準環境はクラウドで、ローカルの結果は同じ run の中での手法どうしの比較にだけ使う。記録済みの正準環境の値（例: 2026-10-13 の既定の 2D 95.21%）とは一致しない。</li>
+          <li>正準環境（クラウド）で回したもの。比較パネル（<code>docs/findings.md</code>）とは instance が違う（ここは instance 1 だけ）ので、数値は一致しない。</li>
           <li>20 run なので、1 関数あたり 5pt の差は 1 run の差。Wilcoxon の勝ち・負けは「MC-ESO が有意に良い／悪い関数の数」（p &lt; 0.05、向きは A12）。</li>
-          <li>この表の MC-ESO は 2026-10-13〜29 の既定（いまの MC-ESO-v3）、MC-ESO-v2 は 2026-10-12 の既定値。両者の差が 2026-10-13 の変更の分。2026-10-30 の変更の分は上の「隔離・延命・回復・予報の子」の節の数値（クラウドの比較パネル）を見る。</li>
-          <li>新しい 4 手法（minionpy）は同じ条件の別の run で測って結合した（MC-ESO の結果が全 run で一致することを確かめた）。RCMAES は 2D / 5D の一部の run で数値的に破綻する（ライブラリ側）ので、破綻する前の最良値を成績にしている。</li>
-          <li>調整に使っていない CEC2022 では、この表の MC-ESO（2026-10-13 の既定）の CEC 順位は 18 手法中 13 位（10D）・18 位（20D、最下位）。BBOB の順位はこの関数群に合わせ込んだ分を含む。</li>
-          <li>instance 1 は MC-ESO の調整に使ってきた問題。調整に使っていない instance 2〜4 では、5D の SR@1e-10 の首位が ELSHADE-SPACMA に替わる（クラウドの測定、<a href="https://github.com/kosei-matsuzaki/optimization/blob/main/docs/findings.md">findings.md</a> 7 節）。</li>
+          <li>MC-ESO-v3 は 2026-10-13〜29 の既定。両者の差が 2026-10-30 の変更の分（2D ではほぼ差がなく、10D では Wilcoxon で 8 関数が有意に改善、悪化 0）。</li>
+          <li>RCMAES は 2D / 5D の一部の run で数値的に破綻する（ライブラリ側）ので、破綻する前の最良値を成績にしている。</li>
+          <li>調整に使っていない CEC2022 では、いまの既定の CEC 順位は 18 手法中 10 位（10D）・11 位（20D）。前の既定（MC-ESO-v3）の 15 位・18 位（最下位）から上がったが、ARRDE・LSHADE-SPACMA などの上位には届いていない。BBOB の順位はこの関数群に合わせ込んだ分を含む。</li>
+          <li>instance 1 は MC-ESO の調整に使ってきた問題。調整に使っていない instance 2〜4 では、5D の SR@1e-10 の首位が ELSHADE-SPACMA に替わる（2026-10-13 の既定でのクラウドの測定、<a href="https://github.com/kosei-matsuzaki/optimization/blob/main/docs/findings.md">findings.md</a> 7 節）。</li>
           <li>平均評価回数は、成功した run だけの平均を関数について平均したもの。成功した関数が少ない手法ほど易しい関数だけの値になるので、成功率と一緒に読む。</li>
         </ul>
       </aside>

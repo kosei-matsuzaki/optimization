@@ -607,6 +607,16 @@ _OPTIMIZERS = {
     "v5_herd":        (MultiChannelEpidemicOptimizer, {"herd_child": True}),
     "v5_slow5":       (MultiChannelEpidemicOptimizer, {"keepair_slow": 0.5}),
     "v5_chainR":      (MultiChannelEpidemicOptimizer, {"chain_trace": True, "chain_route": True}),
+    # 2026-10-30, after j61: ctl_plainwave (plain CMA-ES waves) was best at 20D
+    # and worst at 5D/10D. Take its three differences apart: CMA-ES's default λ
+    # for every wave, no whitening by the learned C, σ0 = 0.2·span.
+    "v5_wlam":        (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": -1.0, "wave_handover_lambda": 0.0}),
+    "v5_wnoC":        (MultiChannelEpidemicOptimizer, {"wave_use_C": False}),
+    "v5_wsig":        (MultiChannelEpidemicOptimizer, {"wave_sigma_ratio": 0.2}),
+    # the two arms of j61 that never lost (bit-identical in most settings)
+    "v5_cp":          (MultiChannelEpidemicOptimizer, {"chain_trace": True, "chain_route": True, "pace_max": 3.0}),
+    "v5_cpl":         (MultiChannelEpidemicOptimizer, {"chain_trace": True, "chain_route": True, "pace_max": 3.0,
+                                                       "hd_wave_lambda": -1.0, "wave_handover_lambda": 0.0}),
     "v3_strAB":       (MultiChannelEpidemicOptimizer, {"strain_compete": True, "strain_min": 0.02, "strain_max": 0.5}),
     "v3_scan1wf3":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 3}),
     "v3_scan1wf8":    (MultiChannelEpidemicOptimizer, {"reassort_scan_retry": False, "wave_fail_gate": 8}),
