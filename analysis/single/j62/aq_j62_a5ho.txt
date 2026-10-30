@@ -1,0 +1,59 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=5   ref=MC-ESO
+run: 20261030_173407_j62_a5ho_quick
+meta: n_runs=20 max_evals=12500 set=all-d5 commit=74e350d
+functions: 24   methods: MC-ESO, v5_wlam, v5_wnoC, v5_wsig, v5_cp, v5_cpl
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            75.4%   76.7%   77.7%   78.1%        3916            
+  v5_wlam           70.0%   71.7%   77.3%   77.9%        3897         3/1
+  v5_wnoC           74.8%   75.8%   77.5%   78.1%        3908         0/0
+  v5_wsig           74.4%   75.8%   77.7%   78.5%        3984         1/0
+  v5_cp             75.2%   76.5%   77.5%   77.9%        3898         0/0
+  v5_cpl            70.0%   71.9%   77.1%   77.7%        3882         3/1
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%         v5_wlam 100%            1759/1759
+  F02-EllipsoidalSep              100%         v5_wlam 100%            2642/2642
+  F03-RastriginSep                100%         v5_wlam 100%            4452/4452
+  F04-BucheRastrigin               75%          v5_wlam 75%            4515/4515
+  F05-LinearSlope                 100%         v5_wlam 100%            2354/2354
+  F06-AttractiveSector            100%         v5_wlam 100%            3484/3484
+  F07-StepEllipsoidal             100%         v5_wlam 100%            1569/1569
+  F08-Rosenbrock                  100%         v5_wlam 100%            3917/3914
+  F09-RosenbrockRot               100%         v5_wlam 100%            3741/3741
+  F10-EllipsoidalRot              100%         v5_wlam 100%            2969/2927
+  F11-Discus                      100%         v5_wlam 100%            2507/2507
+  F12-BentCigar                   100%         v5_wlam 100%            4958/4789
+  F13-SharpRidge                  100%         v5_wlam 100%            3693/3713
+  F14-DiffPowers                  100%         v5_wlam 100%            2074/2074
+  F15-RastriginRot                 10%          v5_wlam 10%            6574/6574
+  F16-Weierstrass                  65%          v5_wnoC 65%            4258/4258
+  F17-SchafferF7                   90%          v5_wnoC 90%            3844/3844
+  F18-SchafferF7ill                55%            v5_cp 55%            4872/4872
+  F19-GriewankRosenbrock            0%           v5_wlam 0%                    -
+  F20-Schwefel                      5%          v5_wsig 10%            6256/7822  <-- ref behind
+  F21-Gallagher101                 80%          v5_wlam 80%            4944/4944
+  F22-Gallagher21                  90%          v5_wlam 90%            4153/4153
+  F23-Katsuura                     40%          v5_wnoC 40%            6620/6620
+  F24-LunacekRastrigin              0%           v5_wlam 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F19-GriewankRosenbrock vs v5_cpl         p=0.00335 A12=0.46 (negligible)
+  F19-GriewankRosenbrock vs v5_wlam        p=0.00335 A12=0.46 (negligible)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v5_cp                  mean rank   3.38   best on 21/24
+   2. v5_wsig                mean rank   3.44   best on 19/24
+   3. v5_wlam                mean rank   3.48   best on 20/24
+   4. MC-ESO                 mean rank   3.52   best on 19/24  <- ref
+   5. v5_cpl                 mean rank   3.56   best on 20/24
+   6. v5_wnoC                mean rank   3.62   best on 18/24
+

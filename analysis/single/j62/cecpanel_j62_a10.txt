@@ -1,0 +1,14 @@
+dim 10: 24 functions, panel = MC-ESO + ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES
+  MC-ESO                 mean rank  4.62
+  newdef_v4_k50fR_r50    mean rank  4.25   mean error below base on 7, above on 4
+      rank moved: F18 6->7, F19 8->1, F21 1->3, F23 2->1, F24 9->5
+  v5_cp                  mean rank  4.25   mean error below base on 7, above on 4
+      rank moved: F18 6->7, F19 8->1, F21 1->3, F23 2->1, F24 9->5
+  v5_cpl                 mean rank  4.38   mean error below base on 8, above on 4
+      rank moved: F13 3->5, F18 6->8, F19 8->1, F21 1->3, F23 2->1, F24 9->5
+  v5_wlam                mean rank  4.38   mean error below base on 8, above on 4
+      rank moved: F13 3->5, F18 6->8, F19 8->1, F21 1->3, F23 2->1, F24 9->5
+  v5_wnoC                mean rank  4.25   mean error below base on 7, above on 4
+      rank moved: F18 6->7, F19 8->1, F21 1->3, F23 2->1, F24 9->5
+  v5_wsig                mean rank  4.50   mean error below base on 8, above on 5
+      rank moved: F09 3->8, F13 3->5, F18 6->7, F19 8->1, F20 7->6, F21 1->3, F23 2->1, F24 9->5

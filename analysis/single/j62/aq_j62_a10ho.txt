@@ -1,0 +1,59 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261030_181400_j62_a10ho_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=74e350d
+functions: 24   methods: MC-ESO, v5_wlam, v5_wnoC, v5_wsig, v5_cp, v5_cpl
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            63.8%   65.0%   68.5%   69.8%       10328            
+  v5_wlam           59.2%   60.8%   61.7%   68.3%        9079         5/1
+  v5_wnoC           63.8%   65.2%   68.3%   69.8%       10387         1/0
+  v5_wsig           61.0%   61.5%   68.3%   69.8%       11203         2/0
+  v5_cp             63.5%   64.8%   68.3%   69.6%       10357         0/0
+  v5_cpl            59.2%   60.8%   61.7%   68.3%        9170         4/1
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%         v5_wlam 100%            4917/4917
+  F02-EllipsoidalSep              100%         v5_wlam 100%            6524/6524
+  F03-RastriginSep                100%         v5_wlam 100%            9314/9314
+  F04-BucheRastrigin               50%          v5_wlam 50%           10092/9864
+  F05-LinearSlope                 100%         v5_wlam 100%            7347/7347
+  F06-AttractiveSector            100%         v5_wlam 100%          10685/10685
+  F07-StepEllipsoidal              95%         v5_wsig 100%            6660/7092  <-- ref behind
+  F08-Rosenbrock                  100%         v5_wlam 100%           13966/9959
+  F09-RosenbrockRot               100%         v5_wlam 100%           13571/9588
+  F10-EllipsoidalRot              100%         v5_wlam 100%            7104/6637
+  F11-Discus                      100%         v5_wlam 100%            6362/6192
+  F12-BentCigar                    95%         v5_wlam 100%          13220/11748  <-- ref behind
+  F13-SharpRidge                  100%         v5_wnoC 100%            9059/9059
+  F14-DiffPowers                  100%         v5_wlam 100%            6006/5989
+  F15-RastriginRot                  0%           v5_wlam 0%                    -
+  F16-Weierstrass                  25%          v5_wnoC 25%          14861/16288
+  F17-SchafferF7                   55%          v5_wnoC 55%          13593/13649
+  F18-SchafferF7ill                 0%           v5_wlam 0%                    -
+  F19-GriewankRosenbrock            0%           v5_wlam 0%                    -
+  F20-Schwefel                      0%           v5_wsig 5%                    -  <-- ref behind
+  F21-Gallagher101                 55%          v5_wlam 55%          10251/10251
+  F22-Gallagher21                  40%          v5_wlam 40%          13687/13687
+  F23-Katsuura                     15%          v5_wnoC 15%          11784/11784
+  F24-LunacekRastrigin              0%           v5_wlam 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F19-GriewankRosenbrock vs v5_cpl         p=0.0331 A12=0.48 (negligible)
+  F19-GriewankRosenbrock vs v5_wlam        p=0.0331 A12=0.50 (negligible)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v5_cp                  mean rank   3.25   best on 19/24
+   2. MC-ESO                 mean rank   3.42   best on 18/24  <- ref
+   3. v5_wsig                mean rank   3.46   best on 17/24
+   4. v5_cpl                 mean rank   3.48   best on 16/24
+   5. v5_wnoC                mean rank   3.54   best on 16/24
+   6. v5_wlam                mean rank   3.85   best on 16/24
+

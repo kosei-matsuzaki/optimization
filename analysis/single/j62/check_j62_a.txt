@@ -1,0 +1,17 @@
+v4_k50fR_r50@summary_j61_j61_a5.csv vs MC-ESO@summary.csv: 24 funcs x 45 cols -> 1080/1080 equal, 0 differ
+v4_k50fR_r50@summary_j61_j61_a5ho.csv vs MC-ESO@summary.csv: 24 funcs x 45 cols -> 1080/1080 equal, 0 differ
+v4_k50fR_r50@summary_j61_j61_a10.csv vs MC-ESO@summary.csv: 24 funcs x 45 cols -> 1080/1080 equal, 0 differ
+v4_k50fR_r50@summary_j61_j61_a10ho.csv vs MC-ESO@summary.csv: 24 funcs x 45 cols -> 1080/1080 equal, 0 differ
+--- v5_cp vs j61 v5_chainR ---
+v5_chainR@summary_j61_j61_a5.csv vs v5_cp@summary.csv: 24 funcs x 45 cols -> 1079/1080 equal, 1 differ
+    F06.mean_best_f: 3.3928e-14 vs 3.6771e-14
+v5_chainR@summary_j61_j61_a5ho.csv vs v5_cp@summary.csv: 24 funcs x 45 cols -> 1080/1080 equal, 0 differ
+v5_chainR@summary_j61_j61_a10.csv vs v5_cp@summary.csv: 24 funcs x 45 cols -> 1080/1080 equal, 0 differ
+v5_chainR@summary_j61_j61_a10ho.csv vs v5_cp@summary.csv: 24 funcs x 45 cols -> 1073/1080 equal, 7 differ
+    F15.mean_best_f: 5.8795e+00 vs 5.7800e+00
+    F15.median_best_f: 5.4746e+00 vs 4.9785e+00
+    F16.mean_best_f: 8.6551e-02 vs 6.4597e-02
+    F16.median_best_f: 4.9720e-02 vs 4.7887e-02
+    F16.sr_1e-1: 70% vs 75%
+    F16.ecdf_auc: 0.0241 vs 0.0243
+    F24.mean_best_f: 1.5477e+01 vs 1.5482e+01

@@ -1,0 +1,63 @@
+run=20261030_173359_j62_a5_quick dim=5 funcs=24 methods=6 rows=144
+methods: MC-ESO, v5_wlam, v5_wnoC, v5_wsig, v5_cp, v5_cpl
+duplicates=0 missing=0
+wilcoxon rows=120 references={'MC-ESO'}
+
+[OVERALL mean SR over all functions]
+  method                 SR@1e-10    1e-7    1e-4    1e-2
+  MC-ESO                    76.9%    78.3%    80.4%    81.2%
+  v5_wlam                   72.9%    75.4%    79.4%    81.0%
+  v5_wnoC                   77.3%    78.8%    80.6%    81.2%
+  v5_wsig                   76.0%    78.1%    79.6%    81.0%
+  v5_cp                     76.7%    77.9%    80.2%    81.0%
+  v5_cpl                    72.7%    75.4%    79.2%    80.8%
+
+[evals_succ_mean, paired: functions where BOTH ref and arm have successes]
+  v5_wlam                ref    3840.6 -> arm    3819.2  (n_func=22, diff     -21.4)
+  v5_wnoC                ref    3840.6 -> arm    3841.4  (n_func=22, diff      +0.8)
+  v5_wsig                ref    3840.6 -> arm    3768.5  (n_func=22, diff     -72.1)
+  v5_cp                  ref    3840.6 -> arm    3836.9  (n_func=22, diff      -3.7)
+  v5_cpl                 ref    3840.6 -> arm    3815.3  (n_func=22, diff     -25.3)
+
+[per-function SR@1e-10 change vs ref (all functions scanned)]
+  v5_wlam                up 0 []  down 4 [F16 65->55, F17 80->30, F18 70->40, F23 50->45]
+  v5_wnoC                up 2 [F18 70->75, F19 0->5]  down 0 []
+  v5_wsig                up 1 [F17 80->85]  down 2 [F16 65->50, F18 70->60]
+  v5_cp                  up 1 [F18 70->75]  down 2 [F15 10->5, F16 65->60]
+  v5_cpl                 up 0 []  down 5 [F15 10->5, F16 65->55, F17 80->30, F18 70->40, F23 50->45]
+
+[Wilcoxon vs ref, alpha=0.05 two-sided (ref wins = A12>0.5)]
+  v5_wlam                ref_wins 4 / arm_wins 0
+      ref better: F13 A12=0.77 (large), F17 A12=0.74 (large), F18 A12=0.71 (large), F23 A12=0.53 (negligible)
+  v5_wnoC                ref_wins 0 / arm_wins 0
+  v5_wsig                ref_wins 0 / arm_wins 0
+  v5_cp                  ref_wins 0 / arm_wins 0
+  v5_cpl                 ref_wins 3 / arm_wins 0
+      ref better: F13 A12=0.77 (large), F17 A12=0.74 (large), F18 A12=0.71 (medium)
+
+[mean_best_f per function (cec-style raw mean error is in cec_panel; this is summary mean_best_f)]
+  func          MC-ESO       v5_wlam       v5_wnoC       v5_wsig         v5_cp        v5_cpl
+  F01                0             0             0             0             0             0
+  F02                0             0             0             0             0             0
+  F03                0             0             0             0             0             0
+  F04           0.0995        0.0995        0.0995        0.0995        0.0995        0.0995
+  F05                0             0             0             0             0             0
+  F06        3.393e-14     3.393e-14     3.393e-14     3.393e-14     3.677e-14     3.677e-14
+  F07                0             0             0             0             0             0
+  F08                0             0             0             0             0             0
+  F09                0             0             0             0             0             0
+  F10                0             0             0             0             0             0
+  F11                0             0             0             0             0             0
+  F12                0             0             0             0             0             0
+  F13        5.329e-15     2.993e-13     5.329e-15     5.329e-15     5.329e-15     2.993e-13
+  F14                0     2.487e-15             0             0             0     2.487e-15
+  F15            1.443         1.443         1.443         1.443         1.542         1.542
+  F16          0.02088       0.02078       0.02088       0.02162       0.02525       0.02515
+  F17        3.814e-05     2.251e-05     3.885e-05     3.786e-05     3.814e-05     2.251e-05
+  F18        1.147e-06     4.447e-05     8.987e-07     0.0001003     1.146e-06     4.433e-05
+  F19          0.09965       0.09976       0.09946       0.09965       0.09965       0.09976
+  F20           0.5527         0.531        0.5527         0.531        0.5448        0.5231
+  F21           0.1276        0.1276        0.1276        0.1276        0.1276        0.1276
+  F22           0.1253        0.1253        0.1253        0.1253        0.1253        0.1253
+  F23          0.01743        0.0226       0.01743       0.01743       0.01041       0.01558
+  F24            4.696         4.696         4.696         4.696         4.801         4.801
