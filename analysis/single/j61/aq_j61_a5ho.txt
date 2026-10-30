@@ -1,0 +1,62 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=5   ref=MC-ESO
+run: 20261030_000222_j61_a5ho_quick
+meta: n_runs=20 max_evals=12500 set=all-d5 commit=a6ea25d
+functions: 24   methods: MC-ESO, ctl_plainwave, v4_k50fR_r50, v5_paceR, v5_pmax3, v5_herd, v5_slow5, v5_chainR
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            75.4%   76.7%   77.7%   78.1%        3916            
+  ctl_plainwave     66.2%   70.2%   75.6%   77.9%        3976         6/0
+  v4_k50fR_r50      75.4%   76.7%   77.7%   78.1%        3916         0/0
+  v5_paceR          75.6%   76.5%   77.7%   78.1%        3953         1/0
+  v5_pmax3          75.4%   76.7%   77.7%   78.1%        3916         0/0
+  v5_herd           70.0%   71.5%   72.5%   74.4%        3663         3/0
+  v5_slow5          76.0%   77.5%   78.1%   78.3%        4117         0/0
+  v5_chainR         75.2%   76.5%   77.5%   77.9%        3898         0/0
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%   ctl_plainwave 100%            1759/1759
+  F02-EllipsoidalSep              100%   ctl_plainwave 100%            2642/2642
+  F03-RastriginSep                100%   ctl_plainwave 100%            4452/4452
+  F04-BucheRastrigin               75%     v4_k50fR_r50 75%            4515/4515
+  F05-LinearSlope                 100%   ctl_plainwave 100%            2354/2354
+  F06-AttractiveSector            100%   ctl_plainwave 100%            3484/3484
+  F07-StepEllipsoidal             100%   ctl_plainwave 100%            1569/1569
+  F08-Rosenbrock                  100%   ctl_plainwave 100%            3917/3969
+  F09-RosenbrockRot               100%   ctl_plainwave 100%            3741/3741
+  F10-EllipsoidalRot              100%   ctl_plainwave 100%            2969/3177
+  F11-Discus                      100%   ctl_plainwave 100%            2507/2507
+  F12-BentCigar                   100%   ctl_plainwave 100%            4958/5801
+  F13-SharpRidge                  100%    v4_k50fR_r50 100%            3693/3693
+  F14-DiffPowers                  100%   ctl_plainwave 100%            2074/2074
+  F15-RastriginRot                 10%    ctl_plainwave 10%            6574/6574
+  F16-Weierstrass                  65%     v4_k50fR_r50 65%            4258/4258
+  F17-SchafferF7                   90%     v4_k50fR_r50 90%            3844/3844
+  F18-SchafferF7ill                55%         v5_slow5 75%            4872/5330  <-- ref behind
+  F19-GriewankRosenbrock            0%     ctl_plainwave 0%                    -
+  F20-Schwefel                      5%    ctl_plainwave 10%            6256/6279  <-- ref behind
+  F21-Gallagher101                 80%         v5_paceR 95%            4944/5280  <-- ref behind
+  F22-Gallagher21                  90%    ctl_plainwave 90%            4153/4153
+  F23-Katsuura                     40%     v4_k50fR_r50 40%            6620/6620
+  F24-LunacekRastrigin              0%     ctl_plainwave 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  none — MC-ESO is never significantly beaten.
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v5_slow5               mean rank   3.96   best on 17/24
+   2. v5_paceR               mean rank   4.06   best on 17/24
+   3. v5_chainR              mean rank   4.42   best on 15/24
+   4. MC-ESO                 mean rank   4.52   best on 14/24  <- ref
+   5. ctl_plainwave          mean rank   4.52   best on 15/24
+   6. v4_k50fR_r50           mean rank   4.52   best on 14/24
+   7. v5_pmax3               mean rank   4.52   best on 14/24
+   8. v5_herd                mean rank   5.48   best on 12/24
+

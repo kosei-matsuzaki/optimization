@@ -1,0 +1,93 @@
+methods: ['MC-ESO', 'v4_k50fR_r50', 'ctl_plainwave', 'v5_paceR', 'v5_pmax3', 'v5_herd', 'v5_slow5', 'v5_chainR']
+funcs: 24
+
+[A] OVERALL  SR@1e-10 / 1e-7 / 1e-4 / 1e-2  (mean over 24 funcs), evals_succ_mean over own successes
+  MC-ESO              76.9  78.3  80.4  81.2   evals_own=   3840.6 (n=22)
+  v4_k50fR_r50        76.9  78.3  80.4  81.2   evals_own=   3840.6 (n=22)
+  ctl_plainwave       68.5  71.9  78.5  81.0   evals_own=   3874.0 (n=22)
+  v5_paceR            76.9  77.9  79.8  80.6   evals_own=   3692.2 (n=22)
+  v5_pmax3            76.9  78.3  80.4  81.2   evals_own=   3840.6 (n=22)
+  v5_herd             72.7  74.2  75.2  76.5   evals_own=   3671.2 (n=21)
+  v5_slow5            77.1  77.9  80.8  82.3   evals_own=   3928.7 (n=22)
+  v5_chainR           76.7  77.9  80.2  81.0   evals_own=   3836.9 (n=22)
+
+[B] evals_succ_mean PAIRED (only funcs where BOTH ref and arm have successes)
+  v4_k50fR_r50       arm    3840.6 vs ref    3840.6   (common 22)
+  ctl_plainwave      arm    3874.0 vs ref    3840.6   (common 22)
+  v5_paceR           arm    3692.2 vs ref    3840.6   (common 22)
+  v5_pmax3           arm    3840.6 vs ref    3840.6   (common 22)
+  v5_herd            arm    3671.2 vs ref    3713.3   (common 21)
+  v5_slow5           arm    3928.7 vs ref    3840.6   (common 22)
+  v5_chainR          arm    3836.9 vs ref    3840.6   (common 22)
+
+[C] PER-FUNCTION SR@1e-10 change (ref -> arm), only funcs that moved
+  v4_k50fR_r50       up 0 [] down 0 []
+  ctl_plainwave      up 0 [] down 5 [F13 100->55, F16 65->55, F17 80->10, F18 70->5, F23 50->40]
+  v5_paceR           up 2 [F21 75->95, F22 90->95] down 4 [F15 10->5, F16 65->55, F20 15->10, F23 50->45]
+  v5_pmax3           up 0 [] down 0 []
+  v5_herd            up 3 [F17 80->85, F21 75->80, F22 90->95] down 8 [F04 90->80, F07 100->95, F09 100->90, F13 100->90, F15 10->0, F18 70->45, F20 15->10, F23 50->10]
+  v5_slow5           up 3 [F16 65->70, F21 75->95, F23 50->60] down 3 [F17 80->70, F18 70->55, F20 15->10]
+  v5_chainR          up 1 [F18 70->75] down 2 [F15 10->5, F16 65->60]
+
+[D] SR@1e-10 by function, all methods (%)
+  function                                    MC-ESO    v4_k50fR_r50   ctl_plainwave        v5_paceR        v5_pmax3         v5_herd        v5_slow5       v5_chainR
+  F01-Sphere                                     100             100             100             100             100             100             100             100
+  F02-EllipsoidalSep                             100             100             100             100             100             100             100             100
+  F03-RastriginSep                               100             100             100             100             100             100             100             100
+  F04-BucheRastrigin                              90              90              90              90              90              80              90              90
+  F05-LinearSlope                                100             100             100             100             100             100             100             100
+  F06-AttractiveSector                           100             100             100             100             100             100             100             100
+  F07-StepEllipsoidal                            100             100             100             100             100              95             100             100
+  F08-Rosenbrock                                 100             100             100             100             100             100             100             100
+  F09-RosenbrockRot                              100             100             100             100             100              90             100             100
+  F10-EllipsoidalRot                             100             100             100             100             100             100             100             100
+  F11-Discus                                     100             100             100             100             100             100             100             100
+  F12-BentCigar                                  100             100             100             100             100             100             100             100
+  F13-SharpRidge                                 100             100              55             100             100              90             100             100
+  F14-DiffPowers                                 100             100             100             100             100             100             100             100
+  F15-RastriginRot                                10              10              10               5              10               0              10               5
+  F16-Weierstrass                                 65              65              55              55              65              65              70              60
+  F17-SchafferF7                                  80              80              10              80              80              85              70              80
+  F18-SchafferF7ill                               70              70               5              70              70              45              55              75
+  F19-GriewankRosenbrock                           0               0               0               0               0               0               0               0
+  F20-Schwefel                                    15              15              15              10              15              10              10              15
+  F21-Gallagher101                                75              75              75              95              75              80              95              75
+  F22-Gallagher21                                 90              90              90              95              90              95              90              90
+  F23-Katsuura                                    50              50              40              45              50              10              60              50
+  F24-LunacekRastrigin                             0               0               0               0               0               0               0               0
+
+[D2] CEC mean error by function (mean_best_f), all methods
+  function                                    MC-ESO    v4_k50fR_r50   ctl_plainwave        v5_paceR        v5_pmax3         v5_herd        v5_slow5       v5_chainR
+  F01-Sphere                               0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00
+  F02-EllipsoidalSep                       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00
+  F03-RastriginSep                         0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       4.263e-15       0.000e+00       0.000e+00
+  F04-BucheRastrigin                       9.950e-02       9.950e-02       9.950e-02       9.950e-02       9.950e-02       1.990e-01       9.950e-02       9.950e-02
+  F05-LinearSlope                          0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00
+  F06-AttractiveSector                     3.393e-14       3.393e-14       3.961e-14       3.677e-14       3.677e-14       5.400e-14       3.038e-14       3.393e-14
+  F07-StepEllipsoidal                      0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       4.977e-04       0.000e+00       0.000e+00
+  F08-Rosenbrock                           0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00
+  F09-RosenbrockRot                        0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       3.931e-01       0.000e+00       0.000e+00
+  F10-EllipsoidalRot                       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00
+  F11-Discus                               0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00
+  F12-BentCigar                            0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00       0.000e+00
+  F13-SharpRidge                           5.329e-15       5.329e-15       5.297e-10       5.329e-15       5.329e-15       3.658e-02       5.329e-15       5.329e-15
+  F14-DiffPowers                           0.000e+00       0.000e+00       2.242e-13       0.000e+00       0.000e+00       2.487e-15       0.000e+00       0.000e+00
+  F15-RastriginRot                         1.443e+00       1.443e+00       1.443e+00       1.628e+00       1.443e+00       2.737e+00       1.443e+00       1.542e+00
+  F16-Weierstrass                          2.088e-02       2.088e-02       2.106e-02       2.661e-02       2.088e-02       2.081e-02       1.953e-02       2.525e-02
+  F17-SchafferF7                           3.814e-05       3.814e-05       7.483e-05       3.814e-05       3.814e-05       1.013e-03       4.531e-06       3.814e-05
+  F18-SchafferF7ill                        1.147e-06       1.147e-06       5.615e-04       1.147e-06       1.147e-06       2.130e-02       5.592e-05       1.146e-06
+  F19-GriewankRosenbrock                   9.965e-02       9.965e-02       8.596e-02       1.055e-01       9.965e-02       6.559e-02       9.880e-02       9.965e-02
+  F20-Schwefel                             5.527e-01       5.527e-01       5.527e-01       5.606e-01       5.527e-01       5.844e-01       5.607e-01       5.448e-01
+  F21-Gallagher101                         1.276e-01       1.276e-01       1.276e-01       6.226e-02       1.276e-01       2.056e-01       2.160e-07       1.276e-01
+  F22-Gallagher21                          1.253e-01       1.253e-01       1.253e-01       3.459e-02       1.253e-01       3.459e-02       3.462e-02       1.253e-01
+  F23-Katsuura                             1.743e-02       1.743e-02       2.350e-02       4.595e-02       1.743e-02       7.283e-02       2.388e-02       1.041e-02
+  F24-LunacekRastrigin                     4.696e+00       4.696e+00       4.696e+00       5.449e+00       4.696e+00       5.123e+00       5.472e+00       4.801e+00
+
+[E] WILCOXON (reference=MC-ESO, p_two<0.05). 'ref wins' = A12>0.5
+  v4_k50fR_r50       ref wins 0 []  ref loses 0 []
+  ctl_plainwave      ref wins 5 [F13 A12=1.00 large, F14 A12=1.00 large, F17 A12=0.87 large, F18 A12=0.88 large, F23 A12=0.56 small]  ref loses 0 []
+  v5_paceR           ref wins 0 []  ref loses 0 []
+  v5_pmax3           ref wins 0 []  ref loses 0 []
+  v5_herd            ref wins 3 [F15 A12=0.84 large, F18 A12=0.77 large, F23 A12=0.80 large]  ref loses 0 []
+  v5_slow5           ref wins 0 []  ref loses 1 [F21 A12=0.40 small]
+  v5_chainR          ref wins 0 []  ref loses 0 []
