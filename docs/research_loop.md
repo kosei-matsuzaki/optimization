@@ -117,7 +117,7 @@
 
 **2026-10-30 から `MC-ESO` は新しい既定（旧 `v4_k50fR_r50`）。** 旧既定は `MC-ESO-v3`。`v3_*` / `v4_*` の腕は旧既定の上で走る（記録した数値が再現する）。`v5_*` と `ctl_*` は新しい既定の上。j47 / j49 / j57 のパネルの `MC-ESO` は**旧既定**なので、新しい既定のパネル順位は同じ run に入れた `v4_k50fR_r50`（新しい既定と bit 一致）で読む。
 
-1. **【j63 (h20) 20D の hold-out】** 調整に使っていない instance で 20D の利得を確かめる。`./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 6-10 --seed-offset 7 --methods "MC-ESO,v5_wlam,v5_wg1,v5_wg2,v5_wg2cp" --jobs 4`（label `j63_h20`）。パネルは無いので run 内の比較（標準の集計 ＋ [5] の run 内 CEC 順位）。**記録**: `analysis/single/j63/`。採否の判断はしない。
+1. **【j63 (h20) 20D の hold-out】** 調整に使っていない instance で 20D の利得を確かめる。`./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 6-10 --seed-offset 7 --methods "MC-ESO,v5_wlam,v5_wg1,v5_wg2,v5_wg2cp" --jobs 4`（label `j63_h20`）。パネルは無いので run 内の比較（標準の集計 ＋ [5] の run 内 CEC 順位）。**記録**: `analysis/single/j63/`。採否の判断はしない。 (claimed 2026-11-01 16:30 UTC)
 
 1. **【j63 (a) 5D/10D】** 手法 `"MC-ESO,v5_wlamS,v5_wg1,v5_wg2,v5_wg2cp"`、j50 と同じ 4 設定（label `j63_a5` / `j63_a5ho` / `j63_a10` / `j63_a10ho`、`--jobs 4`）。5D では `v5_wg1` / `v5_wg2` の λ は既定と同じ（20）なので **既定と bit 一致になるはず**（一致したかを書く）。**集計**: j62 (a) と同じ（新しい既定のパネル順位は 5D 4.12/4.15・10D 4.25/4.46）。**記録**: `analysis/single/j63/`。採否の判断はしない。
 
