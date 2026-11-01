@@ -1,5 +1,5 @@
 {
- "n_params": 140,
+ "n_params": 141,
  "groups": [
   {
    "label": "集団と選択",
@@ -907,6 +907,17 @@
      ],
      "meaning": "<b>不採用</b>（2026-10-14、延長が常に成立して不変）。封じ込めの波に渡す残り予算の割合。&lt; 1 なら波が流行を上回る間だけ延長する",
      "status": "rejected"
+    },
+    {
+     "names": [
+      "wave_gen_floor"
+     ],
+     "doc_default": "None",
+     "code_default": [
+      "None"
+     ],
+     "meaning": "<b>実験中（v5、腕 <code>v5_wg1</code> / <code>v5_wg2</code>）</b>。停滞の波の λ を、波の予算で少なくとも この値 × D² 世代回せる大きさまで下げる（CMA-ES の既定 4+⌊3 ln D⌋ が下限）。2500·D 評価で g=2 なら 5D 20・10D 31・20D 15",
+     "status": "experimental"
     }
    ]
   },

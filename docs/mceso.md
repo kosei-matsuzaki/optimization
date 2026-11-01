@@ -398,6 +398,7 @@ MC-ESO は明示的なフェーズ切替パラメータを持たず、**σ の�
 | `herd_child` | False | **実験中（v5、腕 `v5_herd`）**。3 次元以上で毎世代 1 体、上位半分の宿主の対数重みつき平均（流行の中心）に子を置き、最悪の宿主より良ければ入れ替える。大域構造のある起伏（回転 Rastrigin・Schaffer）では、中心がどの宿主よりもならした谷底に近い |
 | `keepair_slow` | None | **実験中（v5、腕 `v5_slow5`）**。3 次元以上の KEEP-AIR の run で、drilling の前は σ を `sigma_down` のこの値乗で縮める（None でほかと同じ）。多峰の流行を 1 つの谷に決めるまで広く保つ |
 | `chain_route` | False | **実験中（v5、腕 `v5_chainR`）**。`chain_trace` をルーターが DROPLET と確定した run に限る |
+| `wave_gen_floor` | None | **実験中（v5、腕 `v5_wg1` / `v5_wg2`）**。停滞の波の λ を、波の予算で少なくとも この値 × D² 世代回せる大きさまで下げる（CMA-ES の既定 4+⌊3 ln D⌋ が下限）。2500·D 評価で g=2 なら 5D 20・10D 31・20D 15 |
 
 ---
 

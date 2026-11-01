@@ -927,6 +927,13 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         keepair_slow: "float | None" = None,
         # chain_trace only on runs the router committed to DROPLET.
         chain_route: bool = False,
+        # Stall-wave λ from the budget (2026-11-01, ≥3D): λ is cut so that the
+        # wave's share of the budget lasts at least this many × D² generations
+        # (the time scale of CMA-ES's covariance learning), never below CMA-ES's
+        # default 4 + ⌊3 ln D⌋ (None = hd_wave_lambda as set). At 2500·D
+        # evaluations λ = 4·D gives every dimension the same ~156 generations,
+        # which at 20D is too few for Rosenbrock's valley (F08/F09; j62).
+        wave_gen_floor: "float | None" = None,
         switch_grow: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
@@ -1018,6 +1025,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.herd_child = herd_child
         self.keepair_slow = keepair_slow
         self.chain_route = chain_route
+        self.wave_gen_floor = wave_gen_floor
         self.air_cauchy = air_cauchy
         self.strain_idle = strain_idle
         self.strain_init = strain_init
@@ -2182,6 +2190,10 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             lam = int(round(-lam_mult * (4 + int(3 * math.log(self.dim)))))
         else:
             lam = max(4, int(round(lam_mult * self.dim)))
+        if self.wave_gen_floor is not None and lam_mult is None:
+            lam_min = 4 + int(3 * math.log(self.dim))
+            lam_gen = int(frac * st.max_evals / (self.wave_gen_floor * self.dim ** 2))
+            lam = max(lam_min, min(lam, lam_gen))
         if self.wave_plain:
             lam = 4 + int(3 * math.log(self.dim))
         if cap < 2 * lam:

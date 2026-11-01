@@ -613,6 +613,14 @@ _OPTIMIZERS = {
     "v5_wlam":        (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": -1.0, "wave_handover_lambda": 0.0}),
     "v5_wnoC":        (MultiChannelEpidemicOptimizer, {"wave_use_C": False}),
     "v5_wsig":        (MultiChannelEpidemicOptimizer, {"wave_sigma_ratio": 0.2}),
+    # 2026-11-01, after j62: v5_wlam won 20D (F08/F09) and lost 5D/10D. λ of the
+    # stall waves from the budget: ≥ g·D² generations in the wave's share
+    # (λ at 2500·D: g=1 → 5D 20 / 10D 40 / 20D 31; g=2 → 20 / 31 / 15).
+    "v5_wlamS":       (MultiChannelEpidemicOptimizer, {"hd_wave_lambda": -1.0}),
+    "v5_wg1":         (MultiChannelEpidemicOptimizer, {"wave_gen_floor": 1.0}),
+    "v5_wg2":         (MultiChannelEpidemicOptimizer, {"wave_gen_floor": 2.0}),
+    "v5_wg2cp":       (MultiChannelEpidemicOptimizer, {"wave_gen_floor": 2.0, "chain_trace": True,
+                                                       "chain_route": True, "pace_max": 3.0}),
     # the two arms of j61 that never lost (bit-identical in most settings)
     "v5_cp":          (MultiChannelEpidemicOptimizer, {"chain_trace": True, "chain_route": True, "pace_max": 3.0}),
     "v5_cpl":         (MultiChannelEpidemicOptimizer, {"chain_trace": True, "chain_route": True, "pace_max": 3.0,
