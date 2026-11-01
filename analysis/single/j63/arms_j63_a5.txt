@@ -1,0 +1,25 @@
+run: 20261101_173259_j63_a5_quick funcs 24 methods ['MC-ESO', 'v5_wlamS', 'v5_wg1', 'v5_wg2', 'v5_wg2cp']
+(function, method) cells: 120 = 24 x 5, no dup/missing
+
+--- per-function SR@1e-10 changes (ref -> arm) ---
+v5_wlamS   n=3: F16 65->55, F17 80->55, F18 70->50
+v5_wg1     n=0: NO CHANGE (all 24 identical)
+v5_wg2     n=0: NO CHANGE (all 24 identical)
+v5_wg2cp   n=3: F15 10->5, F16 65->60, F18 70->75
+
+--- evals_succ_mean (paired over functions where BOTH have successes) ---
+v5_wlamS   ref 3840.6 -> arm 3811.9  (-28.7, n_common=22)
+v5_wg1     ref 3840.6 -> arm 3840.6  (+0.0, n_common=22)
+v5_wg2     ref 3840.6 -> arm 3840.6  (+0.0, n_common=22)
+v5_wg2cp   ref 3840.6 -> arm 3836.9  (-3.7, n_common=22)
+
+--- Wilcoxon (ref=MC-ESO, alpha=0.05 two-sided) ---
+v5_wlamS   ref_wins=2 arm_wins=0 | ref: F17 0.58 small, F18 0.59 small | arm: -
+v5_wg1     ref_wins=0 arm_wins=0 | ref: - | arm: -
+v5_wg2     ref_wins=0 arm_wins=0 | ref: - | arm: -
+v5_wg2cp   ref_wins=0 arm_wins=0 | ref: - | arm: -
+20261101_173259_j63_a5_quick: 24 funcs x 20 seeds
+  v5_wlamS   vs MC-ESO: 457/480 per-run cells identical  differs: F16(3), F17(10), F18(7), F20(2), F23(1)
+  v5_wg1     vs MC-ESO: 480/480 per-run cells identical  BIT-IDENTICAL
+  v5_wg2     vs MC-ESO: 480/480 per-run cells identical  BIT-IDENTICAL
+  v5_wg2cp   vs MC-ESO: 469/480 per-run cells identical  differs: F06(1), F15(2), F16(1), F18(1), F20(3), F23(1), F24(2)

@@ -1,0 +1,31 @@
+function                 MC-ESO       v5_wg1       v5_wg2       v5_wg2cp     v5_wlamS   
+F01-Sphere               0            0            0            0            0          
+F02-Ellipsoida           0            0            0            0            0          
+F03-RastriginS           0            0            0            0            0          
+F04-BucheRastr           0.3482       0.3482       0.3482       0.3482       0.3482     
+F05-LinearSlop           0            0            0            0            0          
+F06-Attractive           0            0            0            0            0          
+F07-StepEllips           0.07444      0.07444      0.0744       0.0744       0.07751    
+F08-Rosenbrock           0            0            0            0            0          
+F09-Rosenbrock           0            0            0            0            0          
+F10-Ellipsoida           0            0            0            0            0          
+F11-Discus               0            0            0            0            0          
+F12-BentCigar            0            0            0            0            0          
+F13-SharpRidge           0            0            5.734e-09    5.734e-09    0          
+F14-DiffPowers           0            0            0            0            0          
+F15-RastriginR           6.373        6.373        6.373        6.373        6.373      
+F16-Weierstras           0.06331      0.06331      0.0632       0.0787       0.06379    
+F17-SchafferF7           0.006949     0.006949     0.00695      0.007098     0.007626   
+F18-SchafferF7           0.01404      0.01404      0.01429      0.01429      0.01951    
+F19-GriewankRo           0.2504       0.2504       0.2504       0.2435       0.2504     
+F20-Schwefel             0.8429       0.8429       0.9001       0.9001       0.7816     
+F21-Gallagher1           0.2373       0.2373       0.2373       0.2373       0.2373     
+F22-Gallagher2           0.5931       0.5931       0.5931       0.5931       0.5931     
+F23-Katsuura             0.04697      0.04697      0.04697      0.0455       0.04697    
+F24-LunacekRas           15.53        15.53        15.53        15.48        15.53      
+
+functions where all 5 methods tie: 15
+v5_wg1     below ref on 0, above on 0
+v5_wg2     below ref on 2, above on 4
+v5_wg2cp   below ref on 4, above on 5
+v5_wlamS   below ref on 1, above on 4
