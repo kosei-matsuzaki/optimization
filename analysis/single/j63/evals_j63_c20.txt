@@ -1,0 +1,12 @@
+== functions with successes at 1e-10 (finite evals_succ_mean) ==
+  MC-ESO: G01,G03,G05,G11
+  v5_wlam: G01,G02,G03,G05,G11
+  v5_wg1: G01,G02,G03,G05,G11
+  v5_wg2: G01,G02,G03,G05,G11
+  v5_wg2cp: G01,G02,G03,G05,G11
+
+== evals_succ_mean: corresponding mean over functions where BOTH have successes ==
+v5_wlam: base 22729.0 -> arm 22780.8 (diff +51.8), n=4: G01,G03,G05,G11
+v5_wg1: base 22729.0 -> arm 22416.0 (diff -313.0), n=4: G01,G03,G05,G11
+v5_wg2: base 22729.0 -> arm 22777.8 (diff +48.8), n=4: G01,G03,G05,G11
+v5_wg2cp: base 22729.0 -> arm 22750.8 (diff +21.8), n=4: G01,G03,G05,G11

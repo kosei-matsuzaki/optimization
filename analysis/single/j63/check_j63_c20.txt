@@ -1,0 +1,11 @@
+panel MC-ESO cells: 240  this-run MC-ESO cells: 240
+common cells: 240  only-panel: 0  only-new: 0
+bit-identical (best_f/n_evals/success): 240/240
+differing functions: none
+
+v5_wlam vs base: 158/240 identical; differ on ['G02', 'G03', 'G05', 'G06', 'G07', 'G08', 'G09', 'G12']
+v5_wg1 vs base: 213/240 identical; differ on ['G02', 'G03', 'G06']
+v5_wg2 vs base: 213/240 identical; differ on ['G02', 'G03', 'G06']
+v5_wg2cp vs base: 175/240 identical; differ on ['G02', 'G03', 'G06', 'G07', 'G08', 'G12']
+
+v5_wg2 vs v5_wg2cp: 193/240 identical; differ on ['G06', 'G07', 'G08', 'G12']

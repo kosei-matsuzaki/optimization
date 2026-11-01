@@ -1,0 +1,54 @@
+== per-function SR@1e-10 (all 12 functions) ==
+function                 base   v5_wlam    v5_wg1    v5_wg2  v5_wg2cp
+G01-Zakharov            100.0     100.0     100.0     100.0     100.0
+G02-Rosenbrock            0.0       5.0       5.0       5.0       5.0
+G03-SchafferF7            0.0       0.0       5.0       0.0       0.0
+G04-Rastrigin             0.0       0.0       0.0       0.0       0.0
+G05-Levy                 95.0      95.0      95.0      95.0      95.0
+G06-Hybrid1               0.0       0.0       0.0       0.0       0.0
+G07-Hybrid2               0.0       0.0       0.0       0.0       0.0
+G08-Hybrid3               0.0       0.0       0.0       0.0       0.0
+G09-Composition1          0.0       0.0       0.0       0.0       0.0
+G10-Composition2          0.0       0.0       0.0       0.0       0.0
+G11-Composition3          0.0       0.0       0.0       0.0       0.0
+G12-Composition4          0.0       0.0       0.0       0.0       0.0
+
+== SR@1e-10 changes vs base (only functions that moved) ==
+v5_wlam: (1) G02 0->5
+v5_wg1: (2) G02 0->5 | G03 0->5
+v5_wg2: (1) G02 0->5
+v5_wg2cp: (1) G02 0->5
+
+== evals_succ_mean (corresponding mean over functions where BOTH have successes) ==
+v5_wlam: base inf -> arm inf (diff +nan), n=12: G01,G02,G03,G04,G05,G06,G07,G08,G09,G10,G11,G12
+v5_wg1: base inf -> arm inf (diff +nan), n=12: G01,G02,G03,G04,G05,G06,G07,G08,G09,G10,G11,G12
+v5_wg2: base inf -> arm inf (diff +nan), n=12: G01,G02,G03,G04,G05,G06,G07,G08,G09,G10,G11,G12
+v5_wg2cp: base inf -> arm inf (diff +nan), n=12: G01,G02,G03,G04,G05,G06,G07,G08,G09,G10,G11,G12
+
+== functions with any success at 1e-10 (evals_succ_mean present) ==
+  MC-ESO: G01,G02,G03,G04,G05,G06,G07,G08,G09,G10,G11,G12
+  v5_wlam: G01,G02,G03,G04,G05,G06,G07,G08,G09,G10,G11,G12
+  v5_wg1: G01,G02,G03,G04,G05,G06,G07,G08,G09,G10,G11,G12
+  v5_wg2: G01,G02,G03,G04,G05,G06,G07,G08,G09,G10,G11,G12
+  v5_wg2cp: G01,G02,G03,G04,G05,G06,G07,G08,G09,G10,G11,G12
+
+== per-function evals_succ_mean ==
+function                   MC-ESO    v5_wlam     v5_wg1     v5_wg2   v5_wg2cp
+G01-Zakharov                13773      12458      13773      13773      13665
+G02-Rosenbrock                inf      36476      39257      36773      36773
+G03-SchafferF7              24467      25989      23215      24662      24662
+G04-Rastrigin                 inf        inf        inf        inf        inf
+G05-Levy                    15746      15746      15746      15746      15746
+G06-Hybrid1                   inf        inf        inf        inf        inf
+G07-Hybrid2                   inf        inf        inf        inf        inf
+G08-Hybrid3                   inf        inf        inf        inf        inf
+G09-Composition1              inf        inf        inf        inf        inf
+G10-Composition2              inf        inf        inf        inf        inf
+G11-Composition3            36930      36930      36930      36930      36930
+G12-Composition4              inf        inf        inf        inf        inf
+
+== Wilcoxon (ref MC-ESO, a=0.05 two-sided): base-wins / arm-wins + A12 ==
+v5_wlam: 2/1  base-wins[G05 0.66 medium; G07 0.55 negligible]  arm-wins[G06 0.33 medium]
+v5_wg1: 0/1  base-wins[-]  arm-wins[G03 0.32 medium]
+v5_wg2: 0/0  base-wins[-]  arm-wins[-]
+v5_wg2cp: 0/0  base-wins[-]  arm-wins[-]
