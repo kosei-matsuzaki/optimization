@@ -1,0 +1,17 @@
+== Wilcoxon (reference MC-ESO, alpha=0.05 two-sided) ==
+
+v5_wlam: base wins 6 / arm wins 5
+   base better: F01 A12=0.69 (medium) | F10 A12=0.83 (large) | F13 A12=0.73 (large) | F14 A12=0.73 (large) | F17 A12=0.56 (small) | F18 A12=0.57 (small)
+   arm  better: F06 A12=0.28 (large) | F08 A12=0.00 (large) | F09 A12=0.00 (large) | F12 A12=0.33 (medium) | F20 A12=0.34 (medium)
+
+v5_wg1: base wins 0 / arm wins 4
+   base better: -
+   arm  better: F06 A12=0.28 (large) | F08 A12=0.06 (large) | F09 A12=0.04 (large) | F12 A12=0.43 (small)
+
+v5_wg2: base wins 0 / arm wins 4
+   base better: -
+   arm  better: F06 A12=0.28 (large) | F08 A12=0.01 (large) | F09 A12=0.00 (large) | F12 A12=0.37 (small)
+
+v5_wg2cp: base wins 0 / arm wins 4
+   base better: -
+   arm  better: F06 A12=0.28 (large) | F08 A12=0.01 (large) | F09 A12=0.00 (large) | F12 A12=0.37 (small)

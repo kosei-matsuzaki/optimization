@@ -1,0 +1,14 @@
+seeds: 0 100 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500 1600 1700 1800 1900
+runs per (func,method): Counter({20: 120})
+
+== pairwise per-run agreement (best_f / n_evals / success triple), 24x20=480 runs ==
+MC-ESO     vs v5_wlam   :  259/480 identical; funcs differing: F01 F02 F03 F04 F06 F07 F08 F09 F10 F12 F13 F14 F16 F17 F18 F19 F20 F23
+MC-ESO     vs v5_wg1    :  377/480 identical; funcs differing: F02 F06 F07 F08 F09 F12 F13 F17 F20
+MC-ESO     vs v5_wg2    :  377/480 identical; funcs differing: F02 F06 F07 F08 F09 F12 F13 F17 F20
+MC-ESO     vs v5_wg2cp  :  358/480 identical; funcs differing: F02 F04 F06 F07 F08 F09 F10 F12 F13 F16 F17 F18 F20 F23 F24
+v5_wlam    vs v5_wg1    :  267/480 identical; funcs differing: F01 F02 F03 F04 F06 F07 F08 F09 F10 F12 F13 F14 F16 F17 F18 F19 F20 F23
+v5_wlam    vs v5_wg2    :  283/480 identical; funcs differing: F01 F02 F03 F04 F06 F07 F08 F09 F10 F12 F13 F14 F16 F17 F18 F19 F20 F23
+v5_wlam    vs v5_wg2cp  :  273/480 identical; funcs differing: F01 F02 F03 F04 F06 F07 F08 F09 F10 F12 F13 F14 F16 F17 F18 F19 F20 F23 F24
+v5_wg1     vs v5_wg2    :  379/480 identical; funcs differing: F02 F06 F07 F08 F09 F12 F13 F17 F20
+v5_wg1     vs v5_wg2cp  :  360/480 identical; funcs differing: F02 F04 F06 F07 F08 F09 F10 F12 F13 F16 F17 F18 F20 F23 F24
+v5_wg2     vs v5_wg2cp  :  459/480 identical; funcs differing: F02 F04 F10 F16 F18 F23 F24
