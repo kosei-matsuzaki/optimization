@@ -1,0 +1,45 @@
+== bit-identity vs base (per-run best_f over 24x20=480 runs) ==
+v5_wg1       416/480 identical  differing funcs: F02,F04,F07,F08,F09,F12,F13,F16,F17,F18,F20,F23
+v5_wg2       408/480 identical  differing funcs: F02,F04,F07,F08,F09,F12,F13,F16,F17,F18,F20,F23
+v5_wlam      301/480 identical  differing funcs: F01,F02,F04,F07,F08,F09,F10,F12,F13,F14,F16,F17,F18,F20,F23
+
+== n_wave / frac_wave (mean over all runs) ==
+MC-ESO       n_wave    0.24   frac_wave 0.1885
+v5_wg1       n_wave    0.28   frac_wave 0.1974
+v5_wg2       n_wave    0.28   frac_wave 0.1844
+v5_wlam      n_wave    0.26   frac_wave 0.1380
+
+== CEC mean error per function (per-run err<1e-8 -> 0); arm vs base ==
+v5_wg1       lower(better) 6 / higher(worse) 4
+             F07  base 0.488288 -> arm 0.47111
+             F08  base 0.388481 -> arm 2.55928e-09
+             F09  base 0.000215535 -> arm 0
+             F12  base 2.09232e-08 -> arm 9.61041e-10
+             F13  base 0 -> arm 1.10915e-06
+             F16  base 0.127116 -> arm 0.127116
+             F17  base 0.0120693 -> arm 0.0120736
+             F18  base 0.0779479 -> arm 0.0791124
+             F20  base 0.928427 -> arm 1.03436
+             F23  base 0.100383 -> arm 0.100367
+v5_wg2       lower(better) 4 / higher(worse) 6
+             F07  base 0.488288 -> arm 0.477287
+             F08  base 0.388481 -> arm 0
+             F09  base 0.000215535 -> arm 0
+             F12  base 2.09232e-08 -> arm 9.61041e-10
+             F13  base 0 -> arm 2.62911e-08
+             F16  base 0.127116 -> arm 0.12747
+             F17  base 0.0120693 -> arm 0.0122748
+             F18  base 0.0779479 -> arm 0.0790694
+             F20  base 0.928427 -> arm 1.03171
+             F23  base 0.100383 -> arm 0.100638
+v5_wlam      lower(better) 4 / higher(worse) 6
+             F07  base 0.488288 -> arm 0.480812
+             F08  base 0.388481 -> arm 0
+             F09  base 0.000215535 -> arm 0
+             F12  base 2.09232e-08 -> arm 0
+             F13  base 0 -> arm 1.36487e-06
+             F16  base 0.127116 -> arm 0.130809
+             F17  base 0.0120693 -> arm 0.01401
+             F18  base 0.0779479 -> arm 0.0947939
+             F20  base 0.928427 -> arm 0.971144
+             F23  base 0.100383 -> arm 0.11191
