@@ -1,0 +1,5 @@
+MC-ESO: rows common 24 (new 24 old 24)  cells 312/312 identical  funcs differing: none
+v5_wg2: rows common 24 (new 24 old 24)  cells 312/312 identical  funcs differing: none
+MC-ESO vs v5_wg15 (same run): 1255/1440 identical  funcs differing (9): ['F02-EllipsoidalSep', 'F06-AttractiveSector', 'F07-StepEllipsoidal', 'F08-Rosenbrock', 'F09-RosenbrockRot', 'F12-BentCigar', 'F13-SharpRidge', 'F17-SchafferF7', 'F20-Schwefel']
+v5_wg15 vs v5_wg15cp (same run): 1420/1440 identical  funcs differing (7): ['F02-EllipsoidalSep', 'F04-BucheRastrigin', 'F10-EllipsoidalRot', 'F16-Weierstrass', 'F18-SchafferF7ill', 'F23-Katsuura', 'F24-LunacekRastrigin']
+v5_wg2 vs v5_wg15 (same run): 1322/1440 identical  funcs differing (9): ['F02-EllipsoidalSep', 'F06-AttractiveSector', 'F07-StepEllipsoidal', 'F08-Rosenbrock', 'F09-RosenbrockRot', 'F12-BentCigar', 'F13-SharpRidge', 'F17-SchafferF7', 'F20-Schwefel']

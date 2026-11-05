@@ -1,0 +1,86 @@
+=== [1] overall (mean over 24 functions) ===
+method       SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2
+MC-ESO          36.9%    40.4%    43.5%    46.7%
+v5_wg2          47.1%    50.0%    52.3%    54.4%
+v5_wg15         44.2%    47.9%    51.5%    53.8%
+v5_wg15cp       44.4%    47.9%    51.5%    53.5%
+
+=== evals_succ_mean (paired: functions where BOTH methods have successes) ===
+v5_wg2           22945.5 vs base   24173.6  (common 12, delta -1228.1)
+v5_wg15          23210.4 vs base   24173.6  (common 12, delta -963.2)
+v5_wg15cp        23119.8 vs base   24173.6  (common 12, delta -1053.8)
+
+raw evals_succ_mean per function (MC-ESO / v5_wg2 / v5_wg15 / v5_wg15cp):
+  F01-Sphere                       12465     12465     12465     12465
+  F02-EllipsoidalSep               25152     22205     21975     21965
+  F03-RastriginSep                 16267     16267     16267     16267
+  F04-BucheRastrigin               16058     16058     16058     16833
+  F05-LinearSlope                  20879     20879     20879     20879
+  F06-AttractiveSector             34917     27168     27413     27413
+  F07-StepEllipsoidal              22329       inf       inf       inf
+  F08-Rosenbrock                     inf     34000     38054     38054
+  F09-RosenbrockRot                  inf     32288     40790     40790
+  F10-EllipsoidalRot               19423     19423     19423     19372
+  F11-Discus                       17618     17618     17618     15817
+  F12-BentCigar                    39119     37862     38678     38678
+  F13-SharpRidge                   38961     36177     38525     38525
+  F14-DiffPowers                   17695     17695     17695     17695
+  F15-RastriginRot                   inf       inf       inf       inf
+  F16-Weierstrass                    inf       inf       inf       inf
+  F17-SchafferF7                     inf     49203     37750     37750
+  F18-SchafferF7ill                  inf       inf       inf       inf
+  F19-GriewankRosenbrock             inf       inf       inf       inf
+  F20-Schwefel                       inf       inf       inf       inf
+  F21-Gallagher101                 31529     31529     31529     31529
+  F22-Gallagher21                    inf       inf       inf       inf
+  F23-Katsuura                       inf       inf       inf       inf
+  F24-LunacekRastrigin               inf       inf       inf       inf
+
+=== per-function SR@1e-10 (all 24) ===
+function                      MC-ESO      v5_wg2     v5_wg15   v5_wg15cp
+F01-Sphere                     100%       100%       100%       100%
+F02-EllipsoidalSep             100%       100%        95%       100%
+F03-RastriginSep               100%       100%       100%       100%
+F04-BucheRastrigin              40%        40%        40%        40%
+F05-LinearSlope                100%       100%       100%       100%
+F06-AttractiveSector            30%        55%        55%        55%
+F07-StepEllipsoidal             10%         0%         0%         0%
+F08-Rosenbrock                   0%        95%        70%        70%
+F09-RosenbrockRot                0%       100%        75%        75%
+F10-EllipsoidalRot             100%       100%       100%       100%
+F11-Discus                     100%       100%       100%       100%
+F12-BentCigar                   55%        85%        75%        75%
+F13-SharpRidge                  20%        25%        20%        20%
+F14-DiffPowers                 100%       100%       100%       100%
+F15-RastriginRot                 0%         0%         0%         0%
+F16-Weierstrass                  0%         0%         0%         0%
+F17-SchafferF7                   0%         0%         0%         0%
+F18-SchafferF7ill                0%         0%         0%         0%
+F19-GriewankRosenbrock           0%         0%         0%         0%
+F20-Schwefel                     0%         0%         0%         0%
+F21-Gallagher101                30%        30%        30%        30%
+F22-Gallagher21                  0%         0%         0%         0%
+F23-Katsuura                     0%         0%         0%         0%
+F24-LunacekRastrigin             0%         0%         0%         0%
+
+=== per-function SR@1e-10 differences vs MC-ESO ===
+  v5_wg2: 6 functions changed
+     F06-AttractiveSector        30% ->  55%  (+25)
+     F07-StepEllipsoidal         10% ->   0%  (-10)
+     F08-Rosenbrock               0% ->  95%  (+95)
+     F09-RosenbrockRot            0% -> 100%  (+100)
+     F12-BentCigar               55% ->  85%  (+30)
+     F13-SharpRidge              20% ->  25%  (+5)
+  v5_wg15: 6 functions changed
+     F02-EllipsoidalSep         100% ->  95%  (-5)
+     F06-AttractiveSector        30% ->  55%  (+25)
+     F07-StepEllipsoidal         10% ->   0%  (-10)
+     F08-Rosenbrock               0% ->  70%  (+70)
+     F09-RosenbrockRot            0% ->  75%  (+75)
+     F12-BentCigar               55% ->  75%  (+20)
+  v5_wg15cp: 5 functions changed
+     F06-AttractiveSector        30% ->  55%  (+25)
+     F07-StepEllipsoidal         10% ->   0%  (-10)
+     F08-Rosenbrock               0% ->  70%  (+70)
+     F09-RosenbrockRot            0% ->  75%  (+75)
+     F12-BentCigar               55% ->  75%  (+20)

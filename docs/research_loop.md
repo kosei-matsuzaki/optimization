@@ -117,8 +117,6 @@
 
 **2026-10-30 から `MC-ESO` は新しい既定（旧 `v4_k50fR_r50`）。** 旧既定は `MC-ESO-v3`。`v3_*` / `v4_*` の腕は旧既定の上で走る（記録した数値が再現する）。`v5_*` と `ctl_*` は新しい既定の上。j47 / j49 / j57 のパネルの `MC-ESO` は**旧既定**なので、新しい既定のパネル順位は同じ run に入れた `v4_k50fR_r50`（新しい既定と bit 一致）で読む。
 
-1. **【j64 (h20) 20D の hold-out】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 6-10 --seed-offset 7 --methods "MC-ESO,v5_wg2,v5_wg15,v5_wg15cp" --jobs 4`（label `j64_h20`）。run 内の比較（標準の集計 ＋ [5] の run 内 CEC 順位）。`MC-ESO`・`v5_wg2` が j63 (h20) と一致するかも書く。**記録**: `analysis/single/j64/`。採否の判断はしない。 (claimed 2026-11-05 14:30 UTC)
-
 1. **【j64 (a15) 15D】** `./run.sh quick --all --dim 15 --max-evals 37500 --n-runs 20 --instances 1-5 --methods "MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp" --jobs 4`（label `j64_a15`）。run 内の比較。j63 (a15) では `v5_wg1` 55.0%・`v5_wg2` 54.8%（既定 51.7%）、`v5_wg2` は F07 30→15%・F17 で負け。**記録**: `analysis/single/j64/`。採否の判断はしない。
 
 1. **【j64 (a) 10D の 2 設定】** 手法 `"MC-ESO,v5_wg15,v5_wg15cp"`、j50 と同じ 10D の 2 設定（label `j64_a10` / `j64_a10ho`、`--jobs 4`）。10D では `v5_wg15` の λ は既定と同じ（40）なので **既定と bit 一致になるはず**（一致したかを書く）。**集計**: j63 (a) と同じ（新しい既定のパネル順位は 10D 4.25/4.46）。**記録**: `analysis/single/j64/`。採否の判断はしない。
@@ -154,6 +152,25 @@
 ---
 
 ## 作業ログ
+
+### 2026-11-05 j64 (h20) 20D hold-out を完走 — `v5_wg2` が hold-out でも最良（SR@1e-10 **47.1%** / run 内 CEC 順位 **2.33**）、`v5_wg15`(g=1.5) は **44.2%** / **2.56** で既定 36.9% / 2.71 より上だが `v5_wg2` に届かず。`v5_wg15cp` は 44.4% / 2.40 で `v5_wg15` と同程度。差は F08 Rosenbrock 70% 対 `v5_wg2` 95% と F09 RosenbrockRot 75% 対 100%、F12 BentCigar 75% 対 85% の 3 関数。F07 10→0% の悪化は 3 腕すべてに共通。`MC-ESO` と `v5_wg2` は j63 (h20) と **各 312/312 セル一致**
+- **ランした分**: ジョブのとおり 1 本（shard 分割なし）。`./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 6-10 --seed-offset 7 --methods "MC-ESO,v5_wg2,v5_wg15,v5_wg15cp" --jobs 4`（label `j64_h20`）。14:33:56-14:54:01 = **20.1 分**。`result.json` は `status=done` / `set=all-d20`、**24/24 関数**（summary 96 行 = 24×4・wilcoxon 72 行 = 24×3・stats 24・`mceso_runs.csv` 1920 行 = 4×24×20、(関数, 手法) の重複・欠落ゼロ、wilcoxon の reference はすべて `MC-ESO`）
+- **環境**: numpy 2.4.6 / cma 4.5.0 / scipy 1.17.1、python 3.11.18。CPU Intel Xeon @2.10GHz（family 6 / **model 207 / stepping 2**、4 CPUs）、avx512f あり、BLAS は openblas（SkylakeX、num_threads 4）、`OMP_NUM_THREADS=1`。**容器仕様は j64 (a20) と同じ**。`pynmmso` はビルドできないので findings.md のとおり空 stub を `PYTHONPATH` に置いた（BBOB のみなので影響なし）
+- **全体表**（24 関数平均、`evals_succ_mean` は既定と各腕の両方で成功のある 12 関数での対応平均）:
+
+  | 手法 | SR@1e-10 | SR@1e-7 | SR@1e-4 | SR@1e-2 | evals_succ_mean（対 既定） | run 内 CEC 順位 |
+  |---|---|---|---|---|---|---|
+  | `MC-ESO`（新既定） | 36.9% | 40.4% | 43.5% | 46.7% | 24173.6 | 2.71（4 位） |
+  | `v5_wg2` | **47.1%** | **50.0%** | **52.3%** | **54.4%** | 22945.5（**-1228.1**） | **2.33**（1 位・19/24 で最良） |
+  | `v5_wg15` | 44.2% | 47.9% | 51.5% | 53.8% | 23210.4（-963.2） | 2.56（3 位・14/24） |
+  | `v5_wg15cp` | 44.4% | 47.9% | 51.5% | 53.5% | 23119.8（-1053.8） | 2.40（2 位・16/24） |
+
+- **関数別 SR@1e-10 の変化（既定比、変化した全関数）**: `v5_wg2` 6 関数 — F06 30→55・F07 10→**0**・F08 0→95・F09 0→100・F12 55→85・F13 20→25。`v5_wg15` 6 関数 — F02 100→**95**・F06 30→55・F07 10→**0**・F08 0→70・F09 0→75・F12 55→75。`v5_wg15cp` 5 関数 — F06 30→55・F07 10→**0**・F08 0→70・F09 0→75・F12 55→75。他の 18 関数は 3 腕とも既定と同値（F15-F20・F22-F24 は全手法 0%）
+- **Wilcoxon**（`MC-ESO` を reference、α=0.05 両側）: 既定が勝つ関数は **0**。既定が負けるのは `v5_wg2` 4 関数（F06 A12=0.28 large・F08 0.01 large・F09 0.00 large・F12 0.37 small）、`v5_wg15` 4 関数（同じ 4 関数、F12 のみ A12=0.41 small）、`v5_wg15cp` 5 関数（上の 4 ＋ F02 A12=0.35 medium）
+- **再現の検算**（`check_j64_h20.txt`）: この run の `MC-ESO`（新既定）と `v5_wg2` は j63 (h20) の summary と 13 列 × 24 関数で **各 312/312 セル一致**（j63 は h20 の per-run stats を残していないので照合は summary 水準）。run 内の per-run 比較では `v5_wg15` は既定と 1255/1440・`v5_wg2` と 1322/1440 一致、`v5_wg15cp` は `v5_wg15` と 1420/1440 一致（差は 7 関数 20 セル）
+- **書かれたとおりに進まなかった点**: 無し。なお j63 (h20) は 5 手法（`v5_wlam` を含む）だったので、run 内 CEC 順位の絶対値は本 run（4 手法）と直接比較できない（順位の並びは再現している）
+- `python3 scripts/check_doc_size.py` は PASS。**`find analysis -type f` は 1910 で規則の目安 約 400 を大きく超えている**（本ジョブの追加は 5 ファイル。超過は j64 以前から continuing、削除は行っていない）
+- **記録**: `analysis/single/j64/{summary,wilcoxon}_j64_h20_dim20_all24.csv`、`aq_j64_h20.txt`、`arms_j64_h20.txt`、`check_j64_h20.txt`
 
 ### 2026-11-05 j64 (a20) 20D を完走 — `v5_wg15`（g=1.5、20D で λ=20）はパネル CEC 順位 **4.15** で新しい既定 4.73 より下（良い）だが j63 の `v5_wg2` **4.12** には届かず。SR@1e-10 は **43.5%**（`v5_wg2` 46.0% / 既定 37.1%）で、差は F08 Rosenbrock 50% 対 `v5_wg2` 90% と F13 25% 対 35% の 2 関数。`v5_wg15cp` は `v5_wg15` とパネル同値（4.15）・SR 同値で、差は 6 関数 18 セルのみ。F07 10→0% の悪化は 3 腕すべてに共通。`MC-ESO` と `v5_wg2` は j63 (a20) と per-run **1440/1440 一致**
 - **ランした分**: ジョブのとおり 1 本（shard 分割なし）。`./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v5_wg2,v5_wg15,v5_wg15cp" --jobs 4`（label `j64_a20`）。13:34:59-13:59:38 = **24.6 分**。`result.json` は `status=done` / `set=all-d20`、**24/24 関数**（summary 96 行 = 24×4・wilcoxon 72 行 = 24×3・stats 24・`mceso_runs.csv` 1920 行 = 4×24×20、(関数, 手法) の重複・欠落ゼロ、wilcoxon の reference はすべて `MC-ESO`）
