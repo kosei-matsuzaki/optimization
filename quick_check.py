@@ -621,6 +621,10 @@ _OPTIMIZERS = {
     "v5_wg2":         (MultiChannelEpidemicOptimizer, {"wave_gen_floor": 2.0}),
     "v5_wg2cp":       (MultiChannelEpidemicOptimizer, {"wave_gen_floor": 2.0, "chain_trace": True,
                                                        "chain_route": True, "pace_max": 3.0}),
+    # g=1.5 keeps the default λ up to 10D (5D 20 / 10D 40) and gives 15D 27 / 20D 20 (j63: wg2's λ=31 at 10D cost F17)
+    "v5_wg15":        (MultiChannelEpidemicOptimizer, {"wave_gen_floor": 1.5}),
+    "v5_wg15cp":      (MultiChannelEpidemicOptimizer, {"wave_gen_floor": 1.5, "chain_trace": True,
+                                                       "chain_route": True, "pace_max": 3.0}),
     # the two arms of j61 that never lost (bit-identical in most settings)
     "v5_cp":          (MultiChannelEpidemicOptimizer, {"chain_trace": True, "chain_route": True, "pace_max": 3.0}),
     "v5_cpl":         (MultiChannelEpidemicOptimizer, {"chain_trace": True, "chain_route": True, "pace_max": 3.0,
