@@ -1,0 +1,12 @@
+=== cross-check: this run vs j63 (c20) record (13 cols x 12 funcs = 156) ===
+  j64 MC-ESO  vs  j63 MC-ESO: 156/156 cells equal
+  j64 v5_wg2  vs  j63 v5_wg2: 156/156 cells equal
+
+=== this run's MC-ESO vs the panel run's MC-ESO / MC-ESO-v3 ===
+  j64 MC-ESO  vs  panel j61_mc20m MC-ESO: 156/156 cells equal
+  j64 MC-ESO  vs  panel j61_mc20m MC-ESO-v3: 92/156 cells equal
+      diffs: G01-Zakharov/mean_best_f(0.0000e+00 vs 1.5233e+03); G01-Zakharov/median_best_f(0.0000e+00 vs 2.8422e-14); G01-Zakharov/evals_succ_mean(13773 vs 16120); G01-Zakharov/evals_succ_med(13758 vs 15530); G01-Zakharov/ert(13773 vs 37548); G01-Zakharov/ecdf_auc(0.1211 vs 0.0726); G01-Zakharov/sr_1e-1(100% vs 70%); G01-Zakharov/sr_1e-2(100% vs 70%); G01-Zakharov/sr_1e-3(100% vs 70%); G01-Zakharov/sr_1e-4(100% vs 70%); G01-Zakharov/sr_1e-5(100% vs 70%); G01-Zakharov/sr_1e-7(100% vs 70%)
+
+=== this run: v5_wg15 vs j63's v5_wg2cp (different arm, for context) ===
+  j64 v5_wg15  vs  j63 v5_wg2cp: 132/156 cells equal
+      diffs: G01-Zakharov/evals_succ_mean(13773 vs 13665); G01-Zakharov/evals_succ_med(13758 vs 13724); G01-Zakharov/ert(13773 vs 13665); G01-Zakharov/ecdf_auc(0.1211 vs 0.1221); G02-Rosenbrock/evals_succ_mean(37547 vs 36773); G02-Rosenbrock/evals_succ_med(37547 vs 36773); G02-Rosenbrock/ert(987547 vs 986773); G02-Rosenbrock/ecdf_auc(0.0013 vs 0.0014); G03-SchafferF7/mean_best_f(7.1037e-05 vs 7.9822e-05); G03-SchafferF7/median_best_f(3.1405e-06 vs 4.3730e-06); G03-SchafferF7/evals_succ_mean(22894 vs 24662); G03-SchafferF7/evals_succ_med(22405 vs 23050)

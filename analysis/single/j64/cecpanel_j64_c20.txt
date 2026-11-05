@@ -1,0 +1,9 @@
+dim 20: 12 functions, panel = MC-ESO + AMALGAM-SO, ARRDE, BIPOP-CMA-ES, BIPOP-aCMA-ES, EA4eig, EBOwithCMAR, ELSHADE-SPACMA, IMODE, IPOP-CMA-ES, L-SHADE, L-SRTDE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES, SPS-L-SHADE-EIG, jSO
+  MC-ESO                 mean rank  9.54
+  v5_wg15                mean rank  9.54   mean error below base on 3, above on 0
+  v5_wg15cp              mean rank  9.29   mean error below base on 4, above on 2
+      rank moved: G07 10->6, G08 1->2
+  v5_wg2                 mean rank  9.54   mean error below base on 2, above on 1
+
+note: the panel run's base MC-ESO is cell-identical (156/156) to this run's MC-ESO,
+      so this 9.54 base rank is the new default's own (see check_j64_c20.txt). No rename needed.

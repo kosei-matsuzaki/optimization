@@ -1,0 +1,124 @@
+j64 (c20) CEC2022 dim20 n=20 budget=50000 — per-arm detail (ref = MC-ESO = new default)
+
+=== paired evals_succ_mean (finite in BOTH ref and arm) ===
+  v5_wg2       n_common=4  ref=  22729.0  arm=  22777.8  diff=   +48.8  [G01, G03, G05, G11]
+  v5_wg15      n_common=4  ref=  22729.0  arm=  22335.8  diff=  -393.2  [G01, G03, G05, G11]
+  v5_wg15cp    n_common=4  ref=  22729.0  arm=  22308.8  diff=  -420.2  [G01, G03, G05, G11]
+
+=== all-method mean over the 4 functions finite for every method ===
+  common: ['G01', 'G03', 'G05', 'G11']
+  MC-ESO         22729.0
+  v5_wg2         22777.8
+  v5_wg15        22335.8
+  v5_wg15cp      22308.8
+
+=== Wilcoxon p<0.05 rows (ref=MC-ESO, two-sided) ===
+  G06-Hybrid1            vs v5_wg15      p=0.0166 A12=0.45 (negligible) -> arm better
+  G06-Hybrid1            vs v5_wg15cp    p=0.0218 A12=0.45 (negligible) -> arm better
+  total significant rows: 2 / 36
+
+=== per-arm win/loss counts ===
+  v5_wg15      MC-ESO wins 0 / loses 1
+  v5_wg15cp    MC-ESO wins 0 / loses 1
+  v5_wg2       MC-ESO wins 0 / loses 0
+
+=== all 36 Wilcoxon rows (function, arm, p_two, p_ref_better, A12) ===
+  G01-Zakharov           v5_wg2       n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G01-Zakharov           v5_wg15      n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G01-Zakharov           v5_wg15cp    n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G02-Rosenbrock         v5_wg2       n= 20 win=  0 tie= 19 p_two=0.3173 p_ref=0.8413 A12=0.499 (negligible)
+  G02-Rosenbrock         v5_wg15      n= 20 win=  0 tie= 19 p_two=0.3173 p_ref=0.8413 A12=0.499 (negligible)
+  G02-Rosenbrock         v5_wg15cp    n= 20 win=  0 tie= 19 p_two=0.3173 p_ref=0.8413 A12=0.499 (negligible)
+  G03-SchafferF7         v5_wg2       n= 20 win=  6 tie=  8 p_two=0.3882 p_ref=0.1941 A12=0.535 (negligible)
+  G03-SchafferF7         v5_wg15      n= 20 win=  4 tie=  7 p_two=0.2213 p_ref=0.8893 A12=0.481 (negligible)
+  G03-SchafferF7         v5_wg15cp    n= 20 win=  4 tie=  7 p_two=0.2213 p_ref=0.8893 A12=0.481 (negligible)
+  G04-Rastrigin          v5_wg2       n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G04-Rastrigin          v5_wg15      n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G04-Rastrigin          v5_wg15cp    n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G05-Levy               v5_wg2       n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G05-Levy               v5_wg15      n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G05-Levy               v5_wg15cp    n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G06-Hybrid1            v5_wg2       n= 20 win=  4 tie= 10 p_two=0.2411 p_ref=0.8794 A12=0.465 (negligible)
+  G06-Hybrid1            v5_wg15      n= 20 win=  1 tie= 10 p_two=0.0166 p_ref=0.9917 A12=0.445 (negligible)
+  G06-Hybrid1            v5_wg15cp    n= 20 win=  1 tie= 10 p_two=0.02182 p_ref=0.9891 A12=0.450 (negligible)
+  G07-Hybrid2            v5_wg2       n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G07-Hybrid2            v5_wg15      n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G07-Hybrid2            v5_wg15cp    n= 20 win=  4 tie=  2 p_two=0.07777 p_ref=0.9611 A12=0.343 (medium)
+  G08-Hybrid3            v5_wg2       n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G08-Hybrid3            v5_wg15      n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G08-Hybrid3            v5_wg15cp    n= 20 win=  8 tie=  2 p_two=0.7439 p_ref=0.628 A12=0.495 (negligible)
+  G09-Composition1       v5_wg2       n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G09-Composition1       v5_wg15      n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G09-Composition1       v5_wg15cp    n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G10-Composition2       v5_wg2       n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G10-Composition2       v5_wg15      n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G10-Composition2       v5_wg15cp    n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G11-Composition3       v5_wg2       n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G11-Composition3       v5_wg15      n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G11-Composition3       v5_wg15cp    n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G12-Composition4       v5_wg2       n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G12-Composition4       v5_wg15      n= 20 win=  0 tie= 20 p_two=nan p_ref=nan A12=0.500 (negligible)
+  G12-Composition4       v5_wg15cp    n= 20 win=  1 tie= 18 p_two=0.6547 p_ref=0.3274 A12=0.515 (negligible)
+
+=== per-function SR table, all 4 levels, all methods ===
+function               method         1e-10    1e-7    1e-4    1e-2  evals_succ
+G01-Zakharov           MC-ESO          100%    100%    100%    100%       13773
+G01-Zakharov           v5_wg2          100%    100%    100%    100%       13773
+G01-Zakharov           v5_wg15         100%    100%    100%    100%       13773
+G01-Zakharov           v5_wg15cp       100%    100%    100%    100%       13665
+G02-Rosenbrock         MC-ESO            0%      0%      0%      5%         inf
+G02-Rosenbrock         v5_wg2            5%      5%      5%      5%       36773
+G02-Rosenbrock         v5_wg15           5%      5%      5%      5%       37547
+G02-Rosenbrock         v5_wg15cp         5%      5%      5%      5%       37547
+G03-SchafferF7         MC-ESO            0%      5%     85%    100%       24467
+G03-SchafferF7         v5_wg2            0%      5%     80%    100%       24662
+G03-SchafferF7         v5_wg15           0%     10%     85%    100%       22894
+G03-SchafferF7         v5_wg15cp         0%     10%     85%    100%       22894
+G04-Rastrigin          MC-ESO            0%      0%      0%      0%         inf
+G04-Rastrigin          v5_wg2            0%      0%      0%      0%         inf
+G04-Rastrigin          v5_wg15           0%      0%      0%      0%         inf
+G04-Rastrigin          v5_wg15cp         0%      0%      0%      0%         inf
+G05-Levy               MC-ESO           95%     95%     95%     95%       15746
+G05-Levy               v5_wg2           95%     95%     95%     95%       15746
+G05-Levy               v5_wg15          95%     95%     95%     95%       15746
+G05-Levy               v5_wg15cp        95%     95%     95%     95%       15746
+G06-Hybrid1            MC-ESO            0%      0%      0%      0%         inf
+G06-Hybrid1            v5_wg2            0%      0%      0%      0%         inf
+G06-Hybrid1            v5_wg15           0%      0%      0%      0%         inf
+G06-Hybrid1            v5_wg15cp         0%      0%      0%      0%         inf
+G07-Hybrid2            MC-ESO            0%      0%      0%      0%         inf
+G07-Hybrid2            v5_wg2            0%      0%      0%      0%         inf
+G07-Hybrid2            v5_wg15           0%      0%      0%      0%         inf
+G07-Hybrid2            v5_wg15cp         0%      0%      0%      0%         inf
+G08-Hybrid3            MC-ESO            0%      0%      0%      0%         inf
+G08-Hybrid3            v5_wg2            0%      0%      0%      0%         inf
+G08-Hybrid3            v5_wg15           0%      0%      0%      0%         inf
+G08-Hybrid3            v5_wg15cp         0%      0%      0%      0%         inf
+G09-Composition1       MC-ESO            0%      0%      0%      0%         inf
+G09-Composition1       v5_wg2            0%      0%      0%      0%         inf
+G09-Composition1       v5_wg15           0%      0%      0%      0%         inf
+G09-Composition1       v5_wg15cp         0%      0%      0%      0%         inf
+G10-Composition2       MC-ESO            0%      0%      0%      0%         inf
+G10-Composition2       v5_wg2            0%      0%      0%      0%         inf
+G10-Composition2       v5_wg15           0%      0%      0%      0%         inf
+G10-Composition2       v5_wg15cp         0%      0%      0%      0%         inf
+G11-Composition3       MC-ESO            0%      5%     10%     15%       36930
+G11-Composition3       v5_wg2            0%      5%     10%     15%       36930
+G11-Composition3       v5_wg15           0%      5%     10%     15%       36930
+G11-Composition3       v5_wg15cp         0%      5%     10%     15%       36930
+G12-Composition4       MC-ESO            0%      0%      0%      0%         inf
+G12-Composition4       v5_wg2            0%      0%      0%      0%         inf
+G12-Composition4       v5_wg15           0%      0%      0%      0%         inf
+G12-Composition4       v5_wg15cp         0%      0%      0%      0%         inf
+
+=== per-run bit comparison (stats/, best_f + n_evals + success, 240 runs x 3 = 720) ===
+  MC-ESO       vs v5_wg2       688/720   diff: G02(2), G03(20), G06(10)
+  MC-ESO       vs v5_wg15      685/720   diff: G02(2), G03(23), G06(10)
+  MC-ESO       vs v5_wg15cp    646/720   diff: G02(2), G03(23), G06(10), G07(19), G08(18), G12(2)
+  v5_wg2       vs v5_wg15      689/720   diff: G02(1), G03(21), G06(9)
+  v5_wg2       vs v5_wg15cp    650/720   diff: G02(1), G03(21), G06(9), G07(19), G08(18), G12(2)
+  v5_wg15      vs v5_wg15cp    673/720   diff: G06(8), G07(19), G08(18), G12(2)
+
+caveat: best_f/n_evals/success can agree while the convergence trace differs.
+  G01-Zakharov is such a case: v5_wg15cp's evals_succ_mean is 13665 vs 13773 for the other three,
+  although all 20 runs end at best_f = 0 with n_evals = 50000 (so G01 shows no per-run cell diff).

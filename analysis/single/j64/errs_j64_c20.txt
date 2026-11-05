@@ -1,0 +1,45 @@
+j64 (c20) CEC2022 dim20 n=20 budget=50000 — cec_mean_errors (per-run error < 1e-8 -> 0)
+
+function                          MC-ESO            v5_wg2           v5_wg15         v5_wg15cp   best
+G01-Zakharov                           0                 0                 0                 0   ALL TIE
+G02-Rosenbrock               42.94761077       42.94759957       42.94759957       42.94759957   v5_wg2/v5_wg15/v5_wg15cp
+G03-SchafferF7            7.27221407e-05   7.982233104e-05   7.103657679e-05   7.103657679e-05   v5_wg15/v5_wg15cp
+G04-Rastrigin                 21.3493135        21.3493135        21.3493135        21.3493135   ALL TIE
+G05-Levy                    0.0044764125      0.0044764125      0.0044764125      0.0044764125   ALL TIE
+G06-Hybrid1                  110.4458525        99.8345815        98.0021065         99.211586   v5_wg15
+G07-Hybrid2                     29.74139          29.74139          29.74139         27.335589   v5_wg15cp
+G08-Hybrid3                   21.5738157        21.5738157        21.5738157         22.024126   MC-ESO/v5_wg2/v5_wg15
+G09-Composition1               180.72686         180.72686         180.72686         180.72686   ALL TIE
+G10-Composition2              100.609715        100.609715        100.609715        100.609715   ALL TIE
+G11-Composition3             243.9505524       243.9505524       243.9505524       243.9505524   ALL TIE
+G12-Composition4               244.39557         244.39557         244.39557        244.617145   MC-ESO/v5_wg2/v5_wg15
+
+=== run-internal ranks per function (4 methods; ties get the average rank) ===
+function                          MC-ESO            v5_wg2           v5_wg15         v5_wg15cp
+G01-Zakharov                         2.5               2.5               2.5               2.5
+G02-Rosenbrock                       4.0               2.0               2.0               2.0
+G03-SchafferF7                       3.0               4.0               1.5               1.5
+G04-Rastrigin                        2.5               2.5               2.5               2.5
+G05-Levy                             2.5               2.5               2.5               2.5
+G06-Hybrid1                          4.0               3.0               1.0               2.0
+G07-Hybrid2                          3.0               3.0               3.0               1.0
+G08-Hybrid3                          2.0               2.0               2.0               4.0
+G09-Composition1                     2.5               2.5               2.5               2.5
+G10-Composition2                     2.5               2.5               2.5               2.5
+G11-Composition3                     2.5               2.5               2.5               2.5
+G12-Composition4                     2.0               2.0               2.0               4.0
+
+=== run-internal mean rank (analyze_quick [5]) ===
+  MC-ESO       mean rank  2.75   best(incl. ties) on 8/12
+  v5_wg2       mean rank  2.58   best(incl. ties) on 9/12
+  v5_wg15      mean rank  2.21   best(incl. ties) on 11/12
+  v5_wg15cp    mean rank  2.46   best(incl. ties) on 9/12
+
+=== arm vs default (MC-ESO): mean error strictly lower / higher ===
+  v5_wg2       lower=2 ['G02', 'G06']  higher=1 ['G03']
+  v5_wg15      lower=3 ['G02', 'G03', 'G06']  higher=0 []
+  v5_wg15cp    lower=4 ['G02', 'G03', 'G06', 'G07']  higher=2 ['G08', 'G12']
+
+note: on G02 the gap is in the 7th significant digit (42.947610774560 vs 42.947599570000),
+      i.e. the 'lower on G02' for all three arms is a ~1e-5 relative difference, well above 1e-8
+      so it is not zeroed, but it is far below the scale of the G06/G07 gaps.
