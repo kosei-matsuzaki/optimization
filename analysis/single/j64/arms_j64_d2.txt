@@ -1,0 +1,26 @@
+=== j64_d2  dim2  n=20  max_evals=5000  functions=24  methods=['MC-ESO', 'v5_wg15', 'v5_wg15cp'] ===
+summary rows 72  wilcoxon rows 48  wilcoxon refs ['MC-ESO']
+
+-- columns: ['function', 'category', 'tags', 'method', 'mean_time_s', 'mean_best_f', 'median_best_f', 'sr_1e-1', 'sr_1e-2', 'sr_1e-3', 'sr_1e-4', 'sr_1e-5', 'sr_1e-7', 'sr_1e-10', 'evals_succ_mean', 'evals_succ_med', 'ert', 'ecdf_auc', 'mean_optima_found', 'mean_optima_rate', 'n_optima', 'pr_1e-2', 'pr_1e-4', 'mmo_sr_1e-2', 'mmo_sr_1e-4', 'cec_k', 'cec_pr_1e-1', 'cec_pr_1e-2', 'cec_pr_1e-3', 'cec_pr_1e-4', 'cec_pr_1e-5', 'cec_sr_1e-1', 'cec_sr_1e-2', 'cec_sr_1e-3', 'cec_sr_1e-4', 'cec_sr_1e-5', 'cec_pr_mean', 'cec_sr_mean', 'n_reported', 'cec_pre_1e-1', 'cec_pre_1e-2', 'cec_pre_1e-3', 'cec_pre_1e-4', 'cec_pre_1e-5', 'cec_f1_1e-1', 'cec_f1_1e-2', 'cec_f1_1e-3', 'cec_f1_1e-4', 'cec_f1_1e-5', 'cec_f1_mean']
+
+--- v5_wg15 vs MC-ESO ---
+  sr_1e-10: changed on 0 functions
+  sr_1e-7: changed on 0 functions
+  sr_1e-4: changed on 0 functions
+  sr_1e-2: changed on 0 functions
+  evals_succ_mean (common 24 funcs): arm 775.5 vs base 775.5  delta +0.0
+  mean_best_f: arm below base on 0 [], above on 0 []
+  median_best_f: arm below base on 0 [], above on 0 []
+  wilcoxon rows for arm: 24; columns ['function', 'reference', 'method', 'n', 'win_count', 'tie_count', 'p_value_two_sided', 'p_value_ref_better', 'a12', 'a12_magnitude']
+    p_value_two_sided < 0.05: 0 functions
+
+--- v5_wg15cp vs MC-ESO ---
+  sr_1e-10: changed on 0 functions
+  sr_1e-7: changed on 0 functions
+  sr_1e-4: changed on 0 functions
+  sr_1e-2: changed on 0 functions
+  evals_succ_mean (common 24 funcs): arm 775.5 vs base 775.5  delta +0.0
+  mean_best_f: arm below base on 0 [], above on 0 []
+  median_best_f: arm below base on 0 [], above on 0 []
+  wilcoxon rows for arm: 24; columns ['function', 'reference', 'method', 'n', 'win_count', 'tie_count', 'p_value_two_sided', 'p_value_ref_better', 'a12', 'a12_magnitude']
+    p_value_two_sided < 0.05: 0 functions

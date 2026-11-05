@@ -1,0 +1,6 @@
+== d2 == new 24 files / old 24 files; old methods: ['MC-ESO', 'v4_k50fR_r50', 'v5_paceR', 'v5_pmax3']
+   j64 MC-ESO vs j61 MC-ESO: 1440/1440 identical
+   j64 MC-ESO vs j61 v4_k50fR_r50: 1440/1440 identical
+== d2ho == new 24 files / old 24 files; old methods: ['MC-ESO', 'v4_k50fR_r50', 'v5_paceR', 'v5_pmax3']
+   j64 MC-ESO vs j61 MC-ESO: 1440/1440 identical
+   j64 MC-ESO vs j61 v4_k50fR_r50: 1440/1440 identical

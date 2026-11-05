@@ -1,0 +1,6 @@
+dim 2: 24 functions, panel = MC-ESO + ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES
+  MC-ESO                 mean rank  4.52
+  v5_wg15                mean rank  4.44   mean error below base on 1, above on 2
+      rank moved: F19 2->4, F20 7->3
+  v5_wg15cp              mean rank  4.44   mean error below base on 1, above on 2
+      rank moved: F19 2->4, F20 7->3
