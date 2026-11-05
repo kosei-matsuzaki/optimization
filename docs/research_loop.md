@@ -117,7 +117,7 @@
 
 **2026-10-30 から `MC-ESO` は新しい既定（旧 `v4_k50fR_r50`）。** 旧既定は `MC-ESO-v3`。`v3_*` / `v4_*` の腕は旧既定の上で走る（記録した数値が再現する）。`v5_*` と `ctl_*` は新しい既定の上。j47 / j49 / j57 のパネルの `MC-ESO` は**旧既定**なので、新しい既定のパネル順位は同じ run に入れた `v4_k50fR_r50`（新しい既定と bit 一致）で読む。
 
-1. **【j64 (c20) CEC2022 20D（調整外）】** `./run.sh quick --suite cec2022 --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v5_wg2,v5_wg15,v5_wg15cp" --jobs 4`（label `j64_c20`）。パネルは j63 (c20) と同じ: `cec_panel.py --dim 20 --panel runs/20261029_200016_j61_mc20m_quick --arms results/<この run> --drop MC-ESO-v3`。**記録**: `analysis/single/j64/`。採否の判断はしない。
+1. **【j64 (c20) CEC2022 20D（調整外）】** `./run.sh quick --suite cec2022 --all --dim 20 --max-evals 50000 --n-runs 20 --methods "MC-ESO,v5_wg2,v5_wg15,v5_wg15cp" --jobs 4`（label `j64_c20`）。パネルは j63 (c20) と同じ: `cec_panel.py --dim 20 --panel runs/20261029_200016_j61_mc20m_quick --arms results/<この run> --drop MC-ESO-v3`。**記録**: `analysis/single/j64/`。採否の判断はしない。 (claimed 2026-11-05 18:30 UTC)
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
