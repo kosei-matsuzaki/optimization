@@ -1,0 +1,38 @@
+=== CEC mean error (per-run f-f*, <1e-8 as 0) ===
+function                       MC-ESO       v5_wg2      v5_wg15    v5_wg15cp
+F01-Sphere                          0            0            0            0
+F02-EllipsoidalSep          4.145e-09            0            0            0
+F03-RastriginSep                    0            0            0            0
+F04-BucheRastrigin              1.094        1.094        1.094        1.094
+F05-LinearSlope                     0            0            0            0
+F06-AttractiveSector        6.094e-08            0            0            0
+F07-StepEllipsoidal             1.356        1.368        1.387        1.387
+F08-Rosenbrock                  7.198       0.2375       0.4681       0.4681
+F09-RosenbrockRot               2.146       0.1993        0.204        0.204
+F10-EllipsoidalRot           0.008761            0            0            0
+F11-Discus                          0            0            0            0
+F12-BentCigar                 0.02162    0.0001257      0.00617      0.00617
+F13-SharpRidge              0.0001484    0.0001444    0.0001208    0.0001208
+F14-DiffPowers                      0            0            0            0
+F15-RastriginRot                22.22        22.22        22.22        22.22
+F16-Weierstrass                0.3895       0.3898       0.3898       0.3898
+F17-SchafferF7                0.02389      0.02518      0.02377      0.02377
+F18-SchafferF7ill              0.1278       0.1282       0.1282       0.1227
+F19-GriewankRosenbrock          2.511        2.511        2.511        2.511
+F20-Schwefel                    1.036        1.061         1.11         1.11
+F21-Gallagher101               0.6133       0.6133       0.6133       0.6133
+F22-Gallagher21                  1.29         1.29         1.29         1.29
+F23-Katsuura                   0.2343       0.2343       0.2343       0.1446
+F24-LunacekRastrigin            59.68        59.68        59.68        59.68
+
+=== job-named functions ===
+F02-EllipsoidalSep       base   4.145e-09 | v5_wg2           0 (better) | v5_wg15           0 (better) | v5_wg15cp           0 (better)
+F06-AttractiveSector     base   6.094e-08 | v5_wg2           0 (better) | v5_wg15           0 (better) | v5_wg15cp           0 (better)
+F07-StepEllipsoidal      base       1.356 | v5_wg2       1.368 (worse) | v5_wg15       1.387 (worse) | v5_wg15cp       1.387 (worse)
+F08-Rosenbrock           base       7.198 | v5_wg2      0.2375 (better) | v5_wg15      0.4681 (better) | v5_wg15cp      0.4681 (better)
+F09-RosenbrockRot        base       2.146 | v5_wg2      0.1993 (better) | v5_wg15       0.204 (better) | v5_wg15cp       0.204 (better)
+F10-EllipsoidalRot       base    0.008761 | v5_wg2           0 (better) | v5_wg15           0 (better) | v5_wg15cp           0 (better)
+F12-BentCigar            base     0.02162 | v5_wg2   0.0001257 (better) | v5_wg15     0.00617 (better) | v5_wg15cp     0.00617 (better)
+F13-SharpRidge           base   0.0001484 | v5_wg2   0.0001444 (better) | v5_wg15   0.0001208 (better) | v5_wg15cp   0.0001208 (better)
+F17-SchafferF7           base     0.02389 | v5_wg2     0.02518 (worse) | v5_wg15     0.02377 (better) | v5_wg15cp     0.02377 (better)
+F23-Katsuura             base      0.2343 | v5_wg2      0.2343 (same) | v5_wg15      0.2343 (same) | v5_wg15cp      0.1446 (better)

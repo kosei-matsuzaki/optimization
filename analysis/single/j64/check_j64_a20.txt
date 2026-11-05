@@ -1,0 +1,5 @@
+MC-ESO: j64_a20 vs j63_a20  rows common 480 (new 480 old 480)  cells 1440/1440 identical  funcs differing: none
+v5_wg2: j64_a20 vs j63_a20  rows common 480 (new 480 old 480)  cells 1440/1440 identical  funcs differing: none
+MC-ESO vs v5_wg15 (same run): 1270/1440 identical  funcs differing (15): ['F02-EllipsoidalSep', 'F04-BucheRastrigin', 'F06-AttractiveSector', 'F07-StepEllipsoidal', 'F08-Rosenbrock', 'F09-RosenbrockRot', 'F10-EllipsoidalRot', 'F11-Discus', 'F12-BentCigar', 'F13-SharpRidge', 'F14-DiffPowers', 'F16-Weierstrass', 'F17-SchafferF7', 'F18-SchafferF7ill', 'F20-Schwefel']
+v5_wg15 vs v5_wg15cp (same run): 1422/1440 identical  funcs differing (6): ['F02-EllipsoidalSep', 'F04-BucheRastrigin', 'F11-Discus', 'F18-SchafferF7ill', 'F20-Schwefel', 'F23-Katsuura']
+v5_wg2 vs v5_wg15 (same run): 1315/1440 identical  funcs differing (15): ['F02-EllipsoidalSep', 'F04-BucheRastrigin', 'F06-AttractiveSector', 'F07-StepEllipsoidal', 'F08-Rosenbrock', 'F09-RosenbrockRot', 'F10-EllipsoidalRot', 'F11-Discus', 'F12-BentCigar', 'F13-SharpRidge', 'F14-DiffPowers', 'F16-Weierstrass', 'F17-SchafferF7', 'F18-SchafferF7ill', 'F20-Schwefel']
