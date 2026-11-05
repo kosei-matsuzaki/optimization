@@ -1,0 +1,59 @@
+== CEC mean error per function (per-run error < 1e-8 -> 0; lower = better) ==
+function                       MC-ESO       v5_wg1       v5_wg2      v5_wg15    v5_wg15cp   best
+F01-Sphere                 0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F02-EllipsoidalSep         0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F03-RastriginSep           0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F04-BucheRastrigin         5.4723e-01   5.4723e-01   5.4723e-01   5.4723e-01   5.4723e-01   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F05-LinearSlope            0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F06-AttractiveSector       0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F07-StepEllipsoidal        4.8829e-01   4.7111e-01   4.7729e-01   4.8930e-01   4.8930e-01   v5_wg1
+F08-Rosenbrock             3.8848e-01   2.5593e-09   0.0000e+00   0.0000e+00   0.0000e+00   v5_wg2,v5_wg15,v5_wg15cp
+F09-RosenbrockRot          2.1554e-04   0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F10-EllipsoidalRot         0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F11-Discus                 0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F12-BentCigar              2.0923e-08   9.6104e-10   9.6104e-10   9.6104e-10   9.6104e-10   v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F13-SharpRidge             0.0000e+00   1.1091e-06   2.6291e-08   1.4596e-06   1.4596e-06   MC-ESO
+F14-DiffPowers             0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   0.0000e+00   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F15-RastriginRot           1.1914e+01   1.1914e+01   1.1914e+01   1.1914e+01   1.1914e+01   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F16-Weierstrass            1.2712e-01   1.2712e-01   1.2747e-01   1.2712e-01   1.0883e-01   v5_wg15cp
+F17-SchafferF7             1.2069e-02   1.2074e-02   1.2275e-02   1.2119e-02   1.2119e-02   MC-ESO
+F18-SchafferF7ill          7.7948e-02   7.9112e-02   7.9069e-02   7.8660e-02   7.8660e-02   MC-ESO
+F19-GriewankRosenbrock     1.6113e+00   1.6113e+00   1.6113e+00   1.6113e+00   1.6113e+00   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F20-Schwefel               9.2843e-01   1.0344e+00   1.0317e+00   9.9944e-01   9.9944e-01   MC-ESO
+F21-Gallagher101           4.3279e-01   4.3279e-01   4.3279e-01   4.3279e-01   4.3279e-01   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F22-Gallagher21            6.8584e-01   6.8584e-01   6.8584e-01   6.8584e-01   6.8584e-01   MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp
+F23-Katsuura               1.0038e-01   1.0037e-01   1.0064e-01   1.0043e-01   1.0377e-01   v5_wg1
+F24-LunacekRastrigin       2.8313e+01   2.8313e+01   2.8313e+01   2.8313e+01   2.7977e+01   v5_wg15cp
+
+== within-run CEC mean rank (lower = better; 24 funcs) ==
+ 1. MC-ESO       mean rank  2.938   best on 17/24
+ 2. v5_wg15cp    mean rank  2.938   best on 18/24
+ 3. v5_wg1       mean rank  2.958   best on 17/24
+ 4. v5_wg15      mean rank  3.021   best on 16/24
+ 5. v5_wg2       mean rank  3.146   best on 16/24
+
+== per-function rank (MC-ESO / v5_wg1 / v5_wg2 / v5_wg15 / v5_wg15cp) ==
+F01-Sphere                3.0   3.0   3.0   3.0   3.0
+F02-EllipsoidalSep        3.0   3.0   3.0   3.0   3.0
+F03-RastriginSep          3.0   3.0   3.0   3.0   3.0
+F04-BucheRastrigin        3.0   3.0   3.0   3.0   3.0
+F05-LinearSlope           3.0   3.0   3.0   3.0   3.0
+F06-AttractiveSector      3.0   3.0   3.0   3.0   3.0
+F07-StepEllipsoidal       3.0   1.0   2.0   4.5   4.5
+F08-Rosenbrock            5.0   4.0   2.0   2.0   2.0
+F09-RosenbrockRot         5.0   2.5   2.5   2.5   2.5
+F10-EllipsoidalRot        3.0   3.0   3.0   3.0   3.0
+F11-Discus                3.0   3.0   3.0   3.0   3.0
+F12-BentCigar             5.0   2.5   2.5   2.5   2.5
+F13-SharpRidge            1.0   3.0   2.0   4.5   4.5
+F14-DiffPowers            3.0   3.0   3.0   3.0   3.0
+F15-RastriginRot          3.0   3.0   3.0   3.0   3.0
+F16-Weierstrass           4.0   2.5   5.0   2.5   1.0
+F17-SchafferF7            1.0   2.0   5.0   3.5   3.5
+F18-SchafferF7ill         1.0   5.0   4.0   2.5   2.5
+F19-GriewankRosenbrock    3.0   3.0   3.0   3.0   3.0
+F20-Schwefel              1.0   5.0   4.0   2.5   2.5
+F21-Gallagher101          3.0   3.0   3.0   3.0   3.0
+F22-Gallagher21           3.0   3.0   3.0   3.0   3.0
+F23-Katsuura              2.0   1.0   4.0   3.0   5.0
+F24-LunacekRastrigin      3.5   3.5   3.5   3.5   1.0

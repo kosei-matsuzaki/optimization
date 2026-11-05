@@ -1,0 +1,38 @@
+== SR table (per method, mean over 24 funcs) ==
+method        SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2
+MC-ESO           51.7     54.6     57.9     59.8
+v5_wg1           55.0     56.9     59.4     60.6
+v5_wg2           54.8     55.8     56.9     59.6
+v5_wg15          55.4     56.9     58.5     60.2
+v5_wg15cp        55.4     56.9     58.5     60.2
+
+== evals_succ_mean : paired over funcs where BOTH ref and arm have successes ==
+v5_wg1       n_common=20  ref   19982.6 -> arm   18744.8  diff   -1237.8
+             funcs: F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F11,F12,F13,F14,F16,F17,F18,F21,F22,F23
+v5_wg2       n_common=19  ref   19425.9 -> arm   16855.2  diff   -2570.7
+             funcs: F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F11,F12,F13,F14,F17,F18,F21,F22,F23
+v5_wg15      n_common=19  ref   19126.0 -> arm   17611.9  diff   -1514.1
+             funcs: F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F11,F12,F13,F14,F16,F17,F21,F22,F23
+v5_wg15cp    n_common=19  ref   19126.0 -> arm   17548.8  diff   -1577.2
+             funcs: F01,F02,F03,F04,F05,F06,F07,F08,F09,F10,F11,F12,F13,F14,F16,F17,F21,F22,F23
+
+== per-function SR@1e-10 : ref -> arm (only where changed) ==
+v5_wg1       (6 changed) F07 30->35 | F08 35->85 | F09 90->100 | F12 85->90 | F16 0->5 | F17 0->5
+v5_wg2       (5 changed) F07 30->15 | F08 35->100 | F09 90->100 | F12 85->95 | F13 85->90
+v5_wg15      (6 changed) F07 30->25 | F08 35->100 | F09 90->100 | F12 85->95 | F16 0->5 | F17 0->5
+v5_wg15cp    (6 changed) F07 30->25 | F08 35->100 | F09 90->100 | F12 85->95 | F16 0->5 | F17 0->5
+
+== Wilcoxon (best_f, reference MC-ESO, alpha=0.05 two-sided) ==
+cols: ['function', 'reference', 'method', 'n', 'win_count', 'tie_count', 'p_value_two_sided', 'p_value_ref_better', 'a12', 'a12_magnitude']
+v5_wg1       ref-wins 0 / arm-wins 2
+             ref: -
+             arm: F08 A12=0.18 (large), F09 A12=0.40 (small)
+v5_wg2       ref-wins 1 / arm-wins 1
+             ref: F17 A12=0.55 (negligible)
+             arm: F08 A12=0.10 (large)
+v5_wg15      ref-wins 0 / arm-wins 2
+             ref: -
+             arm: F08 A12=0.11 (large), F09 A12=0.35 (medium)
+v5_wg15cp    ref-wins 0 / arm-wins 2
+             ref: -
+             arm: F08 A12=0.11 (large), F09 A12=0.35 (medium)

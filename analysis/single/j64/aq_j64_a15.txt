@@ -1,0 +1,62 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=15   ref=MC-ESO
+run: 20261105_153401_j64_a15_quick
+meta: n_runs=20 max_evals=37500 set=all-d15 commit=69beee4
+functions: 24   methods: MC-ESO, v5_wg1, v5_wg2, v5_wg15, v5_wg15cp
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            51.7%   54.6%   57.9%   59.8%       19983            
+  v5_wg1            55.0%   56.9%   59.4%   60.6%       18745         0/2
+  v5_wg2            54.8%   55.8%   56.9%   59.6%       16855         1/1
+  v5_wg15           55.4%   56.9%   58.5%   60.2%       17612         0/2
+  v5_wg15cp         55.4%   56.9%   58.5%   60.2%       17549         0/2
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%          v5_wg1 100%            8834/8834
+  F02-EllipsoidalSep              100%          v5_wg1 100%          13593/13154
+  F03-RastriginSep                100%          v5_wg1 100%          14018/14018
+  F04-BucheRastrigin               45%           v5_wg1 45%          19457/18488
+  F05-LinearSlope                 100%          v5_wg1 100%          14004/14004
+  F06-AttractiveSector            100%          v5_wg1 100%          19628/19628
+  F07-StepEllipsoidal              30%           v5_wg1 35%          13430/16182  <-- ref behind
+  F08-Rosenbrock                   35%          v5_wg2 100%          32880/20152  <-- ref behind
+  F09-RosenbrockRot                90%          v5_wg1 100%          30722/27023  <-- ref behind
+  F10-EllipsoidalRot              100%          v5_wg1 100%          12793/12793
+  F11-Discus                      100%          v5_wg1 100%          10729/10729
+  F12-BentCigar                    85%           v5_wg2 95%          23065/22462  <-- ref behind
+  F13-SharpRidge                   85%           v5_wg2 90%          20239/19714  <-- ref behind
+  F14-DiffPowers                  100%          v5_wg1 100%          11876/11876
+  F15-RastriginRot                  0%            v5_wg1 0%                    -
+  F16-Weierstrass                   0%            v5_wg1 5%          30560/28550  <-- ref behind
+  F17-SchafferF7                    0%            v5_wg1 5%          24624/21692  <-- ref behind
+  F18-SchafferF7ill                 0%            v5_wg1 0%          36258/23611
+  F19-GriewankRosenbrock            0%            v5_wg1 0%                    -
+  F20-Schwefel                      0%            v5_wg1 0%                    -
+  F21-Gallagher101                 60%           v5_wg1 60%          19132/19132
+  F22-Gallagher21                  10%           v5_wg1 10%          17532/17532
+  F23-Katsuura                      0%            v5_wg1 0%          26278/26083
+  F24-LunacekRastrigin              0%            v5_wg1 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F08-Rosenbrock         vs v5_wg1         p=0.000438 A12=0.18 (large)
+  F08-Rosenbrock         vs v5_wg15        p=0.000438 A12=0.11 (large)
+  F08-Rosenbrock         vs v5_wg15cp      p=0.000438 A12=0.11 (large)
+  F08-Rosenbrock         vs v5_wg2         p=0.000438 A12=0.10 (large)
+  F09-RosenbrockRot      vs v5_wg1         p=0.034 A12=0.40 (small)
+  F09-RosenbrockRot      vs v5_wg15        p=0.0273 A12=0.35 (medium)
+  F09-RosenbrockRot      vs v5_wg15cp      p=0.0273 A12=0.35 (medium)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. MC-ESO                 mean rank   2.94   best on 17/24  <- ref
+   2. v5_wg15cp              mean rank   2.94   best on 18/24
+   3. v5_wg1                 mean rank   2.96   best on 17/24
+   4. v5_wg15                mean rank   3.02   best on 16/24
+   5. v5_wg2                 mean rank   3.15   best on 16/24
+

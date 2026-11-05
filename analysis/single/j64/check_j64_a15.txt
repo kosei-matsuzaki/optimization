@@ -1,0 +1,24 @@
+result.json: {'type': 'quick', 'created_at': '2026-11-05T15:34:01', 'commit': '69beee4', 'n_runs': 20, 'max_evals': 37500, 'set': 'all-d15', 'dim': 15, 'methods': 'MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp', 'status': 'done'}
+funcs 24 methods 5 ['MC-ESO', 'v5_wg1', 'v5_wg15', 'v5_wg15cp', 'v5_wg2']
+pairs 120 expected 120 dups/missing []
+wilcoxon rows 96 references ['MC-ESO']
+stats files 24
+mceso_runs rows 2400 = methods x funcs x runs 2400
+seeds [0, 100, 200] ... [1700, 1800, 1900] n_seeds 20
+
+== per-run cell agreement within this run (best_f/n_evals/success, 24 funcs x 20 seeds x 3 cols) ==
+MC-ESO       vs v5_wg1        1340/1440  agree   diff funcs: F02,F04,F07,F08,F09,F12,F13,F16,F17,F18,F20,F23
+MC-ESO       vs v5_wg15       1338/1440  agree   diff funcs: F02,F04,F07,F08,F09,F12,F13,F16,F17,F18,F20,F23
+MC-ESO       vs v5_wg15cp     1324/1440  agree   diff funcs: F01,F02,F04,F07,F08,F09,F12,F13,F16,F17,F18,F20,F23,F24
+MC-ESO       vs v5_wg2        1325/1440  agree   diff funcs: F02,F04,F07,F08,F09,F12,F13,F16,F17,F18,F20,F23
+v5_wg1       vs v5_wg15       1364/1440  agree   diff funcs: F02,F04,F07,F08,F09,F12,F13,F17,F18,F20,F23
+v5_wg1       vs v5_wg15cp     1350/1440  agree   diff funcs: F01,F02,F04,F07,F08,F09,F12,F13,F16,F17,F18,F20,F23,F24
+v5_wg1       vs v5_wg2        1347/1440  agree   diff funcs: F02,F04,F07,F08,F09,F12,F13,F16,F17,F18,F20,F23
+v5_wg15      vs v5_wg15cp     1426/1440  agree   diff funcs: F01,F04,F16,F23,F24
+v5_wg15      vs v5_wg2        1361/1440  agree   diff funcs: F04,F07,F08,F09,F13,F16,F17,F18,F20,F23
+v5_wg15cp    vs v5_wg2        1347/1440  agree   diff funcs: F01,F04,F07,F08,F09,F13,F16,F17,F18,F20,F23,F24
+
+== cross-run check vs summary_j63_a15_dim15_all24.csv (summary level, 13 cols) ==
+MC-ESO        312/312  cells identical
+v5_wg1        312/312  cells identical
+v5_wg2        312/312  cells identical
