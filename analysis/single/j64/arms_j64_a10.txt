@@ -1,0 +1,18 @@
+run: 20261105_163223_j64_a10_quick funcs 24 methods ['MC-ESO', 'v5_wg15', 'v5_wg15cp']
+(function, method) cells: 72 = 24 x 3, no dup/missing
+
+--- per-function SR@1e-10 changes (ref -> arm) ---
+v5_wg15     n=0: NO CHANGE (all 24 identical)
+v5_wg15cp   n=0: NO CHANGE (all 24 identical)
+
+--- evals_succ_mean (paired over functions where BOTH have successes) ---
+v5_wg15     ref 10540.8 -> arm 10540.8  (+0.0, n_common=20)
+v5_wg15cp   ref 10540.8 -> arm 10511.5  (-29.2, n_common=20)
+
+--- Wilcoxon (ref=MC-ESO, alpha=0.05 two-sided) ---
+v5_wg15     ref_wins=0 arm_wins=0 | ref: - | arm: -
+v5_wg15cp   ref_wins=0 arm_wins=0 | ref: - | arm: -
+
+20261105_163223_j64_a10_quick: 24 funcs x per-run cells
+  v5_wg15     vs MC-ESO: 1440/1440 per-run cells identical  BIT-IDENTICAL
+  v5_wg15cp   vs MC-ESO: 1419/1440 per-run cells identical  differs: F04(2), F16(3), F17(2), F19(1), F23(9), F24(4)

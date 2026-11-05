@@ -1,0 +1,14 @@
+reproduction check: j64_a10 vs j63_a10 (summary level; j63 kept no per-run stats)
+  new: results/20261105_163223_j64_a10_quick/dim10/summary.csv
+  old: analysis/single/j63/summary_j63_a10_dim10_all24.csv
+  methods in both: MC-ESO
+  MC-ESO         312/312 cells identical (13 cols x 24 funcs)
+
+reproduction check: j64_a10ho vs j63_a10ho (summary level; j63 kept no per-run stats)
+  new: results/20261105_163236_j64_a10ho_quick/dim10/summary.csv
+  old: analysis/single/j63/summary_j63_a10ho_dim10_all24.csv
+  methods in both: MC-ESO
+  MC-ESO         312/312 cells identical (13 cols x 24 funcs)
+
+cross-check a10: this run's v5_wg15 vs j63's v5_wg1 (both expected = default): 312/312 cells identical
+cross-check a10ho: this run's v5_wg15 vs j63's v5_wg1 (both expected = default): 312/312 cells identical

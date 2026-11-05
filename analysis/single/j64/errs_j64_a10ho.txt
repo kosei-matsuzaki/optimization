@@ -1,0 +1,29 @@
+cec_mean_errors (per-run error < 1e-8 as 0)  run=20261105_163236_j64_a10ho_quick  dim=10
+function                         MC-ESO        v5_wg15      v5_wg15cp
+F01-Sphere                            0              0              0
+F02-EllipsoidalSep                    0              0              0
+F03-RastriginSep                      0              0              0
+F04-BucheRastrigin             0.994959       0.994959       0.994959
+F05-LinearSlope                       0              0              0
+F06-AttractiveSector                  0              0              0
+F07-StepEllipsoidal          0.00935709     0.00935709     0.00935709
+F08-Rosenbrock                        0              0              0
+F09-RosenbrockRot                     0              0              0
+F10-EllipsoidalRot                    0              0              0
+F11-Discus                            0              0              0
+F12-BentCigar               1.76353e-08    1.76353e-08    1.76353e-08
+F13-SharpRidge                        0              0              0
+F14-DiffPowers                        0              0              0
+F15-RastriginRot                5.87945        5.87945        5.77998
+F16-Weierstrass               0.0861596      0.0861596      0.0645969
+F17-SchafferF7              0.000959666    0.000959666    0.000959666
+F18-SchafferF7ill             0.0111248      0.0111248      0.0111248
+F19-GriewankRosenbrock         0.271351       0.271351       0.267569
+F20-Schwefel                   0.967204       0.967204       0.967204
+F21-Gallagher101               0.551415       0.551415       0.551415
+F22-Gallagher21                 0.54149        0.54149        0.54149
+F23-Katsuura                  0.0533571      0.0533571       0.053808
+F24-LunacekRastrigin            15.4765        15.4765        15.4816
+
+v5_wg15      below base on 0 (-), above on 0 (-)
+v5_wg15cp    below base on 3 (F15,F16,F19), above on 2 (F23,F24)
