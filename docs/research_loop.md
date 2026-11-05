@@ -117,7 +117,7 @@
 
 **2026-10-30 から `MC-ESO` は新しい既定（旧 `v4_k50fR_r50`）。** 旧既定は `MC-ESO-v3`。`v3_*` / `v4_*` の腕は旧既定の上で走る（記録した数値が再現する）。`v5_*` と `ctl_*` は新しい既定の上。j47 / j49 / j57 のパネルの `MC-ESO` は**旧既定**なので、新しい既定のパネル順位は同じ run に入れた `v4_k50fR_r50`（新しい既定と bit 一致）で読む。
 
-1. **【j64 (a15) 15D】** `./run.sh quick --all --dim 15 --max-evals 37500 --n-runs 20 --instances 1-5 --methods "MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp" --jobs 4`（label `j64_a15`）。run 内の比較。j63 (a15) では `v5_wg1` 55.0%・`v5_wg2` 54.8%（既定 51.7%）、`v5_wg2` は F07 30→15%・F17 で負け。**記録**: `analysis/single/j64/`。採否の判断はしない。
+1. **【j64 (a15) 15D】** `./run.sh quick --all --dim 15 --max-evals 37500 --n-runs 20 --instances 1-5 --methods "MC-ESO,v5_wg1,v5_wg2,v5_wg15,v5_wg15cp" --jobs 4`（label `j64_a15`）。run 内の比較。j63 (a15) では `v5_wg1` 55.0%・`v5_wg2` 54.8%（既定 51.7%）、`v5_wg2` は F07 30→15%・F17 で負け。**記録**: `analysis/single/j64/`。採否の判断はしない。 (claimed 2026-11-05 15:30 UTC)
 
 1. **【j64 (a) 10D の 2 設定】** 手法 `"MC-ESO,v5_wg15,v5_wg15cp"`、j50 と同じ 10D の 2 設定（label `j64_a10` / `j64_a10ho`、`--jobs 4`）。10D では `v5_wg15` の λ は既定と同じ（40）なので **既定と bit 一致になるはず**（一致したかを書く）。**集計**: j63 (a) と同じ（新しい既定のパネル順位は 10D 4.25/4.46）。**記録**: `analysis/single/j64/`。採否の判断はしない。
 
