@@ -87,6 +87,8 @@ class _MCESOState:
     pace_ref: float = 0.0           # log10 of the outbreak's best at its last meaningful step
     pace_since: int = 0
     pace_start: int = 0             # pace_max: evaluations spent when pacing began
+    pace_samples: list = field(default_factory=list)  # pace_final: outbreak best every interval
+    pace_next: int = 0              # pace_final: evaluation count of the next sample
     # The learned C has reached 10^router_learned_cond (latched; σ floor and
     # the containment hand-over read it).
     cc_ill: bool = False
@@ -915,6 +917,16 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # Pacing lasts at most this many stagnation windows after the basin
         # switch (None = until the outbreak overtakes the global best).
         pace_max: "float | None" = None,
+        # v6 (2026-11-09). Final-size forecast of a paced outbreak: its best is
+        # sampled every pace_final stagnation windows, and once three samples
+        # show it decelerating geometrically (ratio of successive gains in
+        # (0, pace_final_ratio)) the Aitken Δ² limit f₂ − Δ₂²/(Δ₂ − Δ₁) is the
+        # value the outbreak is heading for. If that is worse than the global
+        # best, pacing ends (the outbreak is on a peak that cannot win —
+        # Gallagher, where pacing cost F21/F22; pace_horizon's linear rate in
+        # log f never predicted the plateau). None = off.
+        pace_final: "float | None" = None,
+        pace_final_ratio: float = 0.8,
         # Herd child (≥3D): each generation one extra child at the log-weighted
         # mean of the best half of the hosts — the outbreak's centre, which on a
         # rugged surface with global structure (rotated Rastrigin, Schaffer)
@@ -1024,6 +1036,8 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.forecast_route = forecast_route
         self.pace_route = pace_route
         self.pace_max = pace_max
+        self.pace_final = pace_final
+        self.pace_final_ratio = pace_final_ratio
         self.herd_child = herd_child
         self.keepair_slow = keepair_slow
         self.chain_route = chain_route
@@ -1712,6 +1726,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.pace_ref = math.log10(max(st.basin_best, 1e-300))
             st.pace_since = 0
             st.pace_start = len(st.history_f)
+            if self.pace_final is not None:
+                st.pace_samples = [st.basin_best]
+                st.pace_next = st.pace_start + self._pace_final_interval()
         st.log_best_ref = math.log10(max(st.best_so_far, 1e-300))
         st.evals_since_reset = 0
         if not basin_switch:
@@ -2661,6 +2678,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
             st.sigma *= (self.sigma_drill_down if in_drilling else self.sigma_down) ** k_down
         st.sigma = max(sigma_floor_eff, min(st.sigma, span * self.sigma_ceil_ratio))
 
+    def _pace_final_interval(self) -> int:
+        return max(1, int(self.pace_final * self._stagnation_window()))
+
     # ── host competition (overridable for niching variants) ──────────────────
     def _record_eval(self, st: _MCESOState, x: np.ndarray, f: float,
                      sigma_used: float) -> None:
@@ -2691,6 +2711,15 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
                 st.pace_since = 0
         if f < st.basin_best:
             st.basin_best = f
+        if st.paced and self.pace_final is not None and len(st.history_f) >= st.pace_next:
+            st.pace_next += self._pace_final_interval()
+            st.pace_samples.append(st.basin_best)
+            if len(st.pace_samples) >= 3:
+                f0, f1, f2 = st.pace_samples[-3:]
+                d1, d2 = f1 - f0, f2 - f1
+                if d1 < 0 and d2 < 0 and d2 / d1 < self.pace_final_ratio:
+                    if f2 - d2 * d2 / (d2 - d1) > st.best_so_far:
+                        st.paced = False
         if f < st.best_so_far:
             st.paced = False
             st.best_so_far = f

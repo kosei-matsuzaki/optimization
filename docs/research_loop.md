@@ -122,6 +122,14 @@
 
 **2026-11-09 から `MC-ESO` は新しい既定（旧 `v5_wg15` ＝ 10-30 の既定 ＋ `wave_gen_floor=1.5`）。** 前の既定は `MC-ESO-v4`、その前は `MC-ESO-v3`。`v5_*` と `ctl_*` は `MC-ESO-v4` の上、`v3_*` / `v4_*` は `MC-ESO-v3` の上で走る（記録した数値が再現する）。`v6_*` は新しい既定の上。j47 / j49 / j57 のパネルの `MC-ESO` は 10-30 より前の既定なので、新しい既定のパネル順位は同じ run に入れた `MC-ESO`（または bit 一致の腕）を `cec_panel.py` の腕として読む。2D / 5D / 10D（予算 2500·D）では新しい既定は `MC-ESO-v4` と bit 一致（パネル順位 2D 4.44・5D 4.12 / 4.15・10D 4.25 / 4.46）、20D は 4.15。
 
+1. **【j65 (a) v6 の 1 本目: 延命中の流行の最終規模の予報（5D/10D の 4 設定）】** 手法 `"MC-ESO,v6_fin,v6_fin25,v6_finS"`、j50 と同じ 4 設定（label `j65_a5` / `j65_a5ho` / `j65_a10` / `j65_a10ho`、`--jobs 4`）。腕の中身: 乗換え後の延命（`switch_pace`）中の流行の最良を停滞窓 0.5 個（`v6_fin`）／0.25 個（`v6_fin25`）ごとに記録し、直近 3 点の改善幅の比が 0.8 未満（`v6_finS` は 0.5 未満）で減速していれば Aitken Δ² で行き着く値を予報、全体の最良より悪ければ延命を打ち切る（mceso.md の `pace_final`）。狙いは 10-30 の既定変更の代償（Gallagher F21/F22。10D 調整 F21 100→75%・hold-out 70→55%、5D F21 95→75・F22 100→90%）を、延命の利得（10D の F15・F19・F24）を残したまま消すこと。**集計**: j64 (a) と同じ（この run の `MC-ESO` を `newdef_MC-ESO` としてパネルに差し替える。新しい既定のパネル順位は 5D 4.12/4.15・10D 4.25/4.46）。**F15・F19・F21・F22・F24 を必ず並べる**。この run の `MC-ESO` が j64 (a)（10D）の `MC-ESO` と per-run で一致するかも書く。**記録**: `analysis/single/j65/`。採否の判断はしない。
+
+1. **【j65 (d2) 2D の 2 設定】** 手法 `"MC-ESO,v6_fin,v6_fin25,v6_finS"`、j64 (d2) と同じ 2 設定（label `j65_d2` / `j65_d2ho`）。延命は 2D でも働くので腕は動きうる。**集計**: j64 (d2) と同じ（j57_d2 のパネル、新しい既定 4.44）。F21・F22 を必ず並べる。**記録**: `analysis/single/j65/`。採否の判断はしない。
+
+1. **【j65 (a20) 20D】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 1-5 --methods "MC-ESO,v6_fin,v6_fin25,v6_finS" --jobs 4`（label `j65_a20`）。**集計**: j64 (a20) と同じ（j47 のパネル、新しい既定 4.15）。この run の `MC-ESO` が j64 (a20) の `v5_wg15` と per-run で一致するかも書く（新しい既定 ＝ `v5_wg15`）。**記録**: `analysis/single/j65/`。採否の判断はしない。
+
+1. **【j65 (c) CEC2022 10D/20D（調整外）】** CEC2022 の合成関数は高さの違う盆地の混ぜ合わせで、Gallagher と同じく勝てない峰を登る無駄が起きうる。`./run.sh quick --suite cec2022 --all --dim 10 --max-evals 25000 --n-runs 20 --methods "MC-ESO,v6_fin,v6_fin25,v6_finS" --jobs 4`（label `j65_c10`。予算は j61 (m2) の 10D と同じ）と `--dim 20 --max-evals 50000`（label `j65_c20`）。パネルは j61 (m2) の run（10D `runs/20261029_193423_j61_mc10_quick`・20D `runs/20261029_200016_j61_mc20m_quick`）: `cec_panel.py --dim <D> --panel <パネル> --arms results/<この run> --drop MC-ESO-v3`。20D は新しい既定でパネルの `MC-ESO` と別の値になるので、この run の `MC-ESO` も `newdef_MC-ESO` として差し替えて並べる。**記録**: `analysis/single/j65/`。採否の判断はしない。
+
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
 
 ---

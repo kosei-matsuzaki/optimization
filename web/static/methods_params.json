@@ -1,5 +1,5 @@
 {
- "n_params": 141,
+ "n_params": 143,
  "groups": [
   {
    "label": "集団と選択",
@@ -787,6 +787,19 @@
      ],
      "meaning": "<b>不採用</b>（2026-10-22）。通常のスピルオーバーの前に、最良の宿主から学習 C の上位 2 軸に沿う黄金分割の 1 次元探索（最大 2·40 評価）。改善すればスピルオーバーを見送る",
      "status": "rejected"
+    },
+    {
+     "names": [
+      "pace_final",
+      "pace_final_ratio"
+     ],
+     "doc_default": "None / 0.8",
+     "code_default": [
+      "None",
+      "0.8"
+     ],
+     "meaning": "<b>実験中（v6、腕 <code>v6_fin</code> / <code>v6_fin25</code> / <code>v6_finS</code>）</b>。乗換え後の延命中の流行の最終規模の予報。流行の最良を停滞窓 <code>pace_final</code> 個ぶんごとに記録し、直近 3 点の改善幅の比が (0, <code>pace_final_ratio</code>) に入って幾何的に減速していれば、Aitken Δ² の極限 f₂ − Δ₂²/(Δ₂ − Δ₁) を流行の行き着く値とみなす。それが全体の最良より悪ければ延命を打ち切る（勝てない峰を登り続けない。Gallagher F21/F22 の代償の対策。<code>pace_horizon</code> の log f の線形外挿は頭打ちを予報できなかった）",
+     "status": "experimental"
     }
    ]
   },

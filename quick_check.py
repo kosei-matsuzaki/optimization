@@ -627,6 +627,11 @@ _OPTIMIZERS = {
     "v5_wg15":        (MultiChannelEpidemicOptimizer, {"wave_gen_floor": 1.5}),
     "v5_wg15cp":      (MultiChannelEpidemicOptimizer, {"wave_gen_floor": 1.5, "chain_trace": True,
                                                        "chain_route": True, "pace_max": 3.0}),
+    # v6 (on the 2026-11-09 default): final-size forecast of a paced outbreak
+    # (sample interval in stagnation windows / max gain ratio).
+    "v6_fin":         (MultiChannelEpidemicOptimizer, {"pace_final": 0.5}),
+    "v6_fin25":       (MultiChannelEpidemicOptimizer, {"pace_final": 0.25}),
+    "v6_finS":        (MultiChannelEpidemicOptimizer, {"pace_final": 0.5, "pace_final_ratio": 0.5}),
     # the two arms of j61 that never lost (bit-identical in most settings)
     "v5_cp":          (MultiChannelEpidemicOptimizer, {"chain_trace": True, "chain_route": True, "pace_max": 3.0}),
     "v5_cpl":         (MultiChannelEpidemicOptimizer, {"chain_trace": True, "chain_route": True, "pace_max": 3.0,
