@@ -71,7 +71,8 @@ _DEFAULT_CHANGES = (("2026-10-08", "MC-ESO-v0"), ("2026-10-12", "MC-ESO-v1"))
 # a run whose commit does not contain this one used the earlier default.
 # (commit, arm of the earlier default, date for runs without a usable commit)
 _COMMIT_CHANGES = (("ba8d455c7bd6044bbfdf0da6d6a29983c29b1514", "MC-ESO-v2", "2026-10-13"),
-                   ("69e8f2364b21e9bf28f1e68adc9449f7dc661e23", "MC-ESO-v3", "2026-10-30"))
+                   ("69e8f2364b21e9bf28f1e68adc9449f7dc661e23", "MC-ESO-v3", "2026-10-30"),
+                   ("57e76d44de671f24e7f0639ff36c06a41908bf67", "MC-ESO-v4", "2026-11-09"))
 
 
 @functools.lru_cache(maxsize=256)
