@@ -1,0 +1,60 @@
+=== results/20261109_125251_j65_c20_quick dim20 ===
+
+[A] per-function SR@1e-10 (%)
+  function                    MC-ESO      v6_fin    v6_fin25     v6_finS
+  G01-Zakharov                 100.0       100.0       100.0       100.0
+  G02-Rosenbrock                 5.0         5.0         0.0         5.0
+  G03-SchafferF7                 0.0         0.0         0.0         0.0
+  G04-Rastrigin                  0.0         0.0         0.0         0.0
+  G05-Levy                      95.0        95.0        90.0        95.0
+  G06-Hybrid1                    0.0         0.0         0.0         0.0
+  G07-Hybrid2                    0.0         0.0         0.0         0.0
+  G08-Hybrid3                    0.0         0.0         0.0         0.0
+  G09-Composition1               0.0         0.0         0.0         0.0
+  G10-Composition2               0.0         0.0         0.0         0.0
+  G11-Composition3               0.0         0.0         0.0         0.0
+  G12-Composition4               0.0         0.0         0.0         0.0
+
+[B] SR@1e-10 changes vs ref (arm - ref), pp
+  v6_fin: up 0 [] | down 0 []
+  v6_fin25: up 0 [] | down 2 ['G02-Rosenbrock 5->0', 'G05-Levy 95->90']
+  v6_finS: up 0 [] | down 0 []
+
+[C] evals_succ_mean, paired over functions where BOTH have successes
+  v6_fin: common 5 funcs, ref 25378.0 -> arm 24934.4 (-443.6)
+      G02-Rosenbrock: 37547.0 -> 38203.0 (+656.0)
+      G11-Composition3: 36930.0 -> 34056.0 (-2874.0)
+      #funcs with successes: ref 5, arm 5
+  v6_fin25: common 4 funcs, ref 22335.8 -> arm 22154.0 (-181.8)
+      G05-Levy: 15746.0 -> 15221.0 (-525.0)
+      G11-Composition3: 36930.0 -> 36728.0 (-202.0)
+      #funcs with successes: ref 5, arm 4
+  v6_finS: common 5 funcs, ref 25378.0 -> arm 24934.4 (-443.6)
+      G02-Rosenbrock: 37547.0 -> 38203.0 (+656.0)
+      G11-Composition3: 36930.0 -> 34056.0 (-2874.0)
+      #funcs with successes: ref 5, arm 5
+
+[D] Wilcoxon (best_f, reference MC-ESO, alpha=0.05 two-sided)
+  v6_fin: ref wins 1 / losses 0
+      wins:   ['G04-Rastrigin A12=0.53 negligible']
+      losses: []
+  v6_fin25: ref wins 1 / losses 0
+      wins:   ['G04-Rastrigin A12=0.61 small']
+      losses: []
+  v6_finS: ref wins 1 / losses 0
+      wins:   ['G04-Rastrigin A12=0.53 negligible']
+      losses: []
+
+[E] mean_best_f per function (ref / fin / fin25 / finS)
+  G01-Zakharov                       0             0             0             0
+  G02-Rosenbrock                42.948        42.077        47.383        42.077  <-- differs
+  G03-SchafferF7            7.1037e-05    0.00026627    0.00018758    0.00026627  <-- differs
+  G04-Rastrigin                 21.349        22.037         23.67        22.037  <-- differs
+  G05-Levy                   0.0044764     0.0044764     0.0089528     0.0044764  <-- differs
+  G06-Hybrid1                   98.002        98.002        98.002        98.002
+  G07-Hybrid2                   29.741        29.671        32.069        29.994  <-- differs
+  G08-Hybrid3                   21.574        22.161        22.011        22.161  <-- differs
+  G09-Composition1              180.73        180.73        180.73        180.73
+  G10-Composition2              100.61        100.61        100.61        100.61
+  G11-Composition3              243.95        249.18        269.74        249.18  <-- differs
+  G12-Composition4               244.4         244.4        246.81         244.4  <-- differs

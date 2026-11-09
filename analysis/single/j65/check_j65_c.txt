@@ -1,0 +1,34 @@
+MC-ESO@20261109_124226_j65_c10_quick vs MC-ESO@20261029_193423_j61_mc10_quick  dim10
+  rows compared 240 (A 240, B 240), identical rows 240/240, identical cells 720/720
+  functions differing: none
+
+MC-ESO@20261109_125251_j65_c20_quick vs MC-ESO@20261029_200016_j61_mc20m_quick  dim20
+  rows compared 240 (A 240, B 240), identical rows 213/240, identical cells 685/720
+  functions differing: ['G02-Rosenbrock', 'G03-SchafferF7', 'G06-Hybrid1']
+
+MC-ESO@20261109_124226_j65_c10_quick vs v6_fin@20261109_124226_j65_c10_quick  dim10
+  rows compared 240 (A 240, B 240), identical rows 229/240, identical cells 708/720
+  functions differing: ['G04-Rastrigin', 'G07-Hybrid2', 'G08-Hybrid3']
+MC-ESO@20261109_124226_j65_c10_quick vs v6_fin25@20261109_124226_j65_c10_quick  dim10
+  rows compared 240 (A 240, B 240), identical rows 204/240, identical cells 679/720
+  functions differing: ['G02-Rosenbrock', 'G03-SchafferF7', 'G04-Rastrigin', 'G07-Hybrid2', 'G08-Hybrid3', 'G10-Composition2', 'G12-Composition4']
+MC-ESO@20261109_124226_j65_c10_quick vs v6_finS@20261109_124226_j65_c10_quick  dim10
+  rows compared 240 (A 240, B 240), identical rows 229/240, identical cells 708/720
+  functions differing: ['G04-Rastrigin', 'G07-Hybrid2', 'G08-Hybrid3']
+
+MC-ESO@20261109_125251_j65_c20_quick vs v6_fin@20261109_125251_j65_c20_quick  dim20
+  rows compared 240 (A 240, B 240), identical rows 192/240, identical cells 669/720
+  functions differing: ['G02-Rosenbrock', 'G03-SchafferF7', 'G04-Rastrigin', 'G07-Hybrid2', 'G08-Hybrid3', 'G11-Composition3']
+MC-ESO@20261109_125251_j65_c20_quick vs v6_fin25@20261109_125251_j65_c20_quick  dim20
+  rows compared 240 (A 240, B 240), identical rows 159/240, identical cells 632/720
+  functions differing: ['G02-Rosenbrock', 'G03-SchafferF7', 'G04-Rastrigin', 'G05-Levy', 'G07-Hybrid2', 'G08-Hybrid3', 'G09-Composition1', 'G10-Composition2', 'G11-Composition3', 'G12-Composition4']
+MC-ESO@20261109_125251_j65_c20_quick vs v6_finS@20261109_125251_j65_c20_quick  dim20
+  rows compared 240 (A 240, B 240), identical rows 192/240, identical cells 669/720
+  functions differing: ['G02-Rosenbrock', 'G03-SchafferF7', 'G04-Rastrigin', 'G07-Hybrid2', 'G08-Hybrid3', 'G11-Composition3']
+
+v6_fin@20261109_124226_j65_c10_quick vs v6_finS@20261109_124226_j65_c10_quick  dim10
+  rows compared 240 (A 240, B 240), identical rows 240/240, identical cells 720/720
+  functions differing: none
+v6_fin@20261109_125251_j65_c20_quick vs v6_finS@20261109_125251_j65_c20_quick  dim20
+  rows compared 240 (A 240, B 240), identical rows 239/240, identical cells 719/720
+  functions differing: ['G07-Hybrid2']

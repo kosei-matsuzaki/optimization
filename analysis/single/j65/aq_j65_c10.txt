@@ -1,0 +1,42 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261109_124226_j65_c10_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=5bce1ed
+functions: 12   methods: MC-ESO, v6_fin, v6_fin25, v6_finS
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            30.8%   37.5%   37.9%   38.7%        8238            
+  v6_fin            30.8%   37.5%   37.9%   38.7%        8238         0/0
+  v6_fin25          30.4%   37.1%   37.5%   38.3%        8146         0/0
+  v6_finS           30.8%   37.5%   37.9%   38.7%        8238         0/0
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  G01-Zakharov                    100%          v6_fin 100%            5507/5507
+  G02-Rosenbrock                   55%           v6_fin 55%            8787/8787
+  G03-SchafferF7                   65%           v6_fin 65%            9537/9537
+  G04-Rastrigin                     0%            v6_fin 0%                    -
+  G05-Levy                        100%          v6_fin 100%            4959/4959
+  G06-Hybrid1                       0%            v6_fin 0%                    -
+  G07-Hybrid2                       0%            v6_fin 0%          10599/10599
+  G08-Hybrid3                       0%            v6_fin 0%                    -
+  G09-Composition1                  0%            v6_fin 0%                    -
+  G10-Composition2                  0%            v6_fin 0%                    -
+  G11-Composition3                 50%           v6_fin 50%          10036/10036
+  G12-Composition4                  0%            v6_fin 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  none — MC-ESO is never significantly beaten.
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. MC-ESO                 mean rank   2.12   best on 11/12  <- ref
+   2. v6_fin                 mean rank   2.38   best on  9/12
+   3. v6_finS                mean rank   2.38   best on  9/12
+   4. v6_fin25               mean rank   3.12   best on  6/12
+

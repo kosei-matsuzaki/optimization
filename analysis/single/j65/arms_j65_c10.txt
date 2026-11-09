@@ -1,0 +1,57 @@
+=== results/20261109_124226_j65_c10_quick dim10 ===
+
+[A] per-function SR@1e-10 (%)
+  function                    MC-ESO      v6_fin    v6_fin25     v6_finS
+  G01-Zakharov                 100.0       100.0       100.0       100.0
+  G02-Rosenbrock                55.0        55.0        50.0        55.0
+  G03-SchafferF7                65.0        65.0        65.0        65.0
+  G04-Rastrigin                  0.0         0.0         0.0         0.0
+  G05-Levy                     100.0       100.0       100.0       100.0
+  G06-Hybrid1                    0.0         0.0         0.0         0.0
+  G07-Hybrid2                    0.0         0.0         0.0         0.0
+  G08-Hybrid3                    0.0         0.0         0.0         0.0
+  G09-Composition1               0.0         0.0         0.0         0.0
+  G10-Composition2               0.0         0.0         0.0         0.0
+  G11-Composition3              50.0        50.0        50.0        50.0
+  G12-Composition4               0.0         0.0         0.0         0.0
+
+[B] SR@1e-10 changes vs ref (arm - ref), pp
+  v6_fin: up 0 [] | down 0 []
+  v6_fin25: up 0 [] | down 1 ['G02-Rosenbrock 55->50']
+  v6_finS: up 0 [] | down 0 []
+
+[C] evals_succ_mean, paired over functions where BOTH have successes
+  v6_fin: common 6 funcs, ref 8237.5 -> arm 8237.5 (+0.0)
+      (no function differs)
+      #funcs with successes: ref 6, arm 6
+  v6_fin25: common 6 funcs, ref 8237.5 -> arm 8145.7 (-91.8)
+      G02-Rosenbrock: 8787.0 -> 8236.0 (-551.0)
+      #funcs with successes: ref 6, arm 6
+  v6_finS: common 6 funcs, ref 8237.5 -> arm 8237.5 (+0.0)
+      (no function differs)
+      #funcs with successes: ref 6, arm 6
+
+[D] Wilcoxon (best_f, reference MC-ESO, alpha=0.05 two-sided)
+  v6_fin: ref wins 0 / losses 0
+      wins:   []
+      losses: []
+  v6_fin25: ref wins 0 / losses 0
+      wins:   []
+      losses: []
+  v6_finS: ref wins 0 / losses 0
+      wins:   []
+      losses: []
+
+[E] mean_best_f per function (ref / fin / fin25 / finS)
+  G01-Zakharov                       0             0             0             0
+  G02-Rosenbrock                3.0263        3.0263        3.2257        3.0263  <-- differs
+  G03-SchafferF7            1.2168e-05    1.2168e-05    7.7438e-05    1.2168e-05  <-- differs
+  G04-Rastrigin                 8.9546        8.9546        8.2165        8.9546  <-- differs
+  G05-Levy                  5.6843e-15    5.6843e-15    5.6843e-15    5.6843e-15
+  G06-Hybrid1                   11.911        11.911        11.911        11.911
+  G07-Hybrid2                   14.312        15.466        15.617        15.466  <-- differs
+  G08-Hybrid3                   6.1609        7.5803        7.8867        7.5803  <-- differs
+  G09-Composition1              229.29        229.29        229.29        229.29
+  G10-Composition2              100.39        100.39        105.82        100.39  <-- differs
+  G11-Composition3          1.1919e-10    1.1919e-10    1.1919e-10    1.1919e-10
+  G12-Composition4              163.51        163.51        163.53        163.51  <-- differs

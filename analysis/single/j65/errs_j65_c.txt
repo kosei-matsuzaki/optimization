@@ -1,0 +1,29 @@
+CEC mean error (per-run err < 1e-8 -> 0)  results/20261109_124226_j65_c10_quick dim10
+  function                      MC-ESO        v6_fin      v6_fin25       v6_finS
+  G01-Zakharov                       0             0             0             0
+  G02-Rosenbrock               3.02634       3.02634       3.22567       3.02634  <-- differs
+  G03-SchafferF7           1.21674e-05   1.21674e-05   7.74381e-05   1.21674e-05  <-- differs
+  G04-Rastrigin                8.95463       8.95463       8.21646       8.95463  <-- differs
+  G05-Levy                           0             0             0             0
+  G06-Hybrid1                  11.9112       11.9112       11.9112       11.9112
+  G07-Hybrid2                  14.3119       15.4658       15.6168       15.4658  <-- differs
+  G08-Hybrid3                  6.16095       7.58027       7.88669       7.58027  <-- differs
+  G09-Composition1             229.286       229.286       229.286       229.286
+  G10-Composition2             100.391       100.391       105.823       100.391  <-- differs
+  G11-Composition3                   0             0             0             0
+  G12-Composition4             163.505       163.505       163.528       163.505  <-- differs
+
+CEC mean error (per-run err < 1e-8 -> 0)  results/20261109_125251_j65_c20_quick dim20
+  function                      MC-ESO        v6_fin      v6_fin25       v6_finS
+  G01-Zakharov                       0             0             0             0
+  G02-Rosenbrock               42.9476       42.0772       47.3832       42.0772  <-- differs
+  G03-SchafferF7           7.10366e-05   0.000266268   0.000187577   0.000266268  <-- differs
+  G04-Rastrigin                21.3493       22.0368       23.6704       22.0368  <-- differs
+  G05-Levy                  0.00447641    0.00447641    0.00895283    0.00447641  <-- differs
+  G06-Hybrid1                  98.0021       98.0021       98.0021       98.0021
+  G07-Hybrid2                  29.7414       29.6712       32.0695        29.994  <-- differs
+  G08-Hybrid3                  21.5738       22.1611       22.0113       22.1611  <-- differs
+  G09-Composition1             180.727       180.727        180.73       180.727  <-- differs
+  G10-Composition2              100.61        100.61       100.611        100.61  <-- differs
+  G11-Composition3             243.951       249.176       269.739       249.176  <-- differs
+  G12-Composition4             244.396       244.396        246.81       244.396  <-- differs
