@@ -1,0 +1,19 @@
+dim 2: 24 functions, panel = MC-ESO + ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES
+  MC-ESO                 mean rank  4.52
+  v6_fin                 mean rank  4.52   mean error below base on 1, above on 2
+      rank moved: F19 2->6, F20 7->3
+  v6_fin25               mean rank  4.56   mean error below base on 1, above on 2
+      rank moved: F19 2->5, F20 7->5
+  v6_finS                mean rank  4.52   mean error below base on 1, above on 2
+      rank moved: F19 2->6, F20 7->3
+--- new-default check (this run's MC-ESO renamed) ---
+dim 2: 24 functions, panel = MC-ESO + ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES
+  MC-ESO                 mean rank  4.52
+  newdef_MC-ESO          mean rank  4.44   mean error below base on 1, above on 2
+      rank moved: F19 2->4, F20 7->3
+  v6_fin                 mean rank  4.52   mean error below base on 1, above on 2
+      rank moved: F19 2->6, F20 7->3
+  v6_fin25               mean rank  4.56   mean error below base on 1, above on 2
+      rank moved: F19 2->5, F20 7->5
+  v6_finS                mean rank  4.52   mean error below base on 1, above on 2
+      rank moved: F19 2->6, F20 7->3

@@ -1,0 +1,30 @@
+cec mean errors (<1e-8 -> 0)   dim_dir=results/20261109_103423_j65_d2ho_quick/dim2   base=MC-ESO
+function                        MC-ESO          v6_fin        v6_fin25         v6_finS
+F01                                  0               0               0               0
+F02                                  0               0               0               0
+F03                                  0               0        0.049748               0
+F04                                  0               0               0               0
+F05                                  0               0               0               0
+F06                                  0               0               0               0
+F07                                  0               0               0               0
+F08                                  0               0               0               0
+F09                                  0               0               0               0
+F10                                  0               0               0               0
+F11                                  0               0               0               0
+F12                        2.40809e-06     2.40809e-06     2.40809e-06     2.40809e-06
+F13                                  0               0               0               0
+F14                                  0               0               0               0
+F15                                  0               0               0               0
+F16                                  0               0               0               0
+F17                                  0               0               0               0
+F18                                  0               0               0               0
+F19                        2.13029e-06     2.13029e-06               0     2.13029e-06
+F20                          0.0605942       0.0888288       0.0296115       0.0888288
+F21                                  0               0               0               0
+F22                                  0               0               0               0
+F23                                  0               0               0               0
+F24                            1.35354         1.48489         1.17255         1.48489
+
+  v6_fin           below base on 0 functions / above on 2
+  v6_fin25         below base on 3 functions / above on 1
+  v6_finS          below base on 0 functions / above on 2
