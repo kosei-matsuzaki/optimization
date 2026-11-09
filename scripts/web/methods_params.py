@@ -22,7 +22,8 @@ OUT = ROOT / "web" / "static" / "methods_params.json"
 
 # Mechanism groups, in page order: (label, predicate on the parameter name).
 # v5 arms (2026-10-30, all off by default); kept in their own group.
-V5 = ("pace_route", "pace_max", "herd_child", "keepair_slow", "chain_route", "wave_gen_floor")
+V5 = ("pace_route", "pace_max", "herd_child", "keepair_slow", "chain_route")
+# wave_gen_floor (a v5 arm) became the default on 2026-11-09 and sits with the waves.
 
 GROUPS = [
     ("集団と選択", lambda n: n.startswith(("n_pop", "pop_")) or n in ("kill_fraction", "softmax_beta", "select_rank", "init_lhs")),

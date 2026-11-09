@@ -136,6 +136,9 @@ function renderResults(dim) {
 
 // The latest MC-ESO default change and the arm that keeps the default before it
 // (quick_check.py). A run recorded earlier shows that default under "MC-ESO".
+// The 2026-11-09 change (wave_gen_floor=1.5, MC-ESO-v4 before it) is left out on
+// purpose: at 2D/5D/10D — the dimensions this page shows — it changes no result
+// (bit-identical, j64), so the j61 runs still show the current default.
 const LAST_DEFAULT_CHANGE = '2026-10-29T17:02';   // commit 69e8f23 (UTC; run created_at is UTC on the cloud)
 const PREV_DEFAULT = 'MC-ESO-v3';
 

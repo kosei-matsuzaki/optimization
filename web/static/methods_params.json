@@ -827,7 +827,7 @@
       "0.25",
       "0.001"
      ],
-     "meaning": "停滞時の組換え波（3 次元以上）。λ = この値 × D、σ0 = 2 番目 × span、予算の上限、best ≤ 4 番目 × |f_init| のときだけ打つ。None で波なし",
+     "meaning": "停滞時の組換え波（3 次元以上）。λ = この値 × D（<code>wave_gen_floor</code> で上限がかかる）、σ0 = 2 番目 × span、予算の上限、best ≤ 4 番目 × |f_init| のときだけ打つ。None で波なし",
      "status": ""
     },
     {
@@ -912,12 +912,12 @@
      "names": [
       "wave_gen_floor"
      ],
-     "doc_default": "None",
+     "doc_default": "1.5",
      "code_default": [
-      "None"
+      "1.5"
      ],
-     "meaning": "<b>実験中（v5、腕 <code>v5_wg1</code> / <code>v5_wg2</code>）</b>。停滞の波の λ を、波の予算で少なくとも この値 × D² 世代回せる大きさまで下げる（CMA-ES の既定 4+⌊3 ln D⌋ が下限）。2500·D 評価で g=2 なら 5D 20・10D 31・20D 15",
-     "status": "experimental"
+     "meaning": "<b>既定（2026-11-09〜）</b>。停滞の波の λ を、波の予算で少なくとも この値 × D² 世代回せる大きさまで下げる（CMA-ES の既定 4+⌊3 ln D⌋ が下限、None で <code>hd_wave_lambda</code> のまま）。2500·D 評価で 2D 8・5D 20・10D 40（それまでと同じ）・15D 27・20D 20。腕 <code>v5_wg1</code> / <code>v5_wg2</code> は 1 / 2",
+     "status": ""
     }
    ]
   },
