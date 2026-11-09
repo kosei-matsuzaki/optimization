@@ -1,0 +1,31 @@
+=== cec_mean_errors (per-run error, <1e-8 as 0; mean over runs) ===
+function                          base        v6_fin      v6_fin25       v6_finS
+F01-Sphere                           0             0             0             0
+F02-EllipsoidalSep                   0             0             0             0
+F03-RastriginSep                     0             0             0             0
+F04-BucheRastrigin               1.094         1.094         1.094         1.094
+F05-LinearSlope                      0             0             0             0
+F06-AttractiveSector                 0             0             0             0
+F07-StepEllipsoidal              1.387         1.387         1.387         1.387
+F08-Rosenbrock                  0.4681        0.4681        0.4681        0.4681
+F09-RosenbrockRot                0.204         0.204         0.204         0.204
+F10-EllipsoidalRot                   0             0             0             0
+F11-Discus                           0             0             0             0
+F12-BentCigar                  0.00617       0.00617       0.00617       0.00617
+F13-SharpRidge               0.0001208     0.0001208     0.0001208     0.0001208
+F14-DiffPowers                       0             0             0             0
+F15-RastriginRot                 22.22         29.12         34.35         29.12
+F16-Weierstrass                 0.3898        0.4053        0.6105        0.3597
+F17-SchafferF7                 0.02377        0.0308       0.03387        0.0308
+F18-SchafferF7ill               0.1282        0.2163        0.3868        0.2163
+F19-GriewankRosenbrock           2.511         2.605         3.093         2.605
+F20-Schwefel                      1.11          1.11          1.11          1.11
+F21-Gallagher101                0.6133        0.7102         1.151        0.7102
+F22-Gallagher21                   1.29         1.284         1.056         1.284
+F23-Katsuura                    0.2343        0.3276        0.2219        0.3276
+F24-LunacekRastrigin             59.68         65.75         70.62         65.75
+
+functions where arm mean error is below / above base:
+v6_fin: below 1 [F22] above 8 [F15, F16, F17, F18, F19, F21, F23, F24]
+v6_fin25: below 2 [F22, F23] above 7 [F15, F16, F17, F18, F19, F21, F24]
+v6_finS: below 2 [F16, F22] above 7 [F15, F17, F18, F19, F21, F23, F24]

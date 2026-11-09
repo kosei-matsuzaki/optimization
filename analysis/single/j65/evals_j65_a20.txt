@@ -1,0 +1,30 @@
+=== evals_succ_mean (paired: functions where BOTH methods have successes) ===
+v6_fin           24973.4 vs base    24852.1  (common 15, delta +121.3)
+v6_fin25         25044.3 vs base    24852.1  (common 15, delta +192.2)
+v6_finS          24973.4 vs base    24852.1  (common 15, delta +121.3)
+
+raw evals_succ_mean per function (base / v6_fin / v6_fin25 / v6_finS):
+  F01-Sphere                      12536      12536      12536      12536
+  F02-EllipsoidalSep              21098      21098      21098      21098
+  F03-RastriginSep                16569      16569      16569      16569
+  F04-BucheRastrigin              27025      27025      27025      27025
+  F05-LinearSlope                 20464      20464      20464      20464
+  F06-AttractiveSector            27027      27027      27027      27027
+  F07-StepEllipsoidal               inf        inf        inf        inf
+  F08-Rosenbrock                  38760      38760      38760      38760
+  F09-RosenbrockRot               39501      39501      39501      39501
+  F10-EllipsoidalRot              20964      20964      20964      20964
+  F11-Discus                      17222      17222      17222      17222
+  F12-BentCigar                   36061      36061      36061      36061
+  F13-SharpRidge                  37736      37736      37736      37736
+  F14-DiffPowers                  18166      18166      18166      18166
+  F15-RastriginRot                  inf        inf        inf        inf
+  F16-Weierstrass                   inf        inf        inf        inf
+  F17-SchafferF7                    inf        inf        inf        inf
+  F18-SchafferF7ill                 inf        inf        inf        inf
+  F19-GriewankRosenbrock            inf        inf        inf        inf
+  F20-Schwefel                      inf        inf        inf        inf
+  F21-Gallagher101                26913      28732      29796      28732
+  F22-Gallagher21                 12740      12740      12740      12740
+  F23-Katsuura                      inf        inf        inf        inf
+  F24-LunacekRastrigin              inf        inf        inf        inf

@@ -1,0 +1,44 @@
+=== [1] overall (mean over 24 functions) ===
+method         SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean
+MC-ESO            43.5%    47.3%    49.0%    51.7%       24852
+v6_fin            43.3%    47.1%    49.0%    51.5%       24973
+v6_fin25          43.1%    46.9%    48.8%    51.2%       25044
+v6_finS           43.3%    47.1%    49.0%    51.5%       24973
+
+=== per-function SR@1e-10 (all 24) ===
+function                        base      v6_fin    v6_fin25     v6_finS
+F01-Sphere                      100%        100%        100%        100%
+F02-EllipsoidalSep               95%         95%         95%         95%
+F03-RastriginSep                100%        100%        100%        100%
+F04-BucheRastrigin                5%          5%          5%          5%
+F05-LinearSlope                 100%        100%        100%        100%
+F06-AttractiveSector             55%         55%         55%         55%
+F07-StepEllipsoidal               0%          0%          0%          0%
+F08-Rosenbrock                   50%         50%         50%         50%
+F09-RosenbrockRot                85%         85%         85%         85%
+F10-EllipsoidalRot              100%        100%        100%        100%
+F11-Discus                      100%        100%        100%        100%
+F12-BentCigar                    80%         80%         80%         80%
+F13-SharpRidge                   25%         25%         25%         25%
+F14-DiffPowers                  100%        100%        100%        100%
+F15-RastriginRot                  0%          0%          0%          0%
+F16-Weierstrass                   0%          0%          0%          0%
+F17-SchafferF7                    0%          0%          0%          0%
+F18-SchafferF7ill                 0%          0%          0%          0%
+F19-GriewankRosenbrock            0%          0%          0%          0%
+F20-Schwefel                      0%          0%          0%          0%
+F21-Gallagher101                 45%         40%         35%         40%
+F22-Gallagher21                   5%          5%          5%          5%
+F23-Katsuura                      0%          0%          0%          0%
+F24-LunacekRastrigin              0%          0%          0%          0%
+
+=== SR@1e-10 changes vs base ===
+v6_fin: up 0 [] down 1 [F21 45->40]
+v6_fin25: up 0 [] down 1 [F21 45->35]
+v6_finS: up 0 [] down 1 [F21 45->40]
+
+=== Wilcoxon (ref MC-ESO, p_two<0.05) ===
+# references in wilcoxon.csv: ['MC-ESO']; rows=72
+v6_fin: base wins 2 [F15 A12=0.71 (medium), F24 A12=0.58 (small)] | base loses 0 []
+v6_fin25: base wins 5 [F15 A12=0.80 (large), F16 A12=0.68 (medium), F18 A12=0.70 (medium), F19 A12=0.71 (large), F24 A12=0.66 (medium)] | base loses 0 []
+v6_finS: base wins 2 [F15 A12=0.71 (medium), F24 A12=0.58 (small)] | base loses 0 []

@@ -1,0 +1,21 @@
+=== (i) this run MC-ESO (new default) vs j64 (a20) v5_wg15 ===
+MC-ESO@20261109_113218_j65_a20_quick vs v5_wg15@a20: 1440/1440 cells match (keys 480, only-a 0, only-b 0)
+
+--- summary-level (48 cols x 24 funcs, mean_time_s excluded) ---
+MC-ESO vs v5_wg15: 1152/1152 cells match over 24 functions x 48 cols
+
+=== (ii) this run MC-ESO vs j64 (a20) MC-ESO (= old default v4) ===
+MC-ESO@20261109_113218_j65_a20_quick vs MC-ESO@a20: 1270/1440 cells match (keys 480, only-a 0, only-b 0)
+   differing cells by function: F02 6, F04 2, F06 5, F07 10, F08 47, F09 34, F10 2, F11 1, F12 6, F13 12, F14 1, F16 1, F17 6, F18 3, F20 34
+
+=== (iii) arms vs this run's base ===
+MC-ESO@20261109_113218_j65_a20_quick vs v6_fin@20261109_113218_j65_a20_quick: 1386/1440 cells match (keys 480, only-a 0, only-b 0)
+   differing cells by function: F15 15, F16 8, F17 2, F18 10, F19 2, F21 5, F22 1, F23 6, F24 5
+MC-ESO@20261109_113218_j65_a20_quick vs v6_fin25@20261109_113218_j65_a20_quick: 1347/1440 cells match (keys 480, only-a 0, only-b 0)
+   differing cells by function: F15 16, F16 14, F17 2, F18 10, F19 15, F21 13, F22 6, F23 5, F24 12
+MC-ESO@20261109_113218_j65_a20_quick vs v6_finS@20261109_113218_j65_a20_quick: 1387/1440 cells match (keys 480, only-a 0, only-b 0)
+   differing cells by function: F15 15, F16 7, F17 2, F18 10, F19 2, F21 5, F22 1, F23 6, F24 5
+
+=== (iv) v6_fin vs v6_finS ===
+v6_fin@20261109_113218_j65_a20_quick vs v6_finS@20261109_113218_j65_a20_quick: 1437/1440 cells match (keys 480, only-a 0, only-b 0)
+   differing cells by function: F16 3
