@@ -1,0 +1,60 @@
+######## j65_a5ho (dim 5, run 20261109_085255_j65_a5ho_quick) ########
+per-run cell comparison vs MC-ESO   dim_dir=results/20261109_085255_j65_a5ho_quick/dim5
+functions=24  methods=4  cols=('best_f', 'n_evals', 'success')
+  v6_fin           1401/1440 cells equal
+      differing: F04(3) F15(7) F16(1) F19(7) F21(1) F23(6) F24(14)
+  v6_fin25         1375/1440 cells equal
+      differing: F04(2) F15(11) F16(2) F19(11) F20(3) F21(5) F22(6) F23(9) F24(16)
+  v6_finS          1401/1440 cells equal
+      differing: F04(3) F15(7) F16(1) F19(7) F21(1) F23(6) F24(14)
+
+--- v6_fin vs v6_finS (base = v6_fin)
+  v6_fin25         1375/1440 cells equal
+      differing: F04(3) F15(13) F16(2) F19(10) F20(3) F21(5) F22(6) F23(8) F24(15)
+  v6_finS          1439/1440 cells equal
+      differing: F24(1)
+
+--- per-function SR@1e-10
+sr_1e-10  base=MC-ESO  file=results/20261109_085255_j65_a5ho_quick/dim5/summary.csv
+function                    MC-ESO      v6_fin    v6_fin25     v6_finS
+F01                           100%        100%        100%        100%
+F02                           100%        100%        100%        100%
+F03                           100%        100%        100%        100%
+F04                            75%         75%         75%         75%
+F05                           100%        100%        100%        100%
+F06                           100%        100%        100%        100%
+F07                           100%        100%        100%        100%
+F08                           100%        100%        100%        100%
+F09                           100%        100%        100%        100%
+F10                           100%        100%        100%        100%
+F11                           100%        100%        100%        100%
+F12                           100%        100%        100%        100%
+F13                           100%        100%        100%        100%
+F14                           100%        100%        100%        100%
+F15                            10%         10%         15%*         10%
+F16                            65%         65%         70%*         65%
+F17                            90%         90%         90%         90%
+F18                            55%         55%         55%         55%
+F19                             0%          0%          0%          0%
+F20                             5%          5%          5%          5%
+F21                            80%         80%         85%*         80%
+F22                            90%         90%         80%*         90%
+F23                            40%         35%*         40%         35%*
+F24                             0%          0%          0%          0%
+
+  v6_fin       changed on 1 functions: F23 40->35
+  v6_fin25     changed on 4 functions: F15 10->15, F16 65->70, F21 80->85, F22 90->80
+  v6_finS      changed on 1 functions: F23 40->35
+
+--- evals_succ_mean (paired)
+evals_succ_mean paired means  base=MC-ESO  file=results/20261109_085255_j65_a5ho_quick/dim5/summary.csv
+  v6_fin       arm    3943.1  vs base    3916.1  diff    +27.0  (common funcs 22)
+  v6_fin25     arm    3997.5  vs base    3916.1  diff    +81.3  (common funcs 22)
+  v6_finS      arm    3943.1  vs base    3916.1  diff    +27.0  (common funcs 22)
+
+--- Wilcoxon (both directions)
+wilcoxon  file=results/20261109_085255_j65_a5ho_quick/dim5/wilcoxon.csv  rows=72
+  v6_fin       ref(MC-ESO) wins 0 / arm wins 1
+     arm better: F15 A12=0.41 small
+  v6_fin25     ref(MC-ESO) wins 0 / arm wins 0
+  v6_finS      ref(MC-ESO) wins 0 / arm wins 0

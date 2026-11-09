@@ -1,0 +1,8 @@
+### this run's MC-ESO vs j64 (a) 10D MC-ESO (summary level; j64 kept no per-run stats for 10D)
+results/20261109_091425_j65_a10_quick/dim10/summary.csv [MC-ESO]  vs  analysis/single/j64/summary_j64_a10_dim10_all24.csv [MC-ESO]
+common functions: 24 (A 24 / B 24)   columns: 13
+equal cells: 312/312   == IDENTICAL
+
+results/20261109_091428_j65_a10ho_quick/dim10/summary.csv [MC-ESO]  vs  analysis/single/j64/summary_j64_a10ho_dim10_all24.csv [MC-ESO]
+common functions: 24 (A 24 / B 24)   columns: 13
+equal cells: 312/312   == IDENTICAL
