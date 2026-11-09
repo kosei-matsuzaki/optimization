@@ -419,6 +419,8 @@ _OPTIMIZERS = {
     # Pre-2026-10-30 default (v2_scan2d): the reference every v3_* / v4_* arm
     # was measured against; filled with that default below.
     "MC-ESO-v3":      (MultiChannelEpidemicOptimizer, {}),
+    # Default before 2026-11-09 (v4_k50fR_r50 without wave_gen_floor). v5_*/ctl_* arms run on it.
+    "MC-ESO-v4":      (MultiChannelEpidemicOptimizer, {}),
     # Ablations of the 2026-10-12 default (v1_w4q3E): remove one of its parts.
     "v2_air":         (MultiChannelEpidemicOptimizer, {"cc_air_ratio": 0.10}),
     "v2_fl6":         (MultiChannelEpidemicOptimizer, {"sigma_floor_ratio": 1e-6, "sigma_floor_ill_ratio": None}),
@@ -788,21 +790,26 @@ _V2_DEFAULTS = {"ir_archive_frac_hd": None, "cc_spill_freeze_gens": 50, "reassor
                 "reassort_additivity": None, "reassort_donors": "all",
                 "wave_handover_lambda": None, "reassort_scan": None}
 # The 2026-10-30 default change (v4_k50fR_r50 adopted). MC-ESO-v3 and the v3_* /
-# v4_* arms (and everything older) are filled with the pre-change values;
-# "MC-ESO", the v5_* arms and the ctl_* controls run on the new default.
+# v4_* arms (and everything older) are filled with the pre-change values.
+# The 2026-11-09 default change (wave_gen_floor=1.5, v5_wg15 adopted). MC-ESO-v4,
+# the v5_* arms and the ctl_* controls are filled with the pre-change value;
+# "MC-ESO" and the v6_* arms run on the new default.
+_V4_DEFAULTS = {"wave_gen_floor": None}
 _V3_DEFAULTS = {"switch_pace": False, "spill_keep": None, "forecast": False,
                 "forecast_route": False, "recover_age": None}
 for _name, (_cls, _kw) in list(_OPTIMIZERS.items()):
     if (isinstance(_cls, type) and issubclass(_cls, MultiChannelEpidemicOptimizer)
-            and _name != "MC-ESO" and not _name.startswith(("v5_", "ctl_"))):
-        if _name.startswith(("v3_", "v4_")) or _name == "MC-ESO-v3":
-            _OPTIMIZERS[_name] = (_cls, {**_V3_DEFAULTS, **_kw})
+            and _name != "MC-ESO" and not _name.startswith("v6_")):
+        if _name.startswith(("v5_", "ctl_")) or _name == "MC-ESO-v4":
+            _OPTIMIZERS[_name] = (_cls, {**_V4_DEFAULTS, **_kw})
+        elif _name.startswith(("v3_", "v4_")) or _name == "MC-ESO-v3":
+            _OPTIMIZERS[_name] = (_cls, {**_V4_DEFAULTS, **_V3_DEFAULTS, **_kw})
         elif _name.startswith("v2_") or _name == "MC-ESO-v2":
-            _OPTIMIZERS[_name] = (_cls, {**_V3_DEFAULTS, **_V2_DEFAULTS, **_kw})
+            _OPTIMIZERS[_name] = (_cls, {**_V4_DEFAULTS, **_V3_DEFAULTS, **_V2_DEFAULTS, **_kw})
         elif _name.startswith("v1_") or _name == "MC-ESO-v1":
-            _OPTIMIZERS[_name] = (_cls, {**_V3_DEFAULTS, **_V2_DEFAULTS, **_V1_DEFAULTS, **_kw})
+            _OPTIMIZERS[_name] = (_cls, {**_V4_DEFAULTS, **_V3_DEFAULTS, **_V2_DEFAULTS, **_V1_DEFAULTS, **_kw})
         else:
-            _OPTIMIZERS[_name] = (_cls, {**_V3_DEFAULTS, **_V2_DEFAULTS, **_V1_DEFAULTS,
+            _OPTIMIZERS[_name] = (_cls, {**_V4_DEFAULTS, **_V3_DEFAULTS, **_V2_DEFAULTS, **_V1_DEFAULTS,
                                          **_V0_DEFAULTS, **_kw})
 
 

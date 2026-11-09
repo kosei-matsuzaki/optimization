@@ -933,7 +933,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # default 4 + ⌊3 ln D⌋ (None = hd_wave_lambda as set). At 2500·D
         # evaluations λ = 4·D gives every dimension the same ~156 generations,
         # which at 20D is too few for Rosenbrock's valley (F08/F09; j62).
-        wave_gen_floor: "float | None" = None,
+        # Default 1.5 since 2026-11-09 (v5_wg15): at 2500·D λ stays 4·D up to
+        # 10D (bit-identical) and becomes 27 at 15D, 20 at 20D (j64).
+        wave_gen_floor: "float | None" = 1.5,
         switch_grow: "float | None" = None,
         # Airborne jumps from a Cauchy instead of a Gaussian (rare long-range
         # spread between distant basins, e.g. CEC2022 compositions).
