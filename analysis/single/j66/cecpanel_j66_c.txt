@@ -1,0 +1,21 @@
+### 10D panel (j61 mc10, drop MC-ESO-v3) ###
+dim 10: 12 functions, panel = MC-ESO + AMALGAM-SO, ARRDE, BIPOP-CMA-ES, BIPOP-aCMA-ES, EA4eig, EBOwithCMAR, ELSHADE-SPACMA, IMODE, IPOP-CMA-ES, L-SHADE, L-SRTDE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES, SPS-L-SHADE-EIG, jSO
+  MC-ESO                 mean rank  9.46
+  newdef_MC-ESO          mean rank  9.46   mean error below base on 0, above on 0
+  v6_bq4                 mean rank  8.96   mean error below base on 2, above on 0
+      rank moved: G02 9->3
+  v6_sf3                 mean rank  8.96   mean error below base on 3, above on 0
+      rank moved: G02 9->3
+  v6_sf5                 mean rank  8.96   mean error below base on 1, above on 0
+      rank moved: G02 9->3
+
+### 20D panel (j61 mc20m, drop MC-ESO-v3) ###
+dim 20: 12 functions, panel = MC-ESO + AMALGAM-SO, ARRDE, BIPOP-CMA-ES, BIPOP-aCMA-ES, EA4eig, EBOwithCMAR, ELSHADE-SPACMA, IMODE, IPOP-CMA-ES, L-SHADE, L-SRTDE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES, SPS-L-SHADE-EIG, jSO
+  MC-ESO                 mean rank  9.54
+  newdef_MC-ESO          mean rank  9.54   mean error below base on 3, above on 0
+  v6_bq4                 mean rank  8.96   mean error below base on 3, above on 1
+      rank moved: G05 14->7
+  v6_sf3                 mean rank  8.96   mean error below base on 3, above on 1
+      rank moved: G05 14->7
+  v6_sf5                 mean rank  8.62   mean error below base on 4, above on 0
+      rank moved: G03 11->7, G05 14->7

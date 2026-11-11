@@ -1,0 +1,58 @@
+=== results/20261111_183828_j66_c20_quick dim20 ===
+
+[A] per-function SR@1e-10 (%)
+  function                      MC-ESO      v6_bq4      v6_sf3      v6_sf5
+  G01-Zakharov                   100.0       100.0       100.0       100.0
+  G02-Rosenbrock                   5.0         0.0         0.0         5.0
+  G03-SchafferF7                   0.0         0.0         0.0         0.0
+  G04-Rastrigin                    0.0         0.0         0.0         0.0
+  G05-Levy                        95.0       100.0       100.0       100.0
+  G06-Hybrid1                      0.0         0.0         0.0         0.0
+  G07-Hybrid2                      0.0         0.0         0.0         0.0
+  G08-Hybrid3                      0.0         0.0         0.0         0.0
+  G09-Composition1                 0.0         0.0         0.0         0.0
+  G10-Composition2                 0.0         0.0         0.0         0.0
+  G11-Composition3                 0.0         0.0         0.0         0.0
+  G12-Composition4                 0.0         0.0         0.0         0.0
+
+[B] SR@1e-10 changes vs ref (arm - ref), pp
+  v6_bq4: up 1 ['G05-Levy 95->100'] | down 1 ['G02-Rosenbrock 5->0']
+  v6_sf3: up 1 ['G05-Levy 95->100'] | down 1 ['G02-Rosenbrock 5->0']
+  v6_sf5: up 1 ['G05-Levy 95->100'] | down 0 []
+
+[C] evals_succ_mean, paired over functions where BOTH have successes
+  v6_bq4: common 4 funcs, ref 22335.8 -> arm 22481.2 (+145.5)
+      G05-Levy: 15746.0 -> 16328.0 (+582.0)
+      #funcs with successes: ref 5, arm 4
+  v6_sf3: common 4 funcs, ref 22335.8 -> arm 22516.5 (+180.8)
+      G05-Levy: 15746.0 -> 16469.0 (+723.0)
+      #funcs with successes: ref 5, arm 4
+  v6_sf5: common 5 funcs, ref 25378.0 -> arm 25979.2 (+601.2)
+      G03-SchafferF7: 22894.0 -> 24949.0 (+2055.0)
+      G05-Levy: 15746.0 -> 16697.0 (+951.0)
+      #funcs with successes: ref 5, arm 5
+
+[D] Wilcoxon (best_f, reference MC-ESO, alpha=0.05 two-sided)
+  v6_bq4: ref wins 0 / losses 0
+      wins:   []
+      losses: []
+  v6_sf3: ref wins 0 / losses 0
+      wins:   []
+      losses: []
+  v6_sf5: ref wins 0 / losses 0
+      wins:   []
+      losses: []
+
+[E] mean_best_f per function (MC-ESO / v6_bq4 / v6_sf3 / v6_sf5)
+  G01-Zakharov                         0             0             0             0
+  G02-Rosenbrock                  42.948        36.361        37.947         42.15  <-- differs
+  G03-SchafferF7              7.1037e-05    7.7065e-05    9.8737e-05    1.1965e-05  <-- differs
+  G04-Rastrigin                   21.349        21.349        21.349        21.349
+  G05-Levy                     0.0044764    7.3896e-14    7.9581e-14    7.9581e-14  <-- differs
+  G06-Hybrid1                     98.002        98.002        98.002        98.002
+  G07-Hybrid2                     29.741        29.741        29.741        29.741
+  G08-Hybrid3                     21.574        21.574        21.574        21.574
+  G09-Composition1                180.73        180.73        180.73        180.73
+  G10-Composition2                100.61        100.61        100.61        100.61
+  G11-Composition3                243.95        243.95        243.95        243.95
+  G12-Composition4                 244.4         244.4         244.4         244.4

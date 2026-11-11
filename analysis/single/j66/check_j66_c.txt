@@ -1,0 +1,22 @@
+=== [1] this run's MC-ESO (new default) vs j65 (c) recorded MC-ESO, summary level ===
+    (j65 kept no per-run stats for the c labels; mean_time_s excluded)
+  10D vs j65 (c): 564/564 cells over 12 functions x 47 cols
+  20D vs j65 (c): 564/564 cells over 12 functions x 47 cols
+
+=== [2] this run's MC-ESO vs the j61 panel base (per-run best_f/n_evals/success) ===
+  10D new default vs j61 panel MC-ESO: 720/720 cells (240/240 rows)
+  20D new default vs j61 panel MC-ESO: 685/720 cells (213/240 rows)  diffs by func: {'G02-Rosenbrock': 2, 'G03-SchafferF7': 23, 'G06-Hybrid1': 10}
+
+=== [3] arms vs the default in this run (per-run, 12 funcs x 20 seeds x 3 cols = 720 cells) ===
+  10D MC-ESO vs v6_sf3: 699/720 cells (225/240 rows)  diffs by func: {'G02-Rosenbrock': 15, 'G03-SchafferF7': 1, 'G06-Hybrid1': 5}
+  10D MC-ESO vs v6_sf5: 712/720 cells (234/240 rows)  diffs by func: {'G02-Rosenbrock': 8}
+  10D MC-ESO vs v6_bq4: 704/720 cells (231/240 rows)  diffs by func: {'G02-Rosenbrock': 15, 'G03-SchafferF7': 1}
+  20D MC-ESO vs v6_sf3: 699/720 cells (221/240 rows)  diffs by func: {'G02-Rosenbrock': 10, 'G03-SchafferF7': 9, 'G05-Levy': 2}
+  20D MC-ESO vs v6_sf5: 708/720 cells (231/240 rows)  diffs by func: {'G02-Rosenbrock': 6, 'G03-SchafferF7': 4, 'G05-Levy': 2}
+  20D MC-ESO vs v6_bq4: 703/720 cells (225/240 rows)  diffs by func: {'G02-Rosenbrock': 13, 'G03-SchafferF7': 2, 'G05-Levy': 2}
+
+=== [4] v6_sf3 vs v6_sf5 (threshold 3 vs 5 runs), per-run ===
+  10D v6_sf3 vs v6_sf5: 702/720 cells (226/240 rows)  diffs by func: {'G02-Rosenbrock': 12, 'G03-SchafferF7': 1, 'G06-Hybrid1': 5}
+  10D v6_sf3 vs v6_bq4: 706/720 cells (229/240 rows)  diffs by func: {'G02-Rosenbrock': 9, 'G06-Hybrid1': 5}
+  20D v6_sf3 vs v6_sf5: 698/720 cells (221/240 rows)  diffs by func: {'G02-Rosenbrock': 11, 'G03-SchafferF7': 11}
+  20D v6_sf3 vs v6_bq4: 701/720 cells (221/240 rows)  diffs by func: {'G02-Rosenbrock': 10, 'G03-SchafferF7': 8, 'G05-Levy': 1}

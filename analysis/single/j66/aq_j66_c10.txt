@@ -1,0 +1,44 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261111_183334_j66_c10_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=da8cbaa
+functions: 12   methods: MC-ESO, v6_sf3, v6_sf5, v6_bq4
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            30.8%   37.5%   37.9%   38.7%        8238            
+  v6_sf3            33.3%   40.0%   40.4%   42.1%        8861         0/1
+  v6_sf5            31.7%   38.3%   38.7%   40.4%        8521         0/1
+  v6_bq4            33.3%   40.0%   40.8%   41.7%        8893         0/1
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  G01-Zakharov                    100%          v6_sf3 100%            5507/5507
+  G02-Rosenbrock                   55%           v6_sf3 85%           8787/12527  <-- ref behind
+  G03-SchafferF7                   65%           v6_sf3 65%            9537/9537
+  G04-Rastrigin                     0%            v6_sf3 0%                    -
+  G05-Levy                        100%          v6_sf3 100%            4959/4959
+  G06-Hybrid1                       0%            v6_sf3 0%                    -
+  G07-Hybrid2                       0%            v6_sf3 0%          10599/10599
+  G08-Hybrid3                       0%            v6_sf3 0%                    -
+  G09-Composition1                  0%            v6_sf3 0%                    -
+  G10-Composition2                  0%            v6_sf3 0%                    -
+  G11-Composition3                 50%           v6_sf3 50%          10036/10036
+  G12-Composition4                  0%            v6_sf3 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  G02-Rosenbrock         vs v6_bq4         p=0.0113 A12=0.36 (medium)
+  G02-Rosenbrock         vs v6_sf3         p=0.00747 A12=0.35 (medium)
+  G02-Rosenbrock         vs v6_sf5         p=0.0277 A12=0.41 (small)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v6_sf3                 mean rank   2.17   best on 12/12
+   2. v6_bq4                 mean rank   2.42   best on 10/12
+   3. v6_sf5                 mean rank   2.67   best on  9/12
+   4. MC-ESO                 mean rank   2.75   best on  9/12  <- ref
+

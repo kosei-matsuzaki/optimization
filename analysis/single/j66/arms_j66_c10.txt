@@ -1,0 +1,57 @@
+=== results/20261111_183334_j66_c10_quick dim10 ===
+
+[A] per-function SR@1e-10 (%)
+  function                      MC-ESO      v6_bq4      v6_sf3      v6_sf5
+  G01-Zakharov                   100.0       100.0       100.0       100.0
+  G02-Rosenbrock                  55.0        85.0        85.0        65.0
+  G03-SchafferF7                  65.0        65.0        65.0        65.0
+  G04-Rastrigin                    0.0         0.0         0.0         0.0
+  G05-Levy                       100.0       100.0       100.0       100.0
+  G06-Hybrid1                      0.0         0.0         0.0         0.0
+  G07-Hybrid2                      0.0         0.0         0.0         0.0
+  G08-Hybrid3                      0.0         0.0         0.0         0.0
+  G09-Composition1                 0.0         0.0         0.0         0.0
+  G10-Composition2                 0.0         0.0         0.0         0.0
+  G11-Composition3                50.0        50.0        50.0        50.0
+  G12-Composition4                 0.0         0.0         0.0         0.0
+
+[B] SR@1e-10 changes vs ref (arm - ref), pp
+  v6_bq4: up 1 ['G02-Rosenbrock 55->85'] | down 0 []
+  v6_sf3: up 1 ['G02-Rosenbrock 55->85'] | down 0 []
+  v6_sf5: up 1 ['G02-Rosenbrock 55->65'] | down 0 []
+
+[C] evals_succ_mean, paired over functions where BOTH have successes
+  v6_bq4: common 6 funcs, ref 8237.5 -> arm 8893.0 (+655.5)
+      G02-Rosenbrock: 8787.0 -> 12720.0 (+3933.0)
+      #funcs with successes: ref 6, arm 6
+  v6_sf3: common 6 funcs, ref 8237.5 -> arm 8860.8 (+623.3)
+      G02-Rosenbrock: 8787.0 -> 12527.0 (+3740.0)
+      #funcs with successes: ref 6, arm 6
+  v6_sf5: common 6 funcs, ref 8237.5 -> arm 8520.7 (+283.2)
+      G02-Rosenbrock: 8787.0 -> 10486.0 (+1699.0)
+      #funcs with successes: ref 6, arm 6
+
+[D] Wilcoxon (best_f, reference MC-ESO, alpha=0.05 two-sided)
+  v6_bq4: ref wins 0 / losses 1
+      wins:   []
+      losses: ['G02-Rosenbrock p=0.0113 A12=0.36 (medium)']
+  v6_sf3: ref wins 0 / losses 1
+      wins:   []
+      losses: ['G02-Rosenbrock p=0.00747 A12=0.35 (medium)']
+  v6_sf5: ref wins 0 / losses 1
+      wins:   []
+      losses: ['G02-Rosenbrock p=0.0277 A12=0.41 (small)']
+
+[E] mean_best_f per function (MC-ESO / v6_bq4 / v6_sf3 / v6_sf5)
+  G01-Zakharov                         0             0             0             0
+  G02-Rosenbrock                  3.0263        0.4797       0.22363       0.89393  <-- differs
+  G03-SchafferF7              1.2168e-05    9.5565e-06    9.5565e-06    1.2168e-05  <-- differs
+  G04-Rastrigin                   8.9546        8.9546        8.9546        8.9546
+  G05-Levy                    5.6843e-15    5.6843e-15    5.6843e-15    5.6843e-15
+  G06-Hybrid1                     11.911        11.911        11.623        11.911  <-- differs
+  G07-Hybrid2                     14.312        14.312        14.312        14.312
+  G08-Hybrid3                     6.1609        6.1609        6.1609        6.1609
+  G09-Composition1                229.29        229.29        229.29        229.29
+  G10-Composition2                100.39        100.39        100.39        100.39
+  G11-Composition3            1.1919e-10    1.1919e-10    1.1919e-10    1.1919e-10
+  G12-Composition4                163.51        163.51        163.51        163.51
