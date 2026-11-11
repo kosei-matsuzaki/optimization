@@ -1,0 +1,78 @@
+run: results/20261111_163421_j66_d2ho_quick  dim=2  funcs=24  methods=['MC-ESO', 'v6_sf3', 'v6_sf5', 'v6_bq4']
+
+=== OVERALL (24-func mean of SR; evals_succ_mean = paired mean over funcs where BOTH ref and arm have successes) ===
+method      SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_succ(paired)    delta  nfunc
+MC-ESO         94.4%    95.2%    95.6%    95.6%               873.5        —     24
+v6_sf3         94.6%    95.0%    95.6%    95.6%               871.8     -1.8     24  (ref on same 24 funcs: 873.5)
+v6_sf5         94.4%    95.0%    95.6%    95.6%               873.5     +0.0     24  (ref on same 24 funcs: 873.5)
+v6_bq4         94.4%    95.2%    95.6%    95.6%               874.8     +1.3     24  (ref on same 24 funcs: 873.5)
+
+=== PER-FUNCTION SR@1e-10 (all 24 functions, % ) ===
+function                    MC-ESO    v6_sf3    v6_sf5    v6_bq4
+F01-Sphere                    100%      100%      100%      100%
+F02-EllipsoidalSep            100%      100%      100%      100%
+F03-RastriginSep              100%      100%      100%      100%
+F04-BucheRastrigin            100%      100%      100%      100%
+F05-LinearSlope               100%      100%      100%      100%
+F06-AttractiveSector          100%      100%      100%      100%
+F07-StepEllipsoidal           100%      100%      100%      100%
+F08-Rosenbrock                100%      100%      100%      100%
+F09-RosenbrockRot             100%      100%      100%      100%
+F10-EllipsoidalRot            100%      100%      100%      100%
+F11-Discus                    100%      100%      100%      100%
+F12-BentCigar                  80%       85%       80%       80%
+F13-SharpRidge                100%      100%      100%      100%
+F14-DiffPowers                100%      100%      100%      100%
+F15-RastriginRot              100%      100%      100%      100%
+F16-Weierstrass               100%      100%      100%      100%
+F17-SchafferF7                100%      100%      100%      100%
+F18-SchafferF7ill             100%      100%      100%      100%
+F19-GriewankRosenbrock         95%       95%       95%       95%
+F20-Schwefel                   80%       80%       80%       80%
+F21-Gallagher101              100%      100%      100%      100%
+F22-Gallagher21               100%      100%      100%      100%
+F23-Katsuura                  100%      100%      100%      100%
+F24-LunacekRastrigin           10%       10%       10%       10%
+
+=== SR@1e-10 CHANGES vs MC-ESO (per arm; all 24 checked) ===
+v6_sf3    : 1 function(s) — F12-BentCigar 80->85
+v6_sf5    : no change on any of 24 functions
+v6_bq4    : no change on any of 24 functions
+
+=== mean_best_f (all 24 functions) ===
+function                        MC-ESO        v6_sf3        v6_sf5        v6_bq4
+F01-Sphere                  0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F02-EllipsoidalSep          0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F03-RastriginSep            2.8422e-15    2.8422e-15    2.8422e-15    2.8422e-15
+F04-BucheRastrigin          0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F05-LinearSlope             0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F06-AttractiveSector        0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F07-StepEllipsoidal         0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F08-Rosenbrock              0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F09-RosenbrockRot           0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F10-EllipsoidalRot          0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F11-Discus                  0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F12-BentCigar               2.4085e-06    2.4303e-06    2.4231e-06    2.4085e-06
+F13-SharpRidge              0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F14-DiffPowers              0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F15-RastriginRot            0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F16-Weierstrass             0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F17-SchafferF7              3.2774e-14    7.9936e-16    7.9048e-15    3.2774e-14
+F18-SchafferF7ill           4.4409e-16    4.4409e-16    4.4409e-16    4.4409e-16
+F19-GriewankRosenbrock      2.1303e-06    2.1303e-06    2.1303e-06    2.1303e-06
+F20-Schwefel                6.0594e-02    6.0594e-02    6.0594e-02    6.0594e-02
+F21-Gallagher101            0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F22-Gallagher21             0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00
+F23-Katsuura                4.0963e-12    4.0963e-12    4.0963e-12    4.0963e-12
+F24-LunacekRastrigin        1.3535e+00    1.3535e+00    1.3535e+00    1.3535e+00
+
+=== mean_best_f: arm lower(better)/higher(worse)/equal vs MC-ESO ===
+v6_sf3    : lower 1 / higher 1 / equal 22  [F12-BentCigar higher; F17-SchafferF7 lower]
+v6_sf5    : lower 1 / higher 1 / equal 22  [F12-BentCigar higher; F17-SchafferF7 lower]
+v6_bq4    : lower 0 / higher 0 / equal 24
+
+=== WILCOXON (best_f, ref=MC-ESO, alpha=0.05 two-sided) ===
+total rows: 72
+v6_sf3    : rows 24, p<0.05 0 -> ref(MC-ESO) better 0, arm better 0
+v6_sf5    : rows 24, p<0.05 0 -> ref(MC-ESO) better 0, arm better 0
+v6_bq4    : rows 24, p<0.05 0 -> ref(MC-ESO) better 0, arm better 0

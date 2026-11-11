@@ -1,0 +1,21 @@
+command: cec_panel.py --dim 2 --panel analysis/single/j57/j57_d2 --arms results/20261111_163320_j66_d2_quick --drop MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,v3_stage,v4_keep25p,v4_keep50,v4_pace
+dim 2: 24 functions, panel = MC-ESO + ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES
+  MC-ESO                 mean rank  4.52
+  v6_bq4                 mean rank  4.44   mean error below base on 1, above on 2
+      rank moved: F19 2->4, F20 7->3
+  v6_sf3                 mean rank  4.52   mean error below base on 1, above on 4
+      rank moved: F17 3->5, F19 2->4, F20 7->3
+  v6_sf5                 mean rank  4.44   mean error below base on 1, above on 3
+      rank moved: F19 2->4, F20 7->3
+
+--- new-default check (this run's MC-ESO renamed to newdef_MC-ESO) ---
+dim 2: 24 functions, panel = MC-ESO + ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES
+  MC-ESO                 mean rank  4.52
+  newdef_MC-ESO          mean rank  4.44   mean error below base on 1, above on 2
+      rank moved: F19 2->4, F20 7->3
+  v6_bq4                 mean rank  4.44   mean error below base on 1, above on 2
+      rank moved: F19 2->4, F20 7->3
+  v6_sf3                 mean rank  4.52   mean error below base on 1, above on 4
+      rank moved: F17 3->5, F19 2->4, F20 7->3
+  v6_sf5                 mean rank  4.44   mean error below base on 1, above on 3
+      rank moved: F19 2->4, F20 7->3

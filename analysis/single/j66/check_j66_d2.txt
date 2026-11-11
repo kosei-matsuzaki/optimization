@@ -1,0 +1,31 @@
+Reproduction check: this run's MC-ESO (new default) vs j65 (d2)'s recorded MC-ESO
+container spec identical (Xeon @2.10GHz, family 6 / model 207 / stepping 2, avx512f, openblas SkylakeX)
+summary-level only (j65 (d2) did not keep 2D per-run stats)
+
+adjust: 1080/1080 cells identical (45 columns x 24 functions)
+  no differing cell
+hold-out: 1080/1080 cells identical (45 columns x 24 functions)
+  no differing cell
+=== adjust (j66_d2) ===
+per-run agreement vs MC-ESO (best_f / n_evals / success), dir=results/20261111_163320_j66_d2_quick/dim2
+functions 24, methods ['MC-ESO', 'v6_bq4', 'v6_sf3', 'v6_sf5']
+  v6_bq4     1439/1440 cells identical   differing: F19 1
+  v6_sf3     1428/1440 cells identical   differing: F13 1 F17 3 F18 5 F19 1 F24 2
+  v6_sf5     1432/1440 cells identical   differing: F13 1 F17 2 F18 4 F19 1
+
+arm vs arm:
+  v6_bq4 vs v6_sf3: 1429/1440   differing: F13 1 F17 3 F18 5 F24 2
+  v6_bq4 vs v6_sf5: 1433/1440   differing: F13 1 F17 2 F18 4
+  v6_sf3 vs v6_sf5: 1429/1440   differing: F13 2 F17 2 F18 5 F24 2
+
+=== hold-out (j66_d2ho) ===
+per-run agreement vs MC-ESO (best_f / n_evals / success), dir=results/20261111_163421_j66_d2ho_quick/dim2
+functions 24, methods ['MC-ESO', 'v6_bq4', 'v6_sf3', 'v6_sf5']
+  v6_bq4     1439/1440 cells identical   differing: F24 1
+  v6_sf3     1436/1440 cells identical   differing: F12 2 F17 1 F24 1
+  v6_sf5     1438/1440 cells identical   differing: F12 1 F17 1
+
+arm vs arm:
+  v6_bq4 vs v6_sf3: 1437/1440   differing: F12 2 F17 1
+  v6_bq4 vs v6_sf5: 1437/1440   differing: F12 1 F17 1 F24 1
+  v6_sf3 vs v6_sf5: 1436/1440   differing: F12 2 F17 1 F24 1

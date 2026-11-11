@@ -1,0 +1,31 @@
+cec mean errors (<1e-8 -> 0)   dim_dir=results/20261111_163421_j66_d2ho_quick/dim2   base=MC-ESO
+function                          MC-ESO          v6_bq4          v6_sf3          v6_sf5
+F01                                    0               0               0               0
+F02                                    0               0               0               0
+F03                                    0               0               0               0
+F04                                    0               0               0               0
+F05                                    0               0               0               0
+F06                                    0               0               0               0
+F07                                    0               0               0               0
+F08                                    0               0               0               0
+F09                                    0               0               0               0
+F10                                    0               0               0               0
+F11                                    0               0               0               0
+F12                          2.40809e-06     2.40809e-06     2.43017e-06     2.42274e-06
+F13                                    0               0               0               0
+F14                                    0               0               0               0
+F15                                    0               0               0               0
+F16                                    0               0               0               0
+F17                                    0               0               0               0
+F18                                    0               0               0               0
+F19                          2.13029e-06     2.13029e-06     2.13029e-06     2.13029e-06
+F20                            0.0605942       0.0605942       0.0605942       0.0605942
+F21                                    0               0               0               0
+F22                                    0               0               0               0
+F23                                    0               0               0               0
+F24                              1.35354         1.35354         1.35354         1.35354
+
+--- per function: arm lower / higher / equal vs MC-ESO ---
+v6_bq4       lower 0 []  higher 1 [F24]  equal 23
+v6_sf3       lower 0 []  higher 2 [F12 F24]  equal 22
+v6_sf5       lower 0 []  higher 1 [F12]  equal 23
