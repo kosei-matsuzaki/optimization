@@ -1,0 +1,50 @@
+run 20261111_173236_j66_a20_quick  dim20  functions 24  methods ['MC-ESO', 'v6_bq4', 'v6_sf3', 'v6_sf5']
+summary rows 96  (expect 24 x 4 = 96)
+
+[overall] mean over all functions: SR@1e-2 / 1e-4 / 1e-7 / 1e-10, evals_succ_mean(all funcs with successes)
+  MC-ESO            51.7 /  49.0 /  47.3 /  43.5   evals   24852.1 (n=15)
+  v6_sf3            49.0 /  46.7 /  45.2 /  41.7   evals   24649.3 (n=15)
+  v6_sf5            51.7 /  49.0 /  47.1 /  43.5   evals   26202.0 (n=16)
+  v6_bq4            51.0 /  48.8 /  46.9 /  43.5   evals   25089.7 (n=15)
+
+[SR@1e-10 per function] every function; base value then each arm (change marked)
+  func                       MC-ESO      v6_sf3      v6_sf5      v6_bq4
+  F01-Sphere                  100.0    100.0  =    100.0  =    100.0  =
+  F02-EllipsoidalSep           95.0     95.0  =     95.0  =     95.0  =
+  F03-RastriginSep            100.0    100.0  =    100.0  =    100.0  =
+  F04-BucheRastrigin            5.0      5.0  =      5.0  =      5.0  =
+  F05-LinearSlope             100.0    100.0  =    100.0  =    100.0  =
+  F06-AttractiveSector         55.0     55.0  =     55.0  =     55.0  =
+  F07-StepEllipsoidal           0.0      0.0  =      0.0  =      0.0  =
+  F08-Rosenbrock               50.0     45.0  v     50.0  =     50.0  =
+  F09-RosenbrockRot            85.0     40.0  v     75.0  v     80.0  v
+  F10-EllipsoidalRot          100.0    100.0  =    100.0  =    100.0  =
+  F11-Discus                  100.0    100.0  =    100.0  =    100.0  =
+  F12-BentCigar                80.0     80.0  =     80.0  =     80.0  =
+  F13-SharpRidge               25.0     25.0  =     25.0  =     20.0  v
+  F14-DiffPowers              100.0    100.0  =    100.0  =    100.0  =
+  F15-RastriginRot              0.0      0.0  =      0.0  =      0.0  =
+  F16-Weierstrass               0.0      0.0  =      0.0  =      0.0  =
+  F17-SchafferF7                0.0      0.0  =      0.0  =      0.0  =
+  F18-SchafferF7ill             0.0      0.0  =      0.0  =      0.0  =
+  F19-GriewankRosenbrock        0.0      0.0  =      0.0  =      0.0  =
+  F20-Schwefel                  0.0      0.0  =      0.0  =      0.0  =
+  F21-Gallagher101             45.0     50.0  ^     55.0  ^     55.0  ^
+  F22-Gallagher21               5.0      5.0  =      5.0  =      5.0  =
+  F23-Katsuura                  0.0      0.0  =      0.0  =      0.0  =
+  F24-LunacekRastrigin          0.0      0.0  =      0.0  =      0.0  =
+
+  v6_sf3: up 1 [F21 45->50]  down 2 [F08 50->45, F09 85->40]
+  v6_sf5: up 1 [F21 45->55]  down 1 [F09 85->75]
+  v6_bq4: up 1 [F21 45->55]  down 2 [F09 85->80, F13 25->20]
+
+[evals_succ_mean] corresponding mean over functions where BOTH base and arm have successes
+  v6_sf3           arm   24649.3 vs base   24852.1  (  -202.8)  common funcs 15  differing on 4: F08 38760->38728, F09 39501->36401, F13 37736->37153, F21 26913->27586
+  v6_sf5           arm   24913.8 vs base   24852.1  (   +61.7)  common funcs 15  differing on 2: F09 39501->38320, F21 26913->29019
+  v6_bq4           arm   25089.7 vs base   24852.1  (  +237.5)  common funcs 15  differing on 3: F09 39501->39432, F13 37736->39278, F21 26913->29003
+
+[wilcoxon] rows 72  columns ['function', 'reference', 'method', 'n', 'win_count', 'tie_count', 'p_value_two_sided', 'p_value_ref_better', 'a12', 'a12_magnitude']
+  references present: {'MC-ESO'}
+  v6_sf3           base wins 4 [F09 p=0.00222 A12=0.72 large, F04 p=0.000655 A12=0.67 medium, F22 p=0.000979 A12=0.66 medium, F16 p=0.0277 A12=0.52 negligible]   arm wins 1 [F07 p=0.00465 A12=0.39 small]
+  v6_sf5           base wins 1 [F22 p=0.000979 A12=0.66 medium]   arm wins 1 [F07 p=0.0173 A12=0.41 small]
+  v6_bq4           base wins 3 [F22 p=0.000979 A12=0.68 medium, F04 p=0.000438 A12=0.67 medium, F16 p=0.0117 A12=0.53 negligible]   arm wins 1 [F07 p=0.00189 A12=0.36 medium]

@@ -1,0 +1,30 @@
+run 20261111_173236_j66_a20_quick  dim20  functions 24
+  func                           MC-ESO         v6_sf3         v6_sf5         v6_bq4
+  F01-Sphere                          0              0              0              0
+  F02-EllipsoidalSep                  0              0              0              0
+  F03-RastriginSep                    0              0              0              0
+  F04-BucheRastrigin            1.09446        1.09446        1.09446        1.09448
+  F05-LinearSlope                     0              0              0              0
+  F06-AttractiveSector                0              0              0              0
+  F07-StepEllipsoidal           1.38721       0.999483        1.06519       0.914063
+  F08-Rosenbrock               0.468108       0.479227       0.468108       0.468108
+  F09-RosenbrockRot            0.204017       0.664854       0.267261       0.209502
+  F10-EllipsoidalRot                  0              0              0              0
+  F11-Discus                          0              0              0              0
+  F12-BentCigar              0.00617043     0.00617043     0.00617043     0.00617043
+  F13-SharpRidge            0.000120821       0.023214    0.000120821      0.0113617
+  F14-DiffPowers                      0              0              0              0
+  F15-RastriginRot              22.2157        22.2157        22.2157        22.2157
+  F16-Weierstrass              0.389753       0.397917       0.392197       0.407369
+  F17-SchafferF7              0.0237732      0.0256817      0.0250592      0.0237488
+  F18-SchafferF7ill            0.128239       0.126048       0.106388       0.127191
+  F19-GriewankRosenbrock        2.51087        2.51087        2.51087        2.51087
+  F20-Schwefel                  1.10993        1.09845        1.08601        1.10993
+  F21-Gallagher101             0.613273       0.578716        0.54409       0.544122
+  F22-Gallagher21               1.29029         1.2904        1.29036        1.29042
+  F23-Katsuura                 0.234259       0.234628       0.234259       0.234635
+  F24-LunacekRastrigin          59.6817        59.6817        59.6817        59.6817
+
+  v6_sf3: mean error differs on 11 functions (F07, F08, F09, F13, F16, F17, F18, F20, F21, F22, F23); below base on 4 (F07, F18, F20, F21), above on 7 (F08, F09, F13, F16, F17, F22, F23)
+  v6_sf5: mean error differs on 8 functions (F07, F09, F16, F17, F18, F20, F21, F22); below base on 4 (F07, F18, F20, F21), above on 4 (F09, F16, F17, F22)
+  v6_bq4: mean error differs on 10 functions (F04, F07, F09, F13, F16, F17, F18, F21, F22, F23); below base on 4 (F07, F17, F18, F21), above on 6 (F04, F09, F13, F16, F22, F23)

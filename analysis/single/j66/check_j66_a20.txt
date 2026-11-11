@@ -1,0 +1,6 @@
+(a) 20261111_173236_j66_a20_quick 'MC-ESO' vs summary_j65_a20_dim20_all24.csv 'MC-ESO': 1128/1128 cells equal over 24 functions x 47 columns
+
+(b) per-run cells for 'MC-ESO': 480 (function, run) rows x 3 fields = 1440
+  v6_sf3           1323/1440 cells identical to MC-ESO   differs on: F04, F07, F08, F09, F13, F16, F17, F18, F20, F21, F22, F23
+  v6_sf5           1376/1440 cells identical to MC-ESO   differs on: F07, F09, F16, F17, F18, F20, F21, F22
+  v6_bq4           1335/1440 cells identical to MC-ESO   differs on: F04, F07, F09, F13, F16, F17, F18, F21, F22, F23
