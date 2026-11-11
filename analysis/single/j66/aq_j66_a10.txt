@@ -1,0 +1,54 @@
+==============================================================================
+QUICK EVALUATION REPORT   dim=10   ref=MC-ESO
+run: 20261111_154920_j66_a10_quick
+meta: n_runs=20 max_evals=25000 set=all-d10 commit=4972459
+functions: 24   methods: MC-ESO, v6_sf3, v6_sf5, v6_bq4
+==============================================================================
+
+[1] OVERALL (mean over all functions)
+  method          SR@1e-10  SR@1e-7  SR@1e-4  SR@1e-2  evals_mean  Wins/Loss*
+  --------------------------------------------------------------------------
+  MC-ESO            63.5%   64.8%   69.6%   71.0%       10541            
+  v6_sf3            64.4%   65.8%   70.6%   73.1%       10725         0/0
+  v6_sf5            63.7%   65.0%   69.6%   72.3%       10529         0/0
+  v6_bq4            64.4%   65.6%   70.6%   73.1%       10696         1/1
+  * Wins/Loss = #functions where MC-ESO is Wilcoxon-significant better/worse (p<0.05, two-sided, by A12 direction).
+
+[3] PER-FUNCTION  MC-ESO vs best baseline on sr_1e-10
+  function               MC-ESO SR@1e-10            best base      evals(ref/base)
+  --------------------------------------------------------------------------
+  F01-Sphere                      100%          v6_sf3 100%            4985/4985
+  F02-EllipsoidalSep              100%          v6_sf3 100%            7022/7022
+  F03-RastriginSep                100%          v6_sf3 100%            9338/9338
+  F04-BucheRastrigin               65%           v6_sf3 65%            9419/9419
+  F05-LinearSlope                 100%          v6_sf3 100%            7741/7741
+  F06-AttractiveSector            100%          v6_sf3 100%          10558/10558
+  F07-StepEllipsoidal              80%           v6_sf3 90%            6148/7815  <-- ref behind
+  F08-Rosenbrock                  100%          v6_sf3 100%          13422/13422
+  F09-RosenbrockRot               100%          v6_sf3 100%          13203/13203
+  F10-EllipsoidalRot              100%          v6_sf3 100%            6984/6984
+  F11-Discus                      100%          v6_sf3 100%            6398/6398
+  F12-BentCigar                   100%          v6_sf3 100%          12266/12266
+  F13-SharpRidge                   95%           v6_sf3 95%            9402/9402
+  F14-DiffPowers                  100%          v6_sf3 100%            5956/5956
+  F15-RastriginRot                  0%            v6_sf3 0%                    -
+  F16-Weierstrass                  10%           v6_sf3 20%          18748/20317  <-- ref behind
+  F17-SchafferF7                   30%           v6_sf3 30%          15170/15612
+  F18-SchafferF7ill                 0%            v6_sf3 0%          19801/19801
+  F19-GriewankRosenbrock            0%            v6_sf3 0%                    -
+  F20-Schwefel                      0%            v6_sf3 0%                    -
+  F21-Gallagher101                 75%           v6_sf3 75%          12002/12002
+  F22-Gallagher21                  55%           v6_sf5 60%            9279/9720  <-- ref behind
+  F23-Katsuura                     15%           v6_sf3 15%          12973/12973
+  F24-LunacekRastrigin              0%            v6_sf3 0%                    -
+
+[4] WILCOXON: functions where a baseline significantly beats MC-ESO
+  (p_two<0.05 and A12<0.5 => baseline better)
+  F17-SchafferF7         vs v6_bq4         p=0.0284 A12=0.42 (small)
+
+[5] CEC MEAN-ERROR RANK (per-run error < 1e-8 counted as 0; lower = better)
+   1. v6_bq4                 mean rank   2.42   best on 20/24
+   2. v6_sf3                 mean rank   2.42   best on 21/24
+   3. v6_sf5                 mean rank   2.44   best on 21/24
+   4. MC-ESO                 mean rank   2.73   best on 19/24  <- ref
+

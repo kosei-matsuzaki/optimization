@@ -1,0 +1,32 @@
+run=results/20261111_153301_j66_a5ho_quick dim=5 funcs=24 methods=['MC-ESO', 'v6_sf3', 'v6_sf5', 'v6_bq4']
+
+== per-arm overall (mean over 24 funcs) ==
+  MC-ESO     SR@1e-10  75.4  1e-7  76.7  1e-4  77.7  1e-2  78.1
+  v6_sf3     SR@1e-10  76.0  1e-7  77.3  1e-4  78.3  1e-2  79.2
+  v6_sf5     SR@1e-10  75.6  1e-7  77.1  1e-4  78.1  1e-2  78.8
+  v6_bq4     SR@1e-10  76.7  1e-7  78.3  1e-4  79.4  1e-2  80.2
+
+== evals_succ_mean, paired over functions where BOTH ref and arm have successes ==
+  v6_sf3     arm    3956.8  vs ref    3916.1  (n_common=22, delta +40.6)
+  v6_sf5     arm    3951.3  vs ref    3916.1  (n_common=22, delta +35.2)
+  v6_bq4     arm    4089.2  vs ref    3916.1  (n_common=22, delta +173.0)
+
+== per-function SR@1e-10 changes (ref -> arm), all 24 funcs checked ==
+  v6_sf3     up 1 [F16-Weierstrass 65->80]  down 0 []
+  v6_sf5     up 1 [F16-Weierstrass 65->70]  down 0 []
+  v6_bq4     up 2 [F16-Weierstrass 65->85, F20-Schwefel 5->15]  down 0 []
+
+== mean error (mean_best_f / 'mean') per function, selected ==
+  func                       MC-ESO        v6_sf3        v6_sf5        v6_bq4
+  F07-StepEllipsoidal             0             0             0             0
+  F13-SharpRidge          9.237e-15     9.237e-15     9.237e-15     9.237e-15
+  F15-RastriginRot            1.741         1.741         1.741         1.741
+  F16-Weierstrass           0.02455       0.01016       0.01586       0.01005
+  F17-SchafferF7          3.975e-06     3.975e-06     3.975e-06     3.975e-06
+  F18-SchafferF7ill         0.01021      0.007053       0.01021      0.004918
+  F20-Schwefel               0.6975        0.5578        0.5929        0.4376
+
+== Wilcoxon detail (reference=MC-ESO, two-sided alpha=0.05) ==
+  v6_sf3     ref_wins 1 [F15-RastriginRot p=0.04311 A12=0.54]  arm_wins 2 [F16-Weierstrass p=0.04311 A12=0.41; F20-Schwefel p=0.04086 A12=0.42]
+  v6_sf5     ref_wins 1 [F15-RastriginRot p=0.04311 A12=0.54]  arm_wins 0 []
+  v6_bq4     ref_wins 1 [F15-RastriginRot p=0.04311 A12=0.53]  arm_wins 2 [F16-Weierstrass p=0.02771 A12=0.39; F20-Schwefel p=0.009633 A12=0.34]

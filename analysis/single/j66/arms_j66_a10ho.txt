@@ -1,0 +1,32 @@
+run=results/20261111_154923_j66_a10ho_quick dim=10 funcs=24 methods=['MC-ESO', 'v6_sf3', 'v6_sf5', 'v6_bq4']
+
+== per-arm overall (mean over 24 funcs) ==
+  MC-ESO     SR@1e-10  63.8  1e-7  65.0  1e-4  68.5  1e-2  69.8
+  v6_sf3     SR@1e-10  63.8  1e-7  65.0  1e-4  68.8  1e-2  70.4
+  v6_sf5     SR@1e-10  63.8  1e-7  65.0  1e-4  68.8  1e-2  70.4
+  v6_bq4     SR@1e-10  63.8  1e-7  65.0  1e-4  68.5  1e-2  70.4
+
+== evals_succ_mean, paired over functions where BOTH ref and arm have successes ==
+  v6_sf3     arm   10405.2  vs ref   10328.4  (n_common=20, delta +76.9)
+  v6_sf5     arm   10417.2  vs ref   10328.4  (n_common=20, delta +88.9)
+  v6_bq4     arm   10320.4  vs ref   10328.4  (n_common=20, delta -8.0)
+
+== per-function SR@1e-10 changes (ref -> arm), all 24 funcs checked ==
+  v6_sf3     up 0 []  down 0 []
+  v6_sf5     up 0 []  down 0 []
+  v6_bq4     up 0 []  down 0 []
+
+== mean error (mean_best_f / 'mean') per function, selected ==
+  func                       MC-ESO        v6_sf3        v6_sf5        v6_bq4
+  F07-StepEllipsoidal      0.009357      0.009172      0.009357      0.002756
+  F13-SharpRidge          1.548e-12     1.548e-12     1.548e-12     1.548e-12
+  F15-RastriginRot             5.88          5.88          5.88          5.88
+  F16-Weierstrass           0.08616       0.07074       0.06166       0.07359
+  F17-SchafferF7          0.0009597     0.0003187     0.0009984     0.0002568
+  F18-SchafferF7ill         0.01112      0.009941       0.01112      0.007722
+  F20-Schwefel               0.9672         0.945        0.9625        0.9305
+
+== Wilcoxon detail (reference=MC-ESO, two-sided alpha=0.05) ==
+  v6_sf3     ref_wins 0 []  arm_wins 0 []
+  v6_sf5     ref_wins 1 [F23-Katsuura p=0.04311 A12=0.51]  arm_wins 0 []
+  v6_bq4     ref_wins 1 [F23-Katsuura p=0.02771 A12=0.52]  arm_wins 0 []

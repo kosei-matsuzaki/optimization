@@ -1,0 +1,32 @@
+run=results/20261111_154920_j66_a10_quick dim=10 funcs=24 methods=['MC-ESO', 'v6_sf3', 'v6_sf5', 'v6_bq4']
+
+== per-arm overall (mean over 24 funcs) ==
+  MC-ESO     SR@1e-10  63.5  1e-7  64.8  1e-4  69.6  1e-2  71.0
+  v6_sf3     SR@1e-10  64.4  1e-7  65.8  1e-4  70.6  1e-2  73.1
+  v6_sf5     SR@1e-10  63.7  1e-7  65.0  1e-4  69.6  1e-2  72.3
+  v6_bq4     SR@1e-10  64.4  1e-7  65.6  1e-4  70.6  1e-2  73.1
+
+== evals_succ_mean, paired over functions where BOTH ref and arm have successes ==
+  v6_sf3     arm   10724.6  vs ref   10540.8  (n_common=20, delta +183.9)
+  v6_sf5     arm   10528.9  vs ref   10540.8  (n_common=20, delta -11.9)
+  v6_bq4     arm   10695.8  vs ref   10540.8  (n_common=20, delta +155.0)
+
+== per-function SR@1e-10 changes (ref -> arm), all 24 funcs checked ==
+  v6_sf3     up 2 [F07-StepEllipsoidal 80->90, F16-Weierstrass 10->20]  down 0 []
+  v6_sf5     up 1 [F22-Gallagher21 55->60]  down 0 []
+  v6_bq4     up 2 [F07-StepEllipsoidal 80->90, F16-Weierstrass 10->20]  down 0 []
+
+== mean error (mean_best_f / 'mean') per function, selected ==
+  func                       MC-ESO        v6_sf3        v6_sf5        v6_bq4
+  F07-StepEllipsoidal       0.07444        0.0151       0.07254       0.03947
+  F13-SharpRidge          9.061e-12     9.061e-12     9.061e-12     9.061e-12
+  F15-RastriginRot            6.373         6.373         6.373         6.373
+  F16-Weierstrass           0.06331       0.03605       0.03777        0.0373
+  F17-SchafferF7           0.006949      0.001905      0.003544      0.001644
+  F18-SchafferF7ill         0.01404       0.01404       0.01404       0.01404
+  F20-Schwefel               0.8429        0.8251        0.8132        0.8163
+
+== Wilcoxon detail (reference=MC-ESO, two-sided alpha=0.05) ==
+  v6_sf3     ref_wins 0 []  arm_wins 0 []
+  v6_sf5     ref_wins 0 []  arm_wins 0 []
+  v6_bq4     ref_wins 1 [F04-BucheRastrigin p=0.01796 A12=0.54]  arm_wins 1 [F17-SchafferF7 p=0.02842 A12=0.42]
