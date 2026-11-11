@@ -927,6 +927,12 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         # log f never predicted the plateau). None = off.
         pace_final: "float | None" = None,
         pace_final_ratio: float = 0.8,
+        # v6 (2026-11-11). After this many failed spillovers in a row the basin
+        # switch is taken even below basin_switch_quality_rel_floor (None = the
+        # floor always holds). On 5D F20 the best falls under the floor in the
+        # first ~3k evaluations and the remaining ~9k go to 10-14 spillovers
+        # around the same best, none of which improves it.
+        switch_floor_after: "int | None" = None,
         # Herd child (≥3D): each generation one extra child at the log-weighted
         # mean of the best half of the hosts — the outbreak's centre, which on a
         # rugged surface with global structure (rotated Rastrigin, Schaffer)
@@ -1038,6 +1044,7 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         self.pace_max = pace_max
         self.pace_final = pace_final
         self.pace_final_ratio = pace_final_ratio
+        self.switch_floor_after = switch_floor_after
         self.herd_child = herd_child
         self.keepair_slow = keepair_slow
         self.chain_route = chain_route
@@ -1557,6 +1564,9 @@ class MultiChannelEpidemicOptimizer(BaseOptimizer):
         search fully commits to a fresh repelled region; otherwise base escalates
         only after a streak of failed spillovers (suppressed near precision)."""
         if self._basin_exhausted(st):
+            return True
+        if (self.switch_floor_after is not None
+                and st.consecutive_failed_spillovers >= self.switch_floor_after):
             return True
         return (st.consecutive_failed_spillovers >= self.basin_switch_after_failed_spillovers
                 and st.best_so_far > self.basin_switch_quality_rel_floor * st.f_init_scale)
