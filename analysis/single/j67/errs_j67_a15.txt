@@ -1,0 +1,47 @@
+=== [D] CEC mean error per function (per-run error < 1e-8 counted as 0) and rank ===
+function                        MC-ESO        v6_sf4        v6_sf5        v6_sf6   winner
+F01-Sphere                  0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F02-EllipsoidalSep          0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F03-RastriginSep            0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F04-BucheRastrigin          5.4723e-01    5.4723e-01    5.4723e-01    5.4723e-01   tie-all
+F05-LinearSlope             0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F06-AttractiveSector        0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F07-StepEllipsoidal         4.8930e-01    3.0502e-01    4.3110e-01    4.3518e-01   v6_sf4
+F08-Rosenbrock              0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F09-RosenbrockRot           0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F10-EllipsoidalRot          0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F11-Discus                  0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F12-BentCigar               9.6104e-10    9.6104e-10    9.6104e-10    9.6104e-10   tie-all
+F13-SharpRidge              1.4596e-06    1.4596e-06    1.4596e-06    1.4596e-06   tie-all
+F14-DiffPowers              0.0000e+00    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F15-RastriginRot            1.1914e+01    1.1914e+01    1.1914e+01    1.1914e+01   tie-all
+F16-Weierstrass             1.2712e-01    1.3989e-01    1.3310e-01    1.3120e-01   MC-ESO
+F17-SchafferF7              1.2119e-02    7.4286e-03    8.2839e-03    1.1626e-02   v6_sf4
+F18-SchafferF7ill           7.8660e-02    6.0459e-02    7.1236e-02    7.5078e-02   v6_sf4
+F19-GriewankRosenbrock      1.6113e+00    1.6113e+00    1.6113e+00    1.6113e+00   tie-all
+F20-Schwefel                9.9944e-01    9.7863e-01    9.6943e-01    9.8961e-01   v6_sf5
+F21-Gallagher101            4.3279e-01    4.3279e-01    4.3279e-01    4.3279e-01   tie-all
+F22-Gallagher21             6.8584e-01    6.8595e-01    6.5132e-01    6.8590e-01   v6_sf5
+F23-Katsuura                1.0043e-01    1.0043e-01    1.0043e-01    1.0043e-01   tie-all
+F24-LunacekRastrigin        2.8313e+01    2.8313e+01    2.8313e+01    2.8313e+01   tie-all
+
+=== mean rank (24 funcs) ===
+v6_sf5     mean rank  2.33   best-or-tied on 20/24
+v6_sf4     mean rank  2.42   best-or-tied on 21/24
+v6_sf6     mean rank  2.58   best-or-tied on 18/24
+MC-ESO     mean rank  2.67   best-or-tied on 19/24   <- ref (new default)
+
+=== functions where ref strictly beats every arm (CEC error) ===
+  F16-Weierstrass: ref 1.2712e-01 vs v6_sf4 1.3989e-01, v6_sf5 1.3310e-01, v6_sf6 1.3120e-01
+=== functions where some arm strictly beats ref ===
+  F07-StepEllipsoidal: ref 4.8930e-01 vs v6_sf4 3.0502e-01, v6_sf5 4.3110e-01, v6_sf6 4.3518e-01
+  F17-SchafferF7: ref 1.2119e-02 vs v6_sf4 7.4286e-03, v6_sf5 8.2839e-03, v6_sf6 1.1626e-02
+  F18-SchafferF7ill: ref 7.8660e-02 vs v6_sf4 6.0459e-02, v6_sf5 7.1236e-02, v6_sf6 7.5078e-02
+  F20-Schwefel: ref 9.9944e-01 vs v6_sf4 9.7863e-01, v6_sf5 9.6943e-01, v6_sf6 9.8961e-01
+  F22-Gallagher21: ref 6.8584e-01 vs v6_sf5 6.5132e-01
+
+=== [E] per-run agreement with the default (best_f / n_evals / success) ===
+stats columns: ['method', 'seed', 'time_s', 'best_f', 'n_evals', 'success', 'optima_found', 'optima_total', 'optima_rate']
+v6_sf4     1382/1440 cells identical to default   differing functions: {'F07-StepEllipsoidal': 12, 'F16-Weierstrass': 12, 'F17-SchafferF7': 10, 'F18-SchafferF7ill': 7, 'F20-Schwefel': 3, 'F22-Gallagher21': 14}
+v6_sf5     1396/1440 cells identical to default   differing functions: {'F07-StepEllipsoidal': 3, 'F16-Weierstrass': 12, 'F17-SchafferF7': 8, 'F18-SchafferF7ill': 4, 'F20-Schwefel': 2, 'F22-Gallagher21': 15}
+v6_sf6     1405/1440 cells identical to default   differing functions: {'F07-StepEllipsoidal': 4, 'F16-Weierstrass': 9, 'F17-SchafferF7': 8, 'F18-SchafferF7ill': 1, 'F20-Schwefel': 1, 'F22-Gallagher21': 12}

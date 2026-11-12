@@ -1,0 +1,26 @@
+compared columns (45): mean_best_f, median_best_f, sr_1e-1, sr_1e-2, sr_1e-3, sr_1e-4, sr_1e-5, sr_1e-7, sr_1e-10, evals_succ_mean, evals_succ_med, ert, ecdf_auc, mean_optima_found, mean_optima_rate, n_optima, pr_1e-2, pr_1e-4, mmo_sr_1e-2, mmo_sr_1e-4, cec_k, cec_pr_1e-1, cec_pr_1e-2, cec_pr_1e-3, cec_pr_1e-4, cec_pr_1e-5, cec_sr_1e-1, cec_sr_1e-2, cec_sr_1e-3, cec_sr_1e-4, cec_sr_1e-5, cec_pr_mean, cec_sr_mean, n_reported, cec_pre_1e-1, cec_pre_1e-2, cec_pre_1e-3, cec_pre_1e-4, cec_pre_1e-5, cec_f1_1e-1, cec_f1_1e-2, cec_f1_1e-3, cec_f1_1e-4, cec_f1_1e-5, cec_f1_mean
+=== [F] reproduction: this run's MC-ESO (new default, = old v5_wg15) vs j64 (a15) ===
+MC-ESO(j67_a15) vs v5_wg15(j64_a15): 1080/1080 cells identical
+MC-ESO(j67_a15) vs v5_wg15cp(j64_a15): 1061/1080 cells identical
+    differs: ('F01-Sphere', 'mean_best_f', '1.2434e-14', '1.9540e-14')
+    differs: ('F01-Sphere', 'median_best_f', '3.5527e-15', '1.4211e-14')
+    differs: ('F04-BucheRastrigin', 'evals_succ_mean', '17922', '16971')
+    differs: ('F04-BucheRastrigin', 'ert', '63901', '62898')
+    differs: ('F04-BucheRastrigin', 'ecdf_auc', '0.0342', '0.0360')
+    differs: ('F10-EllipsoidalRot', 'evals_succ_mean', '12793', '12745')
+    differs: ('F10-EllipsoidalRot', 'ert', '12793', '12745')
+    differs: ('F10-EllipsoidalRot', 'ecdf_auc', '0.1011', '0.1014')
+    differs: ('F11-Discus', 'evals_succ_mean', '10729', '10530')
+    differs: ('F11-Discus', 'evals_succ_med', '10526', '10522')
+    differs: ('F11-Discus', 'ert', '10729', '10530')
+    differs: ('F11-Discus', 'ecdf_auc', '0.1198', '0.1222')
+    differs: ('F16-Weierstrass', 'mean_best_f', '1.2712e-01', '1.0883e-01')
+    differs: ('F16-Weierstrass', 'median_best_f', '1.0066e-01', '8.6660e-02')
+    differs: ('F16-Weierstrass', 'sr_1e-1', '50%', '60%')
+    differs: ('F16-Weierstrass', 'ecdf_auc', '0.0057', '0.0058')
+    differs: ('F23-Katsuura', 'mean_best_f', '1.0043e-01', '1.0377e-01')
+    differs: ('F23-Katsuura', 'median_best_f', '6.4846e-02', '5.8187e-02')
+    differs: ('F24-LunacekRastrigin', 'mean_best_f', '2.8313e+01', '2.7977e+01')
+
+(context) j64 (a15) old default MC-ESO SR@1e-10 = 51.7 %
+(context) j64 (a15) v5_wg15 SR@1e-10 = 55.4 %

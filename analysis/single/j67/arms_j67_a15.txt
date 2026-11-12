@@ -1,0 +1,50 @@
+=== [A] OVERALL (24-function means) ===
+method        SR@1e-10    1e-7    1e-4    1e-2  evals_succ_mean(paired vs ref)
+MC-ESO           55.4%   56.9%   58.5%   60.2%   -
+v6_sf4           55.6%   57.1%   59.0%   61.9%         inf (    +nan, 24 funcs; ref inf)
+v6_sf5           55.6%   57.1%   58.8%   61.0%         inf (    +nan, 24 funcs; ref inf)
+v6_sf6           55.6%   57.1%   58.8%   60.6%         inf (    +nan, 24 funcs; ref inf)
+
+=== [B] PER-FUNCTION SR@1e-10 (ref vs arms); changes marked ===
+function                    ref    v6_sf4    v6_sf5    v6_sf6
+F01-Sphere                 100%      100%      100%      100%
+F02-EllipsoidalSep         100%      100%      100%      100%
+F03-RastriginSep           100%      100%      100%      100%
+F04-BucheRastrigin          45%       45%       45%       45%
+F05-LinearSlope            100%      100%      100%      100%
+F06-AttractiveSector       100%      100%      100%      100%
+F07-StepEllipsoidal         25%       30%       25%       30%  <-- changed
+F08-Rosenbrock             100%      100%      100%      100%
+F09-RosenbrockRot          100%      100%      100%      100%
+F10-EllipsoidalRot         100%      100%      100%      100%
+F11-Discus                 100%      100%      100%      100%
+F12-BentCigar               95%       95%       95%       95%
+F13-SharpRidge              85%       85%       85%       85%
+F14-DiffPowers             100%      100%      100%      100%
+F15-RastriginRot             0%        0%        0%        0%
+F16-Weierstrass              5%        5%        5%        5%
+F17-SchafferF7               5%        5%        5%        5%
+F18-SchafferF7ill            0%        0%        0%        0%
+F19-GriewankRosenbrock       0%        0%        0%        0%
+F20-Schwefel                 0%        0%        0%        0%
+F21-Gallagher101            60%       60%       60%       60%
+F22-Gallagher21             10%       10%       15%       10%  <-- changed
+F23-Katsuura                 0%        0%        0%        0%
+F24-LunacekRastrigin         0%        0%        0%        0%
+
+changed functions: F07-StepEllipsoidal, F22-Gallagher21
+all 4 methods 0%: F15-RastriginRot, F18-SchafferF7ill, F19-GriewankRosenbrock, F20-Schwefel, F23-Katsuura, F24-LunacekRastrigin
+all 4 methods 100%: F01-Sphere, F02-EllipsoidalSep, F03-RastriginSep, F05-LinearSlope, F06-AttractiveSector, F08-Rosenbrock, F09-RosenbrockRot, F10-EllipsoidalRot, F11-Discus, F14-DiffPowers
+
+=== [C] WILCOXON (best_f, reference MC-ESO, alpha=0.05 two-sided) ===
+v6_sf4     ref-better(ref wins) 1  arm-better(ref loses) 3   => arm record vs ref: 3W/1L
+     ARM-wins F07-StepEllipsoidal p=0.0109 A12=0.41 (small)
+     ARM-wins F17-SchafferF7 p=0.0209 A12=0.42 (small)
+     ARM-wins F18-SchafferF7ill p=0.0173 A12=0.41 (small)
+     REF-wins F22-Gallagher21 p=0.0004 A12=0.74 (large)
+v6_sf5     ref-better(ref wins) 1  arm-better(ref loses) 1   => arm record vs ref: 1W/1L
+     ARM-wins F17-SchafferF7 p=0.0357 A12=0.45 (negligible)
+     REF-wins F22-Gallagher21 p=0.0106 A12=0.69 (medium)
+v6_sf6     ref-better(ref wins) 2  arm-better(ref loses) 0   => arm record vs ref: 0W/2L
+     REF-wins F16-Weierstrass p=0.0077 A12=0.52 (negligible)
+     REF-wins F22-Gallagher21 p=0.0007 A12=0.71 (large)

@@ -124,8 +124,6 @@
 
 
 
-1. **【j67 (a15) 15D】** `./run.sh quick --all --dim 15 --max-evals 37500 --n-runs 20 --instances 1-5 --methods "MC-ESO,v6_sf4,v6_sf5,v6_sf6" --jobs 4`（label `j67_a15`）。run 内の比較（j64 (a15) と同じ集計。新しい既定は SR@1e-10 55.4%）。**記録**: `analysis/single/j67/`。採否の判断はしない。 (claimed 2026-11-12 15:30 UTC)
-
 1. **【j67 (a) 5D/10D の 4 設定と 2D の 2 設定（K の感度）】** 手法 `"MC-ESO,v6_sf4,v6_sf6"`、5D/10D は j66 (a) と同じ 4 設定（label `j67_a5` / `j67_a5ho` / `j67_a10` / `j67_a10ho`）、2D は j66 (d2) と同じ 2 設定（label `j67_d2` / `j67_d2ho`）。集計も j66 (a) / (d2) と同じ（パネル順位は `newdef_MC-ESO` 差し替え）。j66 の `v6_sf5` の値（2D 4.44・5D 4.08 / 4.10・10D 4.25 / 4.38）と並べる。**記録**: `analysis/single/j67/`。採否の判断はしない。
 
 **対話セッションでやること（測定ルーチンは取らない）**: いまは無し。
@@ -155,6 +153,19 @@
 ---
 
 ## 作業ログ
+
+### 2026-11-12 j67 (a15) 15D を完走 — **3 腕とも SR@1e-10 は既定 ＋0.2pt（55.4→55.6%）で横並び、run 内 CEC 順位は `v6_sf5` 2.33 ＜ `v6_sf4` 2.42 ＜ `v6_sf6` 2.58 ＜ 既定 2.67** で 3 腕すべてが既定を上回った。動いた関数は **F07（25→30、`v6_sf4`/`v6_sf6`）と F22（10→15、`v6_sf5` のみ）の 2 つだけ**。Wilcoxon は F22 で既定が 3 腕すべてに勝つ（A12 0.69〜0.74）
+- **ランした分**: ジョブのとおり 1 本（shard 分割なし）。`./run.sh quick --all --dim 15 --max-evals 37500 --n-runs 20 --instances 1-5 --methods "MC-ESO,v6_sf4,v6_sf5,v6_sf6" --jobs 4`（label `j67_a15`）。15:44:29-16:01:24 ＝ wall **16.9 分**。`result.json` は `status=done` / `set=all-d15`、**24/24 関数**（summary 96 行 = 24×4・wilcoxon 72 行 = 24×3・stats 24・`mceso_runs.csv` 1920 行 = 4×24×20、(関数, 手法) の重複・欠落ゼロ、wilcoxon の reference はすべて `MC-ESO`、seed は 0〜1900 の 20 個）
+- **環境**: numpy 2.4.6 / cma 4.5.0 / scipy 1.17.1、python 3.11.18。CPU Intel Xeon @2.10GHz（family 6 / **model 207 / stepping 2**、4 CPUs）、avx512f あり、BLAS は openblas（SkylakeX、num_threads 4）、`OMP_NUM_THREADS=1`。**容器仕様は j67 (a20ho)・j64 (a15) と同じ**。`pynmmso` はビルドできないので findings.md「環境と再現性」のとおり空 stub を `PYTHONPATH` に置いた（BBOB のみなので影響なし）
+- **全体表（24 関数平均。SR@1e-10 / 1e-7 / 1e-4 / 1e-2、`evals_succ_mean` は既定と各腕の両方で成功のある 19 関数の対応平均〈対 既定〉、run 内 CEC 順位は `analyze_quick` [5] の 4 手法）**: 既定 `MC-ESO` **55.4 / 56.9 / 58.5 / 60.2**、evals 17611.9、CEC 順位 **2.67**（4 位・19/24 で最良タイ）｜ `v6_sf4`（K=4）**55.6 / 57.1 / 59.0 / 61.9**、evals 17837.6（**+225.7**）、CEC **2.42**（2 位・**21/24**）｜ `v6_sf5`（K=5）**55.6 / 57.1 / 58.8 / 61.0**、evals 17780.1（**+168.2**）、CEC **2.33**（**1 位**・20/24）｜ `v6_sf6`（K=6）**55.6 / 57.1 / 58.8 / 60.6**、evals 17811.8（+199.9）、CEC **2.58**（3 位・18/24）＝ SR は 3 腕同値、SR@1e-2 と CEC 順位では腕が上、`evals_succ_mean` は 3 腕とも既定より増える
+- **関数別 SR@1e-10 の変化（既定比、変化した全関数）**: **F07-StepEllipsoidal 25→30（`v6_sf4`・`v6_sf6`。`v6_sf5` は 25 のまま）**、**F22-Gallagher21 10→15（`v6_sf5` のみ。`v6_sf4`・`v6_sf6` は 10 のまま）**。他の 22 関数は 4 手法すべて同値。F15・F18・F19・F20・F23・F24 は 4 手法すべて 0%、F01・F02・F03・F05・F06・F08・F09・F10・F11・F14 は全手法 100%
+- **Wilcoxon**（`best_f`、reference `MC-ESO`、α=0.05 両側）: `v6_sf4` **3勝1敗**（勝 F07 A12=0.41 small・F17 0.42 small・F18 0.41 small ｜ 敗 F22 0.74 **large**）｜ `v6_sf5` **1勝1敗**（勝 F17 0.45 negligible ｜ 敗 F22 0.69 medium）｜ `v6_sf6` **0勝2敗**（F16 0.52 negligible・F22 0.71 **large**）＝ F22 は 3 腕すべてで既定が有意に勝つが、SR@1e-10 では `v6_sf5` が 10→15 と上げている（深い水準と `best_f` 分布で向きが逆）
+- **CEC 平均誤差（`errs_j67_a15.txt`）**: 腕が勝つのは F07（既定 0.4893 → `v6_sf4` **0.3050**）・F17（1.2119e-2 → 7.4286e-3）・F18（7.8660e-2 → 6.0459e-2）・F20（0.9994 → 0.9694）・F22（0.6858 → `v6_sf5` 0.6513）。既定が 3 腕すべてに勝つのは **F16 のみ**（0.1271 対 0.1312〜0.1399）。残り 18 関数は 4 手法とも同値（tie）
+- **per-run 一致（`best_f`/`n_evals`/`success`、1440 セル）**: `v6_sf4` 1382/1440・`v6_sf5` 1396/1440・`v6_sf6` 1405/1440 ＝ **15D では 3 腕とも既定と bit 不一致**。差が出るのは F07・F16・F17・F18・F20・F22 の 6 関数のみ
+- **再現の検算**（`check_j67_a15.txt`）: この run の既定 `MC-ESO` は j64 (a15) の `v5_wg15` と 45 列 × 24 関数で **1080/1080 セル一致** ＝ 11-09 の既定付け替えどおりで、ジョブが書いた「新しい既定は SR@1e-10 55.4%」も一致。`v5_wg15cp` とは 1061/1080（j64 で既知の 15D の不一致）
+- **書かれたとおりに行かなかったこと**: (1) 最初の起動で `./run.sh quick ... | head -30` と繋いでしまい、SIGPIPE で 5 関数（summary 20 行）で停止した。その結果ディレクトリは削除し、ジョブのコマンドをそのまま出力をファイルへ向けて**回し直した**（上の 16.9 分の run が集計対象。truncate された run は記録に使っていない）。(2) `pip install -r requirements.txt` は `pynmmso` のビルドで落ちるので findings.md の手順で 3.11 側に入れ直した。(3) `arms_*.txt`・`errs_*.txt`・`evals_*.txt`・`check_*.txt` を出すスクリプトはリポジトリに無いので、過去と同じ体裁のものを書いて使った（判断は足していない）。採否の判断はしていない
+- `python3 scripts/check_doc_size.py` の結果は下記。**`find analysis -type f` は 2065 で規則の目安 約 400 を大きく超えている**（本ジョブの追加は 7 ファイル。超過は j64 以前から継続、削除は行っていない）
+- **記録**: `analysis/single/j67/{summary,wilcoxon}_j67_a15_dim15_all24.csv`、`analyze_quick` 全文は `aq_j67_a15.txt`、関数別表・Wilcoxon 明細は `arms_j67_a15.txt`、`evals_succ_mean` 明細は `evals_j67_a15.txt`、CEC 平均誤差と per-run 一致は `errs_j67_a15.txt`、再現の検算は `check_j67_a15.txt`
 
 ### 2026-11-12 j67 (a20ho) 20D 確認用 instance を完走 — **`v6_sf5` は 20D の hold-out でも既定を下回らない**（run 内 CEC 順位 2.33 ＜ 既定 2.52、SR@1e-10 44.4% 対 44.2%）。`v6_sf4`（K=4）は 2.62 / 43.3% で既定より悪く、`v6_sf6`（K=6）は 2.52 / 44.2% で既定と同値。動いた関数は **F21（30→35、`v6_sf5` のみ）・F22（0→5、同）・F09（75→55 / 70 / 75 ＝ `v6_sf4` と `v6_sf5` が下げた）**
 - **ランした分**: ジョブのとおり 1 本（shard 分割なし）。`./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 6-10 --seed-offset 7 --methods "MC-ESO,v6_sf4,v6_sf5,v6_sf6" --jobs 4`（label `j67_a20ho`）。14:31:57-14:54:43 ＝ wall **22.8 分**。`result.json` は `status=done` / `set=all-d20`、**24/24 関数**（summary 96 行 = 24×4・wilcoxon 72 行 = 24×3・stats 24・`mceso_runs.csv` 1920 行 = 4×24×20、(関数, 手法) の重複・欠落ゼロ、wilcoxon の reference はすべて `MC-ESO`）

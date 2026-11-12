@@ -1,0 +1,34 @@
+=== evals_succ_mean : paired mean over functions where BOTH ref and arm succeeded ===
+method      paired mean   ref mean      delta  #funcs
+v6_sf4          17837.6    17611.9     +225.7      19
+v6_sf5          17780.1    17611.9     +168.2      19
+v6_sf6          17811.8    17611.9     +199.9      19
+
+excluded (no success for some method): F15-RastriginRot, F18-SchafferF7ill, F19-GriewankRosenbrock, F20-Schwefel, F24-LunacekRastrigin
+
+=== per-function evals_succ_mean ===
+function                     MC-ESO     v6_sf4     v6_sf5     v6_sf6
+F01-Sphere                     8834       8834       8834       8834
+F02-EllipsoidalSep            12836      12836      12836      12836
+F03-RastriginSep              14018      14018      14018      14018
+F04-BucheRastrigin            17922      17922      17922      17922
+F05-LinearSlope               14004      14004      14004      14004
+F06-AttractiveSector          19628      19628      19628      19628
+F07-StepEllipsoidal           13264      16202      13264      17063
+F08-Rosenbrock                23991      23991      23991      23991
+F09-RosenbrockRot             24643      24643      24643      24643
+F10-EllipsoidalRot            12793      12793      12793      12793
+F11-Discus                    10729      10729      10729      10729
+F12-BentCigar                 22715      22715      22715      22715
+F13-SharpRidge                19693      19693      19693      19693
+F14-DiffPowers                11876      11876      11876      11876
+F15-RastriginRot                  -          -          -          -
+F16-Weierstrass               27212      27212      27212      27212
+F17-SchafferF7                22455      23805      22455      22455
+F18-SchafferF7ill                 -          -          -          -
+F19-GriewankRosenbrock            -          -          -          -
+F20-Schwefel                      -          -          -          -
+F21-Gallagher101              19132      19132      19132      19132
+F22-Gallagher21               17532      17532      20727      17532
+F23-Katsuura                  21349      21349      21349      21349
+F24-LunacekRastrigin              -          -          -          -
