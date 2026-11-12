@@ -634,6 +634,8 @@ _OPTIMIZERS = {
     "v6_finS":        (MultiChannelEpidemicOptimizer, {"pace_final": 0.5, "pace_final_ratio": 0.5}),
     "v6_sf3":         (MultiChannelEpidemicOptimizer, {"switch_floor_after": 3}),
     "v6_sf5":         (MultiChannelEpidemicOptimizer, {"switch_floor_after": 5}),
+    "v6_sf4":         (MultiChannelEpidemicOptimizer, {"switch_floor_after": 4}),
+    "v6_sf6":         (MultiChannelEpidemicOptimizer, {"switch_floor_after": 6}),
     "v6_bq4":         (MultiChannelEpidemicOptimizer, {"basin_switch_quality_rel_floor": 1e-4}),
     # the two arms of j61 that never lost (bit-identical in most settings)
     "v5_cp":          (MultiChannelEpidemicOptimizer, {"chain_trace": True, "chain_route": True, "pace_max": 3.0}),
