@@ -124,7 +124,7 @@
 
 
 
-1. **【j67 (a15) 15D】** `./run.sh quick --all --dim 15 --max-evals 37500 --n-runs 20 --instances 1-5 --methods "MC-ESO,v6_sf4,v6_sf5,v6_sf6" --jobs 4`（label `j67_a15`）。run 内の比較（j64 (a15) と同じ集計。新しい既定は SR@1e-10 55.4%）。**記録**: `analysis/single/j67/`。採否の判断はしない。
+1. **【j67 (a15) 15D】** `./run.sh quick --all --dim 15 --max-evals 37500 --n-runs 20 --instances 1-5 --methods "MC-ESO,v6_sf4,v6_sf5,v6_sf6" --jobs 4`（label `j67_a15`）。run 内の比較（j64 (a15) と同じ集計。新しい既定は SR@1e-10 55.4%）。**記録**: `analysis/single/j67/`。採否の判断はしない。 (claimed 2026-11-12 15:30 UTC)
 
 1. **【j67 (a) 5D/10D の 4 設定と 2D の 2 設定（K の感度）】** 手法 `"MC-ESO,v6_sf4,v6_sf6"`、5D/10D は j66 (a) と同じ 4 設定（label `j67_a5` / `j67_a5ho` / `j67_a10` / `j67_a10ho`）、2D は j66 (d2) と同じ 2 設定（label `j67_d2` / `j67_d2ho`）。集計も j66 (a) / (d2) と同じ（パネル順位は `newdef_MC-ESO` 差し替え）。j66 の `v6_sf5` の値（2D 4.44・5D 4.08 / 4.10・10D 4.25 / 4.38）と並べる。**記録**: `analysis/single/j67/`。採否の判断はしない。
 
