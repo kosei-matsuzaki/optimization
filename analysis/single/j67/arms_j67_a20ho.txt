@@ -1,0 +1,67 @@
+run: 20261112_143157_j67_a20ho_quick  dim=20  n=20  max_evals=50000  instances 6-10 seed-offset 7
+=== PER-FUNCTION SR@1e-10 (all 24 functions, %) ===
+function                   MC-ESO   v6_sf4   v6_sf5   v6_sf6   changed vs MC-ESO
+F01-Sphere                    100      100      100      100
+F02-EllipsoidalSep             95       95       95       95
+F03-RastriginSep              100      100      100      100
+F04-BucheRastrigin             40       40       40       40
+F05-LinearSlope               100      100      100      100
+F06-AttractiveSector           55       55       55       55
+F07-StepEllipsoidal             0        0        0        0
+F08-Rosenbrock                 70       70       70       70
+F09-RosenbrockRot              75       55       70       75   v6_sf4-20 v6_sf5-5
+F10-EllipsoidalRot            100      100      100      100
+F11-Discus                    100      100      100      100
+F12-BentCigar                  75       75       75       75
+F13-SharpRidge                 20       20       20       20
+F14-DiffPowers                100      100      100      100
+F15-RastriginRot                0        0        0        0
+F16-Weierstrass                 0        0        0        0
+F17-SchafferF7                  0        0        0        0
+F18-SchafferF7ill               0        0        0        0
+F19-GriewankRosenbrock          0        0        0        0
+F20-Schwefel                    0        0        0        0
+F21-Gallagher101               30       30       35       30   v6_sf5+5
+F22-Gallagher21                 0        0        5        0   v6_sf5+5
+F23-Katsuura                    0        0        0        0
+F24-LunacekRastrigin            0        0        0        0
+functions with any SR@1e-10 change: 3/24
+
+=== OVERALL SR ladder (mean over 24 funcs, %) ===
+MC-ESO     SR@1e-2  53.8  1e-4  51.5  1e-7  47.9  1e-10  44.2
+v6_sf4     SR@1e-2  52.9  1e-4  50.6  1e-7  47.3  1e-10  43.3
+v6_sf5     SR@1e-2  54.2  1e-4  51.7  1e-7  48.1  1e-10  44.4
+v6_sf6     SR@1e-2  53.8  1e-4  51.5  1e-7  47.9  1e-10  44.2
+
+=== evals_succ_mean (pairwise: only functions where BOTH have successes) ===
+v6_sf4     n_common=24  MC-ESO=     inf  arm=     inf  diff=    +nan
+v6_sf5     n_common=24  MC-ESO=     inf  arm=     inf  diff=    +nan
+v6_sf6     n_common=24  MC-ESO=     inf  arm=     inf  diff=    +nan
+
+=== WILCOXON (both directions, p_two<0.05), reference = MC-ESO ===
+  F07-StepEllipsoidal      vs v6_sf4   p=0.003729 A12=0.39 (small) ARM better
+  F17-SchafferF7           vs v6_sf4   p=0.04942 A12=0.43 (small) ARM better
+  F22-Gallagher21          vs v6_sf4   p=0.002218 A12=0.68 (medium) MC-ESO better
+  F07-StepEllipsoidal      vs v6_sf5   p=0.01252 A12=0.34 (medium) ARM better
+  F22-Gallagher21          vs v6_sf5   p=0.03417 A12=0.65 (medium) MC-ESO better
+  F22-Gallagher21          vs v6_sf6   p=0.002218 A12=0.68 (medium) MC-ESO better
+  counts MC-ESO wins/arm wins: v6_sf4: 1/2, v6_sf5: 1/1, v6_sf6: 1/0
+
+=== REQUIRED LINEUP: F07 / F09 / F21 / F22 ===
+function                metric                MC-ESO      v6_sf4      v6_sf5      v6_sf6
+F07-StepEllipsoidal     SR@1e-10                  0%          0%          0%          0%
+F07-StepEllipsoidal     mean_best_f           1.6556      1.2501      1.1346      1.4685
+F07-StepEllipsoidal     evals_succ               inf         inf         inf         inf
+F07-StepEllipsoidal     SR@1e-2                   0%          0%          0%          0%
+F09-RosenbrockRot       SR@1e-10                 75%         55%         70%         75%
+F09-RosenbrockRot       mean_best_f       6.2272e-07     0.13587     0.04174  6.2272e-07
+F09-RosenbrockRot       evals_succ             40790       40300       40539       40790
+F09-RosenbrockRot       SR@1e-2                 100%         80%         95%        100%
+F21-Gallagher101        SR@1e-10                 30%         30%         35%         30%
+F21-Gallagher101        mean_best_f          0.78069     0.78078     0.74618     0.78078
+F21-Gallagher101        evals_succ             31529       31529       31461       31529
+F21-Gallagher101        SR@1e-2                  35%         35%         40%         35%
+F22-Gallagher21         SR@1e-10                  0%          0%          5%          0%
+F22-Gallagher21         mean_best_f           1.7627      1.7629      1.7282      1.7628
+F22-Gallagher21         evals_succ               inf         inf       42204         inf
+F22-Gallagher21         SR@1e-2                   0%          0%          5%          0%

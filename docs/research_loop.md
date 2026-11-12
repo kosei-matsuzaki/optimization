@@ -123,7 +123,6 @@
 **2026-11-09 から `MC-ESO` は新しい既定（旧 `v5_wg15` ＝ 10-30 の既定 ＋ `wave_gen_floor=1.5`）。** 前の既定は `MC-ESO-v4`、その前は `MC-ESO-v3`。`v5_*` と `ctl_*` は `MC-ESO-v4` の上、`v3_*` / `v4_*` は `MC-ESO-v3` の上で走る（記録した数値が再現する）。`v6_*` は新しい既定の上。j47 / j49 / j57 のパネルの `MC-ESO` は 10-30 より前の既定なので、新しい既定のパネル順位は同じ run に入れた `MC-ESO`（または bit 一致の腕）を `cec_panel.py` の腕として読む。2D / 5D / 10D（予算 2500·D）では新しい既定は `MC-ESO-v4` と bit 一致（パネル順位 2D 4.44・5D 4.12 / 4.15・10D 4.25 / 4.46）、20D は 4.15。
 
 
-1. **【j67 (a20ho) 20D 確認用 instance】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 6-10 --seed-offset 7 --methods "MC-ESO,v6_sf4,v6_sf5,v6_sf6" --jobs 4`（label `j67_a20ho`）。`v6_sf5` の採用前の確認（20D の確認用 instance は j66 で未測定）。`v6_sf4` / `v6_sf6` は K の感度（mceso.md の `switch_floor_after`、K=4 / 6）。パネルが無いので run 内の比較（[1] 全体表・関数別 SR@1e-10・Wilcoxon・[5] run 内 CEC 順位）。**F07・F09・F21・F22 を必ず並べる**（j66 (a20) で `v6_sf5` が動かした関数）。**記録**: `analysis/single/j67/`。採否の判断はしない。 (claimed 2026-11-12 14:30 UTC)
 
 1. **【j67 (a15) 15D】** `./run.sh quick --all --dim 15 --max-evals 37500 --n-runs 20 --instances 1-5 --methods "MC-ESO,v6_sf4,v6_sf5,v6_sf6" --jobs 4`（label `j67_a15`）。run 内の比較（j64 (a15) と同じ集計。新しい既定は SR@1e-10 55.4%）。**記録**: `analysis/single/j67/`。採否の判断はしない。
 
@@ -156,6 +155,19 @@
 ---
 
 ## 作業ログ
+
+### 2026-11-12 j67 (a20ho) 20D 確認用 instance を完走 — **`v6_sf5` は 20D の hold-out でも既定を下回らない**（run 内 CEC 順位 2.33 ＜ 既定 2.52、SR@1e-10 44.4% 対 44.2%）。`v6_sf4`（K=4）は 2.62 / 43.3% で既定より悪く、`v6_sf6`（K=6）は 2.52 / 44.2% で既定と同値。動いた関数は **F21（30→35、`v6_sf5` のみ）・F22（0→5、同）・F09（75→55 / 70 / 75 ＝ `v6_sf4` と `v6_sf5` が下げた）**
+- **ランした分**: ジョブのとおり 1 本（shard 分割なし）。`./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 6-10 --seed-offset 7 --methods "MC-ESO,v6_sf4,v6_sf5,v6_sf6" --jobs 4`（label `j67_a20ho`）。14:31:57-14:54:43 ＝ wall **22.8 分**。`result.json` は `status=done` / `set=all-d20`、**24/24 関数**（summary 96 行 = 24×4・wilcoxon 72 行 = 24×3・stats 24・`mceso_runs.csv` 1920 行 = 4×24×20、(関数, 手法) の重複・欠落ゼロ、wilcoxon の reference はすべて `MC-ESO`）
+- **環境**: numpy 2.4.6 / cma 4.5.0 / scipy 1.17.1、python 3.11.18。CPU Intel Xeon @**2.10GHz**（family 6 / **model 207 / stepping 2**、4 CPUs、15 GB）、avx512f あり、BLAS は openblas（SkylakeX、num_threads 4）、`OMP_NUM_THREADS=1`（既定は unset なので手で 1 にした）。**容器仕様は j65 (a20)・j61 (d2) と同じで、j66 (a20) の model 173 @2.30GHz とは別**。`pynmmso` はビルドできないので findings.md の空 stub を `PYTHONPATH` に置いた（BBOB のみなので影響なし。`analyze_quick.py` の [5] もこれが無いと落ちる）
+- **[1] 全体表**（24 関数平均、%）: 既定 SR@1e-2 53.8 / 1e-4 51.5 / 1e-7 47.9 / **1e-10 44.2** ｜ `v6_sf4` 52.9 / 50.6 / 47.3 / **43.3** ｜ `v6_sf5` 54.2 / 51.7 / 48.1 / **44.4** ｜ `v6_sf6` 53.8 / 51.5 / 47.9 / **44.2**
+- **`evals_succ_mean`**（両方に成功のある 15 関数で平均。除外 9 ＝ F07・F15・F16・F18・F19・F20・F22・F23・F24）: 既定 26341.3 に対し `v6_sf4` 26343.1（+1.8）・`v6_sf5` **26320.0（-21.3）**・`v6_sf6` 26341.3（±0）。差の出た関数は `v6_sf4` が F09 -490 / F13 +517、`v6_sf5` が F09 -251 / F21 -68、`v6_sf6` は無し
+- **関数別 SR@1e-10 の変化（全 24 関数のうち動いたのは 3 関数のみ）**: **F09 RosenbrockRot 75 → `v6_sf4` 55（-20）/ `v6_sf5` 70（-5）/ `v6_sf6` 75（±0）**、**F21 Gallagher101 30 → 30 / 35（+5）/ 30**、**F22 Gallagher21 0 → 0 / 5（+5）/ 0**。他の 21 関数は 4 手法すべて同値（F07・F15-F20・F23・F24 は 4 手法とも 0%）
+- **Wilcoxon**（reference ＝ `MC-ESO`、p 両側 <0.05、A12 つき）: 既定の勝ち / 腕の勝ちは **`v6_sf4` 1/2・`v6_sf5` 1/1・`v6_sf6` 1/0**。内訳 ＝ 腕が勝った F07 StepEllipsoidal（vs `v6_sf4` p=0.0037 A12=0.39 small、vs `v6_sf5` p=0.0125 A12=0.34 medium）・F17 SchafferF7（vs `v6_sf4` p=0.0494 A12=0.43 small）／既定が勝った F22 Gallagher21（vs `v6_sf4` p=0.0022 A12=0.68・vs `v6_sf5` p=0.0342 A12=0.65・vs `v6_sf6` p=0.0022 A12=0.68、いずれも medium）
+- **[5] run 内 CEC 順位**（パネル無しのため run 内 4 手法。低い＝良い）: `v6_sf5` **2.33**（24 関数中 18 で最良）＜ `MC-ESO` 2.52（17）＝ `v6_sf6` 2.52（15）＜ `v6_sf4` 2.62（17）
+- **必須の並べ（F07・F09・F21・F22、平均誤差）**: F07 1.6556 → **1.2501 / 1.1346 / 1.4685（3 腕とも下げ ＝ j66 (a20) と同じ向き）**、F09 6.23e-07 → 0.1359 / 0.0417 / 6.23e-07（`v6_sf4`・`v6_sf5` が上げ ＝ j66 (a20) と同じ向き）、F21 0.7807 → 0.7808 / **0.7462** / 0.7808、F22 1.7627 → 1.7629 / **1.7282** / 1.7628。**平均誤差が動いた関数は `v6_sf4` 10（下 4 ＝ F07・F13・F17・F20）・`v6_sf5` 9（下 5 ＝ F07・F17・F18・F20・F21＋F22、上 4 ＝ F09・F16・F19）・`v6_sf6` 8（下 4 ＝ F07・F17・F18・F20）**
+- **per-run 一致（`best_f`、24×20 = 480 セル）**: `v6_sf4` 404/480・`v6_sf5` 420/480・`v6_sf6` 432/480 ＝ **3 腕とも既定と bit 不一致（K=6 も 20D では動いている）**。差の出る関数は F07・F09・F13・F16-F22 に限る
+- **記録**: `analysis/single/j67/{summary,wilcoxon}_j67_a20ho_dim20_all24.csv`、`analyze_quick` 全文は `aq_j67_a20ho.txt`、関数別表・Wilcoxon 明細は `arms_j67_a20ho.txt`、`evals_succ_mean` 明細は `evals_j67_a20ho.txt`、平均誤差と per-run 一致は `errs_j67_a20ho.txt`。per-run stats は j65・j66 と同じく複製していない（ファイル数の上限のため）。**`find analysis -type f` は 2058 で規則の目安 約 400 を大きく超えている**（本ジョブの追加は 6 ファイル。超過は j64 以前から継続、削除は行っていない）
+- 採否の判断はしていない（測定ルーチンの役割外）。ジョブ記載どおりに実行し、書かれていない測定は足していない
 
 ### 2026-11-11 j66（v6 の 2 本目 `switch_floor_after`、5D/10D・2D・20D・CEC2022）を完走 — 要約は [history.md の v6 の節](history.md)。全文（環境・検算・関数別の平均誤差・per-run 一致）は `git show dd51c4b:docs/research_loop.md`、数値の控えは `analysis/single/j66/`
 

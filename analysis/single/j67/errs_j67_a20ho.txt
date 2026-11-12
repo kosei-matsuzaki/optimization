@@ -1,0 +1,35 @@
+mceso_runs columns: ['function', 'method', 'seed', 'best_f', 'route', 'route_commit_evals', 'n_spillover', 'n_basin_switch', 'exhausted_evals', 'frac_close', 'frac_droplet', 'frac_airborne', 'frac_reseed', 'n_pop_first', 'n_pop_last', 'n_wave', 'n_handover', 'n_reassort', 'frac_wave', 'frac_reassort']
+compare columns: ['best_f'] n_runs: 20
+
+=== per-run cell agreement vs MC-ESO (24 funcs x 20 runs x 1 cols) ===
+v6_sf4   404/480 cells identical  -> differs on F07,F09,F13,F16,F17,F18,F19,F20,F21,F22
+v6_sf5   420/480 cells identical  -> differs on F07,F09,F16,F17,F18,F19,F20,F21,F22
+v6_sf6   432/480 cells identical  -> differs on F07,F16,F17,F18,F19,F20,F21,F22
+
+=== CEC-style mean error per function (per-run err<1e-8 -> 0) ===
+function                      MC-ESO      v6_sf4      v6_sf5      v6_sf6   moved
+F01-Sphere                         0           0           0           0
+F02-EllipsoidalSep                 0           0           0           0
+F03-RastriginSep                   0           0           0           0
+F04-BucheRastrigin            1.2934      1.2934      1.2934      1.2934
+F05-LinearSlope                    0           0           0           0
+F06-AttractiveSector               0           0           0           0
+F07-StepEllipsoidal           1.6556      1.2501      1.1346      1.4685   v6_sf4DOWN v6_sf5DOWN v6_sf6DOWN
+F08-Rosenbrock               0.21568     0.21568     0.21568     0.21568
+F09-RosenbrockRot         6.2268e-07     0.13587     0.04174  6.2268e-07   v6_sf4UP v6_sf5UP
+F10-EllipsoidalRot                 0           0           0           0
+F11-Discus                         0           0           0           0
+F12-BentCigar             0.00021094  0.00021094  0.00021094  0.00021094
+F13-SharpRidge            8.9188e-05  8.6735e-05  8.9188e-05  8.9188e-05   v6_sf4DOWN
+F14-DiffPowers                     0           0           0           0
+F15-RastriginRot              20.675      20.675      20.675      20.675
+F16-Weierstrass              0.40422     0.41681     0.40641     0.41243   v6_sf4UP v6_sf5UP v6_sf6UP
+F17-SchafferF7              0.030716    0.022191    0.026198    0.022939   v6_sf4DOWN v6_sf5DOWN v6_sf6DOWN
+F18-SchafferF7ill            0.13384     0.13434     0.12399     0.12952   v6_sf4UP v6_sf5DOWN v6_sf6DOWN
+F19-GriewankRosenbrock        2.7209      2.7228      2.7228      2.7228   v6_sf4UP v6_sf5UP v6_sf6UP
+F20-Schwefel                 0.97865     0.95826     0.97048     0.96174   v6_sf4DOWN v6_sf5DOWN v6_sf6DOWN
+F21-Gallagher101             0.78069     0.78078     0.74618     0.78078   v6_sf4UP v6_sf5DOWN v6_sf6UP
+F22-Gallagher21               1.7627      1.7629      1.7282      1.7628   v6_sf4UP v6_sf5DOWN v6_sf6UP
+F23-Katsuura                 0.40662     0.40662     0.40662     0.40662
+F24-LunacekRastrigin          57.429      57.429      57.429      57.429
+functions where mean error moved: {'v6_sf4': 10, 'v6_sf5': 9, 'v6_sf6': 8} (DOWN = better than default)
