@@ -1,0 +1,26 @@
+######## j67_d2 (dim 2, panel analysis/single/j57/j57_d2, --drop MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,v3_stage,v4_keep25p,v4_keep50,v4_pace) ########
+command: cec_panel.py --dim 2 --panel analysis/single/j57/j57_d2 --arms /tmp/claude-0/-home-user-optimization/47867a0c-2bd0-5b54-a7f3-5144e142bc3b/scratchpad/arms/j67_d2 (MC-ESO renamed to newdef_MC-ESO) --drop MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,v3_stage,v4_keep25p,v4_keep50,v4_pace
+dim 2: 24 functions, panel = MC-ESO + ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES
+  MC-ESO                 mean rank  4.52
+  newdef_MC-ESO          mean rank  4.44   mean error below base on 1, above on 2
+      rank moved: F19 2->4, F20 7->3
+  v6_sf4                 mean rank  4.44   mean error below base on 1, above on 3
+      rank moved: F19 2->4, F20 7->3
+  v6_sf6                 mean rank  4.44   mean error below base on 1, above on 3
+      rank moved: F19 2->4, F20 7->3
+
+######## j67_d2ho (dim 2, panel analysis/single/j57/j57_d2, --drop MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,v3_stage,v4_keep25p,v4_keep50,v4_pace) ########
+command: cec_panel.py --dim 2 --panel analysis/single/j57/j57_d2 --arms /tmp/claude-0/-home-user-optimization/47867a0c-2bd0-5b54-a7f3-5144e142bc3b/scratchpad/arms/j67_d2ho (MC-ESO renamed to newdef_MC-ESO) --drop MC-ESO-0707,MC-ESO-v0,MC-ESO-v1,MC-ESO-v2,v3_stage,v4_keep25p,v4_keep50,v4_pace
+dim 2: 24 functions, panel = MC-ESO + ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES
+  MC-ESO                 mean rank  4.52
+  newdef_MC-ESO          mean rank  4.56   mean error below base on 1, above on 4
+      rank moved: F12 5->6, F18 5->3, F19 2->4
+  v6_sf4                 mean rank  4.56   mean error below base on 1, above on 4
+      rank moved: F12 5->6, F18 5->3, F19 2->4
+  v6_sf6                 mean rank  4.71   mean error below base on 1, above on 5
+      rank moved: F12 5->6, F17 3->6.5, F18 5->3, F19 2->4
+
+
+NOTE: the j57_d2 panel was run on the tuning instances, so the j67_d2ho block above
+compares hold-out arms against a panel measured on different instances. j65 (d2) and
+j66 (d2) did not treat that as the hold-out panel rank; it is kept here only as raw output.

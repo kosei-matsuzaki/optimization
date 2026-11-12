@@ -1,0 +1,13 @@
+=== [F] reproduction: this run's MC-ESO (new default) vs j66, all columns except mean_time_s ===
+== j67_a5 MC-ESO vs j66 (summary_j66_a5_dim5_all24.csv)
+funcs_compared=24  1080/1080 cells identical  differing=0
+== j67_a5ho MC-ESO vs j66 (summary_j66_a5ho_dim5_all24.csv)
+funcs_compared=24  1080/1080 cells identical  differing=0
+== j67_a10 MC-ESO vs j66 (summary_j66_a10_dim10_all24.csv)
+funcs_compared=24  1080/1080 cells identical  differing=0
+== j67_a10ho MC-ESO vs j66 (summary_j66_a10ho_dim10_all24.csv)
+funcs_compared=24  1080/1080 cells identical  differing=0
+== j67_d2 MC-ESO vs j66 (summary_j66_d2_dim2_all24.csv)
+funcs_compared=24  1080/1080 cells identical  differing=0
+== j67_d2ho MC-ESO vs j66 (summary_j66_d2ho_dim2_all24.csv)
+funcs_compared=24  1080/1080 cells identical  differing=0

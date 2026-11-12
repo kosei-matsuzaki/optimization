@@ -1,0 +1,38 @@
+=== [D] CEC mean error per function (per-run error < 1e-8 counted as 0) and rank ===
+function                          MC-ESO        v6_sf4        v6_sf6   winner
+F01-Sphere                    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F02-EllipsoidalSep            0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F03-RastriginSep              0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F04-BucheRastrigin            0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F05-LinearSlope               0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F06-AttractiveSector          0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F07-StepEllipsoidal           0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F08-Rosenbrock                0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F09-RosenbrockRot             0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F10-EllipsoidalRot            0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F11-Discus                    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F12-BentCigar                 3.7714e-08    3.7714e-08    3.7714e-08   tie-all
+F13-SharpRidge                0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F14-DiffPowers                0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F15-RastriginRot              0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F16-Weierstrass               0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F17-SchafferF7                0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F18-SchafferF7ill             1.4450e-06    5.7562e-06    2.8785e-06   MC-ESO
+F19-GriewankRosenbrock        1.6808e-05    1.9474e-05    1.9474e-05   MC-ESO
+F20-Schwefel                  0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F21-Gallagher101              0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F22-Gallagher21               0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F23-Katsuura                  0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F24-LunacekRastrigin          1.0626e+00    1.0661e+00    1.0614e+00   v6_sf6
+
+=== mean error vs ref (below = better) ===
+v6_sf4       below  0  above  3
+     below: (none)
+     above: F18-SchafferF7ill, F19-GriewankRosenbrock, F24-LunacekRastrigin
+v6_sf6       below  1  above  2
+     below: F24-LunacekRastrigin
+     above: F18-SchafferF7ill, F19-GriewankRosenbrock
+
+=== per-run identity vs ref (best_f / n_evals / success) ===
+v6_sf4       1431/1440 cells identical   differing: F17-SchafferF7 2, F18-SchafferF7ill 5, F19-GriewankRosenbrock 1, F24-LunacekRastrigin 1
+v6_sf6       1429/1440 cells identical   differing: F13-SharpRidge 1, F17-SchafferF7 2, F18-SchafferF7ill 5, F19-GriewankRosenbrock 1, F24-LunacekRastrigin 2

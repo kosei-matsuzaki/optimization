@@ -1,0 +1,38 @@
+=== [D] CEC mean error per function (per-run error < 1e-8 counted as 0) and rank ===
+function                          MC-ESO        v6_sf4        v6_sf6   winner
+F01-Sphere                    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F02-EllipsoidalSep            0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F03-RastriginSep              0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F04-BucheRastrigin            9.9496e-01    9.9496e-01    9.9496e-01   tie-all
+F05-LinearSlope               0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F06-AttractiveSector          0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F07-StepEllipsoidal           9.3571e-03    9.3571e-03    9.3571e-03   tie-all
+F08-Rosenbrock                0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F09-RosenbrockRot             0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F10-EllipsoidalRot            0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F11-Discus                    0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F12-BentCigar                 1.7635e-08    1.7635e-08    1.7635e-08   tie-all
+F13-SharpRidge                0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F14-DiffPowers                0.0000e+00    0.0000e+00    0.0000e+00   tie-all
+F15-RastriginRot              5.8795e+00    5.8795e+00    5.8795e+00   tie-all
+F16-Weierstrass               8.6160e-02    6.9748e-02    6.4947e-02   v6_sf6
+F17-SchafferF7                9.5967e-04    3.0200e-04    2.9385e-04   v6_sf6
+F18-SchafferF7ill             1.1125e-02    1.1125e-02    1.1125e-02   tie-all
+F19-GriewankRosenbrock        2.7135e-01    2.7135e-01    2.7135e-01   tie-all
+F20-Schwefel                  9.6720e-01    9.1983e-01    9.6622e-01   v6_sf4
+F21-Gallagher101              5.5142e-01    5.5142e-01    5.5142e-01   tie-all
+F22-Gallagher21               5.4149e-01    5.4149e-01    5.0690e-01   v6_sf6
+F23-Katsuura                  5.3357e-02    5.3467e-02    5.3357e-02   MC-ESO/v6_sf6
+F24-LunacekRastrigin          1.5477e+01    1.5477e+01    1.5477e+01   tie-all
+
+=== mean error vs ref (below = better) ===
+v6_sf4       below  3  above  1
+     below: F16-Weierstrass, F17-SchafferF7, F20-Schwefel
+     above: F23-Katsuura
+v6_sf6       below  4  above  0
+     below: F16-Weierstrass, F17-SchafferF7, F20-Schwefel, F22-Gallagher21
+     above: (none)
+
+=== per-run identity vs ref (best_f / n_evals / success) ===
+v6_sf4       1423/1440 cells identical   differing: F16-Weierstrass 10, F17-SchafferF7 2, F20-Schwefel 3, F23-Katsuura 2
+v6_sf6       1429/1440 cells identical   differing: F16-Weierstrass 6, F17-SchafferF7 2, F20-Schwefel 1, F22-Gallagher21 2

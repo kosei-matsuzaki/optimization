@@ -1,0 +1,33 @@
+=== evals_succ_mean : paired mean over functions where BOTH ref and arm succeeded ===
+method        paired mean   ref mean      delta  #funcs
+v6_sf4            10673.6    10540.8     +132.9      20
+v6_sf6            10540.8    10540.8       +0.0      20
+
+excluded (no success for some method): F15-RastriginRot, F19-GriewankRosenbrock, F20-Schwefel, F24-LunacekRastrigin
+
+=== per-function evals_succ_mean ===
+function                       MC-ESO     v6_sf4     v6_sf6
+F01-Sphere                       4985       4985       4985
+F02-EllipsoidalSep               7022       7022       7022
+F03-RastriginSep                 9338       9338       9338
+F04-BucheRastrigin               9419       9419       9419
+F05-LinearSlope                  7741       7741       7741
+F06-AttractiveSector            10558      10558      10558
+F07-StepEllipsoidal              6148       7056       6148
+F08-Rosenbrock                  13422      13422      13422
+F09-RosenbrockRot               13203      13203      13203
+F10-EllipsoidalRot               6984       6984       6984
+F11-Discus                       6398       6398       6398
+F12-BentCigar                   12266      12266      12266
+F13-SharpRidge                   9402       9402       9402
+F14-DiffPowers                   5956       5956       5956
+F15-RastriginRot                    -          -          -
+F16-Weierstrass                 18748      20076      18748
+F17-SchafferF7                  15170      15099      15170
+F18-SchafferF7ill               19801      19801      19801
+F19-GriewankRosenbrock              -          -          -
+F20-Schwefel                        -          -          -
+F21-Gallagher101                12002      12002      12002
+F22-Gallagher21                  9279       9771       9279
+F23-Katsuura                    12973      12973      12973
+F24-LunacekRastrigin                -          -          -

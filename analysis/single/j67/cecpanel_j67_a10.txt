@@ -1,0 +1,20 @@
+######## j67_a10 (dim 10, panel analysis/single/j49/j49_p10) ########
+dim 10: 24 functions, panel = MC-ESO + ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES
+  MC-ESO                 mean rank  4.62
+  newdef_MC-ESO          mean rank  4.25   mean error below base on 7, above on 4
+      rank moved: F18 6->7, F19 8->1, F21 1->3, F23 2->1, F24 9->5
+  v6_sf4                 mean rank  4.25   mean error below base on 8, above on 3
+      rank moved: F18 6->7, F19 8->1, F21 1->3, F23 2->1, F24 9->5
+  v6_sf6                 mean rank  4.25   mean error below base on 8, above on 3
+      rank moved: F18 6->7, F19 8->1, F21 1->3, F23 2->1, F24 9->5
+
+######## j67_a10ho (dim 10, panel analysis/single/j49/j49_p10ho) ########
+dim 10: 24 functions, panel = MC-ESO + ARRDE, BIPOP-aCMA-ES, EBOwithCMAR, ELSHADE-SPACMA, IPOP-CMA-ES, L-SHADE, LSHADE-SPACMA, NL-SHADE-RSP, RCMAES
+  MC-ESO                 mean rank  4.75
+  newdef_MC-ESO          mean rank  4.46   mean error below base on 9, above on 4
+      rank moved: F19 6->3, F21 2->3, F23 2->1, F24 9->5
+  v6_sf4                 mean rank  4.42   mean error below base on 11, above on 2
+      rank moved: F16 3->2, F19 6->3, F21 2->3, F23 2->1, F24 9->5
+  v6_sf6                 mean rank  4.38   mean error below base on 10, above on 3
+      rank moved: F16 3->1, F19 6->3, F21 2->3, F23 2->1, F24 9->5
+
