@@ -123,7 +123,7 @@
 **2026-11-09 から `MC-ESO` は新しい既定（旧 `v5_wg15` ＝ 10-30 の既定 ＋ `wave_gen_floor=1.5`）。** 前の既定は `MC-ESO-v4`、その前は `MC-ESO-v3`。`v5_*` と `ctl_*` は `MC-ESO-v4` の上、`v3_*` / `v4_*` は `MC-ESO-v3` の上で走る（記録した数値が再現する）。`v6_*` は新しい既定の上。j47 / j49 / j57 のパネルの `MC-ESO` は 10-30 より前の既定なので、新しい既定のパネル順位は同じ run に入れた `MC-ESO`（または bit 一致の腕）を `cec_panel.py` の腕として読む。2D / 5D / 10D（予算 2500·D）では新しい既定は `MC-ESO-v4` と bit 一致（パネル順位 2D 4.44・5D 4.12 / 4.15・10D 4.25 / 4.46）、20D は 4.15。
 
 
-1. **【j67 (a20ho) 20D 確認用 instance】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 6-10 --seed-offset 7 --methods "MC-ESO,v6_sf4,v6_sf5,v6_sf6" --jobs 4`（label `j67_a20ho`）。`v6_sf5` の採用前の確認（20D の確認用 instance は j66 で未測定）。`v6_sf4` / `v6_sf6` は K の感度（mceso.md の `switch_floor_after`、K=4 / 6）。パネルが無いので run 内の比較（[1] 全体表・関数別 SR@1e-10・Wilcoxon・[5] run 内 CEC 順位）。**F07・F09・F21・F22 を必ず並べる**（j66 (a20) で `v6_sf5` が動かした関数）。**記録**: `analysis/single/j67/`。採否の判断はしない。
+1. **【j67 (a20ho) 20D 確認用 instance】** `./run.sh quick --all --dim 20 --max-evals 50000 --n-runs 20 --instances 6-10 --seed-offset 7 --methods "MC-ESO,v6_sf4,v6_sf5,v6_sf6" --jobs 4`（label `j67_a20ho`）。`v6_sf5` の採用前の確認（20D の確認用 instance は j66 で未測定）。`v6_sf4` / `v6_sf6` は K の感度（mceso.md の `switch_floor_after`、K=4 / 6）。パネルが無いので run 内の比較（[1] 全体表・関数別 SR@1e-10・Wilcoxon・[5] run 内 CEC 順位）。**F07・F09・F21・F22 を必ず並べる**（j66 (a20) で `v6_sf5` が動かした関数）。**記録**: `analysis/single/j67/`。採否の判断はしない。 (claimed 2026-11-12 14:30 UTC)
 
 1. **【j67 (a15) 15D】** `./run.sh quick --all --dim 15 --max-evals 37500 --n-runs 20 --instances 1-5 --methods "MC-ESO,v6_sf4,v6_sf5,v6_sf6" --jobs 4`（label `j67_a15`）。run 内の比較（j64 (a15) と同じ集計。新しい既定は SR@1e-10 55.4%）。**記録**: `analysis/single/j67/`。採否の判断はしない。
 
